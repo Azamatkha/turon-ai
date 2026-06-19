@@ -60,29 +60,21 @@ Marshrutlar: `/login` → `/chat` → `/admin`.
 
 ## 🚀 Ishga tushirish
 
-**Yagona talab:** Docker + Docker Compose. Boshqa hech narsa (Python, Node, Tesseract...) **o'rnatish shart emas** — har bir xizmat o'z konteynerida hammasini o'zi o'rnatadi.
+Talab: Docker + Docker Compose.
 
+### Hammasini ko'tarish
 ```bash
-git clone <repo>
-cd turon-ai
 docker compose up --build
 ```
-
-Tamom. Brauzerda och:
-
 | Xizmat | Manzil |
 |--------|--------|
 | Frontend (React) | http://localhost:5173 |
 | Backend API (Swagger) | http://localhost:8000/docs |
 | Qdrant panel | http://localhost:6333/dashboard |
 
-> Birinchi `up` uzoqroq (obrazlar quriladi, til modellari + npm paketlar yuklanadi). Keyingilari tez.
-> To'xtatish: `Ctrl+C`. Orqa fonda: `docker compose up -d`.
-
 Faqat bittasini ko'tarish: `docker compose up frontend` (yoki `backend`).
 
-### Hujjatlarni bazaga yozish (ixtiyoriy — RAG ma'lumoti uchun)
-Ilova ingest'siz ham ishlaydi; lekin qidiruv uchun hujjat kerak:
+### Hujjatlarni bazaga yozish (ingest)
 ```bash
 # 1) PDF'larni backend/data/documents/ ga tashla, keyin:
 docker compose run --rm backend python -m app.rag.ingest
@@ -94,6 +86,13 @@ docker compose run --rm backend python -m app.rag.retriever "savolingiz"
 Qayta ingest oldidan bazani tozalash:
 ```bash
 docker compose run --rm backend python -c "from app.rag.db import client, COLLECTION; client.delete_collection(COLLECTION)"
+```
+
+### Frontend (alohida, Docker'siz)
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173
 ```
 
 ### Eslatmalar
@@ -120,7 +119,8 @@ docker compose run --rm backend python -c "from app.rag.db import client, COLLEC
 - [x] 1-bosqich: PDF OCR → bo'lish → vektor → Qdrant (AI'siz)
 - [x] OCR sifatini oshirish (preprocessing + `tessdata_best`)
 - [x] Har bo'lakka hujjat mavzusi (sarlavha)
-- [x] Frontend: Login, Chat, Admin sahifalari (React + TS)
+- [x] Frontend: React+TS skeleti + Login sahifasi
+- [ ] Frontend: Chat va Admin sahifalari
 - [ ] 2-bosqich: AI (LLM) ulash — `/ask` endpoint
 - [ ] Frontend ↔ backend ulash
 

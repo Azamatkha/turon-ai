@@ -1,5 +1,6 @@
-# Ikkita xizmatni birga boshqaradi: vector baza (qdrant) + backend (fastapi+ocr).
+# Uchta xizmatni birga boshqaradi: vector baza (qdrant) + backend (fastapi+ocr) + frontend (react).
 # Ishga tushirish:  docker compose up --build
+# Hech narsa o'rnatish SHART EMAS — har bir xizmat o'z konteynerida hammasini o'rnatadi.
 
 services:
   # ---- Vector baza (alohida xizmat) ----
@@ -23,6 +24,16 @@ services:
       - hf_models:/models    # bge-m3 modeli BIR MARTA yuklanadi, keyin shu yerdan o'qiladi
     depends_on:
       - qdrant
+
+  # ---- Frontend (React + Vite) ----
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"          # brauzerda http://localhost:5173
+    volumes:
+      - ./frontend:/app      # kodni o'zgartirsang darrov ko'rinadi (hot-reload)
+      - /app/node_modules    # node_modules konteyner ichida qoladi (host bilan almashmaydi)
+    # backendga ulanish hozircha shart emas — mustaqil ishlaydi
 
 # Nomli volume: yuklab olingan AI modeli (~2.3 GB) container o'chsa ham saqlanadi
 volumes:
