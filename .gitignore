@@ -1,0 +1,19 @@
+# Python
+backend/venv/            # virtual muhit (har kim o'zi yaratadi)
+__pycache__/
+*.pyc
+backend/.env             # MAXFIY: API kalitlar — hech qachon GitHub'ga emas!
+
+# Node / React (frontend)
+frontend/node_modules/   # juda og'ir, har kim o'zi o'rnatadi
+frontend/dist/
+frontend/.env
+
+# Vector baza ma'lumotlari (og'ir, avtomatik yaraladi)
+qdrant_data/
+backend/chroma_db/
+
+# Hujjatlar (og'ir, maxfiy bo'lishi mumkin)
+backend/data/documents/
+
+.vscode/

@@ -1,0 +1,29 @@
+# Ikkita xizmatni birga boshqaradi: vector baza (qdrant) + backend (fastapi+ocr).
+# Ishga tushirish:  docker compose up --build
+
+services:
+  # ---- Vector baza (alohida xizmat) ----
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"        # REST/gRPC port (brauzerda http://localhost:6333/dashboard)
+    volumes:
+      - ./qdrant_data:/qdrant/storage   # ma'lumot kompyuterda saqlanadi (o'chmaydi)
+
+  # ---- Backend (FastAPI + OCR) ----
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_HOST=qdrant   # backend qdrant'ni shu nom orqali topadi (docker tarmog'i)
+      - QDRANT_PORT=6333
+    volumes:
+      - ./backend:/app       # kodni o'zgartirsang qayta build shart emas
+      - hf_models:/models    # bge-m3 modeli BIR MARTA yuklanadi, keyin shu yerdan o'qiladi
+    depends_on:
+      - qdrant
+
+# Nomli volume: yuklab olingan AI modeli (~2.3 GB) container o'chsa ham saqlanadi
+volumes:
+  hf_models:
