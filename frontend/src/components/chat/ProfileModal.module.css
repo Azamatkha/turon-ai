@@ -1,0 +1,250 @@
+/* Profilni tahrirlash modal oynasi (ism/username/parol + chiqish tugmasi) */
+
+/* =====================
+   Layout
+   ===================== */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(13, 33, 45, 0.42);
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease both;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 24px 70px rgba(13, 33, 45, 0.4);
+  animation: popIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.headInfo {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.divider {
+  height: 1px;
+  background: #e8ebe6;
+  margin: 20px 0;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  flex: 0 0 auto;
+  background: linear-gradient(140deg, #3a7ca5, #3a7ca5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  border: none;
+  background: #f1f4ef;
+  color: #5b6f78;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.input {
+  width: 100%;
+  height: 46px;
+  border: 1.6px solid #dde2dc;
+  border-radius: 11px;
+  padding: 0 14px;
+  font-size: 14.5px;
+  color: #173f73;
+  outline: none;
+  background: #fbfcfa;
+  transition: border-color 0.18s ease;
+}
+
+.usernameField {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 46px;
+  border: 1.6px solid #dde2dc;
+  border-radius: 11px;
+  padding: 0 14px;
+  background: #fbfcfa;
+}
+
+.usernamePrefix {
+  color: #9aafb8;
+  font-size: 15px;
+  flex: 0 0 auto;
+}
+
+.usernameInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14.5px;
+  color: #173f73;
+  height: 100%;
+}
+
+.saveBtn {
+  width: 100%;
+  height: 48px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(23, 63, 115, 0.2);
+  transition: all 0.2s ease;
+}
+
+.logoutBtn {
+  width: 100%;
+  height: 44px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid #f0d5d2;
+  border-radius: 12px;
+  cursor: pointer;
+  background: #fff;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.18s ease;
+}
+
+.savedContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Qo'llab-quvvatlash raqami qatori */
+.support {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: #f4f7f9;
+  border: 1px solid #e6eef3;
+}
+
+.supportIcon {
+  color: #2a6f97;
+  flex: 0 0 auto;
+}
+
+.supportHint {
+  font-size: 12.5px;
+  color: #6b7d86;
+  flex: 1;
+  min-width: 0;
+}
+
+.supportNumber {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #173f73;
+  text-decoration: none;
+  flex: 0 0 auto;
+  transition: color 0.15s ease;
+}
+
+.supportNumber:hover {
+  color: #2a6f97;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.fullName {
+  font-size: 17px;
+  font-weight: 700;
+  color: #173f73;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.handle {
+  font-size: 13px;
+  color: #7d909a;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #42565f;
+  margin-bottom: 7px;
+  letter-spacing: 0.2px;
+}
+
+.takenLabel {
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 600;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* =====================
+   States
+   ===================== */
+.saveBtnIdle {
+  background: linear-gradient(135deg, #2a6f97, #173f73);
+}
+
+.saveBtnSaved {
+  background: #1f8a5b;
+}

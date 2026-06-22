@@ -1,0 +1,74 @@
+/* =====================
+   Layout
+   ===================== */
+.root {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  /* 3-chi til (kirill) qo'shilgani uchun kengroq — eng uzun yorliq sig'ishi kerak */
+  width: 208px;
+  z-index: 50;
+  border-radius: 13px;
+  padding: 5px;
+  animation: popIn 0.2s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.flag {
+  flex: 0 0 auto;
+  display: block;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 1px rgba(23, 63, 115, 0.14), 0 1px 2px rgba(23, 63, 115, 0.18);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.chevron {
+  transition: transform 0.22s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 11px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.shortLabel {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.itemLabel {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+}

@@ -1,0 +1,32 @@
+/* Chat sahifasining tashqi joylashuvi: sidebar + asosiy chat maydoni */
+
+/* =====================
+   Layout
+   ===================== */
+.page {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Orqa fon nuqta qatlami — barcha kontent ostida, bosishni to'smaydi */
+.bgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}

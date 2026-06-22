@@ -1,0 +1,59 @@
+/* Pastdagi xabar yozish paneli (matn maydoni + yuborish tugmasi) */
+
+/* =====================
+   Layout
+   ===================== */
+.wrap {
+  flex: 0 0 auto;
+  padding: 10px 22px 16px;
+}
+
+.inner {
+  width: 100%;
+  max-width: min(960px, 86%);
+  margin: 0 auto;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border-radius: 22px;
+  padding: 8px 8px 8px 16px;
+}
+
+.textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.5;
+  max-height: 160px;
+  padding: 6px 4px;
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: none;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.disclaimer {
+  text-align: center;
+  font-size: 11.5px;
+  margin-top: 9px;
+}

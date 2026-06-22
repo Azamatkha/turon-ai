@@ -1,0 +1,195 @@
+/* =====================
+   Layout
+   ===================== */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(13, 33, 45, 0.42);
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease both;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 24px 70px rgba(13, 33, 45, 0.4);
+  animation: popIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+.roleRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  border: none;
+  background: #f1f4ef;
+  color: #5b6f78;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.usernameField {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 44px;
+  border: 1.6px solid #dde2dc;
+  border-radius: 11px;
+  padding: 0 13px;
+  background: #fbfcfa;
+}
+
+.usernamePrefix {
+  color: #9aafb8;
+  font-size: 15px;
+  flex: 0 0 auto;
+}
+
+.usernameInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #173f73;
+  height: 100%;
+}
+
+.roleBtn {
+  flex: 1;
+  padding: 9px 4px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 48px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2a6f97, #173f73);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(23, 63, 115, 0.2);
+  transition: all 0.2s ease;
+}
+
+/* Bosilganda darhol fizik feedback (boshqa qaytuv/animatsiyani kutmasdan) */
+.submitBtn:active {
+  transform: scale(0.98);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.4px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+.input {
+  width: 100%;
+  height: 44px;
+  border: 1.6px solid #dde2dc;
+  border-radius: 11px;
+  padding: 0 13px;
+  font-size: 14px;
+  color: #173f73;
+  outline: none;
+  background: #fbfcfa;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #173f73;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: 13px;
+  color: #7d909a;
+  margin-bottom: 22px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #42565f;
+  margin-bottom: 7px;
+}
+
+.takenLabel {
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+/* =====================
+   States
+   ===================== */
+.roleBtnActive {
+  border: 1.4px solid #2a6f97;
+  color: #2a6f97;
+  background: rgba(47, 102, 144, 0.08);
+}
+
+.roleBtnInactive {
+  border: 1.4px solid #dde2dc;
+  color: #7d909a;
+  background: #fff;
+}

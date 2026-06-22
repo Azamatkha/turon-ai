@@ -1,0 +1,39 @@
+/* Admin sahifasining tashqi joylashuvi: sidebar + asosiy kontent maydoni */
+
+/* =====================
+   Layout
+   ===================== */
+.page {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+  background: #eef1f5;
+  color: #173f73;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+/* Orqa fon nuqta qatlami — barcha kontent ostida, bosishni to'smaydi */
+.bgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 28px 40px;
+}

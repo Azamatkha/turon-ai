@@ -1,0 +1,257 @@
+/* Suhbat oynasining markaziy qismi: bo'sh holat (taklif chiplari) yoki xabarlar oqimi */
+
+/* =====================
+   Layout
+   ===================== */
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.emptyState {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 560px;
+}
+
+.thread {
+  width: 100%;
+  max-width: min(960px, 86%);
+  margin: 0 auto;
+  padding: 28px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.messageRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  animation: msgIn 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.messageRowUser {
+  justify-content: flex-end;
+}
+
+.messageRowBot {
+  justify-content: flex-start;
+}
+
+.typingRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  animation: msgIn 0.3s ease both;
+}
+
+.typingBubble {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 4px 18px 18px 18px;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.logoBadge {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 22px;
+}
+
+.botAvatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: linear-gradient(140deg, #173f73, #3a7ca5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dbe7f0;
+  box-shadow: 0 1px 3px rgba(23, 63, 115, 0.2);
+}
+
+.bubble {
+  padding: 13px 17px;
+  border-radius: 5px 18px 18px 18px;
+  font-size: 14.5px;
+  line-height: 1.62;
+  white-space: pre-wrap;
+}
+
+.bubbleUser {
+  max-width: 76%;
+  background: #3a7ca5;
+  color: #fff;
+  padding: 11px 16px;
+  border-radius: 18px 18px 5px 18px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  box-shadow: 0 1px 3px rgba(23, 63, 115, 0.18);
+}
+
+.bubbleBot {
+  max-width: 100%;
+}
+
+/* Bot javobi ustuni: bulutcha + ostidagi amallar qatori */
+.botCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  max-width: 80%;
+}
+
+/* Amallar qatori (nusxalash, baho, qayta yaratish) — touch'da ham ko'rinadi,
+   hover/focus'da to'liq yorishadi */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 5px 0 0 2px;
+  opacity: 0.55;
+  transition: opacity 0.18s ease;
+}
+
+.messageRowBot:hover .actions,
+.actions:focus-within {
+  opacity: 1;
+}
+
+.actBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.actBtn:hover {
+  background: rgba(58, 124, 165, 0.12);
+  color: #2a6f97;
+}
+
+.actBtn:active {
+  transform: scale(0.9);
+}
+
+.actBtn:focus-visible {
+  outline: 2px solid #7fb3d2;
+  outline-offset: 1px;
+}
+
+.actBtnUp {
+  color: #1f8a5b;
+}
+
+.actBtnUp:hover {
+  background: rgba(31, 138, 91, 0.12);
+  color: #1f8a5b;
+}
+
+.actBtnDown {
+  color: #c0392b;
+}
+
+.actBtnDown:hover {
+  background: rgba(192, 57, 43, 0.12);
+  color: #c0392b;
+}
+
+.suggestionChip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 15px;
+  border-radius: 13px;
+  cursor: pointer;
+  font-size: 13.5px;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.suggestionIcon {
+  font-size: 15px;
+}
+
+.typingDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: #3a7ca5;
+  animation: dot 1.3s infinite both;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.greeting {
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  margin-bottom: 8px;
+}
+
+.subtext {
+  font-size: 15px;
+  max-width: 420px;
+  margin-bottom: 30px;
+}
+
+/* =====================
+   Animations
+   ===================== */
+/* Bo'sh holat elementlari (logo, salom, izoh, chiplar) ketma-ket ko'tarilib chiqadi */
+.emptyState > * {
+  animation: emptyIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+.emptyState > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.emptyState > *:nth-child(3) {
+  animation-delay: 0.14s;
+}
+
+.emptyState > *:nth-child(4) {
+  animation-delay: 0.21s;
+}
+
+@keyframes emptyIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,30 +1,23 @@
 import { useState, useRef, useEffect, CSSProperties } from "react";
+import type { Lang } from "../types/lang";
+import styles from "./LangSwitcher.module.css";
 
-export type Lang = "uz" | "ru";
+export type { Lang };
 
 // Til ro'yxati: kod, to'liq nom, qisqa belgi
+// "uz" va "uz_cyrl" bir xil davlat bayrog'iga ega (O'zbekiston) — faqat yozuvi farq qiladi
 const LANGS: { code: Lang; label: string; short: string }[] = [
-  { code: "uz", label: "O‘zbekcha", short: "UZB" },
+  { code: "uz", label: "O‘zbekcha (lotin)", short: "UZB" },
+  { code: "uz_cyrl", label: "Ўзбекча (кирилл)", short: "УЗБ" },
   { code: "ru", label: "Русский", short: "RUS" },
 ];
 
+// Bayroq ikonkasi davlat kodiga bog'lanadi, til kodiga emas (uz/uz_cyrl bittasini ulashadi)
+const FLAG_COUNTRY: Record<Lang, string> = { uz: "uz", uz_cyrl: "uz", ru: "ru" };
+
 // Dumaloq (rounded) bayroq ikonkasi — flag-icons paketidan, doira shaklida kesilgan
 function Flag({ code, size = 22 }: { code: Lang; size?: number }) {
-  return (
-    <span
-      className={`fi fi-${code} fis`}
-      style={{
-        width: size,
-        height: size,
-        flex: "0 0 auto",
-        display: "block",
-        borderRadius: "50%",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        boxShadow: "0 0 0 1px rgba(22,66,91,.14), 0 1px 2px rgba(22,66,91,.18)",
-      }}
-    />
-  );
+  return <span className={`fi fi-${FLAG_COUNTRY[code]} fis ${styles.flag}`} style={{ width: size, height: size }} />;
 }
 
 interface ThemeTokens {
@@ -46,16 +39,16 @@ const THEMES: Record<"light" | "dark", ThemeTokens> = {
   light: {
     btnBg: "#fff",
     btnBorder: "#dde2dc",
-    btnText: "#16425b",
+    btnText: "#173f73",
     chevron: "#7d909a",
-    btnShadow: "0 1px 3px rgba(22,66,91,.06)",
+    btnShadow: "0 1px 3px rgba(23, 63, 115,.06)",
     menuBg: "#fff",
     menuBorder: "#e6eae3",
     menuShadow: "0 16px 40px rgba(13,33,45,.18)",
-    itemText: "#16425b",
+    itemText: "#173f73",
     itemActiveBg: "#eef3f6",
     itemHoverBg: "#f1f4ef",
-    check: "#2f6690",
+    check: "#2a6f97",
   },
   dark: {
     btnBg: "rgba(255,255,255,.08)",
@@ -106,27 +99,17 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
   }, [open]);
 
   return (
-    <div ref={rootRef} style={{ position: "relative", ...style }}>
+    <div ref={rootRef} className={styles.root} style={style}>
       <button
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Tilni tanlash"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "7px 11px",
-          background: t.btnBg,
-          border: "1px solid " + t.btnBorder,
-          borderRadius: "11px",
-          cursor: "pointer",
-          boxShadow: t.btnShadow,
-          transition: "all .16s ease",
-        }}
+        className={styles.trigger}
+        style={{ background: t.btnBg, border: "1px solid " + t.btnBorder, boxShadow: t.btnShadow }}
       >
         <Flag code={lang} size={20} />
-        <span style={{ fontSize: "13px", fontWeight: 600, color: t.btnText }}>{current.short}</span>
+        <span className={styles.shortLabel} style={{ color: t.btnText }}>{current.short}</span>
         <svg
           width="14"
           height="14"
@@ -136,7 +119,7 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ transition: "transform .22s ease", transform: open ? "rotate(180deg)" : "none" }}
+          className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -145,19 +128,8 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
       {open && (
         <div
           role="listbox"
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            [align]: 0,
-            width: "188px",
-            zIndex: 50,
-            background: t.menuBg,
-            border: "1px solid " + t.menuBorder,
-            borderRadius: "13px",
-            padding: "5px",
-            boxShadow: t.menuShadow,
-            animation: "popIn .2s cubic-bezier(.2,.8,.3,1) both",
-          }}
+          className={styles.menu}
+          style={{ [align]: 0, background: t.menuBg, border: "1px solid " + t.menuBorder, boxShadow: t.menuShadow }}
         >
           {LANGS.map((o) => {
             const active = o.code === lang;
@@ -173,21 +145,11 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
                 }}
                 onMouseEnter={() => setHover(o.code)}
                 onMouseLeave={() => setHover(null)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "11px",
-                  width: "100%",
-                  padding: "9px 11px",
-                  border: "none",
-                  borderRadius: "9px",
-                  background: active ? t.itemActiveBg : hovered ? t.itemHoverBg : "transparent",
-                  cursor: "pointer",
-                  transition: "background .14s ease",
-                }}
+                className={styles.menuItem}
+                style={{ background: active ? t.itemActiveBg : hovered ? t.itemHoverBg : "transparent" }}
               >
                 <Flag code={o.code} size={24} />
-                <span style={{ flex: 1, textAlign: "left", fontSize: "14px", fontWeight: 500, color: t.itemText }}>{o.label}</span>
+                <span className={styles.itemLabel} style={{ color: t.itemText }}>{o.label}</span>
                 {active && (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.check} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />

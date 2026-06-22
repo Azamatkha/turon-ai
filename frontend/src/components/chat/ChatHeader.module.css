@@ -1,0 +1,59 @@
+/* Chat sahifasining yuqori paneli: suhbat nomi + til almashtirgich + mavzu tugmasi */
+
+/* =====================
+   Layout
+   ===================== */
+.header {
+  height: 60px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Chap tomonda suzib turgan SidebarToggle tugmasiga joy qoldiriladi */
+  padding: 0 18px 0 56px;
+  position: relative;
+  z-index: 3;
+  backdrop-filter: blur(8px);
+  transition: background 0.35s ease, border-color 0.35s ease;
+  animation: headerIn 0.45s ease both;
+}
+
+/* =====================
+   Animations
+   ===================== */
+@keyframes headerIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 34vw;
+}

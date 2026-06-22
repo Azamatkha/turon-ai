@@ -1,0 +1,372 @@
+/* =====================
+   Layout
+   ===================== */
+.aside {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: flex-basis 0.38s cubic-bezier(0.4, 0, 0.2, 1), width 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 0 0 14px;
+}
+
+/* ChatHeader bilan bir xil balandlik (60px) — chegara chizig'i tekis ulanishi uchun */
+.railHead {
+  width: 100%;
+  height: 60px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.panelHead {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 0 16px;
+  flex: 0 0 auto;
+}
+
+.panelHeadBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.newChatRow {
+  padding: 14px 14px 6px;
+}
+
+/* Qidiruv qatori: ikonka + maydon + tozalash tugmasi */
+.searchRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 8px 14px 2px;
+  padding: 0 10px 0 32px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: border-color 0.18s ease, background 0.18s ease;
+  animation: searchIn 0.3s ease both;
+}
+
+@keyframes searchIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.searchRow:focus-within {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(127, 179, 210, 0.55);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.searchInput::placeholder {
+  color: rgba(217, 220, 214, 0.5);
+}
+
+.searchClear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.searchClear:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.noResults {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 12.5px;
+}
+
+.chatList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px 12px;
+}
+
+.chatGroupItems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.profileTrigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 0.18s ease;
+}
+
+.profileMeta {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.railSpacer {
+  flex: 1;
+}
+
+.avatarSm {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  background: linear-gradient(140deg, #3a7ca5, #3a7ca5);
+  /* ACCENT ikki marta takrorlangan — original gradient ham shunday edi */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.logoIcon {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+
+.brandText {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.brandTextAi {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.railBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 0.15s ease;
+}
+
+.newChatBtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.groupLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 4px 11px 7px;
+}
+
+/* Tarixdagi bitta suhbat qatori: tanlash tugmasi + o'chirish ikonkasi yonma-yon */
+.chatRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.chatItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* O'chirish tugmasi: doim bosish mumkin (touch'da ham), lekin hover/focus'da
+   to'liq ko'rinadi — sof hover'ga bog'lab qo'ymaslik uchun (touch'da hover yo'q) */
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.chatRow:hover .removeBtn,
+.removeBtn:focus-visible {
+  opacity: 1;
+}
+
+.removeBtn:hover,
+.removeBtn:focus-visible {
+  background: rgba(192, 57, 43, 0.18);
+  color: #ff8a80;
+}
+
+.removeBtn:focus-visible {
+  outline: 2px solid #7fb3d2;
+  outline-offset: 1px;
+}
+
+.chatDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  flex: 0 0 auto;
+}
+
+.chatTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  opacity: 0.5;
+  flex: 0 0 auto;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.profileName {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileHandle {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =====================
+   States
+   ===================== */
+/* Klaviatura bilan tab qilganda ko'rinadigan fokus halqasi
+   (sichqoncha bilan bosganda chiqmaydi — faqat :focus-visible) */
+.railBtn:focus-visible,
+.newChatBtn:focus-visible,
+.chatItem:focus-visible,
+.profileTrigger:focus-visible {
+  outline: 2px solid #7fb3d2;
+  outline-offset: 2px;
+}
+
+/* Yangi qo'shilgan suhbat ro'yxatga kirib kelishi — bosqichma-bosqich paydo bo'ladi */
+.chatGroupItems > .chatRow {
+  animation: chatItemIn 0.3s ease both;
+}
+
+/* =====================
+   Animations
+   ===================== */
+@keyframes chatItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,73 @@
+/* Login qutisidan TASHQARIDAGI sahifa foni: 3 ta xira "aurora" dog'i + interaktiv
+   nuqta-to'r (DotField). Login qutisi (oq karta) ustiga emas, orqasiga chiziladi. */
+
+/* =====================
+   Layout
+   ===================== */
+.auroraLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dotLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* =====================
+   Containers
+   ===================== */
+/* Uchta katta, xira (blur qilingan) rangli aylana — ekranning turli burchaklarida,
+   ataylab ko'p sig'maydigan o'lchamda (vw asosida) joylashtirilgan */
+.blobTopLeft {
+  position: absolute;
+  top: -12%;
+  left: -8%;
+  width: 46vw;
+  height: 46vw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(47, 102, 144, 0.22), transparent 68%);
+  filter: blur(20px);
+}
+
+.blobBottomRight {
+  position: absolute;
+  bottom: -16%;
+  right: -10%;
+  width: 52vw;
+  height: 52vw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, rgba(58, 124, 165, 0.2), transparent 70%);
+  filter: blur(20px);
+}
+
+.blobMiddle {
+  position: absolute;
+  top: 30%;
+  left: 55%;
+  width: 30vw;
+  height: 30vw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(127, 179, 210, 0.16), transparent 72%);
+  filter: blur(24px);
+}
+
+/* =====================
+   Animations
+   ===================== */
+.blobTopLeft {
+  animation: blobA 16s ease-in-out infinite;
+}
+
+.blobBottomRight {
+  animation: blobB 20s ease-in-out infinite;
+}
+
+.blobMiddle {
+  animation: blobA 24s ease-in-out infinite reverse;
+}

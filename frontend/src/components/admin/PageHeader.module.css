@@ -1,0 +1,81 @@
+/* Admin panelning yuqori sarlavha qatori: sahifa nomi + qidiruv + "qo'shish" tugmasi */
+
+/* =====================
+   Layout
+   ===================== */
+.header {
+  height: 66px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: #fff;
+  border-bottom: 1px solid #e4e8e2;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px;
+  background: #f4f6f3;
+  border: 1px solid #e0e5df;
+  border-radius: 11px;
+}
+
+.searchInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #173f73;
+  width: 170px;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #2a6f97, #173f73);
+  box-shadow: 0 4px 14px rgba(23, 63, 115, 0.22);
+  transition: all 0.18s ease;
+}
+
+.addBtn:active {
+  transform: scale(0.97);
+}
+
+/* =====================
+   Typography
+   ===================== */
+.title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #173f73;
+}
+
+.subtitle {
+  font-size: 12.5px;
+  color: #7d909a;
+  margin-top: 2px;
+}

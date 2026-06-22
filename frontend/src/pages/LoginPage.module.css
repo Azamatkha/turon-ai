@@ -1,0 +1,44 @@
+/* =====================
+   Layout
+   ===================== */
+.page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.page {
+  background: radial-gradient(circle at 50% 0%, #e6edef 0%, #d4dee2 55%, #bfd0d8 100%);
+  color: #173f73;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1140px;
+  height: min(660px, calc(100vh - 56px));
+  display: flex;
+  border-radius: 30px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 40px 80px -20px rgba(13, 33, 45, 0.32), 0 0 0 1px rgba(23, 63, 115, 0.04);
+}
+
+/* =====================
+   Animations
+   ===================== */
+/* Sahifa ochilganda login qutisi pastdan ozgina ko'tarilib, yumshoq paydo bo'ladi
+   (riseIn — index.css'dagi umumiy keyframe) */
+.card {
+  animation: riseIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}

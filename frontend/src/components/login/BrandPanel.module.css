@@ -1,0 +1,198 @@
+/* =====================
+   Layout
+   ===================== */
+/* Chap, qoraygan brend paneli — login sahifasining "vitrina" tomoni */
+.panel {
+  position: relative;
+  flex: 1.05;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px 36px;
+}
+
+/* =====================
+   Containers
+   ===================== */
+/* Asosiy fon — logotip rangidan (#173f73) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
+.panel {
+  background: linear-gradient(150deg, #173f73 0%, #2a6f97 38%, #173f73 85%, #2a6f97 100%);
+  color: #eef3f6;
+}
+
+/* Pastdagi 3 ta ".blob*"/".deco*" — panelni "bo'sh" ko'rinmasligi uchun fonga
+   qo'shilgan xira, sekin suzuvchi doiralar va kichik bezak kvadratchalar.
+   Ular pointer-events:none, ya'ni sichqoncha bosishlariga to'sqinlik qilmaydi. */
+
+/* Yuqori o'ng burchakdagi xira aylana (panel ramkasidan tashqariga chiqib turadi) */
+.blobTop {
+  position: absolute;
+  top: -120px;
+  right: -80px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(217, 220, 214, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+/* Pastki chap burchakdagi kattaroq xira aylana */
+.blobBottom {
+  position: absolute;
+  bottom: -150px;
+  left: -110px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, rgba(58, 124, 165, 0.42), transparent 70%);
+  pointer-events: none;
+}
+
+/* DotField (interaktiv nuqta-to'r) ustiga qo'yiladigan radial maska — markazda
+   to'liq ko'rinadi, chetlarga borgan sayin shaffoflashib ketadi (qattiq chiziq bo'lmasin uchun) */
+.dotMask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.9;
+  -webkit-mask-image: radial-gradient(circle at 64% 42%, #000, transparent 82%);
+  mask-image: radial-gradient(circle at 64% 42%, #000, transparent 82%);
+  pointer-events: none;
+}
+
+/* Sochilgan bezak kvadratchalari — sof dekorativ, hech qanday ma'lumot tashimaydi */
+.deco1 {
+  position: absolute;
+  top: 27px;
+  left: 38px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.deco2 {
+  position: absolute;
+  bottom: 120px;
+  left: 64px;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.deco3 {
+  position: absolute;
+  bottom: 80px;
+  left: 120px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(127, 209, 168, 0.12);
+  pointer-events: none;
+}
+
+/* Yuqori chap burchakdagi "Turon AI" logotip + matn qatori */
+.logoRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  z-index: 2;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  color: #bfe0f0;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+}
+
+.logoTextAi {
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+/* Pastki sarlavha bloki (badge + h1 + tavsif + SSO qatori) */
+.headlineBlock {
+  position: relative;
+  z-index: 2;
+}
+
+.ssoRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  color: rgba(238, 243, 246, 0.55);
+}
+
+/* =====================
+   Typography
+   ===================== */
+/* "FAQAT ICHKI FOYDALANISH" kabi yashil nuqtali pill-shaped yorliq */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #cfe3ef;
+  margin-bottom: 12px;
+  white-space: nowrap;
+}
+
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: #7fd1a8;
+  box-shadow: 0 0 0 3px rgba(127, 209, 168, 0.25);
+}
+
+.headline {
+  font-size: 22px;
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin: 0 0 8px;
+  max-width: 340px;
+  /* Sarlavha qatorlari taxminan bir xil uzunlikda bo'lib qolinishi uchun */
+  text-wrap: balance;
+}
+
+.subtext {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(238, 243, 246, 0.78);
+  margin: 0 0 13px;
+  max-width: 340px;
+}
+
+/* =====================
+   Animations
+   ===================== */
+/* Blob'lar sekin-asta tebranib turadi — har biri turli tezlik/yo'nalishda,
+   shu tufayli fon "robotsimon" emas, organik harakat qilayotgandek ko'rinadi */
+.blobTop {
+  animation: blobA 14s ease-in-out infinite;
+}
+
+.blobBottom {
+  animation: blobB 18s ease-in-out infinite;
+}

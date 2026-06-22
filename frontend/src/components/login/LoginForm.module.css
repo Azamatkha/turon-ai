@@ -1,0 +1,230 @@
+/* =====================
+   Layout
+   ===================== */
+.panel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 36px;
+  background: #f4f6f3;
+}
+
+.langSwitcherWrap {
+  position: absolute;
+  top: 24px;
+  right: 26px;
+  z-index: 20;
+}
+
+.formBox {
+  width: 100%;
+  max-width: 386px;
+}
+
+.headerBlock {
+  margin-bottom: 30px;
+}
+
+.fieldGroup {
+  margin-bottom: 16px;
+}
+
+.fieldGroupTight {
+  margin-bottom: 14px;
+}
+
+.rememberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.monitoredRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  color: #9aa7a2;
+  font-size: 12px;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.errorBox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  margin-bottom: 18px;
+  border-radius: 11px;
+  background: #fdeceb;
+  border: 1px solid #f6c9c5;
+  color: #c0392b;
+  font-size: 13.5px;
+  font-weight: 500;
+  animation: shake 0.4s ease both;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 14px;
+  height: 50px;
+  border: 1.6px solid #dde2dc;
+  box-shadow: 0 1px 2px rgba(23, 63, 115, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fieldActive {
+  border-color: #2a6f97;
+  box-shadow: 0 0 0 4px rgba(47, 102, 144, 0.12);
+}
+
+.pwToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #7d909a;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rememberBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 6px;
+  flex: 0 0 auto;
+  border: 1.8px solid #c2ccc9;
+  background: #fff;
+  transition: all 0.18s ease;
+}
+
+.checkboxChecked {
+  border-color: #2a6f97;
+  background: #2a6f97;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2a6f97, #173f73);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(23, 63, 115, 0.22);
+  /* Bosilganda ozgina kichraytirib, "bosildi" degan darhol fizik tuyg'u beradi */
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.3s ease;
+}
+
+.submitBtnLoading {
+  cursor: default;
+  background: #3a7ca5;
+}
+
+.submitBtn:active {
+  transform: scale(0.98);
+}
+
+.submitContent {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.4px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.title {
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0 0 7px;
+  color: #173f73;
+}
+
+.subtitle {
+  font-size: 14.5px;
+  color: #6b7d86;
+  margin: 0;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #42565f;
+  margin-bottom: 7px;
+  letter-spacing: 0.2px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #173f73;
+  height: 100%;
+  padding: 0;
+}
+
+.rememberLabel {
+  font-size: 13.5px;
+  color: #42565f;
+  white-space: nowrap;
+}
+
+.helpLink {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2a6f97;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.submitText {
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}

@@ -1,0 +1,223 @@
+/* Login sahifasining brend panelida ko'rsatiladigan "soxta" mahsulot
+   ko'rinishi — haqiqiy chat oynasi emas, faqat marketingbop maqsadda
+   suzib turadigan ikkita karta (chat namunasi + statistika doirasi). */
+
+/* =====================
+   Layout
+   ===================== */
+.wrap {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  padding: 4px 0 0;
+}
+
+.stack {
+  position: relative;
+  width: 258px;
+  max-width: 100%;
+}
+
+/* =====================
+   Containers
+   ===================== */
+.chatCard {
+  position: relative;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 26px 50px -16px rgba(8, 25, 36, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+}
+
+.chatCardHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eef1ec;
+  margin-bottom: 11px;
+}
+
+.chatCardIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(140deg, #173f73, #2a6f97);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.chatCardMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.chatCardStatus {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #6b7d86;
+  margin-top: 2px;
+}
+
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: #34c77b;
+}
+
+.chatCardVersion {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #9aafb8;
+  letter-spacing: 0.4px;
+}
+
+.bubbleRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.bubbleRowAi {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.bubbleUser {
+  max-width: 80%;
+  background: #2a6f97;
+  color: #fff;
+  font-size: 11.5px;
+  line-height: 1.4;
+  padding: 7px 11px;
+  border-radius: 13px 13px 4px 13px;
+}
+
+.bubbleAi {
+  max-width: 84%;
+  background: #f3f6f1;
+  color: #1c3c4d;
+  font-size: 11.5px;
+  line-height: 1.45;
+  padding: 7px 11px;
+  border-radius: 4px 13px 13px 13px;
+}
+
+/* Statistika kartasi asosiy chat kartasining pastki-o'ng burchagidan "osilib" turadi
+   (manfiy right/bottom — ataylab asosiy karta chegarasidan tashqariga chiqarilgan) */
+.statCard {
+  position: absolute;
+  right: -22px;
+  bottom: -16px;
+  width: 148px;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 15px;
+  padding: 12px;
+  box-shadow: 0 22px 44px -14px rgba(8, 25, 36, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+}
+
+.statLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #6b7d86;
+  margin-bottom: 9px;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+/* "94%" progress-doira — conic-gradient yordamida CSS'da chizilgan, SVG/Canvas kerak emas.
+   0%–94% qism brend rangida, 94%–100% qismi och kulrang (qolgan ulush) */
+.ring {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: conic-gradient(#2a6f97 0% 94%, #e3e8e2 94% 100%);
+}
+
+/* Doira ichidagi oq "donut" — tashqi halqani yupqa qilib ko'rsatadi, markazda foiz matni */
+.ringInner {
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #173f73;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 42px;
+}
+
+.barLow {
+  width: 6px;
+  height: 60%;
+  border-radius: 2px;
+  background: #cddbe5;
+}
+
+.barAccent {
+  width: 6px;
+  height: 85%;
+  border-radius: 2px;
+  background: #3a7ca5;
+}
+
+.barMid {
+  width: 6px;
+  height: 45%;
+  border-radius: 2px;
+  background: #cddbe5;
+}
+
+.barStrong {
+  width: 6px;
+  height: 100%;
+  border-radius: 2px;
+  background: #2a6f97;
+}
+
+/* =====================
+   Typography
+   ===================== */
+.chatCardName {
+  font-size: 12px;
+  font-weight: 700;
+  color: #173f73;
+  line-height: 1.1;
+}
+
+/* =====================
+   Animations
+   ===================== */
+/* Ikki karta turli amplitude/yo'nalishda suzadi (floatA/floatB — index.css'da
+   aniqlangan) — bir xilda harakatlanmasligi "qo'lda qilingan" emas, jonli ko'rinish beradi */
+.chatCard {
+  animation: floatA 8s ease-in-out infinite;
+}
+
+.statCard {
+  animation: floatB 7s ease-in-out infinite;
+}

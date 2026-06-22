@@ -20,7 +20,7 @@ button {
 }
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 40px #fff inset;
-  -webkit-text-fill-color: #16425b;
+  -webkit-text-fill-color: #173f73;
 }
 
 /* --- Dizaynda ishlatilgan animatsiyalar --- */
@@ -102,12 +102,26 @@ input:-webkit-autofill {
 /* Chiroyli skroll (chat tarixi/xabarlar uchun) */
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(22, 66, 91, 0.16);
+  background: rgba(23, 63, 115, 0.16);
   border-radius: 99px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(22, 66, 91, 0.28);
+  background: rgba(23, 63, 115, 0.28);
   background-clip: padding-box;
+}
+
+/* Foydalanuvchi OS darajasida harakatni kamaytirishni so'ragan bo'lsa —
+   barcha CSS animatsiya/o'tishlarni (shu jumladan har bir .module.css'dagilarni
+   ham) deyarli darhol yakunlaymiz. Bitta joyda turib butun ilovaga ta'sir qiladi. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
