@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, CSSProperties, KeyboardEvent, ButtonHTMLAttributes } from "react";
 import { useNavigate } from "react-router-dom";
+import LangSwitcher from "../components/LangSwitcher";
 
 const ACCENT = "#3a7ca5";
 
@@ -249,7 +250,7 @@ export default function ChatPage() {
         {!sidebarOpen ? (
           // yig'ilgan (collapsed) rail
           <div style={{ width: COLL + "px", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: "7px", padding: "16px 0 14px" }}>
-            <HButton onClick={() => setSidebarOpen(true)} title="Ochish" baseStyle={{ ...railBtn, opacity: 1, color: side.logo, animation: "floaty 5s ease-in-out infinite" }} hoverStyle={sideHover}>
+            <HButton onClick={() => setSidebarOpen(true)} title="Ochish" baseStyle={{ ...railBtn, opacity: 1, color: side.logo }} hoverStyle={sideHover}>
               <Logo size={25} />
             </HButton>
             <div style={{ width: "26px", height: "1px", background: side.border, margin: "3px 0 5px" }} />
@@ -270,7 +271,7 @@ export default function ChatPage() {
           <div style={{ width: SW + "px", height: "100%", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 14px 16px 16px", borderBottom: "1px solid " + side.border, flex: "0 0 auto" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                <div style={{ width: "26px", height: "26px", flex: "0 0 auto", color: side.logo, animation: "floaty 5s ease-in-out infinite" }}><Logo size={26} /></div>
+                <div style={{ width: "26px", height: "26px", flex: "0 0 auto", color: side.logo }}><Logo size={26} /></div>
                 <div style={{ fontSize: "17px", fontWeight: 700, letterSpacing: "-.3px", color: side.fg, whiteSpace: "nowrap" }}>
                   Turon<span style={{ fontWeight: 400, opacity: 0.7 }}> AI</span>
                 </div>
@@ -338,16 +339,7 @@ export default function ChatPage() {
 
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             {/* til almashtirgich */}
-            <div style={{ display: "flex", alignItems: "center", gap: "2px", padding: "3px", borderRadius: "99px", background: isDark ? "rgba(255,255,255,.06)" : "rgba(22,66,91,.06)" }}>
-              {(["uz", "ru"] as Lang[]).map((code) => {
-                const on = lang === code;
-                return (
-                  <button key={code} onClick={() => setLang(code)} style={{ border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600, letterSpacing: ".3px", padding: "5px 11px", borderRadius: "99px", transition: "all .2s ease", background: on ? ACCENT : "transparent", color: on ? "#fff" : tk.muted, boxShadow: on ? "0 1px 3px rgba(22,66,91,.25)" : "none" }}>
-                    {code === "uz" ? "UZB" : "RUS"}
-                  </button>
-                );
-              })}
-            </div>
+            <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" />
             {/* mavzu tugmasi (light/dark) */}
             <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: isDark ? tk.muted : tk.strong, transition: "color .3s ease" }}>Light</span>
@@ -367,7 +359,7 @@ export default function ChatPage() {
         <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", position: "relative" }}>
           {isEmpty && (
             <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "32px 20px" }}>
-              <div style={{ width: "64px", height: "64px", color: ACCENT, marginBottom: "22px", animation: "floaty 5s ease-in-out infinite" }}><Logo size={64} /></div>
+              <div style={{ width: "64px", height: "64px", color: ACCENT, marginBottom: "22px" }}><Logo size={64} /></div>
               <div style={{ fontSize: "27px", fontWeight: 600, letterSpacing: "-.4px", color: tk.strong, marginBottom: "8px" }}>{T.greeting(userName)}</div>
               <div style={{ fontSize: "15px", color: tk.muted, maxWidth: "420px", marginBottom: "30px" }}>{T.sub}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", maxWidth: "560px" }}>

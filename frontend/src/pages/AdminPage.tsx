@@ -137,7 +137,7 @@ export default function AdminPage() {
       {/* ===== SIDEBAR ===== */}
       <aside style={{ width: "248px", flex: "0 0 auto", background: "#16425b", color: "#eef2ef", height: "100%", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(255,255,255,.08)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "11px", padding: "20px 18px", borderBottom: "1px solid rgba(255,255,255,.09)" }}>
-          <div style={{ width: "30px", height: "30px", color: "#7fb3d2", flex: "0 0 auto", animation: "floaty 6s ease-in-out infinite" }}><Logo size={30} /></div>
+          <div style={{ width: "30px", height: "30px", color: "#7fb3d2", flex: "0 0 auto" }}><Logo size={30} /></div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: "16px", fontWeight: 800, letterSpacing: "-.3px", lineHeight: 1 }}>Turon<span style={{ fontWeight: 400, opacity: 0.7 }}> AI</span></div>
             <div style={{ fontSize: "10.5px", fontWeight: 600, letterSpacing: "1.2px", textTransform: "uppercase", color: "#7fb3d2", marginTop: "3px" }}>Admin panel</div>

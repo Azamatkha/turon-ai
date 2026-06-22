@@ -1,5 +1,7 @@
 import { useState, CSSProperties, KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import DotGrid from "../components/DotGrid";
+import LangSwitcher from "../components/LangSwitcher";
 
 // Turon AI logotipi (SVG)
 const Logo = ({ size = 38 }: { size?: number }) => (
@@ -10,28 +12,6 @@ const Logo = ({ size = 38 }: { size?: number }) => (
     />
   </svg>
 );
-
-// Bayroq (uz / ru)
-const Flag = ({ code }: { code: "uz" | "ru" }) => {
-  if (code === "ru") {
-    return (
-      <svg viewBox="0 0 9 6" width="100%" height="100%" style={{ display: "block" }}>
-        <rect width={9} height={6} fill="#fff" />
-        <rect y={2} width={9} height={2} fill="#0039A6" />
-        <rect y={4} width={9} height={2} fill="#D52B1E" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 9 6" width="100%" height="100%" style={{ display: "block" }}>
-      <rect width={9} height={6} fill="#fff" />
-      <rect width={9} height={1.9} fill="#0099B5" />
-      <rect y={4.1} width={9} height={1.9} fill="#1EB53A" />
-      <circle cx={1.7} cy={1} r={0.55} fill="#fff" stroke="#CE1126" strokeWidth={0.18} />
-      <circle cx={1.9} cy={1} r={0.5} fill="#0099B5" />
-    </svg>
-  );
-};
 
 // Ikki tildagi matnlar (i18n)
 const STR = {
@@ -50,6 +30,10 @@ const STR = {
     help: "Yordam kerakmi?",
     monitored: "Sessiya xavfsizlik uchun kuzatiladi. Ruxsatsiz kirish taqiqlanadi.",
     label: "O‘zbekcha",
+    online: "Onlayn",
+    pvUser: "Omonat depozit shartlarini tushuntirib bera olasizmi?",
+    pvAI: "Albatta. Joriy stavka yiliga 18% — qisqacha bayon qilib beraymi?",
+    statLabel: "Hal qilingan so‘rovlar",
   },
   ru: {
     badge: "Только внутренний доступ",
@@ -66,6 +50,10 @@ const STR = {
     help: "Нужна помощь?",
     monitored: "Сессия отслеживается в целях безопасности. Несанкционированный доступ запрещён.",
     label: "Русский",
+    online: "Онлайн",
+    pvUser: "Можешь объяснить условия срочного депозита?",
+    pvAI: "Конечно. Текущая ставка — 18% годовых. Сделать краткую сводку?",
+    statLabel: "Решённые запросы",
   },
 } as const;
 
@@ -130,26 +118,101 @@ export default function LoginPage() {
   return (
     <div
       style={{
-        height: "100vh",
+        position: "relative",
+        minHeight: "100vh",
         width: "100%",
         display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "28px",
         overflow: "hidden",
-        background: "#d9dcd6",
+        background: "radial-gradient(circle at 50% 0%,#e6edef 0%,#d4dee2 55%,#bfd0d8 100%)",
         color: "#16425b",
+        boxSizing: "border-box",
       }}
     >
+      {/* ===== SAHIFA FONI: aurora dog'lari + interaktiv nuqta-to'r (login qutisidan tashqarida) ===== */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none", overflow: "hidden" }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "-12%",
+            left: "-8%",
+            width: "46vw",
+            height: "46vw",
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 35% 35%,rgba(47,102,144,.22),transparent 68%)",
+            filter: "blur(20px)",
+            animation: "blobA 16s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-16%",
+            right: "-10%",
+            width: "52vw",
+            height: "52vw",
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 60% 40%,rgba(58,124,165,.20),transparent 70%)",
+            filter: "blur(20px)",
+            animation: "blobB 20s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "30%",
+            left: "55%",
+            width: "30vw",
+            height: "30vw",
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 50% 50%,rgba(127,179,210,.16),transparent 72%)",
+            filter: "blur(24px)",
+            animation: "blobA 24s ease-in-out infinite reverse",
+          }}
+        />
+      </div>
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+        <DotGrid
+          dotSize={4}
+          gap={28}
+          baseColor="#c2cdd2"
+          activeColor="#2f6690"
+          proximity={130}
+          shockRadius={240}
+          shockStrength={4}
+          resistance={750}
+          returnDuration={1.5}
+        />
+      </div>
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          width: "100%",
+          maxWidth: "1140px",
+          height: "min(660px, calc(100vh - 56px))",
+          display: "flex",
+          borderRadius: "26px",
+          overflow: "hidden",
+          background: "#fff",
+          boxShadow: "0 40px 80px -20px rgba(13,33,45,.32), 0 0 0 1px rgba(22,66,91,.04)",
+        }}
+      >
       {/* ===== BREND PANELI ===== */}
       <div
         style={{
           position: "relative",
           flex: 1.05,
           minWidth: 0,
-          background: "linear-gradient(150deg,#16425b 0%,#2f6690 62%,#3a7ca5 100%)",
+          background: "linear-gradient(150deg,#0f3145 0%,#16425b 38%,#2f6690 78%,#3a7ca5 100%)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          padding: "48px 52px",
+          padding: "32px 36px",
           color: "#eef3f6",
         }}
       >
@@ -161,7 +224,7 @@ export default function LoginPage() {
             width: "420px",
             height: "420px",
             borderRadius: "50%",
-            background: "radial-gradient(circle at 30% 30%,rgba(217,220,214,.20),transparent 70%)",
+            background: "radial-gradient(circle at 30% 30%,rgba(217,220,214,.18),transparent 70%)",
             animation: "blobA 14s ease-in-out infinite",
             pointerEvents: "none",
           }}
@@ -171,39 +234,120 @@ export default function LoginPage() {
             position: "absolute",
             bottom: "-150px",
             left: "-110px",
-            width: "500px",
-            height: "500px",
+            width: "520px",
+            height: "520px",
             borderRadius: "50%",
-            background: "radial-gradient(circle at 60% 40%,rgba(58,124,165,.45),transparent 70%)",
+            background: "radial-gradient(circle at 60% 40%,rgba(58,124,165,.42),transparent 70%)",
             animation: "blobB 18s ease-in-out infinite",
             pointerEvents: "none",
           }}
         />
+        {/* interaktiv nuqta-to'r foni (sichqoncha yaqinida yorishadi, bosilganda to'lqin) */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px)",
-            backgroundSize: "46px 46px",
-            WebkitMaskImage: "radial-gradient(circle at 72% 28%,#000,transparent 72%)",
-            maskImage: "radial-gradient(circle at 72% 28%,#000,transparent 72%)",
+            zIndex: 1,
+            opacity: 0.9,
+            WebkitMaskImage: "radial-gradient(circle at 64% 42%,#000,transparent 82%)",
+            maskImage: "radial-gradient(circle at 64% 42%,#000,transparent 82%)",
             pointerEvents: "none",
           }}
-        />
+        >
+          <DotGrid
+            dotSize={4}
+            gap={22}
+            baseColor="#2c5570"
+            activeColor="#bfe0f0"
+            proximity={120}
+            shockRadius={220}
+            shockStrength={4}
+            resistance={750}
+            returnDuration={1.5}
+          />
+        </div>
+        {/* sochilgan bezak kvadratchalar */}
+        <div style={{ position: "absolute", top: "34px", left: "38px", width: "30px", height: "30px", borderRadius: "7px", background: "rgba(255,255,255,.05)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "120px", left: "64px", width: "18px", height: "18px", borderRadius: "5px", background: "rgba(255,255,255,.06)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "80px", left: "120px", width: "26px", height: "26px", borderRadius: "6px", background: "rgba(127,209,168,.12)", pointerEvents: "none" }} />
 
         {/* logo */}
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "13px" }}>
-          <div style={{ width: "38px", height: "38px", color: "#bfe0f0", animation: "floaty 6s ease-in-out infinite" }}>
-            <Logo size={38} />
+        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "11px", zIndex: 2 }}>
+          <div style={{ width: "32px", height: "32px", color: "#bfe0f0" }}>
+            <Logo size={32} />
           </div>
-          <div style={{ fontSize: "21px", fontWeight: 800, letterSpacing: "-.4px", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-.4px", whiteSpace: "nowrap" }}>
             Turon<span style={{ fontWeight: 400, opacity: 0.75 }}> AI</span>
           </div>
         </div>
 
+        {/* suzuvchi mahsulot oldindan ko'rinishi */}
+        <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", minHeight: 0, padding: "4px 0 0" }}>
+          <div style={{ position: "relative", width: "258px", maxWidth: "100%" }}>
+            {/* asosiy chat karta */}
+            <div
+              style={{
+                position: "relative",
+                background: "rgba(255,255,255,.96)",
+                borderRadius: "18px",
+                padding: "14px",
+                boxShadow: "0 26px 50px -16px rgba(8,25,36,.6), 0 0 0 1px rgba(255,255,255,.4) inset",
+                animation: "floatA 8s ease-in-out infinite",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "9px", paddingBottom: "10px", borderBottom: "1px solid #eef1ec", marginBottom: "11px" }}>
+                <div style={{ width: "26px", height: "26px", borderRadius: "8px", background: "linear-gradient(140deg,#16425b,#2f6690)", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto" }}>
+                  <svg viewBox="0 0 300 304" width="14" height="14"><path d="M255.855 103.421L151.944 0L0 151.229L151.944 303.571L237.084 217.934L236.596 217.741C218.796 215.674 196.967 200.887 174.025 194.767C153.234 190.031 117.854 192.284 113.738 189.784C210.706 153.869 208.725 193.015 261.188 193.69L300 154.651C205.217 202.737 227.309 139.389 112.627 146.032C208.968 101.141 220.332 165.106 297.139 144.51L273.803 121.284L273.564 121.289C209.821 145.798 215.563 94.5428 113.183 100.88C195.18 63.1381 219.363 100.88 255.774 103.395L255.855 103.421Z" fill="#dbe7f0" /></svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#16425b", lineHeight: 1.1 }}>Turon AI</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "#6b7d86", marginTop: "2px" }}>
+                    <span style={{ width: "5px", height: "5px", borderRadius: "99px", background: "#34c77b" }} />
+                    {T.online}
+                  </div>
+                </div>
+                <div style={{ fontSize: "9.5px", fontWeight: 600, color: "#9aafb8", letterSpacing: ".4px" }}>v2.5</div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
+                <div style={{ maxWidth: "80%", background: "#2f6690", color: "#fff", fontSize: "11.5px", lineHeight: 1.4, padding: "7px 11px", borderRadius: "13px 13px 4px 13px" }}>{T.pvUser}</div>
+              </div>
+              <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                <div style={{ maxWidth: "84%", background: "#f3f6f1", color: "#1c3c4d", fontSize: "11.5px", lineHeight: 1.45, padding: "7px 11px", borderRadius: "4px 13px 13px 13px" }}>{T.pvAI}</div>
+              </div>
+            </div>
+
+            {/* suzuvchi statistika karta */}
+            <div
+              style={{
+                position: "absolute",
+                right: "-22px",
+                bottom: "-16px",
+                width: "148px",
+                background: "rgba(255,255,255,.97)",
+                borderRadius: "15px",
+                padding: "12px",
+                boxShadow: "0 22px 44px -14px rgba(8,25,36,.55), 0 0 0 1px rgba(255,255,255,.4) inset",
+                animation: "floatB 7s ease-in-out infinite",
+              }}
+            >
+              <div style={{ fontSize: "10.5px", fontWeight: 600, color: "#6b7d86", marginBottom: "9px" }}>{T.statLabel}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "11px" }}>
+                <div style={{ position: "relative", width: "50px", height: "50px", flex: "0 0 auto", borderRadius: "50%", background: "conic-gradient(#2f6690 0% 94%,#e3e8e2 94% 100%)" }}>
+                  <div style={{ position: "absolute", inset: "7px", borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12.5px", fontWeight: 800, color: "#16425b" }}>94%</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", height: "42px" }}>
+                  <div style={{ width: "6px", height: "60%", borderRadius: "2px", background: "#cddbe5" }} />
+                  <div style={{ width: "6px", height: "85%", borderRadius: "2px", background: "#3a7ca5" }} />
+                  <div style={{ width: "6px", height: "45%", borderRadius: "2px", background: "#cddbe5" }} />
+                  <div style={{ width: "6px", height: "100%", borderRadius: "2px", background: "#2f6690" }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* sarlavha bloki */}
-        <div style={{ position: "relative", maxWidth: "470px" }}>
+        <div style={{ position: "relative", zIndex: 2 }}>
           <div
             style={{
               display: "inline-flex",
@@ -212,12 +356,12 @@ export default function LoginPage() {
               padding: "6px 13px",
               border: "1px solid rgba(255,255,255,.22)",
               borderRadius: "99px",
-              fontSize: "11.5px",
+              fontSize: "11px",
               fontWeight: 600,
               letterSpacing: ".5px",
               textTransform: "uppercase",
               color: "#cfe3ef",
-              marginBottom: "22px",
+              marginBottom: "12px",
               whiteSpace: "nowrap",
             }}
           >
@@ -234,36 +378,35 @@ export default function LoginPage() {
           </div>
           <h1
             style={{
-              fontSize: "40px",
-              lineHeight: 1.12,
+              fontSize: "22px",
+              lineHeight: 1.18,
               fontWeight: 700,
-              letterSpacing: "-1px",
-              margin: "0 0 16px",
+              letterSpacing: "-.4px",
+              margin: "0 0 8px",
+              maxWidth: "340px",
               textWrap: "balance" as CSSProperties["textWrap"],
             }}
           >
             {T.headline}
           </h1>
-          <p style={{ fontSize: "16px", lineHeight: 1.6, color: "rgba(238,243,246,.78)", margin: 0, maxWidth: "420px" }}>
+          <p style={{ fontSize: "12.5px", lineHeight: 1.55, color: "rgba(238,243,246,.78)", margin: "0 0 13px", maxWidth: "340px" }}>
             {T.sub}
           </p>
-        </div>
-
-        {/* pastki SSO qatori */}
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            fontSize: "12.5px",
-            color: "rgba(238,243,246,.6)",
-          }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-          </svg>
-          {T.sso}
+          {/* pastki SSO qatori */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "10.5px",
+              color: "rgba(238,243,246,.55)",
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+            </svg>
+            {T.sso}
+          </div>
         </div>
       </div>
 
@@ -276,84 +419,13 @@ export default function LoginPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "32px",
+          padding: "32px 36px",
           background: "#f4f6f3",
         }}
       >
         {/* til tanlash dropdown */}
         <div style={{ position: "absolute", top: "24px", right: "26px", zIndex: 20 }}>
-          <button
-            onClick={() => setLangMenuOpen((v) => !v)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 12px",
-              background: "#fff",
-              border: "1px solid #dde2dc",
-              borderRadius: "11px",
-              cursor: "pointer",
-              boxShadow: "0 1px 3px rgba(22,66,91,.06)",
-              transition: "all .16s ease",
-            }}
-          >
-            <span style={{ width: "20px", height: "14px", borderRadius: "2px", overflow: "hidden", flex: "0 0 auto", boxShadow: "0 0 0 1px rgba(22,66,91,.12)", display: "block" }}>
-              <Flag code={lang} />
-            </span>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "#16425b" }}>{lang === "ru" ? "RUS" : "UZB"}</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7d909a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform .22s ease", transform: langMenuOpen ? "rotate(180deg)" : "none" }}>
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-
-          {langMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "46px",
-                right: 0,
-                width: "178px",
-                background: "#fff",
-                border: "1px solid #e6eae3",
-                borderRadius: "13px",
-                padding: "5px",
-                boxShadow: "0 16px 40px rgba(13,33,45,.18)",
-                animation: "popIn .2s cubic-bezier(.2,.8,.3,1) both",
-              }}
-            >
-              {(["uz", "ru"] as Lang[]).map((code) => (
-                <button
-                  key={code}
-                  onClick={() => {
-                    setLang(code);
-                    setLangMenuOpen(false);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    width: "100%",
-                    padding: "9px 11px",
-                    border: "none",
-                    borderRadius: "9px",
-                    background: lang === code ? "#eef3f6" : "transparent",
-                    cursor: "pointer",
-                    transition: "background .14s ease",
-                  }}
-                >
-                  <span style={{ width: "22px", height: "15px", borderRadius: "2px", overflow: "hidden", flex: "0 0 auto", boxShadow: "0 0 0 1px rgba(22,66,91,.12)", display: "block" }}>
-                    <Flag code={code} />
-                  </span>
-                  <span style={{ flex: 1, textAlign: "left", fontSize: "13.5px", fontWeight: 500, color: "#16425b" }}>{STR[code].label}</span>
-                  {lang === code && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2f6690" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          <LangSwitcher lang={lang} onChange={setLang} theme="light" align="right" />
         </div>
 
         {/* forma */}
@@ -541,6 +613,7 @@ export default function LoginPage() {
             {T.monitored}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
