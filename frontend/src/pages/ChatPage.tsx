@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
-import { useChatSimulation } from "../hooks/useChatSimulation";
+import { useChatHistory } from "../hooks/useChatHistory";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStatic } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
+import { fetchMe, logout } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
@@ -20,24 +21,41 @@ export default function ChatPage() {
   const { lang, setLang, t: T } = useLang(chatDict);
   const {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, send, stop, regenerate,
-  } = useChatSimulation();
+    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate,
+  } = useChatHistory();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState("");
   const { theme, toggleTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [fullName, setFullName] = useState("Aziz Karimov");
-  const [username, setUsername] = useState("a.karimov");
-  const [pFullName, setPFullName] = useState("Aziz Karimov");
-  const [pUsername, setPUsername] = useState("a.karimov");
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [role, setRole] = useState("user");
+  const [pFullName, setPFullName] = useState("");
+  const [pUsername, setPUsername] = useState("");
   const [pPassword, setPPassword] = useState("");
 
+  // Haqiqiy foydalanuvchini backenddan olamiz (login token bilan)
+  useEffect(() => {
+    fetchMe()
+      .then((me) => {
+        setFullName(me.full_name);
+        setUsername(me.username);
+        setRole(me.role);
+      })
+      .catch(() => navigate("/login"));
+  }, [navigate]);
+
   const isDark = theme === "dark";
-  const userName = fullName || "Aziz Karimov";
+  const userName = fullName || "Foydalanuvchi";
   const userHandle = "@" + (username || "user");
   const initial = userName.charAt(0).toUpperCase();
+
+  const doLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   // Xabarlar o'zgarganda pastga skroll
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -128,6 +146,10 @@ export default function ChatPage() {
           isDark={isDark}
           onToggleTheme={toggleTheme}
           tk={tk}
+          isAdmin={role === "admin"}
+          onAdmin={() => navigate("/admin")}
+          editableTitle={!!activeId && !!active.title}
+          onRenameTitle={(next) => renameChat(activeId, next)}
         />
 
         <MessageArea
@@ -174,7 +196,7 @@ export default function ChatPage() {
             saved={saved}
             onClose={() => setProfileOpen(false)}
             onSave={saveProfile}
-            onLogout={() => navigate("/login")}
+            onLogout={doLogout}
           />
         )}
       </main>

@@ -3,7 +3,7 @@ import type { AdminRole } from "../../types/admin";
 import { admin } from "../../locales";
 import styles from "./AddUserModal.module.css";
 
-const ROLES: AdminRole[] = ["Agent", "Manager", "Admin"];
+const ROLES: AdminRole[] = ["Xodim", "Admin"];
 
 interface AddUserModalProps {
   fName: string;
@@ -12,6 +12,8 @@ interface AddUserModalProps {
   setFUser: (v: string) => void;
   fDept: string;
   setFDept: (v: string) => void;
+  fPass: string;
+  setFPass: (v: string) => void;
   fRole: AdminRole;
   setFRole: (r: AdminRole) => void;
   adding: boolean;
@@ -21,7 +23,7 @@ interface AddUserModalProps {
 }
 
 export default function AddUserModal({
-  fName, setFName, fUser, setFUser, fDept, setFDept, fRole, setFRole, adding, userTaken, onClose, onSubmit,
+  fName, setFName, fUser, setFUser, fDept, setFDept, fPass, setFPass, fRole, setFRole, adding, userTaken, onClose, onSubmit,
 }: AddUserModalProps) {
   return (
     <div onClick={onClose} className={styles.overlay}>
@@ -46,6 +48,10 @@ export default function AddUserModal({
               <input value={fUser} onChange={(e) => setFUser(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))} placeholder={admin.usernamePh} autoCapitalize="none" className={styles.usernameInput} />
               {userTaken && <span className={styles.takenLabel}>{admin.taken}</span>}
             </div>
+          </div>
+          <div>
+            <label className={styles.fieldLabel}>Parol</label>
+            <input value={fPass} onChange={(e) => setFPass(e.target.value)} type="password" className={styles.input} placeholder="••••••••" autoComplete="new-password" />
           </div>
           <div className={styles.gridTwo}>
             <div>

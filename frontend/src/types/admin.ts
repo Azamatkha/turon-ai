@@ -1,9 +1,9 @@
-export type AdminRole = "Agent" | "Manager" | "Admin";
-export type AdminStatus = "Active" | "Invited" | "Suspended";
+export type AdminRole = "Xodim" | "Admin";
+export type AdminStatus = "Active" | "Suspended";
 export type AdminView = "dashboard" | "users";
 
 export interface AdminUser {
-  id: number;
+  id: string;
   name: string;
   handle: string;
   dept: string;

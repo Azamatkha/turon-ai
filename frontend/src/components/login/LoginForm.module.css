@@ -74,18 +74,25 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff, #fbfcfb);
   border-radius: 12px;
   padding: 0 14px;
   height: 50px;
   border: 1.6px solid #dde2dc;
   box-shadow: 0 1px 2px rgba(23, 63, 115, 0.03);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.field:hover {
+  border-color: #c2d2d8;
+}
+
+/* Register sahifasi fokus holatini JS bilan kuzatmaydi — :focus-within yetarli */
+.field:focus-within,
 .fieldActive {
   border-color: #2a6f97;
   box-shadow: 0 0 0 4px rgba(47, 102, 144, 0.12);
+  transform: translateY(-1px);
 }
 
 .pwToggleBtn {
@@ -215,12 +222,69 @@
   white-space: nowrap;
 }
 
+.helpWrap {
+  position: relative;
+}
+
 .helpLink {
   font-size: 13.5px;
   font-weight: 600;
   color: #2a6f97;
   text-decoration: none;
   white-space: nowrap;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.helpLink:hover {
+  color: #173f73;
+  text-decoration: underline;
+}
+
+.helpPop {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 30;
+  white-space: nowrap;
+  padding: 9px 13px;
+  border-radius: 10px;
+  background: #173f73;
+  color: #eaf1f6;
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: 0 10px 26px rgba(13, 33, 45, 0.28);
+  animation: helpPop 0.18s ease both;
+}
+
+.helpPop::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 100%;
+  border: 6px solid transparent;
+  border-top-color: #173f73;
+}
+
+.helpPhone {
+  color: #7fb3d2;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@keyframes helpPop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .submitText {

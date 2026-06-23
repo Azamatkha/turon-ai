@@ -40,6 +40,26 @@
   border-top: 1px solid rgba(255, 255, 255, 0.09);
 }
 
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(238, 242, 239, 0.7);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.logoutBtn:hover {
+  background: rgba(255, 90, 80, 0.18);
+  color: #ffd9d4;
+}
+
 /* =====================
    Containers
    ===================== */

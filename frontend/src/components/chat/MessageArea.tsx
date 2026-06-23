@@ -8,6 +8,14 @@ import styles from "./MessageArea.module.css";
 
 const suggIcons = ["✦", "✎", "◷", "‹/›"];
 
+// ISO vaqtni "14:05" ko'rinishida ko'rsatadi
+function fmtTime(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 interface MessageAreaProps {
   scrollRef: Ref<HTMLDivElement>;
   isEmpty: boolean;
@@ -79,7 +87,10 @@ export default function MessageArea({
             if (isUser) {
               return (
                 <div key={m.id} className={`${styles.messageRow} ${styles.messageRowUser}`}>
-                  <div className={styles.bubbleUser}>{m.text}</div>
+                  <div className={styles.bubbleColUser}>
+                    <div className={styles.bubbleUser}>{m.text}</div>
+                    {m.time && <div className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>}
+                  </div>
                 </div>
               );
             }
@@ -96,6 +107,10 @@ export default function MessageArea({
                   <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(23, 63, 115,.04)" }}>
                     {m.text}
                   </div>
+
+                  {showActions && m.time && (
+                    <div className={styles.msgTimeBot} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>
+                  )}
 
                   {showActions && (
                     <div className={styles.actions} style={{ color: tk.muted }}>

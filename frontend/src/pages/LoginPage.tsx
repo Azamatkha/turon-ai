@@ -1,7 +1,8 @@
 import { useState, KeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { loginDict } from "../locales";
+import { login as loginRequest, isAuthenticated } from "../services/authService";
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
 import LoginForm from "../components/login/LoginForm";
@@ -18,6 +19,9 @@ export default function LoginPage() {
   const [error, setError] = useState(false);
   const { lang, setLang, t } = useLang(loginDict);
 
+  // Allaqachon login qilingan bo'lsa — to'g'ridan-to'g'ri bosh sahifaga
+  if (isAuthenticated()) return <Navigate to="/" replace />;
+
   const setLogin = (v: string) => {
     setLoginValue(v);
     setError(false);
@@ -27,7 +31,7 @@ export default function LoginPage() {
     setError(false);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (loading) return;
     if (!login.trim() || !password.trim()) {
       setError(true);
@@ -35,8 +39,13 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError(false);
-    // Hozircha backendga ulanmagan — 1.1s kutib chat sahifasiga o'tamiz
-    setTimeout(() => navigate("/chat"), 3000);
+    try {
+      await loginRequest(login, password);
+      navigate("/");
+    } catch {
+      setError(true);
+      setLoading(false);
+    }
   };
 
   const onKey = (e: KeyboardEvent) => {
