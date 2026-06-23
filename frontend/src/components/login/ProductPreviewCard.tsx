@@ -1,8 +1,43 @@
+import { useEffect, useState } from "react";
 import type { LoginStrings } from "../../types/i18n";
 import styles from "./ProductPreviewCard.module.css";
 
+const TARGET = 94;
+
+// "Speedometr" effekti: foiz 0 dan TARGET gacha ko'tariladi va har necha
+// sekundda qaytadan ishga tushadi (ringni ham to'ldiradi).
+function useCountUp(target: number, duration = 1600, cycle = 4800) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    let startTs = 0;
+    const animate = () => {
+      startTs = performance.now();
+      const step = (now: number) => {
+        const p = Math.min((now - startTs) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3); // ease-out
+        setValue(Math.round(eased * target));
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    animate();
+    const interval = setInterval(() => {
+      setValue(0);
+      animate();
+    }, cycle);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(interval);
+    };
+  }, [target, duration, cycle]);
+  return value;
+}
+
 // Suzuvchi mahsulot oldindan ko'rinishi (chat karta + statistika kartasi)
 export default function ProductPreviewCard({ t }: { t: LoginStrings }) {
+  const pct = useCountUp(TARGET);
+
   return (
     <div className={styles.wrap}>
       <div className={styles.stack}>
@@ -22,10 +57,10 @@ export default function ProductPreviewCard({ t }: { t: LoginStrings }) {
             <div className={styles.chatCardVersion}>v2.5</div>
           </div>
           <div className={styles.bubbleRow}>
-            <div className={styles.bubbleUser}>{t.pvUser}</div>
+            <div className={`${styles.bubbleUser} ${styles.bubbleAnimUser}`}>{t.pvUser}</div>
           </div>
           <div className={styles.bubbleRowAi}>
-            <div className={styles.bubbleAi}>{t.pvAI}</div>
+            <div className={`${styles.bubbleAi} ${styles.bubbleAnimAi}`}>{t.pvAI}</div>
           </div>
         </div>
 
@@ -33,14 +68,17 @@ export default function ProductPreviewCard({ t }: { t: LoginStrings }) {
         <div className={styles.statCard}>
           <div className={styles.statLabel}>{t.statLabel}</div>
           <div className={styles.statRow}>
-            <div className={styles.ring}>
-              <div className={styles.ringInner}>94%</div>
+            <div
+              className={styles.ring}
+              style={{ background: `conic-gradient(#2a6f97 ${pct}%, #e3e8e2 ${pct}% 100%)` }}
+            >
+              <div className={styles.ringInner}>{pct}%</div>
             </div>
             <div className={styles.bars}>
-              <div className={styles.barLow} />
-              <div className={styles.barAccent} />
-              <div className={styles.barMid} />
-              <div className={styles.barStrong} />
+              <div className={`${styles.barLow} ${styles.barAnim}`} />
+              <div className={`${styles.barAccent} ${styles.barAnim}`} />
+              <div className={`${styles.barMid} ${styles.barAnim}`} />
+              <div className={`${styles.barStrong} ${styles.barAnim}`} />
             </div>
           </div>
         </div>

@@ -5,15 +5,18 @@ import "./index.css";
 import "flag-icons/css/flag-icons.min.css";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import ChatPage from "./pages/ChatPage";
 import AdminPage from "./pages/AdminPage";
+import { RequireAuth, RequireAdmin } from "./components/RouteGuards";
 
-// 3 ta sahifa marshruti (route)
+// Marshrutlar: "/" = chat (login bo'lsa), aks holda login sahifasiga yo'naltiradi
 const router = createBrowserRouter([
-  { path: "/", element: <Navigate to="/login" replace /> },
+  { path: "/", element: <RequireAuth><ChatPage /></RequireAuth> },
   { path: "/login", element: <LoginPage /> },
-  { path: "/chat", element: <ChatPage /> },
-  { path: "/admin", element: <AdminPage /> },
+  { path: "/register", element: <RegisterPage /> },
+  { path: "/chat", element: <Navigate to="/" replace /> },
+  { path: "/admin", element: <RequireAdmin><AdminPage /></RequireAdmin> },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

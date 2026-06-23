@@ -9,7 +9,7 @@
   position: absolute;
   top: calc(100% + 8px);
   /* 3-chi til (kirill) qo'shilgani uchun kengroq — eng uzun yorliq sig'ishi kerak */
-  width: 208px;
+  min-width: 158px;
   z-index: 50;
   border-radius: 13px;
   padding: 5px;

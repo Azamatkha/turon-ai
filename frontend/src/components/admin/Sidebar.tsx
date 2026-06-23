@@ -1,8 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { AdminView } from "../../types/admin";
 import { admin } from "../../locales";
+import { fetchMe, logout, type Me } from "../../services/authService";
 import styles from "./Sidebar.module.css";
 
 interface NavItem {
@@ -19,6 +22,23 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ view, setView, usersCount }: SidebarProps) {
+  const navigate = useNavigate();
+  const [me, setMe] = useState<Me | null>(null);
+
+  // Tizimga kirgan adminni real bazadan olamiz (qattiq yozilgan ism o'rniga)
+  useEffect(() => {
+    fetchMe().then(setMe).catch(() => navigate("/login"));
+  }, [navigate]);
+
+  const meName = me?.full_name || "Admin";
+  const meHandle = me ? "@" + me.username : "";
+  const meInitial = meName.charAt(0).toUpperCase();
+
+  const doLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   const navItems: NavItem[] = [
     {
       id: "dashboard",
@@ -60,14 +80,28 @@ export default function Sidebar({ view, setView, usersCount }: SidebarProps) {
             </HButton>
           );
         })}
+
+        {/* Chat sahifasiga qaytish */}
+        <HButton
+          onClick={() => navigate("/")}
+          className={`${styles.navItem} ${styles.navItemInactive}`}
+          baseStyle={{}}
+          hoverStyle={{ background: "rgba(255,255,255,.06)", color: "#fff" }}
+        >
+          <span className={styles.navIcon}><IoMdChatboxes size={20} /></span>
+          <span className={styles.navLabel}>Chatga o‘tish</span>
+        </HButton>
       </nav>
 
       <div className={styles.footer}>
-        <div className={styles.footerAvatar}>M</div>
+        <div className={styles.footerAvatar}>{meInitial}</div>
         <div className={styles.footerMeta}>
-          <div className={styles.footerName}>Malika Yusupova</div>
-          <div className={styles.footerRole}>{admin.superAdmin}</div>
+          <div className={styles.footerName}>{meName}</div>
+          <div className={styles.footerRole}>{meHandle || admin.superAdmin}</div>
         </div>
+        <button onClick={doLogout} title={admin.logout} aria-label={admin.logout} className={styles.logoutBtn}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+        </button>
       </div>
     </aside>
   );

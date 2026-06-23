@@ -7,9 +7,9 @@ export type { Lang };
 // Til ro'yxati: kod, to'liq nom, qisqa belgi
 // "uz" va "uz_cyrl" bir xil davlat bayrog'iga ega (O'zbekiston) — faqat yozuvi farq qiladi
 const LANGS: { code: Lang; label: string; short: string }[] = [
-  { code: "uz", label: "O‘zbekcha (lotin)", short: "UZB" },
-  { code: "uz_cyrl", label: "Ўзбекча (кирилл)", short: "УЗБ" },
-  { code: "ru", label: "Русский", short: "RUS" },
+  { code: "uz", label: "O‘zbekcha", short: "O‘zbekcha" },
+  { code: "uz_cyrl", label: "Ўзбекча", short: "Ўзбекча" },
+  { code: "ru", label: "Русский", short: "Русский" },
 ];
 
 // Bayroq ikonkasi davlat kodiga bog'lanadi, til kodiga emas (uz/uz_cyrl bittasini ulashadi)

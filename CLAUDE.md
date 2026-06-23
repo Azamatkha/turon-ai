@@ -28,13 +28,13 @@ Code changes hot-reload (volumes are mounted) — no rebuild needed. Only rebuil
 
 ```bash
 # put PDFs in backend/data/documents/, then:
-docker compose run --rm backend python -m app.rag.ingest
+docker compose run --rm backend python -m src.rag.ingest
 
 # sanity-check vector search (no LLM involved yet):
-docker compose run --rm backend python -m app.rag.retriever "savolingiz"
+docker compose run --rm backend python -m src.rag.retriever "savolingiz"
 
 # wipe the Qdrant collection before re-ingesting:
-docker compose run --rm backend python -c "from app.rag.db import client, COLLECTION; client.delete_collection(COLLECTION)"
+docker compose run --rm backend python -c "from src.rag.qdrant_client import client, COLLECTION; client.delete_collection(COLLECTION)"
 ```
 
 The bge-m3 embedding model (~2.3GB) downloads once into the `hf_models` docker volume on first use.
@@ -54,18 +54,18 @@ Two pipelines share the same embedding model and Qdrant collection (`turon_docs`
 
 ```
 INGEST (one-off, via CLI):  ingest.py → ocr.py → chunking.py → embeddings.py → Qdrant
-QUERY (per request):        retriever.py → embeddings.py → Qdrant → [TODO: LLM] → main.py
+QUERY (per request):        api/ask → ask_service → retriever.py → Qdrant → llm_service (Anthropic) → answer
 ```
 
-`backend/app/rag/`:
+The backend was rebuilt into a layered architecture under `backend/src/` (api → services → rag → core). See `backend/README.md` for the full layout. Key RAG modules live in `backend/src/rag/`:
 - `ocr.py` — scanned PDFs have no text layer, only images. Converts each page to an image (poppler/pdf2image), preprocesses it (grayscale → autocontrast → median filter → Otsu binarization) to improve OCR accuracy, then runs pytesseract with `tessdata_best` language models (`uzb+rus`, configurable to `uzb_cyrl+rus` for Cyrillic docs).
 - `chunking.py` — splits text into ~800-char chunks on sentence boundaries (never mid-word/mid-sentence), with 150-char overlap between consecutive chunks so context isn't lost at boundaries. Also extracts a document title (`sarlavha_aniqla`) from page 1 by locating Uzbek document-type keywords (nizom, qaror, yo'riqnoma, etc.) and taking a window of text around the match.
 - `embeddings.py` — wraps `BAAI/bge-m3` via sentence-transformers; the model is lazy-loaded once into a module-level global and reused.
-- `db.py` — Qdrant client and collection setup. Connects via `QDRANT_HOST`/`QDRANT_PORT` env vars (set to `qdrant` in docker-compose, defaults to `localhost` otherwise).
+- `qdrant_client.py` — Qdrant client and collection setup. Connects via `QDRANT_HOST`/`QDRANT_PORT` env vars (set to `qdrant` in docker-compose, defaults to `localhost` otherwise).
 - `ingest.py` — one-time CLI script: reads every PDF in `data/documents/`, OCRs it, chunks it, prepends the detected title to each chunk before embedding (so retrieval is title-aware), and upserts into Qdrant with payload `{matn, sarlavha, manba, bolak}`.
 - `retriever.py` — embeds a query and does a `top_k` similarity search against Qdrant. This is a pre-LLM sanity check, not a real answer endpoint.
 
-`backend/app/main.py` — FastAPI app; currently only a health check at `/`. The planned `/ask` endpoint (retriever → LLM → answer) is not yet implemented.
+`backend/src/main.py` — FastAPI app factory (middleware, CORS, error handlers, routers). Endpoints: `/health`, `/diagnostic`, and under `/api/v1`: `auth` (login/logout/me), `ask` (RAG → LLM answer), `documents`. Auth is temporary (JWT + in-memory user store, no RBAC yet).
 
 `frontend/src/`:
 - `main.tsx` — React Router setup; routes `/login` → `/chat` → `/admin`.
@@ -77,5 +77,8 @@ QUERY (per request):        retriever.py → embeddings.py → Qdrant → [TODO:
 - [x] OCR quality improvements (preprocessing + tessdata_best)
 - [x] Per-chunk document title detection
 - [x] Frontend pages (Login, Chat, Admin)
-- [ ] Stage 2: wire up an LLM — `/ask` endpoint
+- [x] Stage 2: production backend rebuild (layered: api → services → rag → core)
+- [x] LLM wired up — `/api/v1/ask` (RAG → Anthropic → answer + citations)
+- [x] Temporary auth API (`/api/v1/auth/login|logout|me`, JWT, no RBAC yet)
 - [ ] Connect frontend to backend
+- [ ] RBAC + persistent user store (PostgreSQL); Redis/Celery active use

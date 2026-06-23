@@ -1,40 +1,120 @@
-# Uchta xizmatni birga boshqaradi: vector baza (qdrant) + backend (fastapi+ocr) + frontend (react).
-# Ishga tushirish:  docker compose up --build
-# Hech narsa o'rnatish SHART EMAS — har bir xizmat o'z konteynerida hammasini o'rnatadi.
+# Turon AI — to'liq ilova bitta buyruq bilan:
+#
+#     docker compose up --build
+#
+# Ichida: redis + rabbitmq + qdrant + backend (FastAPI) + celery + frontend.
+# PostgreSQL — SIZNING LOKAL bazangiz (turon-ai-db), host.docker.internal orqali
+# ulanadi. Docker o'z Postgres konteynerini ko'tarmaydi.
+# Backend birinchi build'da embeddings uchun torch o'rnatadi — biroz uzoq (5-10 daqiqa).
+# Backend avtomatik: migratsiya (lokal bazangizda) -> seed admin -> server.
+#
+# Ochish:  Frontend http://localhost:5173   |   API http://localhost:8000/docs
+
+name: turon-ai
+
+x-backend-build: &backend-build
+  context: ./backend
+  dockerfile: infra/docker/Dockerfile
+
+x-backend-env: &backend-env
+  # Postgres = SIZNING lokal bazangiz (host mashinasi). Boshqalar docker tarmog'ida.
+  POSTGRES_HOST: host.docker.internal
+  POSTGRES_PORT: 5432
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: 5672
+  QDRANT_HOST: qdrant
+  QDRANT_PORT: 6333
 
 services:
-  # ---- Vector baza (alohida xizmat) ----
+  redis:
+    image: redis:7
+    command: redis-server --requirepass devpass
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "devpass", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   qdrant:
     image: qdrant/qdrant:latest
     ports:
-      - "6333:6333"        # REST/gRPC port (brauzerda http://localhost:6333/dashboard)
+      - "6333:6333"
     volumes:
-      - ./qdrant_data:/qdrant/storage   # ma'lumot kompyuterda saqlanadi (o'chmaydi)
+      - ./qdrant_data:/qdrant/storage
 
-  # ---- Backend (FastAPI + OCR) ----
   backend:
-    build: ./backend
+    build: *backend-build
+    image: turon-backend:latest
+    env_file:
+      - ./backend/.env
+    environment:
+      <<: *backend-env
+    # Lokal bazaga (host) ulanish uchun host-gateway
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # migratsiya (lokal bazangizda) -> standart admin -> server
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m scripts.seed_user &&
+             uvicorn src.main.web:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
-    environment:
-      - QDRANT_HOST=qdrant   # backend qdrant'ni shu nom orqali topadi (docker tarmog'i)
-      - QDRANT_PORT=6333
     volumes:
-      - ./backend:/app       # kodni o'zgartirsang qayta build shart emas
-      - hf_models:/models    # bge-m3 modeli BIR MARTA yuklanadi, keyin shu yerdan o'qiladi
+      - hf_models:/models
     depends_on:
-      - qdrant
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
 
-  # ---- Frontend (React + Vite) ----
+  celery_worker:
+    image: turon-backend:latest
+    command: python -m celery -A celery_tasks.main worker --pool=solo --loglevel=info
+    env_file:
+      - ./backend/.env
+    environment:
+      <<: *backend-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - hf_models:/models
+    depends_on:
+      backend:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   frontend:
     build: ./frontend
     ports:
-      - "5173:5173"          # brauzerda http://localhost:5173
+      - "5173:5173"
     volumes:
-      - ./frontend:/app      # kodni o'zgartirsang darrov ko'rinadi (hot-reload)
-      - /app/node_modules    # node_modules konteyner ichida qoladi (host bilan almashmaydi)
-    # backendga ulanish hozircha shart emas — mustaqil ishlaydi
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
 
-# Nomli volume: yuklab olingan AI modeli (~2.3 GB) container o'chsa ham saqlanadi
 volumes:
   hf_models:

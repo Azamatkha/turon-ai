@@ -221,3 +221,26 @@
 .statCard {
   animation: floatB 7s ease-in-out infinite;
 }
+
+/* Statistika ustunchalari "tirik" ko'rinishi uchun balandligi pulslanadi */
+.barAnim {
+  transform-origin: bottom;
+  animation: barPulse 3s ease-in-out infinite;
+}
+.barAccent.barAnim { animation-delay: 0.25s; }
+.barMid.barAnim { animation-delay: 0.5s; }
+.barStrong.barAnim { animation-delay: 0.75s; }
+
+@keyframes barPulse {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1); }
+}
+
+/* Chat "bubble"lari mayin suzadi */
+.bubbleAnimUser { animation: bubbleFloat 5s ease-in-out infinite; }
+.bubbleAnimAi { animation: bubbleFloat 5s ease-in-out 0.5s infinite; }
+
+@keyframes bubbleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}

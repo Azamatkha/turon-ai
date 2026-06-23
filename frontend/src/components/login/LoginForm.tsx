@@ -1,4 +1,5 @@
-import { KeyboardEvent } from "react";
+import { KeyboardEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import LangSwitcher from "../LangSwitcher";
 import type { Lang } from "../../types/lang";
 import type { LoginStrings } from "../../types/i18n";
@@ -29,6 +30,7 @@ export default function LoginForm({
   login, setLogin, password, setPassword, pwVisible, setPwVisible,
   remember, setRemember, focus, setFocus, loading, error, submit, onKey,
 }: LoginFormProps) {
+  const [helpOpen, setHelpOpen] = useState(false);
   return (
     <div className={styles.panel}>
       {/* til tanlash dropdown */}
@@ -97,14 +99,16 @@ export default function LoginForm({
             />
             <button onClick={() => setPwVisible((v) => !v)} tabIndex={-1} title="Show / hide password" className={styles.pwToggleBtn}>
               {pwVisible ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              ) : (
+                // parol KO'RINIB turibdi -> "yopiq ko'z" (bosilsa yashiradi)
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.16 3.19M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.4-1.1" />
                   <line x1="3" y1="3" x2="21" y2="21" />
+                </svg>
+              ) : (
+                // parol YASHIRIN -> "ochiq ko'z" (bosilsa ko'rsatadi)
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
                 </svg>
               )}
             </button>
@@ -123,7 +127,18 @@ export default function LoginForm({
             </span>
             <span className={styles.rememberLabel}>{t.remember}</span>
           </button>
-          <a href="#" className={styles.helpLink}>{t.help}</a>
+          <div className={styles.helpWrap}>
+            <button type="button" onClick={() => setHelpOpen((v) => !v)} className={styles.helpLink} tabIndex={-1}>
+              {t.help}
+            </button>
+            {helpOpen && (
+              <div className={styles.helpPop} role="status">
+                {lang === "ru" ? "Служба поддержки" : lang === "uz_cyrl" ? "Ёрдам маркази" : "Yordam markazi"}
+                {": "}
+                <a href="tel:1234" className={styles.helpPhone}>1234</a>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* kirish tugmasi */}
@@ -140,6 +155,14 @@ export default function LoginForm({
             </span>
           )}
         </button>
+
+        {/* ro'yxatdan o'tish havolasi */}
+        <div className={styles.monitoredRow} style={{ justifyContent: "center", gap: 6 }}>
+          {lang === "ru" ? "Нет аккаунта?" : lang === "uz_cyrl" ? "Ҳисобингиз йўқми?" : "Hisobingiz yo‘qmi?"}
+          <Link to="/register" style={{ color: "#2a6f97", fontWeight: 600 }}>
+            {lang === "ru" ? "Регистрация" : lang === "uz_cyrl" ? "Рўйхатдан ўтиш" : "Ro‘yxatdan o‘tish"}
+          </Link>
+        </div>
 
         {/* pastki kuzatuv eslatmasi */}
         <div className={styles.monitoredRow}>

@@ -113,6 +113,27 @@
   max-width: 100%;
 }
 
+/* Foydalanuvchi xabari ustuni: bulutcha + ostida vaqt */
+.bubbleColUser {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 76%;
+  min-width: 0;
+}
+
+.msgTimeUser {
+  font-size: 11px;
+  margin: 4px 4px 0 0;
+  opacity: 0.7;
+}
+
+.msgTimeBot {
+  font-size: 11px;
+  margin: 5px 0 0 2px;
+  opacity: 0.7;
+}
+
 /* Bot javobi ustuni: bulutcha + ostidagi amallar qatori */
 .botCol {
   display: flex;

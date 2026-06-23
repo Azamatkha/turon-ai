@@ -4,6 +4,7 @@ export interface Msg {
   id: string;
   role: Role;
   text: string;
+  time?: string; // ISO vaqt belgisi (yuborilgan/kelgan payt)
 }
 
 export interface Chat {
