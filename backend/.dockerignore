@@ -1,9 +1,10 @@
-__pycache__/
+# Image ichiga keraksiz narsalarni ko'chirmaymiz (build tez, image kichik)
+venv/
+**/__pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
+.pytest_cache/
+data/documents/*.pdf
 .env
-.venv
-*.log
-.git
+Dockerfile
+.dockerignore
