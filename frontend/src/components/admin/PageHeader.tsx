@@ -10,9 +10,7 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ onUsers, search, setSearch, onAddUser }: PageHeaderProps) {
-  const subtitle = onUsers
-    ? admin.usersSubtitle
-    : admin.overview + new Date().toLocaleDateString("uz-UZ", { weekday: "long", month: "long", day: "numeric" });
+  const subtitle = onUsers ? admin.usersSubtitle : "Umumiy ko‘rinish";
 
   return (
     <header className={styles.header}>

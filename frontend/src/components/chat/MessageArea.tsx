@@ -13,7 +13,7 @@ function fmtTime(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 interface MessageAreaProps {
@@ -108,11 +108,8 @@ export default function MessageArea({
                     {m.text}
                   </div>
 
-                  {showActions && m.time && (
-                    <div className={styles.msgTimeBot} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>
-                  )}
-
                   {showActions && (
+                    <div className={styles.footerRow}>
                     <div className={styles.actions} style={{ color: tk.muted }}>
                       <button onClick={() => copyMsg(m)} className={styles.actBtn} title={copiedId === m.id ? s.copied : s.copy} aria-label={copiedId === m.id ? s.copied : s.copy}>
                         {copiedId === m.id ? (
@@ -135,6 +132,8 @@ export default function MessageArea({
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
                         </button>
                       )}
+                    </div>
+                    {m.time && <span className={styles.msgTimeBot} style={{ color: tk.muted }}>{fmtTime(m.time)}</span>}
                     </div>
                   )}
                 </div>

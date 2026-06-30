@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import type { AdminRole, AdminUser, AdminView } from "../types/admin";
 import {
-  listUsers, createUser, changeRole, deleteUser, updateUser, type ApiUser, type BackendRole,
+  listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole,
 } from "../services/adminService";
 import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
@@ -10,6 +9,8 @@ import PageHeader from "../components/admin/PageHeader";
 import DashboardView from "../components/admin/DashboardView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
+import FilterSelect from "../components/admin/FilterSelect";
+import SidebarToggle from "../components/chat/SidebarToggle";
 import styles from "./AdminPage.module.css";
 
 // Faqat ikki rol: Admin va Xodim (oddiy foydalanuvchi).
@@ -26,12 +27,13 @@ const mapUser = (u: ApiUser): AdminUser => ({
 });
 
 export default function AdminPage() {
-  const navigate = useNavigate();
   const [view, setView] = useState<AdminView>("dashboard");
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [dept, setDept] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [allDepts, setAllDepts] = useState<string[]>([]); // filter uchun barqaror ro'yxat
+  const [navCollapsed, setNavCollapsed] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -56,6 +58,21 @@ export default function AdminPage() {
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, dept]);
+
+  // Filter uchun barcha bo'limlar (filtrlangan userlardan emas — barqaror manba)
+  const refreshDepts = async () => {
+    try {
+      const s = await getStats();
+      setAllDepts(s.departments.map((d) => d.name).filter((n) => n !== "Boshqa"));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  useEffect(() => {
+    refreshDepts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setMounted(false);
@@ -84,6 +101,7 @@ export default function AdminPage() {
       });
       setAddOpen(false);
       await load();
+      await refreshDepts(); // yangi bo'lim qo'shilgan bo'lishi mumkin
     } catch {
       /* username band bo'lsa modal ochiq qoladi */
     } finally {
@@ -111,7 +129,6 @@ export default function AdminPage() {
 
   const handle = "@" + fUser.trim();
   const userTaken = !!fUser.trim() && users.some((u) => u.handle === handle);
-  const departments = Array.from(new Set(users.map((u) => u.dept).filter((d) => d && d !== "—")));
 
   return (
     <div className={styles.page}>
@@ -119,7 +136,18 @@ export default function AdminPage() {
         <DotField dotRadius={3.5} dotSpacing={26} bulgeOnly bulgeStrength={18} cursorRadius={220} glowRadius={160} gradientFrom="#dbe0e7" gradientTo="#cfd6df" glowColor="rgba(42,111,151,0.07)" />
       </div>
 
-      <Sidebar view={view} setView={setView} usersCount={users.length} />
+      <Sidebar
+        view={view}
+        setView={setView}
+        usersCount={users.length}
+        collapsed={navCollapsed}
+      />
+
+      <SidebarToggle
+        open={!navCollapsed}
+        onToggle={() => setNavCollapsed((v) => !v)}
+        left={navCollapsed ? 76 : 248}
+      />
 
       <main className={styles.main}>
         <PageHeader onUsers={onUsers} search={search} setSearch={setSearch} onAddUser={openAdd} />
@@ -128,14 +156,15 @@ export default function AdminPage() {
           {onDashboard && <DashboardView mounted={mounted} />}
           {onUsers && (
             <>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}>
-                <button onClick={() => navigate("/")} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #dde2dc", background: "#fff", color: "#173f73", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
-                  ← Chat
-                </button>
-                <select value={dept} onChange={(e) => setDept(e.target.value)} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #dde2dc", background: "#fff", color: "#173f73", fontSize: 13 }}>
-                  <option value="">Barcha bo‘limlar</option>
-                  {departments.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
+              <div style={{ marginBottom: 14 }}>
+                <FilterSelect
+                  value={dept}
+                  onChange={setDept}
+                  options={[
+                    { value: "", label: "Barcha bo‘limlar" },
+                    ...allDepts.map((d) => ({ value: d, label: d })),
+                  ]}
+                />
               </div>
               <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} />
             </>

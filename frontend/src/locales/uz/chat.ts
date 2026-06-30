@@ -5,7 +5,7 @@ export const chat: ChatStrings = {
   newChat: "Yangi suhbat",
   sub: "Istalgan narsani so‘rang, g‘oya o‘ylab toping yoki quyidan boshlang.",
   placeholder: "Turon AI’ga yozing…",
-  disclaimer: "Turon AI xato qilishi mumkin. Muhim ma’lumotlarni tekshiring.",
+  disclaimer: "Yangi qatorga o‘tish uchun Shift+Enter. Javoblar biroz kechikishi mumkin.",
   today: "Bugun",
   yest: "Kecha",
   prev: "Oxirgi 7 kun",

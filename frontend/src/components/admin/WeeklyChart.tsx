@@ -21,8 +21,7 @@ export default function WeeklyChart({ data, max, mounted }: WeeklyChartProps) {
           <div className={styles.sub}>{admin.weeklyMessagesSub}</div>
         </div>
         <div className={styles.totalRow}>
-          <span className={styles.total}>18.4k</span>
-          <span className={styles.totalTrend}>+12%</span>
+          <span className={styles.total}>{data.reduce((s, b) => s + b.value, 0).toLocaleString()}</span>
         </div>
       </div>
       <div className={styles.bars}>
@@ -30,7 +29,7 @@ export default function WeeklyChart({ data, max, mounted }: WeeklyChartProps) {
           <div key={b.day} className={styles.barCol}>
             <div
               title={b.value.toLocaleString()}
-              className={`${styles.bar} ${i === 3 ? styles.barHighlight : styles.barNormal}`}
+              className={`${styles.bar} ${b.value === max && max > 0 ? styles.barHighlight : styles.barNormal}`}
               style={{ height: mounted ? (b.value / max) * 100 + "%" : "0%", transitionDelay: `${i * 0.07}s` }}
             />
             <span className={styles.dayLabel}>{b.day}</span>

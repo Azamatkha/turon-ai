@@ -48,7 +48,7 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit }: {
       </button>
 
       {menu && (
-        <div style={{ position: "absolute", right: 12, top: 46, zIndex: 20, background: "#fff", border: "1px solid #e6eae3", borderRadius: 12, boxShadow: "0 16px 40px rgba(13,33,45,.18)", padding: 6, minWidth: 190 }}>
+        <div style={{ position: "absolute", right: 12, ...(last ? { bottom: 46 } : { top: 46 }), zIndex: 20, background: "#fff", border: "1px solid #e6eae3", borderRadius: 12, boxShadow: "0 16px 40px rgba(13,33,45,.18)", padding: 6, minWidth: 190 }}> 
           <button onClick={() => { onEdit(u); setMenu(false); }}
             style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "#173f73", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>

@@ -8,11 +8,8 @@ frontend/node_modules/   # juda og'ir, har kim o'zi o'rnatadi
 frontend/dist/
 frontend/.env
 
-qdrant_data/
-backend/chroma_db/
-
 backend/data/documents/
 
 .vscode/
 .claude/
-CLAUDE.MD
+CLAUDE.md

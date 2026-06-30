@@ -1,5 +1,6 @@
-// Mock admin xizmati — foydalanuvchilarni localStorage'da boshqaradi (backendsiz).
-// Keyinchalik backend ulanganda fetch chaqiruvlariga almashtiriladi.
+// Haqiqiy admin xizmati — backendga ulangan (/v1/users).
+
+import { apiFetch } from "./authService";
 
 export type BackendRole = "admin" | "moderator" | "user";
 
@@ -12,46 +13,23 @@ export interface ApiUser {
   is_active: boolean;
 }
 
-const KEY = "turon_admin_users";
-
-// Boshlang'ich (seed) foydalanuvchilar — birinchi ochilishda localStorage'ga yoziladi
-const SEED: ApiUser[] = [
-  { id: "1", username: "a.karimov", full_name: "Aziz Karimov", department: "Chakana", role: "user", is_active: true },
-  { id: "2", username: "m.yusupova", full_name: "Malika Yusupova", department: "IT", role: "admin", is_active: true },
-  { id: "3", username: "d.tashkentov", full_name: "Dilshod Tashkentov", department: "Korporativ", role: "user", is_active: true },
-];
-
-// Sun'iy kechikish — yuklash holatlari ko'rinib turishi uchun
-const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms));
-
-function read(): ApiUser[] {
-  const raw = localStorage.getItem(KEY);
-  if (!raw) {
-    localStorage.setItem(KEY, JSON.stringify(SEED));
-    return [...SEED];
-  }
+async function readError(res: Response, fallback: string): Promise<string> {
   try {
-    return JSON.parse(raw) as ApiUser[];
+    const data = await res.json();
+    return data.detail || data.message || fallback;
   } catch {
-    return [...SEED];
+    return fallback;
   }
-}
-
-function write(users: ApiUser[]) {
-  localStorage.setItem(KEY, JSON.stringify(users));
 }
 
 export async function listUsers(search = "", department = ""): Promise<ApiUser[]> {
-  await delay();
-  let users = read();
-  const q = search.trim().toLowerCase();
-  if (q) {
-    users = users.filter(
-      (u) => u.full_name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
-    );
-  }
-  if (department) users = users.filter((u) => (u.department || "") === department);
-  return users;
+  const params = new URLSearchParams();
+  if (search.trim()) params.set("search", search.trim());
+  if (department) params.set("department", department);
+  const qs = params.toString();
+  const res = await apiFetch(`/v1/users${qs ? `?${qs}` : ""}`);
+  if (!res.ok) throw new Error(await readError(res, "Foydalanuvchilarni olishda xatolik"));
+  return res.json();
 }
 
 export async function createUser(input: {
@@ -61,49 +39,75 @@ export async function createUser(input: {
   password: string;
   role: BackendRole;
 }): Promise<ApiUser> {
-  await delay();
-  const users = read();
-  if (users.some((u) => u.username.toLowerCase() === input.username.trim().toLowerCase())) {
-    throw new Error("Bu login allaqachon band");
-  }
-  const user: ApiUser = {
-    id: "u" + Date.now(),
-    username: input.username.trim(),
-    full_name: input.full_name.trim(),
-    department: input.department?.trim() || null,
-    role: input.role,
-    is_active: true,
-  };
-  write([user, ...users]);
-  return user;
+  const res = await apiFetch("/v1/users", {
+    method: "POST",
+    body: JSON.stringify({
+      full_name: input.full_name,
+      username: input.username,
+      department: input.department ?? null,
+      password: input.password,
+      role: input.role,
+    }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Bu login allaqachon band"));
+  return res.json();
 }
 
 export async function changeRole(id: string, role: BackendRole): Promise<ApiUser> {
-  await delay();
-  const users = read();
-  const user = users.find((u) => u.id === id);
-  if (!user) throw new Error("Foydalanuvchi topilmadi");
-  user.role = role;
-  write(users);
-  return user;
+  const res = await apiFetch(`/v1/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Rolni o'zgartirishda xatolik"));
+  return res.json();
 }
 
 export async function updateUser(
   id: string,
   input: { username?: string; full_name?: string; department?: string; password?: string }
 ): Promise<ApiUser> {
-  await delay();
-  const users = read();
-  const user = users.find((u) => u.id === id);
-  if (!user) throw new Error("Foydalanuvchi topilmadi");
-  if (input.username !== undefined) user.username = input.username.trim();
-  if (input.full_name !== undefined) user.full_name = input.full_name.trim();
-  if (input.department !== undefined) user.department = input.department.trim() || null;
-  write(users);
-  return user;
+  const res = await apiFetch(`/v1/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Foydalanuvchini yangilashda xatolik"));
+  return res.json();
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  await delay();
-  write(read().filter((u) => u.id !== id));
+  const res = await apiFetch(`/v1/users/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(await readError(res, "Foydalanuvchini o'chirishda xatolik"));
+}
+
+// ── Dashboard statistikasi ──
+export interface DeptStat {
+  name: string;
+  count: number;
+  pct: number;
+}
+
+export interface WeeklyPoint {
+  label: string;
+  count: number;
+}
+
+export interface RecentActivityItem {
+  name: string;
+  when: string;
+}
+
+export interface DashboardStats {
+  total_users: number;
+  total_sessions: number;
+  total_messages: number;
+  total_departments: number;
+  departments: DeptStat[];
+  weekly: WeeklyPoint[];
+  recent_activity: RecentActivityItem[];
+}
+
+export async function getStats(): Promise<DashboardStats> {
+  const res = await apiFetch("/v1/admin/stats");
+  if (!res.ok) throw new Error(await readError(res, "Statistikani olishda xatolik"));
+  return res.json();
 }

@@ -95,9 +95,11 @@
   font-size: 14.5px;
   line-height: 1.62;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 .bubbleUser {
+  width: fit-content;
   max-width: 76%;
   background: #3a7ca5;
   color: #fff;
@@ -106,6 +108,7 @@
   font-size: 14.5px;
   line-height: 1.55;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
   box-shadow: 0 1px 3px rgba(23, 63, 115, 0.18);
 }
 
@@ -118,7 +121,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  max-width: 76%;
+  width: 100%;
   min-width: 0;
 }
 
@@ -130,8 +133,9 @@
 
 .msgTimeBot {
   font-size: 11px;
-  margin: 5px 0 0 2px;
+  margin: 0;
   opacity: 0.7;
+  white-space: nowrap;
 }
 
 /* Bot javobi ustuni: bulutcha + ostidagi amallar qatori */
@@ -145,11 +149,21 @@
 
 /* Amallar qatori (nusxalash, baho, qayta yaratish) — touch'da ham ko'rinadi,
    hover/focus'da to'liq yorishadi */
+/* Bot xabari tagi: amallar (chap) + vaqt (o'ng) bitta qatorda */
+.footerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  margin: 5px 0 0 2px;
+}
+
 .actions {
   display: flex;
   align-items: center;
   gap: 2px;
-  margin: 5px 0 0 2px;
+  margin: 0;
   opacity: 0.55;
   transition: opacity 0.18s ease;
 }

@@ -38,7 +38,7 @@ export function useChatHistory() {
           id: s.id, group: groupFor(s.updated_at), title: s.title, messages: [],
         }));
         setChats(mapped);
-        if (mapped.length) await openSession(mapped[0].id);
+        // Login'da avtomatik ochmaymiz — bo'sh (yangi) chat ko'rinadi, user o'zi tanlaydi
       } catch {
         /* backend tayyor emas — bo'sh holat */
       }

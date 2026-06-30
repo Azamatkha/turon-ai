@@ -17,7 +17,7 @@ export const admin = {
   weeklyMessagesTitle: "Shu haftadagi xabarlar",
   weeklyMessagesSub: "Turon AI qayta ishlagan hajm",
   deptUsageTitle: "Bo‘limlar bo‘yicha foydalanish",
-  deptUsageSub: "Faol sessiyalar ulushi",
+  deptUsageSub: "So‘rovlar ulushi",
   recentActivityTitle: "So‘nggi faollik",
   tableUser: "Foydalanuvchi",
   tableDept: "Bo‘lim",

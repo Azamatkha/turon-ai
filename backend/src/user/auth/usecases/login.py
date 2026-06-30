@@ -1,0 +1,135 @@
+from uuid import uuid4
+
+from fastapi import Depends
+from redis.asyncio import Redis
+
+from loggers import get_logger
+from src.core.database.session import get_unit_of_work
+from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
+from src.core.errors.exceptions import InstanceProcessingException
+from src.core.redis.dependencies import get_redis_client
+from src.core.schemas import TokenModel
+from src.core.utils.security import (
+    hash_password,
+    needs_password_rehash,
+    verify_password,
+)
+from src.user.auth.schemas import LoginUserModel
+from src.user.auth.security import create_access_token, create_refresh_token
+from src.user.models import User
+
+INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password."
+INVALID_CREDENTIALS_PASSWORD_HASH = hash_password("dummy-password")
+logger = get_logger(__name__)
+
+
+class LoginUserUseCase:
+    """
+    Log in a user and return access and refresh tokens.
+
+    Inputs:
+    - data: LoginUserModel containing email and password.
+
+    Validations:
+    - User must exist.
+    - Password must be correct.
+    - User must be verified.
+    - User must be active (not blocked).
+
+    Workflow:
+    1) Retrieve user by email.
+    2) Verify password (using dummy hash if user not found to prevent timing attacks).
+    3) Check if user is verified.
+    4) Check if user is active.
+    5) Rehash and persist the password if needed.
+    6) Generate access and refresh tokens.
+
+    Side effects:
+    - Persists password hash updates when rehashing is required.
+    - Token creation handles its own caching.
+
+    Errors:
+    - InstanceProcessingException: if credentials are invalid, the user is not
+      verified, or the user is blocked.
+
+    Returns:
+    - TokenModel with access and refresh tokens.
+    """
+
+    def __init__(
+        self,
+        uow: ApplicationUnitOfWork[RepositoryProtocol],
+        redis_client: Redis,
+    ) -> None:
+        self.uow = uow
+        self.redis_client = redis_client
+
+    async def execute(
+        self,
+        data: LoginUserModel,
+    ) -> TokenModel:
+        async with self.uow as uow:
+            user = await uow.users.get_single(uow.session, username=data.username)
+            if not user:
+                logger.debug(
+                    "[LoginUser] User '%s' not found.",
+                    data.username,
+                )
+                await verify_password(data.password, INVALID_CREDENTIALS_PASSWORD_HASH)
+                raise InstanceProcessingException(INVALID_CREDENTIALS_MESSAGE)
+
+            correct_password = await verify_password(data.password, user.password_hash)
+            if not correct_password:
+                logger.debug(
+                    "[LoginUser] Incorrect password for user '%s'",
+                    data.username,
+                )
+                raise InstanceProcessingException(INVALID_CREDENTIALS_MESSAGE)
+
+            if not user.is_active:
+                logger.debug(
+                    "[LoginUser] User '%s' is blocked.",
+                    data.username,
+                )
+                raise InstanceProcessingException(INVALID_CREDENTIALS_MESSAGE)
+
+            await self._rehash_password_if_needed(uow, user, data.password)
+            # So'nggi faollik uchun login hodisasini yozamiz
+            await uow.login_events.create(uow.session, {"user_id": user.id})
+            session_id = str(uuid4())
+            token_data = {"sub": str(user.id)}
+            await uow.commit()
+            return TokenModel(
+                access_token=await create_access_token(
+                    token_data, redis_client=self.redis_client, session_id=session_id
+                ),
+                refresh_token=await create_refresh_token(
+                    token_data,
+                    redis_client=self.redis_client,
+                    session_id=session_id,
+                ),
+            )
+
+    async def _rehash_password_if_needed(
+        self,
+        uow: ApplicationUnitOfWork[RepositoryProtocol],
+        user: User,
+        raw_password: str,
+    ) -> None:
+        if not needs_password_rehash(user.password_hash):
+            return
+        await uow.users.update(
+            uow.session,
+            {"password_hash": hash_password(raw_password)},
+            id=user.id,
+        )
+
+
+def get_login_user_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+    redis_client: Redis = Depends(get_redis_client),
+) -> LoginUserUseCase:
+    return LoginUserUseCase(
+        uow=uow,
+        redis_client=redis_client,
+    )

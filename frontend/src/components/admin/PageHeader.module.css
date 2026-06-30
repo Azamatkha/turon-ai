@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 28px 0 56px;
   background: #fff;
   border-bottom: 1px solid #e4e8e2;
 }

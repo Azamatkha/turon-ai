@@ -13,8 +13,8 @@ export default function RecentActivity({ items }: { items: ActivityItem[] }) {
     <div className={styles.card}>
       <div className={styles.title}>{admin.recentActivityTitle}</div>
       <div className={styles.list}>
-        {items.map((a) => (
-          <div key={a.who} className={styles.row}>
+        {items.map((a, i) => (
+          <div key={i} className={styles.row}>
             <div className={styles.dot} style={{ background: a.c, boxShadow: `0 0 0 3px ${a.c}22` }} />
             <span className={styles.text}><span className={styles.who}>{a.who}</span> {a.what}</span>
             <span className={styles.when}>{a.when}</span>

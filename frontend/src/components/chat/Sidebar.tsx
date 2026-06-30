@@ -77,7 +77,16 @@ export default function Sidebar({
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><line x1="8" y1="7" x2="20" y2="7" /><line x1="8" y1="12" x2="20" y2="12" /><line x1="8" y1="17" x2="20" y2="17" /><circle cx="4" cy="7" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="17" r="1" /></svg>
           </HButton>
           <div className={styles.railSpacer} />
-          <div className={styles.avatarSm} title={userName}>{initial}</div>
+          <HButton
+            onClick={openProfile}
+            title={userName}
+            aria-label={userName}
+            className={styles.railBtn}
+            baseStyle={{ opacity: 0.95, color: side.fg }}
+            hoverStyle={sideHover}
+          >
+          <div className={styles.avatarSm}>{initial}</div>
+          </HButton>
         </div>
       ) : (
         // ochiq panel

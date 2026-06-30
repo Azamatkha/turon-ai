@@ -5,7 +5,7 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStatic } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
-import { fetchMe, logout } from "../services/authService";
+import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
@@ -72,9 +72,17 @@ export default function ChatPage() {
     setProfileOpen(true);
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     const u = pUsername.trim();
-    if (!pFullName.trim() || !u || (TAKEN_USERNAMES.includes(u) && u !== username)) return;
+    if (!pFullName.trim() || !u) return;
+    try {
+      // Parol kiritilgan bo'lsa — backendga yangi parolni yuboramiz
+      if (pPassword) await changePassword(pPassword);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Parolni o'zgartirishda xatolik");
+      return;
+    }
+    // Ism/login hozircha faqat ekranda yangilanadi (backendda /me yangilash endpointi hali yo'q)
     setFullName(pFullName.trim());
     setUsername(u);
     setPPassword("");

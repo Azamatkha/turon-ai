@@ -19,13 +19,13 @@ interface SidebarProps {
   view: AdminView;
   setView: (v: AdminView) => void;
   usersCount: number;
+  collapsed: boolean;
 }
 
-export default function Sidebar({ view, setView, usersCount }: SidebarProps) {
+export default function Sidebar({ view, setView, usersCount, collapsed }: SidebarProps) {
   const navigate = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
 
-  // Tizimga kirgan adminni real bazadan olamiz (qattiq yozilgan ism o'rniga)
   useEffect(() => {
     fetchMe().then(setMe).catch(() => navigate("/login"));
   }, [navigate]);
@@ -54,13 +54,21 @@ export default function Sidebar({ view, setView, usersCount }: SidebarProps) {
   ];
 
   return (
-    <aside className={styles.aside}>
-      <div className={styles.brandRow}>
-        <div className={styles.logoIcon}><Logo size={30} /></div>
-        <div>
-          <div className={styles.brandName}>Turon<span className={styles.brandNameAi}> AI</span></div>
-          <div className={styles.panelLabel}>{admin.panelLabel}</div>
-        </div>
+    <aside
+      className={styles.aside}
+      style={{ width: collapsed ? 76 : 248, transition: "width .2s ease" }}
+    >
+      <div
+        className={styles.brandRow}
+        style={collapsed ? { justifyContent: "center", padding: 0 } : undefined}
+      >
+        <div className={styles.logoIcon}><Logo size={collapsed ? 28 : 30} /></div>
+        {!collapsed && (
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className={styles.brandName}>Turon<span className={styles.brandNameAi}> AI</span></div>
+            <div className={styles.panelLabel}>{admin.panelLabel}</div>
+          </div>
+        )}
       </div>
 
       <nav className={styles.nav}>
@@ -70,35 +78,41 @@ export default function Sidebar({ view, setView, usersCount }: SidebarProps) {
             <HButton
               key={item.id}
               onClick={() => setView(item.id)}
+              title={collapsed ? item.label : undefined}
               className={`${styles.navItem} ${act ? styles.navItemActive : styles.navItemInactive}`}
-              baseStyle={{}}
+              baseStyle={collapsed ? { justifyContent: "center" } : {}}
               hoverStyle={act ? {} : { background: "rgba(255,255,255,.06)", color: "#fff" }}
             >
               <span className={styles.navIcon}>{item.icon}</span>
-              <span className={styles.navLabel}>{item.label}</span>
-              {item.badge && <span className={styles.navBadge}>{item.badge}</span>}
+              {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
+              {!collapsed && item.badge && <span className={styles.navBadge}>{item.badge}</span>}
             </HButton>
           );
         })}
 
-        {/* Chat sahifasiga qaytish */}
         <HButton
           onClick={() => navigate("/")}
+          title={collapsed ? "Chatga o'tish" : undefined}
           className={`${styles.navItem} ${styles.navItemInactive}`}
-          baseStyle={{}}
+          baseStyle={collapsed ? { justifyContent: "center" } : {}}
           hoverStyle={{ background: "rgba(255,255,255,.06)", color: "#fff" }}
         >
           <span className={styles.navIcon}><IoMdChatboxes size={20} /></span>
-          <span className={styles.navLabel}>Chatga o‘tish</span>
+          {!collapsed && <span className={styles.navLabel}>Chatga o‘tish</span>}
         </HButton>
       </nav>
 
-      <div className={styles.footer}>
+      <div
+        className={styles.footer}
+        style={collapsed ? { flexDirection: "column", gap: 10 } : undefined}
+      >
         <div className={styles.footerAvatar}>{meInitial}</div>
-        <div className={styles.footerMeta}>
-          <div className={styles.footerName}>{meName}</div>
-          <div className={styles.footerRole}>{meHandle || admin.superAdmin}</div>
-        </div>
+        {!collapsed && (
+          <div className={styles.footerMeta}>
+            <div className={styles.footerName}>{meName}</div>
+            <div className={styles.footerRole}>{meHandle || admin.superAdmin}</div>
+          </div>
+        )}
         <button onClick={doLogout} title={admin.logout} aria-label={admin.logout} className={styles.logoutBtn}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
         </button>
