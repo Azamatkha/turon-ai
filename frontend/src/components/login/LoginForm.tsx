@@ -1,5 +1,7 @@
 import { KeyboardEvent, useState } from "react";
 import { Link } from "react-router-dom";
+import { GrLogin } from "react-icons/gr";
+import { RiLockPasswordLine } from "react-icons/ri";
 import LangSwitcher from "../LangSwitcher";
 import type { Lang } from "../../types/lang";
 import type { LoginStrings } from "../../types/i18n";
@@ -15,8 +17,6 @@ interface LoginFormProps {
   setPassword: (v: string) => void;
   pwVisible: boolean;
   setPwVisible: (fn: (v: boolean) => boolean) => void;
-  remember: boolean;
-  setRemember: (fn: (v: boolean) => boolean) => void;
   focus: "login" | "pw" | null;
   setFocus: (v: "login" | "pw" | null) => void;
   loading: boolean;
@@ -28,7 +28,7 @@ interface LoginFormProps {
 export default function LoginForm({
   t, lang, setLang,
   login, setLogin, password, setPassword, pwVisible, setPwVisible,
-  remember, setRemember, focus, setFocus, loading, error, submit, onKey,
+  focus, setFocus, loading, error, submit, onKey,
 }: LoginFormProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   return (
@@ -82,10 +82,7 @@ export default function LoginForm({
         <div className={styles.fieldGroupTight}>
           <label className={styles.fieldLabel}>{t.password}</label>
           <div className={focus === "pw" ? `${styles.field} ${styles.fieldActive}` : styles.field}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={focus === "pw" ? "#2a6f97" : "#9aafb8"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "0 0 auto", transition: "stroke .2s ease" }}>
-              <rect x="4" y="11" width="16" height="10" rx="2.2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-            </svg>
+            <RiLockPasswordLine size={19} color={focus === "pw" ? "#2a6f97" : "#9aafb8"} style={{ flex: "0 0 auto", transition: "color .2s ease" }} />
             <input
               className={styles.input}
               value={password}
@@ -115,18 +112,8 @@ export default function LoginForm({
           </div>
         </div>
 
-        {/* eslab qolish + yordam */}
-        <div className={styles.rememberRow}>
-          <button onClick={() => setRemember((v) => !v)} className={styles.rememberBtn}>
-            <span className={remember ? `${styles.checkbox} ${styles.checkboxChecked}` : styles.checkbox}>
-              {remember && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </span>
-            <span className={styles.rememberLabel}>{t.remember}</span>
-          </button>
+        {/* yordam */}
+        <div className={styles.rememberRow} style={{ justifyContent: "flex-end" }}>
           <div className={styles.helpWrap}>
             <button type="button" onClick={() => setHelpOpen((v) => !v)} className={styles.helpLink} tabIndex={-1}>
               {t.help}
@@ -135,7 +122,7 @@ export default function LoginForm({
               <div className={styles.helpPop} role="status">
                 {lang === "ru" ? "Служба поддержки" : lang === "uz_cyrl" ? "Ёрдам маркази" : "Yordam markazi"}
                 {": "}
-                <a href="tel:1234" className={styles.helpPhone}>1234</a>
+                <span className={styles.helpPhone}>1234</span>
               </div>
             )}
           </div>
@@ -148,10 +135,7 @@ export default function LoginForm({
           ) : (
             <span className={`${styles.submitContent} ${styles.submitText}`}>
               {t.signIn}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
+              <GrLogin size={17} color="#fff" />
             </span>
           )}
         </button>
@@ -162,15 +146,6 @@ export default function LoginForm({
           <Link to="/register" style={{ color: "#2a6f97", fontWeight: 600 }}>
             {lang === "ru" ? "Регистрация" : lang === "uz_cyrl" ? "Рўйхатдан ўтиш" : "Ro‘yxatdan o‘tish"}
           </Link>
-        </div>
-
-        {/* pastki kuzatuv eslatmasi */}
-        <div className={styles.monitoredRow}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="4" y="11" width="16" height="10" rx="2" />
-            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-          </svg>
-          {t.monitored}
         </div>
       </div>
     </div>

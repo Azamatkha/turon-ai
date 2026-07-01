@@ -33,3 +33,5 @@ class ChatMessage(Base, UUIDIDMixin, TimestampMixin):
     )
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
+    # Foydalanuvchi bahosi: "up" | "down" | None
+    vote: Mapped[str | None] = mapped_column(String(10), nullable=True)

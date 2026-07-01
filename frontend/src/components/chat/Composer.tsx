@@ -1,7 +1,8 @@
 import { useRef, ChangeEvent, KeyboardEvent } from "react";
+import { GrSend } from "react-icons/gr";
 import HButton from "../common/HButton";
 import type { ThemeTokens } from "../../types/chat";
-import { chatStatic } from "../../locales";
+import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT } from "./theme";
 import styles from "./Composer.module.css";
 
@@ -16,9 +17,10 @@ interface ComposerProps {
   disclaimer: string;
   tk: ThemeTokens;
   isDark: boolean;
+  s: ChatStaticStrings;
 }
 
-export default function Composer({ draft, setDraft, canSend, onSend, generating, onStop, placeholder, disclaimer, tk, isDark }: ComposerProps) {
+export default function Composer({ draft, setDraft, canSend, onSend, generating, onStop, placeholder, disclaimer, tk, isDark, s }: ComposerProps) {
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const onDraft = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -49,12 +51,12 @@ export default function Composer({ draft, setDraft, canSend, onSend, generating,
         <div className={styles.bar} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "0 4px 20px rgba(0,0,0,.3)" : "0 4px 20px rgba(23, 63, 115,.07)" }}>
           <textarea ref={taRef} value={draft} onChange={onDraft} onKeyDown={onKey} rows={1} placeholder={placeholder} className={styles.textarea} style={{ color: tk.input }} />
           {generating ? (
-            <HButton onClick={onStop} title={chatStatic.stop} aria-label={chatStatic.stop} className={styles.sendBtn} baseStyle={{ background: "#173f73", cursor: "pointer" }} hoverStyle={{ transform: "scale(1.08)", background: "#0f2c52" }}>
+            <HButton onClick={onStop} title={s.stop} aria-label={s.stop} className={styles.sendBtn} baseStyle={{ background: "#173f73", cursor: "pointer" }} hoverStyle={{ transform: "scale(1.08)", background: "#0f2c52" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>
             </HButton>
           ) : (
-            <HButton onClick={send} title={chatStatic.send} aria-label={chatStatic.send} className={styles.sendBtn} baseStyle={{ background: canSend ? ACCENT : "#c4ccc9", cursor: canSend ? "pointer" : "default" }} hoverStyle={canSend ? { transform: "scale(1.08)", background: "#173f73" } : {}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="6" /><polyline points="6 12 12 6 18 12" /></svg>
+            <HButton onClick={send} title={s.send} aria-label={s.send} className={styles.sendBtn} baseStyle={{ background: canSend ? ACCENT : "#c4ccc9", cursor: canSend ? "pointer" : "default" }} hoverStyle={canSend ? { transform: "scale(1.08)", background: "#173f73" } : {}}>
+              <GrSend size={16} color="#fff" />
             </HButton>
           )}
         </div>

@@ -1,6 +1,15 @@
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, Enum as SQLEnum, ForeignKey, Index, String, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum as SQLEnum,
+    ForeignKey,
+    Index,
+    String,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
@@ -43,6 +52,10 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Onlayn holatni aniqlash uchun — oxirgi faollik vaqti
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
 
     """relationships"""
     # Add relationships here
@@ -89,4 +102,8 @@ class LoginEvent(Base, UUIDIDMixin, TimestampMixin):
         PG_UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
+    )
+    # "login" | "logout" | "session"
+    action: Mapped[str] = mapped_column(
+        String(20), default="login", server_default="login"
     )

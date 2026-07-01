@@ -1,4 +1,5 @@
 import { CSSProperties, useRef } from "react";
+import { RiDeleteBin5Fill } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Chat, SideTokens } from "../../types/chat";
@@ -64,8 +65,10 @@ export default function Sidebar({
         <div className={styles.rail}>
           {/* Ochish/yopish tugmasi endi tashqarida (SidebarToggle) — bu yerda
               faqat statik brend belgisi, asosiy header bilan balandligi bir xil */}
-          <div className={styles.railHead} style={{ borderBottom: "1px solid " + side.border, color: side.logo }}>
-            <Logo size={24} />
+          <div className={styles.railHead} style={{ borderBottom: "1px solid " + side.border }}>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, color: "#2a6f97", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}>
+              <Logo size={22} />
+            </span>
           </div>
           <HButton onClick={newChat} title="Yangi suhbat" aria-label="Yangi suhbat boshlash" className={styles.railBtn} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
@@ -93,7 +96,7 @@ export default function Sidebar({
         <div className={styles.panel}>
           <div className={styles.panelHead} style={{ borderBottom: "1px solid " + side.border }}>
             <div className={styles.panelHeadBrand}>
-              <div className={styles.logoIcon} style={{ color: side.logo }}><Logo size={26} /></div>
+              <div className={styles.logoIcon} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: "#2a6f97", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}><Logo size={24} /></div>
               <div className={styles.brandText} style={{ color: side.fg }}>
                 Turon<span className={styles.brandTextAi}> AI</span>
               </div>
@@ -159,11 +162,7 @@ export default function Sidebar({
                           aria-label={removeChatLabel}
                           className={styles.removeBtn}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                            <path d="M10 11v6M14 11v6" />
-                          </svg>
+                          <RiDeleteBin5Fill size={15} />
                         </button>
                       </div>
                     );

@@ -9,6 +9,7 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceProcessingException
 from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import TokenModel
+from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.security import (
     hash_password,
     needs_password_rehash,
@@ -94,8 +95,11 @@ class LoginUserUseCase:
                 raise InstanceProcessingException(INVALID_CREDENTIALS_MESSAGE)
 
             await self._rehash_password_if_needed(uow, user, data.password)
-            # So'nggi faollik uchun login hodisasini yozamiz
-            await uow.login_events.create(uow.session, {"user_id": user.id})
+            # So'nggi faollik + onlayn holat
+            user.last_seen_at = get_utc_now()
+            await uow.login_events.create(
+                uow.session, {"user_id": user.id, "action": "login"}
+            )
             session_id = str(uuid4())
             token_data = {"sub": str(user.id)}
             await uow.commit()

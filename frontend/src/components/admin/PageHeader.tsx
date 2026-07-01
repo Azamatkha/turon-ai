@@ -10,13 +10,10 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ onUsers, search, setSearch, onAddUser }: PageHeaderProps) {
-  const subtitle = onUsers ? admin.usersSubtitle : "Umumiy ko‘rinish";
-
   return (
     <header className={styles.header}>
       <div>
         <div className={styles.title}>{onUsers ? admin.usersTitle : admin.dashboardTitle}</div>
-        <div className={styles.subtitle}>{subtitle}</div>
       </div>
       <div className={styles.actions}>
         {onUsers && (

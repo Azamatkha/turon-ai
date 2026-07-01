@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from loggers import get_logger
 from src.core.database.repositories import BaseRepository, SoftDeleteRepository
+from src.core.utils.datetime_utils import get_utc_now
 from src.user.models import LoginEvent, User
 
 logger = get_logger(__name__)
@@ -44,20 +45,38 @@ class UserRepository(SoftDeleteRepository[User]):
         result = await session.execute(query)
         return [(row[0], int(row[1])) for row in result.all()]
 
+    async def count_online(self, session: AsyncSession, minutes: int = 5) -> int:
+        """Oxirgi `minutes` daqiqada faol bo'lgan foydalanuvchilar (onlayn)."""
+        cutoff = get_utc_now() - timedelta(minutes=minutes)
+        query = (
+            select(func.count())
+            .select_from(self.model)
+            .where(self.model.is_deleted.is_(False))
+            .where(self.model.last_seen_at.isnot(None))
+            .where(self.model.last_seen_at >= cutoff)
+        )
+        result = await session.execute(query)
+        return int(result.scalar_one())
+
 
 class LoginEventRepository(BaseRepository[LoginEvent]):
 
     model = LoginEvent
 
     async def recent_with_users(
-        self, session: AsyncSession, limit: int = 8
-    ) -> list[tuple[str, datetime]]:
-        """So'nggi loginlar — foydalanuvchi ismi + vaqti bilan."""
+        self, session: AsyncSession, limit: int = 10
+    ) -> list[tuple[str, str, datetime]]:
+        """So'nggi faolliklar — ism, amal (action), vaqt bilan."""
         query = (
-            select(LoginEvent.created_at, User.first_name, User.last_name)
+            select(
+                LoginEvent.created_at,
+                LoginEvent.action,
+                User.first_name,
+                User.last_name,
+            )
             .join(User, LoginEvent.user_id == User.id)
             .order_by(LoginEvent.created_at.desc())
             .limit(limit)
         )
         result = await session.execute(query)
-        return [(f"{r[1]} {r[2]}".strip(), r[0]) for r in result.all()]
+        return [(f"{r[2]} {r[3]}".strip(), r[1], r[0]) for r in result.all()]

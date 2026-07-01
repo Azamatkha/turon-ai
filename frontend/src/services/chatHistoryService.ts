@@ -14,6 +14,7 @@ export interface ApiMessage {
   role: "user" | "assistant";
   content: string;
   created_at: string;
+  vote?: "up" | "down" | null;
 }
 
 export interface ApiSessionDetail extends ApiSession {
@@ -74,5 +75,18 @@ export async function addMessage(
     body: JSON.stringify({ role, content }),
   });
   if (!res.ok) throw new Error(await readError(res, "Xabar qo'shishda xatolik"));
+  return res.json();
+}
+
+export async function voteMessage(
+  sessionId: string,
+  messageId: string,
+  vote: "up" | "down" | null
+): Promise<ApiMessage> {
+  const res = await apiFetch(`/v1/chat/sessions/${sessionId}/messages/${messageId}/vote`, {
+    method: "PATCH",
+    body: JSON.stringify({ vote }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Baholashda xatolik"));
   return res.json();
 }

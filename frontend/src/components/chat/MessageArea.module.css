@@ -101,7 +101,7 @@
 .bubbleUser {
   width: fit-content;
   max-width: 76%;
-  background: #3a7ca5;
+  background: linear-gradient(135deg, #224f6b, #173f73);
   color: #fff;
   padding: 11px 16px;
   border-radius: 18px 18px 5px 18px;

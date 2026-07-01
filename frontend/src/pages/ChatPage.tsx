@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useChatHistory } from "../hooks/useChatHistory";
 import { useTheme } from "../contexts/ThemeContext";
-import { chatDict, chatStatic } from "../locales";
+import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
@@ -19,10 +19,11 @@ import styles from "./ChatPage.module.css";
 export default function ChatPage() {
   const navigate = useNavigate();
   const { lang, setLang, t: T } = useLang(chatDict);
+  const S = chatStaticDict[lang]; // tanlangan tildagi statik matnlar
   const {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate,
-  } = useChatHistory();
+    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate, voteMsg,
+  } = useChatHistory(T.newChat);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState("");
@@ -132,11 +133,11 @@ export default function ChatPage() {
         activeId={activeId}
         setActiveId={setActiveId}
         onRemoveChat={removeChat}
-        removeChatLabel={chatStatic.removeChat}
+        removeChatLabel={S.removeChat}
         search={search}
         setSearch={setSearch}
-        searchPlaceholder={chatStatic.searchPlaceholder}
-        noResultsLabel={chatStatic.noResults}
+        searchPlaceholder={S.searchPlaceholder}
+        noResultsLabel={S.noResults}
         side={side}
         userName={userName}
         userHandle={userHandle}
@@ -144,7 +145,7 @@ export default function ChatPage() {
         openProfile={openProfile}
       />
 
-      <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} />
+      <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} isDark={isDark} />
 
       <main className={styles.main}>
         <ChatHeader
@@ -158,6 +159,7 @@ export default function ChatPage() {
           onAdmin={() => navigate("/admin")}
           editableTitle={!!activeId && !!active.title}
           onRenameTitle={(next) => renameChat(activeId, next)}
+          s={S}
         />
 
         <MessageArea
@@ -174,6 +176,8 @@ export default function ChatPage() {
           onRegenerate={regenerate}
           tk={tk}
           isDark={isDark}
+          s={S}
+          onVote={voteMsg}
         />
 
         <Composer
@@ -187,6 +191,7 @@ export default function ChatPage() {
           disclaimer={T.disclaimer}
           tk={tk}
           isDark={isDark}
+          s={S}
         />
 
         {profileOpen && (
@@ -205,6 +210,8 @@ export default function ChatPage() {
             onClose={() => setProfileOpen(false)}
             onSave={saveProfile}
             onLogout={doLogout}
+            s={S}
+            isDark={isDark}
           />
         )}
       </main>

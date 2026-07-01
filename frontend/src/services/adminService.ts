@@ -93,6 +93,7 @@ export interface WeeklyPoint {
 
 export interface RecentActivityItem {
   name: string;
+  action: string;
   when: string;
 }
 
@@ -101,6 +102,9 @@ export interface DashboardStats {
   total_sessions: number;
   total_messages: number;
   total_departments: number;
+  online: number;
+  total_likes: number;
+  total_dislikes: number;
   departments: DeptStat[];
   weekly: WeeklyPoint[];
   recent_activity: RecentActivityItem[];

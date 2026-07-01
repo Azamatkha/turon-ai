@@ -1,10 +1,9 @@
 # Python
-backend/venv/            # virtual muhit (har kim o'zi yaratadi)
+backend/venv/            
 __pycache__/
 *.pyc
-backend/.env             # MAXFIY: API kalitlar — hech qachon GitHub'ga emas!
-
-frontend/node_modules/   # juda og'ir, har kim o'zi o'rnatadi
+backend/.env             
+frontend/node_modules/   
 frontend/dist/
 frontend/.env
 

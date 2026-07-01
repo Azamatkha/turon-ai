@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
@@ -25,6 +25,18 @@ interface SidebarProps {
 export default function Sidebar({ view, setView, usersCount, collapsed }: SidebarProps) {
   const navigate = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const footerRef = useRef<HTMLDivElement>(null);
+
+  // Tashqariga bosilganda menyuni yopish
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (footerRef.current && !footerRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
 
   useEffect(() => {
     fetchMe().then(setMe).catch(() => navigate("/login"));
@@ -62,7 +74,7 @@ export default function Sidebar({ view, setView, usersCount, collapsed }: Sideba
         className={styles.brandRow}
         style={collapsed ? { justifyContent: "center", padding: 0 } : undefined}
       >
-        <div className={styles.logoIcon}><Logo size={collapsed ? 28 : 30} /></div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: "#2a6f97", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.22)" }}><Logo size={collapsed ? 22 : 24} /></div>
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className={styles.brandName}>Turon<span className={styles.brandNameAi}> AI</span></div>
@@ -102,20 +114,79 @@ export default function Sidebar({ view, setView, usersCount, collapsed }: Sideba
         </HButton>
       </nav>
 
-      <div
-        className={styles.footer}
-        style={collapsed ? { flexDirection: "column", gap: 10 } : undefined}
-      >
-        <div className={styles.footerAvatar}>{meInitial}</div>
-        {!collapsed && (
-          <div className={styles.footerMeta}>
-            <div className={styles.footerName}>{meName}</div>
-            <div className={styles.footerRole}>{meHandle || admin.superAdmin}</div>
+      <div className={styles.footer} style={{ position: "relative" }} ref={footerRef}>
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            width: "100%",
+            justifyContent: collapsed ? "center" : "flex-start",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            color: "inherit",
+          }}
+        >
+          <div className={styles.footerAvatar}>{meInitial}</div>
+          {!collapsed && (
+            <div className={styles.footerMeta} style={{ textAlign: "left" }}>
+              <div className={styles.footerName}>{meName}</div>
+              <div className={styles.footerRole}>{meHandle || admin.superAdmin}</div>
+            </div>
+          )}
+          {!collapsed && (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(238,242,239,.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: menuOpen ? "rotate(180deg)" : "none", transition: "transform .18s ease" }}>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
+        </button>
+
+        {menuOpen && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "calc(100% + 8px)",
+              left: 12,
+              minWidth: 180,
+              background: "#fff",
+              border: "1px solid #e6eae3",
+              borderRadius: 12,
+              padding: 6,
+              boxShadow: "0 12px 32px rgba(13,33,45,.28)",
+              zIndex: 20,
+            }}
+          >
+            <div style={{ padding: "6px 10px 8px", borderBottom: "1px solid #eef1ec", marginBottom: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#173f73", whiteSpace: "nowrap" }}>{meName}</div>
+              <div style={{ fontSize: 11.5, color: "#9aafb8" }}>{meHandle}</div>
+            </div>
+            <button
+              onClick={doLogout}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#fdeceb")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                width: "100%",
+                padding: "9px 10px",
+                border: "none",
+                background: "transparent",
+                color: "#c0392b",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+              {admin.logout}
+            </button>
           </div>
         )}
-        <button onClick={doLogout} title={admin.logout} aria-label={admin.logout} className={styles.logoutBtn}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-        </button>
       </div>
     </aside>
   );

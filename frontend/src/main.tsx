@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ChatPage from "./pages/ChatPage";
 import AdminPage from "./pages/AdminPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import { RequireAuth, RequireAdmin } from "./components/RouteGuards";
 
 // Marshrutlar: "/" = chat (login bo'lsa), aks holda login sahifasiga yo'naltiradi
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
   { path: "/register", element: <RegisterPage /> },
   { path: "/chat", element: <Navigate to="/" replace /> },
   { path: "/admin", element: <RequireAdmin><AdminPage /></RequireAdmin> },
+  { path: "*", element: <NotFoundPage /> },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

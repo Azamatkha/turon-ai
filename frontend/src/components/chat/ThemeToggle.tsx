@@ -5,14 +5,14 @@ interface ThemeToggleProps {
   isDark: boolean;
   onToggle: () => void;
   tk: ThemeTokens;
+  label?: string;
 }
 
-// Mavzu (light/dark) almashtirgich
-export default function ThemeToggle({ isDark, onToggle, tk }: ThemeToggleProps) {
+// Light/dark rejim almashtirgich
+export default function ThemeToggle({ isDark, onToggle, label = "Rejim" }: ThemeToggleProps) {
   return (
     <div className={styles.wrap}>
-      <span className={styles.label} style={{ color: isDark ? tk.muted : tk.strong }}>Light</span>
-      <button onClick={onToggle} title="Mavzu" className={`${styles.switch} ${isDark ? styles.switchDark : styles.switchLight}`}>
+      <button onClick={onToggle} data-tip={label} aria-label={label} className={`${styles.switch} ${isDark ? styles.switchDark : styles.switchLight}`}>
         <span className={`${styles.knob} ${isDark ? styles.knobDark : styles.knobLight}`}>
           {isDark ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#173f73"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></svg>
@@ -33,7 +33,6 @@ export default function ThemeToggle({ isDark, onToggle, tk }: ThemeToggleProps) 
         <span className={`${styles.starSm} ${isDark ? styles.starVisible : styles.starHidden}`} />
         <span className={`${styles.starXs} ${isDark ? styles.starXsVisible : styles.starHidden}`} />
       </button>
-      <span className={styles.label} style={{ color: isDark ? tk.strong : tk.muted }}>Dark</span>
     </div>
   );
 }

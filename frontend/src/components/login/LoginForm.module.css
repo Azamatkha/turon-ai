@@ -21,11 +21,11 @@
 
 .formBox {
   width: 100%;
-  max-width: 386px;
+  max-width: 360px;
 }
 
 .headerBlock {
-  margin-bottom: 30px;
+  margin-bottom: 22px;
 }
 
 .fieldGroup {
@@ -47,9 +47,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 26px;
+  margin-top: 22px;
   color: #9aa7a2;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* =====================
@@ -178,6 +178,18 @@
   animation: spin 0.7s linear infinite;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
 /* =====================
    Typography
    ===================== */
@@ -197,7 +209,7 @@
 
 .fieldLabel {
   display: block;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #42565f;
   margin-bottom: 7px;

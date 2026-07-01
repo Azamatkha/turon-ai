@@ -31,3 +31,38 @@ export interface ChatStrings {
   sugg: string[];
   greeting: (name: string) => string;
 }
+
+// Chat interfeysining tilга bog'liq statik matnlari (til almashtirgichga ulanadi)
+export interface ChatStaticStrings {
+  openSidebar: string;
+  newChatTitle: string;
+  search: string;
+  searchPlaceholder: string;
+  noResults: string;
+  history: string;
+  support: string;
+  supportNumber: string;
+  supportHint: string;
+  collapseSidebar: string;
+  theme: string;
+  adminPanel: string;
+  send: string;
+  stop: string;
+  copy: string;
+  copied: string;
+  regenerate: string;
+  goodResponse: string;
+  badResponse: string;
+  close: string;
+  fullName: string;
+  fullNamePh: string;
+  username: string;
+  usernamePh: string;
+  newPassword: string;
+  newPasswordPh: string;
+  taken: string;
+  saved: string;
+  saveChanges: string;
+  logOut: string;
+  removeChat: string;
+}

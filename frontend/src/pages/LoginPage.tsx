@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [login, setLoginValue] = useState("");
   const [password, setPasswordValue] = useState("");
   const [pwVisible, setPwVisible] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [focus, setFocus] = useState<"login" | "pw" | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -68,8 +67,6 @@ export default function LoginPage() {
           setPassword={setPassword}
           pwVisible={pwVisible}
           setPwVisible={setPwVisible}
-          remember={remember}
-          setRemember={setRemember}
           focus={focus}
           setFocus={setFocus}
           loading={loading}

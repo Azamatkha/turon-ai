@@ -30,6 +30,7 @@ from src.chat.schemas import (
     RenameSessionModel,
     SessionDetailView,
     SessionView,
+    VoteMessageModel,
 )
 from src.chat.usecases import (
     AddMessageUseCase,
@@ -38,12 +39,14 @@ from src.chat.usecases import (
     GetSessionUseCase,
     ListSessionsUseCase,
     RenameSessionUseCase,
+    VoteMessageUseCase,
     get_add_message_use_case,
     get_create_session_use_case,
     get_delete_session_use_case,
     get_get_session_use_case,
     get_list_sessions_use_case,
     get_rename_session_use_case,
+    get_vote_message_use_case,
 )
 
 router = APIRouter()
@@ -113,4 +116,23 @@ async def add_message(
     """Suhbatga xabar qo'shish (role: 'user' yoki 'assistant')."""
     return await use_case.execute(
         user_id=current_user.id, session_id=session_id, data=data
+    )
+
+
+@router.patch(
+    "/sessions/{session_id}/messages/{message_id}/vote", response_model=MessageView
+)
+async def vote_message(
+    session_id: UUID,
+    message_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: VoteMessageModel,
+    use_case: Annotated[VoteMessageUseCase, Depends(get_vote_message_use_case)],
+) -> MessageView:
+    """Xabarga baho berish (like/dislike): vote = 'up' | 'down' | null."""
+    return await use_case.execute(
+        user_id=current_user.id,
+        session_id=session_id,
+        message_id=message_id,
+        vote=data.vote,
     )

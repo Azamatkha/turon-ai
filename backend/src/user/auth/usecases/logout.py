@@ -1,7 +1,11 @@
+from uuid import UUID
+
 from fastapi import Depends
 from redis.asyncio import Redis
 
 from loggers import get_logger
+from src.core.database.session import get_unit_of_work
+from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import SuccessResponse
 from src.user.auth.token_helpers import (
@@ -15,8 +19,13 @@ logger = get_logger(__name__)
 class LogoutUseCase:
     """Invalidate the current user session or all user sessions."""
 
-    def __init__(self, redis_client: Redis) -> None:
+    def __init__(
+        self,
+        redis_client: Redis,
+        uow: ApplicationUnitOfWork[RepositoryProtocol],
+    ) -> None:
         self.redis_client = redis_client
+        self.uow = uow
 
     async def execute(
         self,
@@ -49,11 +58,23 @@ class LogoutUseCase:
                 user_id,
             )
 
+        # So'nggi faollik uchun logout hodisasini yozamiz
+        try:
+            async with self.uow as uow:
+                await uow.login_events.create(
+                    uow.session,
+                    {"user_id": UUID(user_id), "action": "logout"},
+                )
+                await uow.commit()
+        except Exception:
+            logger.exception("[LogoutUser] Failed to record logout event.")
+
         return SuccessResponse(success=True)
 
 
 def get_logout_use_case(
     redis_client: Redis = Depends(get_redis_client),
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> LogoutUseCase:
     """Dependency provider for LogoutUseCase."""
-    return LogoutUseCase(redis_client=redis_client)
+    return LogoutUseCase(redis_client=redis_client, uow=uow)

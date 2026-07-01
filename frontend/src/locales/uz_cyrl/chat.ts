@@ -1,14 +1,48 @@
-import type { ChatStrings } from "../../types/i18n";
+import type { ChatStrings, ChatStaticStrings } from "../../types/i18n";
 
 // O'zbekcha (kirill yozuvi) — lotin "uz" lug'atining transliteratsiyasi
 export const chat: ChatStrings = {
   newChat: "Янги суҳбат",
-  sub: "Истаган нарсани сўранг, ғоя ўйлаб топинг ёки қуйидан бошланг.",
+  sub: "Банк маҳсулотлари бўйича саволингизни ёзинг — мавжуд маълумотлар асосида жавоб бераман.",
   placeholder: "Turon AI'га ёзинг…",
-  disclaimer: "Turon AI хато қилиши мумкин. Муҳим маълумотларни текширинг.",
+  disclaimer: "Янги қаторга ўтиш учун Shift+Enter · жавоблар бироз кечикиши мумкин.",
   today: "Бугун",
   yest: "Кеча",
   prev: "Охирги 7 кун",
-  sugg: ["Мижозга хат лойиҳасини туз", "Банк маҳсулотини тушунтир", "Ҳужжатни қисқача баён қил", "Операция бўйича ёрдам"],
-  greeting: (n: string) => `Қандай ёрдам бераман, ${n}?`,
+  sugg: ["Кредит турлари", "Банк карталари", "Омонатлар", "Тарифлар ва комиссиялар"],
+  greeting: (n: string) => `Ассалому алейкум, ${n}!\nСизга қандай ёрдам бераман?`,
+};
+
+export const chatStatic: ChatStaticStrings = {
+  openSidebar: "Панелни очиш",
+  newChatTitle: "Янги суҳбат",
+  search: "Қидириш",
+  searchPlaceholder: "Суҳбатлардан қидириш…",
+  noResults: "Ҳеч нарса топилмади",
+  history: "Тарих",
+  support: "Қўллаб-қувватлаш",
+  supportNumber: "1234",
+  supportHint: "Ёрдам маркази рақами",
+  collapseSidebar: "Панелни йиғиш",
+  theme: "Режим",
+  adminPanel: "Админ панел",
+  send: "Юбориш",
+  stop: "Тўхтатиш",
+  copy: "Нусхалаш",
+  copied: "Нусхаланди",
+  regenerate: "Қайта яратиш",
+  goodResponse: "Яхши жавоб",
+  badResponse: "Ёмон жавоб",
+  close: "Ёпиш",
+  fullName: "Тўлиқ исм",
+  fullNamePh: "Исмингиз",
+  username: "Фойдаланувчи номи",
+  usernamePh: "username",
+  newPassword: "Янги парол",
+  newPasswordPh: "Бўш қолдирсангиз — ўзгармайди",
+  taken: "Банд",
+  saved: "Сақланди",
+  saveChanges: "Ўзгаришларни сақлаш",
+  logOut: "Чиқиш",
+  removeChat: "Суҳбатни ўчириш",
 };

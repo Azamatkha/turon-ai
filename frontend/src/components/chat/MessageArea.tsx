@@ -2,7 +2,7 @@ import { Ref, useState } from "react";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
-import { chatStatic } from "../../locales";
+import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT } from "./theme";
 import styles from "./MessageArea.module.css";
 
@@ -30,16 +30,16 @@ interface MessageAreaProps {
   onRegenerate: () => void;
   tk: ThemeTokens;
   isDark: boolean;
+  s: ChatStaticStrings;
+  onVote?: (id: string, vote: "up" | "down" | null) => void;
 }
 
 type Vote = "up" | "down";
 
 export default function MessageArea({
-  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, onRegenerate, tk, isDark,
+  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, onRegenerate, tk, isDark, s, onVote,
 }: MessageAreaProps) {
-  const s = chatStatic;
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [votes, setVotes] = useState<Record<string, Vote>>({});
 
   const copyMsg = (m: Msg) => {
     navigator.clipboard?.writeText(m.text).then(() => {
@@ -48,20 +48,16 @@ export default function MessageArea({
     });
   };
 
-  const vote = (id: string, v: Vote) =>
-    setVotes((prev) => {
-      const next = { ...prev };
-      if (next[id] === v) delete next[id];
-      else next[id] = v;
-      return next;
-    });
+  // Bosilgan bahoni qayta bossa — bekor qiladi (toggle)
+  const vote = (id: string, v: Vote, current: Vote | null | undefined) =>
+    onVote?.(id, current === v ? null : v);
 
   return (
     <div ref={scrollRef} className={styles.scrollArea}>
       {isEmpty && (
         <div className={styles.emptyState}>
           <div className={styles.logoBadge} style={{ color: ACCENT }}><Logo size={64} /></div>
-          <div className={styles.greeting} style={{ color: tk.strong }}>{greeting}</div>
+          <div className={styles.greeting} style={{ color: tk.strong, whiteSpace: "pre-line" }}>{greeting}</div>
           <div className={styles.subtext} style={{ color: tk.muted }}>{sub}</div>
           <div className={styles.suggestions}>
             {suggestions.map((label, idx) => (
@@ -98,7 +94,7 @@ export default function MessageArea({
             const isLast = idx === rawMsgs.length - 1;
             // Yozib bo'lgan (yoki to'xtatilgan) bot javobida amallar qatorini ko'rsatamiz
             const showActions = !!m.text && !(generating && isLast);
-            const v = votes[m.id];
+            const v = m.vote;
 
             return (
               <div key={m.id} className={`${styles.messageRow} ${styles.messageRowBot}`}>
@@ -119,11 +115,11 @@ export default function MessageArea({
                         )}
                       </button>
 
-                      <button onClick={() => vote(m.id, "up")} className={`${styles.actBtn} ${v === "up" ? styles.actBtnUp : ""}`} title={s.goodResponse} aria-label={s.goodResponse} aria-pressed={v === "up"}>
+                      <button onClick={() => vote(m.id, "up", v)} className={`${styles.actBtn} ${v === "up" ? styles.actBtnUp : ""}`} title={s.goodResponse} aria-label={s.goodResponse} aria-pressed={v === "up"}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill={v === "up" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></svg>
                       </button>
 
-                      <button onClick={() => vote(m.id, "down")} className={`${styles.actBtn} ${v === "down" ? styles.actBtnDown : ""}`} title={s.badResponse} aria-label={s.badResponse} aria-pressed={v === "down"}>
+                      <button onClick={() => vote(m.id, "down", v)} className={`${styles.actBtn} ${v === "down" ? styles.actBtnDown : ""}`} title={s.badResponse} aria-label={s.badResponse} aria-pressed={v === "down"}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill={v === "down" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></svg>
                       </button>
 

@@ -25,12 +25,13 @@ export default function RegisterPage() {
       setError("Iltimos, barcha majburiy maydonlarni to‘ldiring.");
       return;
     }
-    if (username.trim().length < 3) {
-      setError("Login kamida 3 ta belgidan iborat bo‘lsin.");
+    if (username.trim().length < 4) {
+      setError("Login kamida 4 ta belgidan iborat bo‘lsin.");
       return;
     }
-    if (password.length < 6) {
-      setError("Parol kamida 6 ta belgidan iborat bo‘lsin.");
+    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!strongPassword.test(password)) {
+      setError("Parol kamida 8 ta belgi bo‘lib, katta harf, kichik harf, raqam va belgi (masalan: Admin123!) bo‘lishi kerak.");
       return;
     }
     setLoading(true);

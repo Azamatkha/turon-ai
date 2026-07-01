@@ -20,6 +20,7 @@ class MessageView(Base):
     role: str
     content: str
     created_at: datetime
+    vote: str | None = None
 
 
 class SessionDetailView(SessionView):
@@ -43,4 +44,15 @@ class AddMessageModel(Base):
     def validate_role(cls, value: str) -> str:
         if value not in ALLOWED_ROLES:
             raise ValueError("role faqat 'user' yoki 'assistant' bo'lishi mumkin")
+        return value
+
+
+class VoteMessageModel(Base):
+    vote: str | None = None
+
+    @field_validator("vote")
+    @classmethod
+    def validate_vote(cls, value: str | None) -> str | None:
+        if value not in (None, "up", "down"):
+            raise ValueError("vote faqat 'up', 'down' yoki null bo'lishi mumkin")
         return value

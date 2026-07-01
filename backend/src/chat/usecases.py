@@ -39,6 +39,10 @@ class CreateSessionUseCase:
             session_obj = await uow.chat_sessions.create(
                 uow.session, {"user_id": user_id, "title": title}
             )
+            # So'nggi faollik: yangi suhbat ochildi
+            await uow.login_events.create(
+                uow.session, {"user_id": user_id, "action": "session"}
+            )
             await uow.commit()
             return SessionView.model_validate(session_obj)
 
@@ -125,6 +129,29 @@ class AddMessageUseCase:
             return MessageView.model_validate(message)
 
 
+class VoteMessageUseCase:
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(
+        self, user_id: UUID, session_id: UUID, message_id: UUID, vote: str | None
+    ) -> MessageView:
+        async with self.uow as uow:
+            s = await uow.chat_sessions.get_single(
+                uow.session, id=session_id, user_id=user_id
+            )
+            if not s:
+                raise InstanceNotFoundException(SESSION_NOT_FOUND)
+            msg = await uow.chat_messages.get_single(
+                uow.session, id=message_id, session_id=session_id
+            )
+            if not msg:
+                raise InstanceNotFoundException("Xabar topilmadi")
+            msg.vote = vote
+            await uow.commit()
+            return MessageView.model_validate(msg)
+
+
 # ---- DI factory'lar ----
 def get_list_sessions_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
@@ -160,3 +187,9 @@ def get_add_message_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> AddMessageUseCase:
     return AddMessageUseCase(uow=uow)
+
+
+def get_vote_message_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> VoteMessageUseCase:
+    return VoteMessageUseCase(uow=uow)

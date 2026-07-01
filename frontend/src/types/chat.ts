@@ -5,6 +5,7 @@ export interface Msg {
   role: Role;
   text: string;
   time?: string; // ISO vaqt belgisi (yuborilgan/kelgan payt)
+  vote?: "up" | "down" | null; // foydalanuvchi bahosi
 }
 
 export interface Chat {

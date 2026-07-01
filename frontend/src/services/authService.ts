@@ -51,7 +51,13 @@ function clearStorage() {
 async function readError(res: Response, fallback: string): Promise<string> {
   try {
     const data = await res.json();
-    return data.detail || data.message || fallback;
+    const d = data.detail ?? data.message;
+    // FastAPI validatsiya xatolari massiv ko'rinishida keladi
+    if (Array.isArray(d)) {
+      return d.map((e) => e?.msg || e?.message || String(e)).join("; ") || fallback;
+    }
+    if (typeof d === "string") return d;
+    return fallback;
   } catch {
     return fallback;
   }

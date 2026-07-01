@@ -1,6 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap');
+
 /* Global stillar + dizayndagi animatsiyalar (keyframes) */
 * {
   box-sizing: border-box;
+}
+
+/* Light/Dark mavzu almashganda silliq o'tish (inline stillarga ham ta'sir qiladi) */
+body,
+body * {
+  transition: background-color 0.28s ease, color 0.22s ease, border-color 0.28s ease;
+}
+
+/* Chiroyli hover tooltip (default brauzer title o'rniga) — data-tip="..." qo'ying */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: #173f73;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 5px 9px;
+  border-radius: 7px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 200;
+  box-shadow: 0 6px 18px rgba(13, 33, 45, 0.22);
+}
+[data-tip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Chiroyli scrollbar (default brauzer scrollbar o'rniga) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42, 111, 151, 0.45) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(42, 111, 151, 0.4);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(42, 111, 151, 0.7);
+  background-clip: content-box;
 }
 html,
 body,
@@ -10,13 +69,13 @@ body,
   height: 100%;
 }
 body {
-  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  font-family: "Google Sans", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 input,
 textarea,
 button {
-  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  font-family: "Google Sans", system-ui, sans-serif;
 }
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 40px #fff inset;

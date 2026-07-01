@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Chat, Msg } from "../types/chat";
 import { pickReply } from "../services/chatBotService";
 import {
-  listSessions, createSession, getSession, deleteSession, addMessage, renameSession,
+  listSessions, createSession, getSession, deleteSession, addMessage, renameSession, voteMessage,
 } from "../services/chatHistoryService";
 
 // Sanaga qarab sidebar guruhini aniqlaydi
@@ -18,7 +18,7 @@ function groupFor(iso: string): string {
 
 // Chat tarixini BACKEND (PostgreSQL) bilan boshqaradi — foydalanuvchiga bog'langan.
 // useChatSimulation bilan bir xil interfeysni qaytaradi (ChatPage o'zgarmaydi).
-export function useChatHistory() {
+export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loaded = useRef<Set<string>>(new Set());
@@ -55,7 +55,7 @@ export function useChatHistory() {
     if (loaded.current.has(id)) return;
     try {
       const detail = await getSession(id);
-      const msgs: Msg[] = detail.messages.map((m) => ({ id: m.id, role: m.role, text: m.content, time: m.created_at }));
+      const msgs: Msg[] = detail.messages.map((m) => ({ id: m.id, role: m.role, text: m.content, time: m.created_at, vote: m.vote ?? null }));
       setChats((cs) => cs.map((c) => (c.id === id ? { ...c, title: detail.title, messages: msgs } : c)));
       loaded.current.add(id);
     } catch {
@@ -73,9 +73,9 @@ export function useChatHistory() {
     if (pendingRef.current) clearTimeout(pendingRef.current);
     setThinking(false); setGenerating(false); setDraft("");
     try {
-      const s = await createSession("");
+      const s = await createSession(newChatLabel);
       loaded.current.add(s.id);
-      setChats((cs) => [{ id: s.id, group: "Today", title: "", messages: [] }, ...cs]);
+      setChats((cs) => [{ id: s.id, group: "Today", title: newChatLabel, messages: [] }, ...cs]);
       setActiveIdState(s.id);
     } catch { /* ignore */ }
   };
@@ -111,7 +111,12 @@ export function useChatHistory() {
       if (i >= parts.length && timerRef.current) {
         clearInterval(timerRef.current);
         setGenerating(false);
-        addMessage(sessionId, "assistant", full).catch(() => {});  // DB ga saqlash
+        // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
+        addMessage(sessionId, "assistant", full)
+          .then((saved) =>
+            setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
+          )
+          .catch(() => {});
       }
     }, 26);
   };
@@ -124,9 +129,9 @@ export function useChatHistory() {
     let sessionId = activeId;
     if (!sessionId) {
       try {
-        const s = await createSession("");
+        const s = await createSession(newChatLabel);
         loaded.current.add(s.id);
-        setChats((cs) => [{ id: s.id, group: "Today", title: "", messages: [] }, ...cs]);
+        setChats((cs) => [{ id: s.id, group: "Today", title: newChatLabel, messages: [] }, ...cs]);
         setActiveIdState(s.id);
         sessionId = s.id;
       } catch { return; }
@@ -168,6 +173,13 @@ export function useChatHistory() {
     pendingRef.current = setTimeout(() => respond(activeId, lastUser), 600);
   };
 
+  // Xabarga like/dislike — mahalliy holatni yangilab, DB ga saqlaymiz
+  const voteMsg = (messageId: string, vote: "up" | "down" | null) => {
+    if (!activeId) return;
+    setActiveMsgs(activeId, (m) => m.map((x) => (x.id === messageId ? { ...x, vote } : x)));
+    voteMessage(activeId, messageId, vote).catch(() => {});
+  };
+
   const active = chats.find((c) => c.id === activeId) || { messages: [] as Msg[], title: "" };
   const rawMsgs = active.messages || [];
   const isEmpty = rawMsgs.length === 0 && !thinking;
@@ -176,6 +188,6 @@ export function useChatHistory() {
 
   return {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate,
+    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate, voteMsg,
   };
 }

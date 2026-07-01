@@ -16,6 +16,7 @@ class WeeklyPoint(Base):
 
 class RecentActivityItem(Base):
     name: str
+    action: str
     when: datetime
 
 
@@ -24,6 +25,9 @@ class DashboardStatsView(Base):
     total_sessions: int
     total_messages: int
     total_departments: int
+    online: int
+    total_likes: int
+    total_dislikes: int
     departments: list[DeptStat]
     weekly: list[WeeklyPoint]
     recent_activity: list[RecentActivityItem]

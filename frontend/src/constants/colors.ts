@@ -4,8 +4,8 @@
 // .module.css fayllarida ham (literal hex sifatida) takrorlangan — shu yerda o'zgartirsangiz,
 // CSS fayllarda ham mos ravishda yangilang.
 export const NAVY = "#173f73"; // logotip rangi — asosiy brend rangi
-export const MID_BLUE = "#2a6f97";
-export const ACCENT = "#3a7ca5";
+export const MID_BLUE = "#1e4b64";
+export const ACCENT = "#224f6b";
 export const LIGHT_BLUE = "#7fb3d2";
 export const PALE_BLUE = "#bfe0f0";
 

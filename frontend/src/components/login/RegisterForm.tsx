@@ -1,5 +1,6 @@
 import { KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
+import { GrLogin } from "react-icons/gr";
 import LangSwitcher from "../LangSwitcher";
 import type { Lang } from "../../types/lang";
 import styles from "./LoginForm.module.css";
@@ -114,7 +115,7 @@ export default function RegisterForm(p: Props) {
           {p.loading ? <span className={styles.spinner} /> : (
             <span className={`${styles.submitContent} ${styles.submitText}`}>
               {t.submit}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+              <GrLogin size={17} color="#fff" />
             </span>
           )}
         </button>
