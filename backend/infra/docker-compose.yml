@@ -174,11 +174,11 @@ services:
 
 volumes:
   postgres-data:
-    name: app-postgres-data
+    name: turon-ai-app-postgres-data
   redis-data:
-    name: app-redis-data
+    name: turon-ai-app-redis-data
   celery-beat-state:
-    name: app-celery-beat-state
+    name: turon-ai-app-celery-beat-state
 
 networks:
   app-network:
