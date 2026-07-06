@@ -1,0 +1,7 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "80:4173"
+    restart: unless-stopped
+    container_name: turon-frontend
