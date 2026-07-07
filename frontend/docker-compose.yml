@@ -1,7 +1,13 @@
+name: turon-ai-frontend
+
 services:
   frontend:
-    build: .
-    ports:
-      - "80:4173"
-    restart: unless-stopped
     container_name: turon-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+    restart: always
+    ports:
+      - "127.0.0.1:3001:3001"
