@@ -65,10 +65,14 @@ async function readError(res: Response, fallback: string): Promise<string> {
 
 // Avtorizatsiyalangan so'rov: 401 bo'lsa refresh token bilan bir marta qayta uradi
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  // FormData (fayl yuklash) bo'lsa Content-Type'ni brauzerning o'zi (boundary bilan) qo'yadi —
+  // shuning uchun majburan "application/json" bermaymiz. Qolgan hollarda avvalgidek JSON.
+  const isForm = init.body instanceof FormData;
+  const baseHeaders: Record<string, string> = isForm ? {} : { "Content-Type": "application/json" };
   const doFetch = () =>
     fetch(`${API_URL}${path}`, {
       ...init,
-      headers: { "Content-Type": "application/json", ...authHeaders(), ...(init.headers || {}) },
+      headers: { ...baseHeaders, ...authHeaders(), ...(init.headers || {}) },
     });
 
   let res = await doFetch();

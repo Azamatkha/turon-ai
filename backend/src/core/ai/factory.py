@@ -1,13 +1,13 @@
 import httpx
 
-from src.core.ai.clients.anthropic import AnthropicClient
+from src.core.ai.clients.ollama import OllamaClient
 from src.core.ai.interfaces import BaseAIClient
 from src.core.errors.exceptions import InfrastructureException
 
 
 class AIClientFactory:
 
-    _clients = {"anthropic": AnthropicClient}
+    _clients = {"ollama": OllamaClient}
 
     @classmethod
     def create(cls, name: str, http: httpx.AsyncClient) -> BaseAIClient:

@@ -1,0 +1,100 @@
+// Bilim bazasi xizmati — admin yuklagan ma'lumotni backendga jo'natadi.
+// Backend uni chunk'larga bo'lib, embed qilib, Qdrant vektorli bazaga yozadi.
+
+import { apiFetch } from "./authService";
+
+export interface UploadResult {
+  // Bazaga yozilgan bo'laklar (chunk) soni — tasdiq uchun
+  chunks: number;
+}
+
+// Ro'yxatda ko'rsatiladigan bitta yuklangan ma'lumot (sarlavha bo'yicha guruhlangan)
+export interface KnowledgeItem {
+  title: string;
+  chunks: number;
+  lang: string;
+  preview: string;
+}
+
+export interface KnowledgeChunk {
+  chunk_index: number;
+  text: string;
+}
+
+// Bitta sarlavhaning to'liq tafsiloti (barcha bo'laklar)
+export interface KnowledgeDetail {
+  title: string;
+  lang: string;
+  chunks: KnowledgeChunk[];
+}
+
+async function readError(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = await res.json();
+    return data.detail || data.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// Qo'lda kiritilgan matnni yuborish (faylsiz) — JSON
+export async function uploadText(title: string, text: string): Promise<UploadResult> {
+  const res = await apiFetch("/v1/admin/knowledge/upload", {
+    method: "POST",
+    body: JSON.stringify({ title: title.trim(), text: text.trim() }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Yuklashda xatolik"));
+  return res.json();
+}
+
+// Yuklangan ma'lumotlar ro'yxati
+export async function listKnowledge(): Promise<KnowledgeItem[]> {
+  const res = await apiFetch("/v1/admin/knowledge");
+  if (!res.ok) throw new Error(await readError(res, "Ma'lumotlarni olishda xatolik"));
+  return res.json();
+}
+
+// Bitta sarlavhaning to'liq matni
+export async function getKnowledgeDetail(title: string): Promise<KnowledgeDetail> {
+  const res = await apiFetch(
+    `/v1/admin/knowledge/detail?title=${encodeURIComponent(title)}`
+  );
+  if (!res.ok) throw new Error(await readError(res, "Ma'lumotni olishda xatolik"));
+  return res.json();
+}
+
+// Ma'lumotni (sarlavha bo'yicha barcha bo'laklarni) o'chirish
+export async function deleteKnowledge(title: string): Promise<void> {
+  const res = await apiFetch(
+    `/v1/admin/knowledge?title=${encodeURIComponent(title)}`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) throw new Error(await readError(res, "O'chirishda xatolik"));
+}
+
+// Ma'lumotni tahrirlash (eskisini o'chirib, yangi matnni qayta yozadi)
+export async function updateKnowledge(
+  oldTitle: string,
+  title: string,
+  text: string
+): Promise<UploadResult> {
+  const res = await apiFetch("/v1/admin/knowledge", {
+    method: "PUT",
+    body: JSON.stringify({ old_title: oldTitle, title: title.trim(), text: text.trim() }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Tahrirlashda xatolik"));
+  return res.json();
+}
+
+// .docx faylni yuborish — multipart/form-data
+export async function uploadFile(title: string, file: File): Promise<UploadResult> {
+  const form = new FormData();
+  form.append("title", title.trim());
+  form.append("file", file);
+  const res = await apiFetch("/v1/admin/knowledge/upload", {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readError(res, "Yuklashda xatolik"));
+  return res.json();
+}

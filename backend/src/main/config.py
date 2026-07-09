@@ -131,13 +131,13 @@ class AdministrationConfig(BaseModel):
 
 
 class AIConfig(BaseModel):
-    AI_PROVIDER: str
+    AI_PROVIDER: str = "ollama"
+    OLLAMA_BASE_URL: str = ""
+    OLLAMA_MODEL: str = "qwen3.5:latest"
 
-    ANTHROPIC_API_KEY: str
-    ANTHROPIC_MODEL: str
-    ANTHROPIC_BASE_URL: str
-    ANTHROPIC_VERSION: str
-    ANTHROPIC_FALLBACK_MODELS: list[str] = Field(default_factory=list)
+    # Embedding (matn -> vektor). Same Ollama server, different model.
+    EMBEDDING_MODEL: str = "mxbai-embed-large:latest"
+    EMBEDDING_DIM: int = 1024
 
     TIMEOUT_SECONDS: int
     MAX_RETRIES: int
@@ -146,20 +146,13 @@ class AIConfig(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    @field_validator("ANTHROPIC_FALLBACK_MODELS", mode="before")
-    @classmethod
-    def parse_models_list(cls, v: Any) -> list[str]:
-        if isinstance(v, list):
-            return v
-        if isinstance(v, str) and v.strip().startswith("["):
-            try:
-                parsed = json.loads(v)
-                if isinstance(parsed, list):
-                    return [str(i) for i in parsed]
-            except json.JSONDecodeError:
-                pass
-        sep = "," if "," in (v or "") else ";"
-        return [s.strip() for s in str(v or "").split(sep) if s.strip()]
+
+class QdrantConfig(BaseModel):
+    QDRANT_HOST: str = "qdrant"
+    QDRANT_PORT: int = 6333
+    QDRANT_COLLECTION: str = "knowledge"
+
+    model_config = ConfigDict(extra="ignore")
 
 
 class AppConfig(BaseModel):
@@ -232,6 +225,7 @@ class Config(BaseModel):
     broadcasting: BroadcastingConfig
     administration: AdministrationConfig
     ai: AIConfig
+    qdrant: QdrantConfig
 
     model_config = ConfigDict(extra="ignore")
 
@@ -264,6 +258,7 @@ def get_settings() -> Config:
         broadcasting=BroadcastingConfig(**merged_env),
         administration=AdministrationConfig(**merged_env),
         ai=AIConfig(**merged_env),
+        qdrant=QdrantConfig(**merged_env),
     )
 
 

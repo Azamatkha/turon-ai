@@ -15,7 +15,9 @@ pydantic-settings
 pyjwt
 python-dotenv
 python-multipart
+qdrant-client
 redis
 sqlalchemy
+trafilatura
 uuid6
 uvicorn

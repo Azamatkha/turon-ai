@@ -10,5 +10,6 @@ frontend/.env
 backend/data/documents/
 
 .vscode/
+.idea/
 .claude/
 CLAUDE.md

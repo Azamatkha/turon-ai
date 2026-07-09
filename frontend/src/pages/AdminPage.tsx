@@ -7,6 +7,7 @@ import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
 import DashboardView from "../components/admin/DashboardView";
+import KnowledgeListView from "../components/admin/KnowledgeListView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
 import FilterSelect from "../components/admin/FilterSelect";
@@ -82,6 +83,7 @@ export default function AdminPage() {
 
   const onDashboard = view === "dashboard";
   const onUsers = view === "users";
+  const onKnowledgeList = view === "knowledgeList";
 
   const openAdd = () => {
     setFName(""); setFUser(""); setFDept(""); setFPass(""); setFRole("Xodim");
@@ -150,10 +152,11 @@ export default function AdminPage() {
       />
 
       <main className={styles.main}>
-        <PageHeader onUsers={onUsers} search={search} setSearch={setSearch} onAddUser={openAdd} />
+        <PageHeader view={view} search={search} setSearch={setSearch} onAddUser={openAdd} />
 
         <div className={styles.content}>
           {onDashboard && <DashboardView mounted={mounted} />}
+          {onKnowledgeList && <KnowledgeListView mounted={mounted} />}
           {onUsers && (
             <>
               <div style={{ marginBottom: 14 }}>

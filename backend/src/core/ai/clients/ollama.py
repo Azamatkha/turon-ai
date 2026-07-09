@@ -1,0 +1,168 @@
+import json
+import time
+from typing import Any
+
+import httpx
+
+from loggers import get_logger
+from src.core.ai.interfaces import BaseAIClient
+from src.core.ai.parsing import extract_json
+from src.core.ai.prompts import DIAGNOSTIC_PROMPT, DIAGNOSTIC_SYSTEM
+from src.core.ai.schemas import AttemptInfo, CallResult, DiagnosticResponse
+from src.core.errors.exceptions import InfrastructureException
+from src.core.patterns.singleton import singleton
+from src.main.config import config
+
+logger = get_logger(__name__)
+
+
+@singleton
+class OllamaClient(BaseAIClient):
+    def __init__(self, http: httpx.AsyncClient) -> None:
+        self.base_url = config.ai.OLLAMA_BASE_URL.rstrip("/")
+        self.model = config.ai.OLLAMA_MODEL
+        self.timeout = config.ai.TIMEOUT_SECONDS
+        self.default_temperature = config.ai.DEFAULT_TEMPERATURE
+        self.http = http
+
+    # ----- helpers ----- #
+    @staticmethod
+    def _build_messages(
+        prompt: str, system_prompt: str | None
+    ) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        return messages
+
+    async def _chat(
+        self,
+        messages: list[dict[str, Any]],
+        temperature: float | None,
+        max_tokens: int,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": (
+                temperature if temperature is not None else self.default_temperature
+            ),
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        try:
+            resp = await self.http.post(
+                f"{self.base_url}/v1/chat/completions",
+                json=payload,
+                timeout=self.timeout,
+            )
+        except httpx.HTTPError as exc:
+            raise InfrastructureException(f"Ollama connection error: {exc}") from exc
+
+        if resp.status_code != 200:
+            raise InfrastructureException(
+                f"Ollama error {resp.status_code}: {resp.text[:200]}"
+            )
+        data: dict[str, Any] = resp.json()
+        return data
+
+    @staticmethod
+    def _first_text(data: dict[str, Any]) -> str:
+        choices = data.get("choices") or []
+        if not choices:
+            return ""
+        message = choices[0].get("message") or {}
+        return str(message.get("content", ""))
+
+    # ----- interface ----- #
+    async def generate_text(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        system_prompt: str | None = None,
+    ) -> str:
+        messages = self._build_messages(prompt, system_prompt)
+        data = await self._chat(messages, temperature, max_tokens)
+        return self._first_text(data)
+
+    async def generate_json(
+        self,
+        prompt: str | list[dict[str, Any]],
+        schema: dict[str, Any] | None = None,
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        system_prompt: str | None = None,
+    ) -> CallResult:
+        if isinstance(prompt, list):
+            messages: list[dict[str, Any]] = list(prompt)
+            if system_prompt:
+                messages.insert(0, {"role": "system", "content": system_prompt})
+        else:
+            messages = self._build_messages(prompt, system_prompt)
+
+        data = await self._chat(messages, temperature, max_tokens)
+        text = self._first_text(data)
+        try:
+            parsed: Any = json.loads(extract_json(text))
+        except (json.JSONDecodeError, ValueError):
+            parsed = {"raw": text}
+
+        return CallResult(
+            data=parsed,
+            used_model=self.model,
+            fallback_used=False,
+            total_attempts=1,
+            usage=data.get("usage", {}) or {},
+            model=self.model,
+            model_chain=[self.model],
+            attempts=[
+                AttemptInfo(model=self.model, attempt=1, ok=True, status=200)
+            ],
+        )
+
+    async def ping(self) -> DiagnosticResponse:
+        start = time.perf_counter()
+        messages = self._build_messages(DIAGNOSTIC_PROMPT, DIAGNOSTIC_SYSTEM)
+        try:
+            data = await self._chat(messages, 0.0, 64)
+        except InfrastructureException as exc:
+            latency = int((time.perf_counter() - start) * 1000)
+            return DiagnosticResponse(
+                ok=False,
+                latency_ms=latency,
+                used_model=self.model,
+                fallback_used=False,
+                total_attempts=1,
+                model_chain=[self.model],
+                attempts=[
+                    AttemptInfo(
+                        model=self.model,
+                        attempt=1,
+                        ok=False,
+                        error_type=str(exc),
+                    )
+                ],
+                response=None,
+            )
+
+        latency = int((time.perf_counter() - start) * 1000)
+        text = self._first_text(data)
+        try:
+            response_obj: dict[str, Any] | None = json.loads(extract_json(text))
+        except (json.JSONDecodeError, ValueError):
+            response_obj = {"raw": text}
+
+        return DiagnosticResponse(
+            ok=True,
+            latency_ms=latency,
+            used_model=self.model,
+            fallback_used=False,
+            total_attempts=1,
+            model_chain=[self.model],
+            attempts=[AttemptInfo(model=self.model, attempt=1, ok=True, status=200)],
+            response=response_obj,
+        )

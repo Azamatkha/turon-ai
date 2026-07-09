@@ -7,7 +7,9 @@
   background: #fff;
   border: 1px solid #e6eae3;
   border-radius: 18px;
-  overflow: hidden;
+  /* overflow: visible — qator "..." dropdown menyusi kesilmasligi uchun.
+     Yumaloq burchaklar header va oxirgi qatorga radius berish orqali saqlanadi. */
+  overflow: visible;
   box-shadow: 0 1px 3px rgba(23, 63, 115, 0.04);
 }
 
@@ -17,6 +19,7 @@
   gap: 16px;
   padding: 14px 22px;
   border-bottom: 1px solid #eef1ec;
+  border-radius: 18px 18px 0 0;
   background: #fafbf9;
   font-size: 11.5px;
   font-weight: 700;
@@ -36,6 +39,11 @@
 
 .rowBorder {
   border-bottom: 1px solid #f1f4ef;
+}
+
+/* Oxirgi qatorning pastki burchaklari yumaloq (hover foni to'g'ri ko'rinishi uchun) */
+.row:last-child {
+  border-radius: 0 0 18px 18px;
 }
 
 /* =====================

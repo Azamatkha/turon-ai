@@ -1,6 +1,6 @@
 export type AdminRole = "Xodim" | "Admin";
 export type AdminStatus = "Active" | "Suspended";
-export type AdminView = "dashboard" | "users";
+export type AdminView = "dashboard" | "users" | "knowledgeList";
 
 export interface AdminUser {
   id: string;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Chat, Msg } from "../types/chat";
-import { pickReply } from "../services/chatBotService";
+import { askReply } from "../services/chatBotService";
 import {
   listSessions, createSession, getSession, deleteSession, addMessage, renameSession, voteMessage,
 } from "../services/chatHistoryService";
@@ -96,8 +96,13 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     });
   };
 
-  const respond = (sessionId: string, userText: string) => {
-    const full = pickReply(userText);
+  const respond = async (
+    sessionId: string,
+    userText: string,
+    history: { role: string; content: string }[] = []
+  ) => {
+    // Backend RAG endpointidan haqiqiy javobni olamiz (Qdrant qidiruv + Qwen + history)
+    const full = await askReply(userText, history);
     const tempId = "a" + Date.now();
     setThinking(false);
     setActiveMsgs(sessionId, (m) => [...m, { id: tempId, role: "assistant", text: "", time: new Date().toISOString() }]);
@@ -137,6 +142,12 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       } catch { return; }
     }
 
+    // Oldingi suhbat (shu savoldan avvalgi xabarlar) — mavzu davomiyligi uchun
+    const prevMsgs = chats.find((c) => c.id === sessionId)?.messages ?? [];
+    const history = prevMsgs
+      .filter((m) => m.text)
+      .map((m) => ({ role: m.role, content: m.text }));
+
     const um: Msg = { id: "u" + Date.now(), role: "user", text, time: new Date().toISOString() };
     setChats((cs) => cs.map((c) => {
       if (c.id !== sessionId) return c;
@@ -147,7 +158,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     setThinking(true);
     setGenerating(true);
     addMessage(sessionId, "user", text).catch(() => {});  // DB ga saqlash
-    pendingRef.current = setTimeout(() => respond(sessionId, text), 750);
+    pendingRef.current = setTimeout(() => respond(sessionId, text, history), 750);
   };
 
   const stop = () => {
@@ -159,18 +170,19 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
   const regenerate = () => {
     if (generating || !activeId) return;
     const msgs = chats.find((c) => c.id === activeId)?.messages || [];
-    let lastUser = "";
+    let lastUser = ""; let idx = -1;
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].role === "user") { lastUser = msgs[i].text; break; }
+      if (msgs[i].role === "user") { lastUser = msgs[i].text; idx = i; break; }
     }
     if (!lastUser) return;
+    const history = msgs.slice(0, idx).filter((m) => m.text).map((m) => ({ role: m.role, content: m.text }));
     setActiveMsgs(activeId, (m) => {
       const copy = [...m];
       while (copy.length && copy[copy.length - 1].role === "assistant") copy.pop();
       return copy;
     });
     setThinking(true); setGenerating(true);
-    pendingRef.current = setTimeout(() => respond(activeId, lastUser), 600);
+    pendingRef.current = setTimeout(() => respond(activeId, lastUser, history), 600);
   };
 
   // Xabarga like/dislike — mahalliy holatni yangilab, DB ga saqlaymiz

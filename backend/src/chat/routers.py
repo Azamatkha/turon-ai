@@ -20,7 +20,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
+from src.core.ai.dependencies import get_ai_client
+from src.core.ai.embeddings import OllamaEmbedder, get_embedder
+from src.core.ai.interfaces import BaseAIClient
 from src.core.schemas import SuccessResponse
+from src.core.vectorstore.dependencies import get_vector_store
+from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.schemas import AnswerResult, QuestionRequest
+from src.knowledge.usecases import AnswerQuestionUseCase
 from src.user.auth.dependencies import get_current_user
 from src.user.models import User
 from src.chat.schemas import (
@@ -136,3 +143,18 @@ async def vote_message(
         message_id=message_id,
         vote=data.vote,
     )
+
+
+@router.post("/ask", response_model=AnswerResult)
+async def ask(
+    data: QuestionRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+) -> AnswerResult:
+    """Xodim savoli -> Qdrant qidiruv -> Qwen javob (RAG)."""
+    use_case = AnswerQuestionUseCase(
+        embedder=embedder, store=store, ai_client=ai_client
+    )
+    return await use_case.execute(question=data.question, history=data.history)

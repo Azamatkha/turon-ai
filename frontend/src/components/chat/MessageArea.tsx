@@ -4,6 +4,7 @@ import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT } from "./theme";
+import MessageContent from "./MessageContent";
 import styles from "./MessageArea.module.css";
 
 const suggIcons = ["✦", "✎", "◷", "‹/›"];
@@ -101,7 +102,7 @@ export default function MessageArea({
                 <div className={styles.botAvatar}><Logo size={17} /></div>
                 <div className={styles.botCol}>
                   <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(23, 63, 115,.04)" }}>
-                    {m.text}
+                    <MessageContent text={m.text} />
                   </div>
 
                   {showActions && (

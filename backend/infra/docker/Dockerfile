@@ -16,8 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY infra/requirements/prod.txt infra/requirements/base.txt ./requirements/
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir --user -r requirements/prod.txt
-
+      --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+    && pip install --no-cache-dir --user \
+      --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+      -r requirements/prod.txt
 # --- Final stage ---
 FROM python:3.13-slim-bookworm
 

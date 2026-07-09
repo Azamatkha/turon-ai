@@ -172,7 +172,26 @@ services:
           cpus: '1'
           memory: 1G
 
+  qdrant:
+    container_name: template-qdrant
+    image: qdrant/qdrant:v1.12.4
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API + web dashboard
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
 volumes:
+  qdrant-data:
+    name: turon-ai-app-qdrant-data
   postgres-data:
     name: turon-ai-app-postgres-data
   redis-data:
