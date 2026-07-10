@@ -3,13 +3,17 @@ from uuid import UUID
 from fastapi import Depends
 
 from loggers import get_logger
+from src.core.ai.dependencies import get_ai_client
+from src.core.ai.interfaces import BaseAIClient
 from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.schemas import SuccessResponse
 from src.core.utils.datetime_utils import get_utc_now
+from src.chat.prompts import TITLE_SYSTEM
 from src.chat.schemas import (
     AddMessageModel,
+    GenerateTitleResult,
     MessageView,
     SessionDetailView,
     SessionView,
@@ -129,6 +133,54 @@ class AddMessageUseCase:
             return MessageView.model_validate(message)
 
 
+class GenerateTitleUseCase:
+    """Birinchi xabar matnidan Qwen orqali qisqa suhbat sarlavhasi yasaydi
+    (ChatGPT uslubida). DB'ga tegmaydi — faqat matn qaytaradi."""
+
+    MAX_TOKENS = 32
+    MAX_LEN = 60
+
+    def __init__(self, ai_client: BaseAIClient) -> None:
+        self.ai_client = ai_client
+
+    async def execute(self, text: str) -> GenerateTitleResult:
+        raw = await self.ai_client.generate_text(
+            text,
+            system_prompt=TITLE_SYSTEM,
+            temperature=0.3,
+            max_tokens=self.MAX_TOKENS,
+        )
+        title = raw.strip().strip('"').strip("'").strip()
+        if not title:
+            title = text.strip()[:42]
+        if len(title) > self.MAX_LEN:
+            title = title[: self.MAX_LEN].rstrip()
+        return GenerateTitleResult(title=title)
+
+
+class DeleteMessageUseCase:
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(
+        self, user_id: UUID, session_id: UUID, message_id: UUID
+    ) -> SuccessResponse:
+        async with self.uow as uow:
+            s = await uow.chat_sessions.get_single(
+                uow.session, id=session_id, user_id=user_id
+            )
+            if not s:
+                raise InstanceNotFoundException(SESSION_NOT_FOUND)
+            msg = await uow.chat_messages.get_single(
+                uow.session, id=message_id, session_id=session_id
+            )
+            if not msg:
+                raise InstanceNotFoundException("Xabar topilmadi")
+            await uow.chat_messages.delete(uow.session, id=message_id)
+            await uow.commit()
+            return SuccessResponse(success=True)
+
+
 class VoteMessageUseCase:
     def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
         self.uow = uow
@@ -193,3 +245,15 @@ def get_vote_message_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> VoteMessageUseCase:
     return VoteMessageUseCase(uow=uow)
+
+
+def get_delete_message_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> DeleteMessageUseCase:
+    return DeleteMessageUseCase(uow=uow)
+
+
+def get_generate_title_use_case(
+    ai_client: BaseAIClient = Depends(get_ai_client),
+) -> GenerateTitleUseCase:
+    return GenerateTitleUseCase(ai_client=ai_client)

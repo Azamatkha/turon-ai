@@ -147,6 +147,16 @@ class AIConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class ScrapingConfig(BaseModel):
+    # Bank tarmog'i tashqi HTTPS'ni to'g'ridan-to'g'ri bloklashi mumkin —
+    # shu holatda korporativ proxy manzili shu yerga qo'yiladi:
+    # PROXY_URL=http://<proxy-ip>:<port>
+    # Bo'sh bo'lsa, scraper proxy'siz to'g'ridan-to'g'ri ulanadi.
+    PROXY_URL: str = ""
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class QdrantConfig(BaseModel):
     QDRANT_HOST: str = "qdrant"
     QDRANT_PORT: int = 6333
@@ -226,6 +236,7 @@ class Config(BaseModel):
     administration: AdministrationConfig
     ai: AIConfig
     qdrant: QdrantConfig
+    scraping: ScrapingConfig
 
     model_config = ConfigDict(extra="ignore")
 
@@ -259,6 +270,7 @@ def get_settings() -> Config:
         administration=AdministrationConfig(**merged_env),
         ai=AIConfig(**merged_env),
         qdrant=QdrantConfig(**merged_env),
+        scraping=ScrapingConfig(**merged_env),
     )
 
 

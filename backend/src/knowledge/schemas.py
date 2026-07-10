@@ -61,3 +61,8 @@ class SourceRef(Base):
 class AnswerResult(Base):
     answer: str
     sources: list[SourceRef]
+    # Debug: token statistikasi. finish_reason == "length" bo'lsa, javob
+    # max_tokens tugagani sabab kesilib qolgan bo'lishi mumkin.
+    finish_reason: str = ""
+    completion_tokens: int = 0
+    max_tokens: int = 0

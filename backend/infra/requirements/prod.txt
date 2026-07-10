@@ -24,6 +24,8 @@ anyio==4.12.1
     #   starlette
 argon2-cffi==25.1.0
     # via -r base.in
+beautifulsoup4
+    # via -r base.in  (qo'lda qo'shildi; sayt HTML'idan qo'shimcha maydonlarni qidirish)
 argon2-cffi-bindings==25.1.0
     # via argon2-cffi
 asgiref==3.11.1

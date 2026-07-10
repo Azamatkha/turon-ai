@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database.session import get_session
 from src.core.errors.exceptions import UnauthorizedException
 from src.core.redis.dependencies import get_redis_client
+from src.core.utils.datetime_utils import get_utc_now
 from src.main.config import config
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.redis_keys import auth_redis_keys
@@ -20,6 +21,21 @@ from src.user.repositories import UserRepository
 
 access_token_header = APIKeyHeader(name="Authorization", scheme_name="access-token")
 refresh_token_header = APIKeyHeader(name="Authorization", scheme_name="refresh-token")
+
+# Har so'rovda yozmaslik uchun: last_seen_at shuncha soniyadan kamida bir marta
+# yangilanadi (admin dashboard "onlayn" hisoblagichi shunga tayanadi).
+_LAST_SEEN_THROTTLE_SECONDS = 60
+
+
+async def _touch_last_seen(user: User, session: AsyncSession) -> None:
+    now = get_utc_now()
+    stale = (
+        user.last_seen_at is None
+        or (now - user.last_seen_at).total_seconds() > _LAST_SEEN_THROTTLE_SECONDS
+    )
+    if stale:
+        user.last_seen_at = now
+        await session.commit()
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,6 +115,8 @@ async def get_current_user_with_session(
     user = await user_repository.get_single(session, id=user_id)
     if not user:
         raise credentials_exception
+
+    await _touch_last_seen(user, session)
 
     return AuthenticatedUser(user=user, session_id=session_id)
 

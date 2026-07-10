@@ -1,6 +1,7 @@
 alembic
 alembic-postgresql-enum
 argon2-cffi
+beautifulsoup4
 asgiref
 asyncpg
 celery

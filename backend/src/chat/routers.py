@@ -33,6 +33,8 @@ from src.user.models import User
 from src.chat.schemas import (
     AddMessageModel,
     CreateSessionModel,
+    GenerateTitleRequest,
+    GenerateTitleResult,
     MessageView,
     RenameSessionModel,
     SessionDetailView,
@@ -42,14 +44,18 @@ from src.chat.schemas import (
 from src.chat.usecases import (
     AddMessageUseCase,
     CreateSessionUseCase,
+    DeleteMessageUseCase,
     DeleteSessionUseCase,
+    GenerateTitleUseCase,
     GetSessionUseCase,
     ListSessionsUseCase,
     RenameSessionUseCase,
     VoteMessageUseCase,
     get_add_message_use_case,
     get_create_session_use_case,
+    get_delete_message_use_case,
     get_delete_session_use_case,
+    get_generate_title_use_case,
     get_get_session_use_case,
     get_list_sessions_use_case,
     get_rename_session_use_case,
@@ -57,6 +63,16 @@ from src.chat.usecases import (
 )
 
 router = APIRouter()
+
+
+@router.post("/title", response_model=GenerateTitleResult)
+async def generate_title(
+    data: GenerateTitleRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[GenerateTitleUseCase, Depends(get_generate_title_use_case)],
+) -> GenerateTitleResult:
+    """Birinchi xabar matnidan Qwen orqali qisqa suhbat sarlavhasi yasaydi."""
+    return await use_case.execute(text=data.text)
 
 
 @router.get("/sessions", response_model=list[SessionView])
@@ -123,6 +139,21 @@ async def add_message(
     """Suhbatga xabar qo'shish (role: 'user' yoki 'assistant')."""
     return await use_case.execute(
         user_id=current_user.id, session_id=session_id, data=data
+    )
+
+
+@router.delete(
+    "/sessions/{session_id}/messages/{message_id}", response_model=SuccessResponse
+)
+async def delete_message(
+    session_id: UUID,
+    message_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[DeleteMessageUseCase, Depends(get_delete_message_use_case)],
+) -> SuccessResponse:
+    """Xabarni o'chirish (masalan regenerate qilinganda eski javob o'chiriladi)."""
+    return await use_case.execute(
+        user_id=current_user.id, session_id=session_id, message_id=message_id
     )
 
 

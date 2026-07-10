@@ -47,6 +47,14 @@ class AddMessageModel(Base):
         return value
 
 
+class GenerateTitleRequest(Base):
+    text: str
+
+
+class GenerateTitleResult(Base):
+    title: str
+
+
 class VoteMessageModel(Base):
     vote: str | None = None
 

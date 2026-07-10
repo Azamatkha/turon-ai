@@ -70,6 +70,10 @@ class ScrapeUrlUseCase:
             raise InstanceProcessingException(
                 "Sahifadan matn ajratib bo'lmadi (bo'sh yoki nomatn sahifa)"
             )
+        # Qayta scrape qilinganda avvalgi bo'laklarni o'chiramiz — deterministic ID
+        # bir xil chunk_index'larni ustiga yozadi, lekin chunk soni kamaysa
+        # ortiqcha eski bo'laklar qolib ketmasligi uchun avval tozalaymiz.
+        await self.store.delete_by_title(title)
         return await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
         ).execute(title=title, text=text, source_url=url)
@@ -186,10 +190,13 @@ class AnswerQuestionUseCase:
 
         # HOZIRCHA: kontekst topilsa — undan foydalanamiz; topilmasa — umumiy javob.
         if results:
-            context = "\n\n---\n\n".join(
-                f"[{payload.get('title', '')}]\n{payload.get('chunk_text', '')}"
-                for payload, _ in results
-            )
+            blocks = []
+            for payload, _ in results:
+                title = payload.get("title", "")
+                source_url = payload.get("source_url", "")
+                header = f"[{title}] (Manba: {source_url})" if source_url else f"[{title}]"
+                blocks.append(f"{header}\n{payload.get('chunk_text', '')}")
+            context = "\n\n---\n\n".join(blocks)
             base = f"MA'LUMOT (kontekst):\n{context}\n\nSAVOL: {question}"
         else:
             base = f"SAVOL: {question}"
@@ -205,7 +212,7 @@ class AnswerQuestionUseCase:
         else:
             prompt = base
 
-        answer = await self.ai_client.generate_text(
+        gen = await self.ai_client.generate_text_with_usage(
             prompt,
             system_prompt=RAG_SYSTEM,
             temperature=self.TEMPERATURE,
@@ -221,4 +228,10 @@ class AnswerQuestionUseCase:
                 seen.add(title)
                 sources.append(SourceRef(title=title, score=round(score, 3)))
 
-        return AnswerResult(answer=answer.strip(), sources=sources)
+        return AnswerResult(
+            answer=gen.text.strip(),
+            sources=sources,
+            finish_reason=gen.finish_reason,
+            completion_tokens=gen.completion_tokens,
+            max_tokens=gen.max_tokens,
+        )

@@ -8,7 +8,12 @@ from loggers import get_logger
 from src.core.ai.interfaces import BaseAIClient
 from src.core.ai.parsing import extract_json
 from src.core.ai.prompts import DIAGNOSTIC_PROMPT, DIAGNOSTIC_SYSTEM
-from src.core.ai.schemas import AttemptInfo, CallResult, DiagnosticResponse
+from src.core.ai.schemas import (
+    AttemptInfo,
+    CallResult,
+    DiagnosticResponse,
+    TextGenResult,
+)
 from src.core.errors.exceptions import InfrastructureException
 from src.core.patterns.singleton import singleton
 from src.main.config import config
@@ -42,18 +47,27 @@ class OllamaClient(BaseAIClient):
         temperature: float | None,
         max_tokens: int,
     ) -> dict[str, Any]:
+        # Ollama'ning o'ziga xos (native) /api/chat endpointi — OpenAI-uyg'un
+        # /v1/chat/completions'dan farqli, "think": false'ni ishonchli va
+        # kafolatli qo'llab-quvvatlaydi (reasoning modellarni o'ylashsiz javobga
+        # majburlaydi, aks holda butun token limiti "o'ylashga" ketib qolardi).
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "temperature": (
-                temperature if temperature is not None else self.default_temperature
-            ),
-            "max_tokens": max_tokens,
             "stream": False,
+            "think": False,
+            "options": {
+                "temperature": (
+                    temperature
+                    if temperature is not None
+                    else self.default_temperature
+                ),
+                "num_predict": max_tokens,
+            },
         }
         try:
             resp = await self.http.post(
-                f"{self.base_url}/v1/chat/completions",
+                f"{self.base_url}/api/chat",
                 json=payload,
                 timeout=self.timeout,
             )
@@ -69,10 +83,7 @@ class OllamaClient(BaseAIClient):
 
     @staticmethod
     def _first_text(data: dict[str, Any]) -> str:
-        choices = data.get("choices") or []
-        if not choices:
-            return ""
-        message = choices[0].get("message") or {}
+        message = data.get("message") or {}
         return str(message.get("content", ""))
 
     # ----- interface ----- #
@@ -84,9 +95,32 @@ class OllamaClient(BaseAIClient):
         max_tokens: int,
         system_prompt: str | None = None,
     ) -> str:
+        result = await self.generate_text_with_usage(
+            prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            system_prompt=system_prompt,
+        )
+        return result.text
+
+    async def generate_text_with_usage(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        system_prompt: str | None = None,
+    ) -> TextGenResult:
         messages = self._build_messages(prompt, system_prompt)
         data = await self._chat(messages, temperature, max_tokens)
-        return self._first_text(data)
+
+        return TextGenResult(
+            text=self._first_text(data),
+            finish_reason=str(data.get("done_reason", "")),
+            prompt_tokens=int(data.get("prompt_eval_count", 0)),
+            completion_tokens=int(data.get("eval_count", 0)),
+            max_tokens=max_tokens,
+        )
 
     async def generate_json(
         self,
@@ -116,7 +150,10 @@ class OllamaClient(BaseAIClient):
             used_model=self.model,
             fallback_used=False,
             total_attempts=1,
-            usage=data.get("usage", {}) or {},
+            usage={
+                "prompt_tokens": data.get("prompt_eval_count", 0),
+                "completion_tokens": data.get("eval_count", 0),
+            },
             model=self.model,
             model_chain=[self.model],
             attempts=[

@@ -4,8 +4,9 @@ Connection is lazy (the client only hits Qdrant on the first request),
 so this is safe to construct at startup even if Qdrant is not up yet.
 """
 
+import hashlib
 from typing import Any
-from uuid import uuid4
+from uuid import UUID
 
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
@@ -36,14 +37,25 @@ class QdrantStore:
                 vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
             )
 
+    @staticmethod
+    def _stable_id(payload: dict[str, Any]) -> str:
+        """title + chunk_index'dan barqaror ID hosil qiladi — bir xil ma'lumot
+        qayta yozilsa (masalan qayta scrape qilinganda), eskisi USTIGA yoziladi,
+        dublikat point paydo bo'lmaydi."""
+        key = f"{payload.get('title', '')}::{payload.get('chunk_index', 0)}"
+        digest = hashlib.md5(key.encode("utf-8")).hexdigest()
+        return str(UUID(digest))
+
     async def upsert(
         self,
         vectors: list[list[float]],
         payloads: list[dict[str, Any]],
     ) -> None:
-        """Write vectors + their payloads as points (random UUID ids)."""
+        """Write vectors + their payloads as points (deterministic ids)."""
         points = [
-            PointStruct(id=str(uuid4()), vector=vector, payload=payload)
+            PointStruct(
+                id=self._stable_id(payload), vector=vector, payload=payload
+            )
             for vector, payload in zip(vectors, payloads, strict=True)
         ]
         await self.client.upsert(collection_name=self.collection, points=points)

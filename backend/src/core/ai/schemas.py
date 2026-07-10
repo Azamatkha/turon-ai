@@ -31,3 +31,17 @@ class CallResult(Base):
     model: str = ""
     model_chain: list[str] = []
     attempts: list[AttemptInfo] = []
+
+
+class TextGenResult(Base):
+    """generate_text natijasi + debug uchun token statistikasi.
+
+    finish_reason == "length" bo'lsa — javob max_tokens tugagani sabab
+    kesilib qolgan bo'lishi mumkin (masalan qwen ko'p "o'ylab" joy qoldirmagan).
+    """
+
+    text: str
+    finish_reason: str
+    prompt_tokens: int
+    completion_tokens: int
+    max_tokens: int
