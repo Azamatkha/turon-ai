@@ -4,7 +4,7 @@ import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
-import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
+import { ACCENT, PRIMARY, PRIMARY_ON_DARK, getSideTokens } from "./theme";
 import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
@@ -54,6 +54,8 @@ export default function MessageArea({
   scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, onRegenerate, tk, isDark, s, onVote,
 }: MessageAreaProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Foydalanuvchi xabari foni sidebar rangi bilan bir xil (light mode uchun so'ralgan)
+  const side = getSideTokens(isDark);
 
   const copyMsg = (m: Msg) => {
     navigator.clipboard?.writeText(toPlainText(m.text)).then(() => {
@@ -98,7 +100,7 @@ export default function MessageArea({
               return (
                 <div key={m.id} className={`${styles.messageRow} ${styles.messageRowUser}`}>
                   <div className={styles.bubbleColUser}>
-                    <div className={styles.bubbleUser}>{m.text}</div>
+                    <div className={styles.bubbleUser} style={{ background: side.bg }}>{m.text}</div>
                     {m.time && <div className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>}
                   </div>
                 </div>
@@ -106,8 +108,12 @@ export default function MessageArea({
             }
 
             const isLast = idx === rawMsgs.length - 1;
-            // Yozib bo'lgan (yoki to'xtatilgan) bot javobida amallar qatorini ko'rsatamiz
-            const showActions = !!m.text && !(generating && isLast);
+            const isStreaming = generating && isLast;
+            // Amal tugmalari javob tugagach ko'rinadi; token hisoblagichi esa yozilish
+            // paytida ham ko'rinadi (real vaqtda 1,2,3... sanab boradi).
+            const showActions = !!m.text && !isStreaming;
+            const hasTokens = !!m.debug && !!m.text && m.debug.completionTokens > 0;
+            const showFooter = showActions || hasTokens;
             const v = m.vote;
 
             return (
@@ -118,9 +124,10 @@ export default function MessageArea({
                     <MessageContent text={m.text} />
                   </div>
 
-                  {showActions && (
-                    <div className={styles.footerRow}>
-                    <div className={styles.actions} style={{ color: tk.muted }}>
+                  {showFooter && (
+                    <div className={styles.footerRow} style={{ color: tk.muted }}>
+                    {showActions && (
+                    <div className={styles.actions}>
                       <button onClick={() => copyMsg(m)} className={styles.actBtn} data-tip={copiedId === m.id ? s.copied : s.copy} aria-label={copiedId === m.id ? s.copied : s.copy}>
                         {copiedId === m.id ? (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f8a5b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -143,27 +150,26 @@ export default function MessageArea({
                         </button>
                       )}
                     </div>
-                    <div className={styles.metaRight} style={{ color: tk.muted }}>
-                      {/* Real-time token hisoblagichi — javob yozilishi bilan son o'zgaradi.
-                          finishReason === "length" bo'lsa (javob kesilgan) — qizil rangda. */}
-                      {m.debug && !!m.text && m.debug.completionTokens > 0 && (
-                        <span
-                          className={styles.tokenMeter}
-                          style={{ color: m.debug.finishReason === "length" ? "#c0392b" : tk.muted }}
-                        >
-                          <RiCopperCoinLine
-                            size={13}
-                            style={{ color: m.debug.finishReason === "length" ? "#c0392b" : ACCENT }}
-                          />
-                          {m.debug.completionTokens} token
-                        </span>
-                      )}
-                      {m.time && (
-                        <span className={`${styles.msgTimeBot} tip-end`} data-tip={fmtFullTime(m.time)}>
-                          {fmtTime(m.time)}
-                        </span>
-                      )}
-                    </div>
+                    )}
+                    {/* Real-time token hisoblagichi — javob yozilishi bilan son o'zgaradi
+                        (streaming paytida ham). finishReason === "length" bo'lsa — qizil. */}
+                    {m.debug && !!m.text && m.debug.completionTokens > 0 && (
+                      <span
+                        className={styles.tokenMeter}
+                        style={{ color: m.debug.finishReason === "length" ? "#c0392b" : tk.muted }}
+                      >
+                        <RiCopperCoinLine
+                          size={13}
+                          style={{ color: m.debug.finishReason === "length" ? "#c0392b" : ACCENT }}
+                        />
+                        {m.debug.completionTokens} token
+                      </span>
+                    )}
+                    {!isStreaming && m.time && (
+                      <span className={`${styles.msgTimeBot} tip-end`} data-tip={fmtFullTime(m.time)}>
+                        {fmtTime(m.time)}
+                      </span>
+                    )}
                     </div>
                   )}
                 </div>

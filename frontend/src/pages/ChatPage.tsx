@@ -114,7 +114,7 @@ export default function ChatPage() {
           Ranglar mavzuga (light/dark) qarab beriladi; opacity matn o'qilishini buzmaydi. */}
       <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.8 : 0.9 }}>
         <Grainient
-          color1={isDark ? "#0b2a4a" : "#b8d4ec"}
+          color1={isDark ? "#0b2a4a" : "#709dc4"}
           color2={isDark ? "#0e2030" : "#f6f9fc"}
           color3={isDark ? "#1c6aa8" : "#ffffff"}
           timeSpeed={0.3}
@@ -148,8 +148,8 @@ export default function ChatPage() {
           bulgeStrength={18}
           cursorRadius={220}
           glowRadius={160}
-          gradientFrom={isDark ? "#22455c" : "#dbe3e8"}
-          gradientTo={isDark ? "#2a5570" : "#cfdae0"}
+          gradientFrom={isDark ? "#213c5e" : "#dbe3e8"}
+          gradientTo={isDark ? "#294c74" : "#cfdae0"}
           glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(42,111,151,0.07)"}
         />
       </div>

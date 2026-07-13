@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
+import { PRIMARY } from "../chat/theme";
 import type { AdminView } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import { fetchMe, logout, type Me } from "../../services/authService";
@@ -80,7 +81,7 @@ export default function Sidebar({ view, setView, usersCount, collapsed, t: admin
         className={styles.brandRow}
         style={collapsed ? { justifyContent: "center", padding: 0 } : undefined}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: "#2a6f97", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.22)" }}><Logo size={collapsed ? 22 : 24} /></div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: PRIMARY, background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.22)" }}><Logo size={collapsed ? 22 : 24} /></div>
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className={styles.brandName}>Turon<span className={styles.brandNameAi}> AI</span></div>

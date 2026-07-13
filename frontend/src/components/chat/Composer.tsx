@@ -46,7 +46,7 @@ export default function Composer({ draft, setDraft, canSend, onSend, generating,
   };
 
   return (
-    <div className={styles.wrap} style={{ background: `linear-gradient(to top,${tk.bg} 60%,transparent)` }}>
+    <div className={styles.wrap} style={{ background: "transparent" }}>
       <div className={styles.inner}>
         <div className={styles.bar} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "0 4px 20px rgba(0,0,0,.3)" : "0 4px 20px rgba(23, 63, 115,.07)" }}>
           <textarea ref={taRef} value={draft} onChange={onDraft} onKeyDown={onKey} rows={1} placeholder={placeholder} className={styles.textarea} style={{ color: tk.input }} />

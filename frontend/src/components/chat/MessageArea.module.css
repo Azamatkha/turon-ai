@@ -134,7 +134,7 @@
 .msgTimeBot {
   font-size: 11px;
   margin: 0;
-  opacity: 0.7;
+  opacity: 0.85;
   white-space: nowrap;
 }
 
@@ -149,13 +149,13 @@
 
 /* Amallar qatori (nusxalash, baho, qayta yaratish) — touch'da ham ko'rinadi,
    hover/focus'da to'liq yorishadi */
-/* Bot xabari tagi: amallar (chap) + vaqt (o'ng) bitta qatorda */
+/* Bot xabari tagi: amallar + token + vaqt — hammasi chapdan bir qatorda */
 .footerRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 12px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
   margin: 5px 0 0 2px;
 }
 
@@ -164,7 +164,7 @@
   align-items: center;
   gap: 2px;
   margin: 0;
-  opacity: 0.55;
+  opacity: 0.65;
   transition: opacity 0.18s ease;
 }
 
@@ -250,14 +250,6 @@
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-/* Amallar qatorining o'ng tomoni: token soni + vaqt, bitta qatorda */
-.metaRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 0 0 auto;
 }
 
 /* =====================
