@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import HButton from "../common/HButton";
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
 import { listKnowledge, type KnowledgeItem } from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
 import styles from "./KnowledgeListView.module.css";
 
 interface KnowledgeListViewProps {
   mounted: boolean;
+  t: AdminStrings;
+  onAddClick: () => void;
 }
 
 // Vektor bazaga yuklangan ma'lumotlar ro'yxati (sarlavha bo'yicha guruhlangan).
-export default function KnowledgeListView({ mounted }: KnowledgeListViewProps) {
+export default function KnowledgeListView({ mounted, t: admin, onAddClick }: KnowledgeListViewProps) {
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export default function KnowledgeListView({ mounted }: KnowledgeListViewProps) {
         title={selected}
         onBack={() => setSelected(null)}
         onChanged={load}
+        t={admin}
       />
     );
   }
@@ -47,17 +50,28 @@ export default function KnowledgeListView({ mounted }: KnowledgeListViewProps) {
     <div className={`${styles.wrap} ${mounted ? styles.in : ""}`}>
       <div className={styles.head}>
         <div className={styles.count}>
-          {!loading && !err ? admin.knowledgeChunks(items.length).replace(/bo‘lak/, "ma’lumot") : ""}
+          {!loading && !err ? admin.knowledgeItemsCount(items.length) : ""}
         </div>
-        <HButton
-          onClick={load}
-          className={styles.reloadBtn}
-          baseStyle={{}}
-          hoverStyle={{ background: "#e6eae3", color: "#173f73" }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
-          {admin.knowledgeReload}
-        </HButton>
+        <div className={styles.headActions}>
+          <HButton
+            onClick={onAddClick}
+            className={styles.addBtn}
+            baseStyle={{}}
+            hoverStyle={{ transform: "translateY(-1px)", boxShadow: "0 8px 20px rgba(23, 63, 115,.28)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+            {admin.knowledgeAdd}
+          </HButton>
+          <HButton
+            onClick={load}
+            className={styles.reloadBtn}
+            baseStyle={{}}
+            hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+            {admin.knowledgeReload}
+          </HButton>
+        </div>
       </div>
 
       {loading ? (

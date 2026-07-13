@@ -10,8 +10,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 28px 0 56px;
-  background: #fff;
-  border-bottom: 1px solid #e4e8e2;
+  background: var(--adm-card);
+  border-bottom: 1px solid var(--adm-border-2);
 }
 
 .actions {
@@ -29,8 +29,8 @@
   gap: 8px;
   height: 42px;
   padding: 0 14px;
-  background: #f4f6f3;
-  border: 1px solid #e0e5df;
+  background: var(--adm-hover);
+  border: 1px solid var(--adm-border-input);
   border-radius: 11px;
 }
 
@@ -39,7 +39,7 @@
   outline: none;
   background: transparent;
   font-size: 14px;
-  color: #173f73;
+  color: var(--adm-text-strong);
   width: 170px;
 }
 
@@ -71,11 +71,11 @@
   font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.3px;
-  color: #173f73;
+  color: var(--adm-text-strong);
 }
 
 .subtitle {
   font-size: 12.5px;
-  color: #7d909a;
+  color: var(--adm-text-muted);
   margin-top: 2px;
 }

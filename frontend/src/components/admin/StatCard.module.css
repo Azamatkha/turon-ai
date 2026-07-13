@@ -4,8 +4,8 @@
    Containers
    ===================== */
 .card {
-  background: #fff;
-  border: 1px solid #e6eae3;
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border);
   border-radius: 18px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(23, 63, 115, 0.04);
@@ -17,7 +17,7 @@
    ===================== */
 .card:hover {
   transform: translateY(-3px);
-  border-color: #d7e0e8;
+  border-color: var(--adm-accent-light);
   box-shadow: 0 10px 24px rgba(23, 63, 115, 0.1);
 }
 
@@ -42,7 +42,7 @@
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 99px;
-  color: #1f8a5b;
+  color: var(--adm-success);
   background: rgba(31, 138, 91, 0.1);
 }
 
@@ -53,13 +53,13 @@
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -1px;
-  color: #173f73;
+  color: var(--adm-text-strong);
   line-height: 1;
 }
 
 .label {
   font-size: 13px;
-  color: #7d909a;
+  color: var(--adm-text-muted);
   margin-top: 7px;
   font-weight: 500;
 }

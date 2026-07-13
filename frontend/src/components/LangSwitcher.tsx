@@ -72,9 +72,10 @@ interface LangSwitcherProps {
   theme?: "light" | "dark";
   align?: "left" | "right";
   style?: CSSProperties;
+  tip?: string;
 }
 
-export default function LangSwitcher({ lang, onChange, theme = "light", align = "right", style }: LangSwitcherProps) {
+export default function LangSwitcher({ lang, onChange, theme = "light", align = "right", style, tip }: LangSwitcherProps) {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState<Lang | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -104,8 +105,9 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Tilni tanlash"
-        className={styles.trigger}
+        aria-label={tip}
+        data-tip={tip}
+        className={`${styles.trigger} tip-end`}
         style={{ background: t.btnBg, border: "1px solid " + t.btnBorder, boxShadow: t.btnShadow }}
       >
         <Flag code={lang} size={20} />
@@ -151,9 +153,7 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
                 <Flag code={o.code} size={24} />
                 <span className={styles.itemLabel} style={{ color: t.itemText }}>{o.label}</span>
                 {active && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.check} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: t.check, flex: "0 0 auto" }} />
                 )}
               </button>
             );

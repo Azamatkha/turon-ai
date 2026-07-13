@@ -24,6 +24,8 @@ export const chatStatic: ChatStaticStrings = {
   supportHint: "Номер службы поддержки",
   collapseSidebar: "Свернуть панель",
   theme: "Режим",
+  nightMode: "Ночной режим",
+  dayMode: "Дневной режим",
   adminPanel: "Админ-панель",
   send: "Отправить",
   stop: "Остановить",
@@ -44,4 +46,5 @@ export const chatStatic: ChatStaticStrings = {
   saveChanges: "Сохранить изменения",
   logOut: "Выход",
   removeChat: "Удалить чат",
+  selectLanguage: "Выбрать язык",
 };

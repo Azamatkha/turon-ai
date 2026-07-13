@@ -1,4 +1,4 @@
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
 import styles from "./WeeklyChart.module.css";
 
 interface DayValue {
@@ -10,9 +10,10 @@ interface WeeklyChartProps {
   data: DayValue[];
   max: number;
   mounted: boolean;
+  t: AdminStrings;
 }
 
-export default function WeeklyChart({ data, max, mounted }: WeeklyChartProps) {
+export default function WeeklyChart({ data, max, mounted, t: admin }: WeeklyChartProps) {
   return (
     <div className={styles.card}>
       <div className={styles.head}>
@@ -28,7 +29,7 @@ export default function WeeklyChart({ data, max, mounted }: WeeklyChartProps) {
         {data.map((b, i) => (
           <div key={b.day} className={styles.barCol}>
             <div
-              title={b.value.toLocaleString()}
+              data-tip={b.value.toLocaleString()}
               className={`${styles.bar} ${b.value === max && max > 0 ? styles.barHighlight : styles.barNormal}`}
               style={{ height: mounted ? (b.value / max) * 100 + "%" : "0%", transitionDelay: `${i * 0.07}s` }}
             />

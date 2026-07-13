@@ -2,6 +2,7 @@ import { CSSProperties, useRef } from "react";
 import { RiDeleteBin5Fill } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
+import { PRIMARY } from "./theme";
 import type { Chat, SideTokens } from "../../types/chat";
 import styles from "./Sidebar.module.css";
 
@@ -66,25 +67,25 @@ export default function Sidebar({
           {/* Ochish/yopish tugmasi endi tashqarida (SidebarToggle) — bu yerda
               faqat statik brend belgisi, asosiy header bilan balandligi bir xil */}
           <div className={styles.railHead} style={{ borderBottom: "1px solid " + side.border }}>
-            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, color: "#2a6f97", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, color: PRIMARY, background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}>
               <Logo size={22} />
             </span>
           </div>
-          <HButton onClick={newChat} title="Yangi suhbat" aria-label="Yangi suhbat boshlash" className={styles.railBtn} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
+          <HButton onClick={newChat} data-tip="Yangi suhbat" aria-label="Yangi suhbat boshlash" className={`${styles.railBtn} tip-right`} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
           </HButton>
-          <HButton onClick={openAndSearch} title="Qidirish" aria-label="Suhbatlardan qidirish" className={styles.railBtn} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
+          <HButton onClick={openAndSearch} data-tip="Qidirish" aria-label="Suhbatlardan qidirish" className={`${styles.railBtn} tip-right`} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>
           </HButton>
-          <HButton onClick={() => setOpen(true)} title="Tarix" aria-label="Suhbatlar tarixi" className={styles.railBtn} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
+          <HButton onClick={() => setOpen(true)} data-tip="Tarix" aria-label="Suhbatlar tarixi" className={`${styles.railBtn} tip-right`} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><line x1="8" y1="7" x2="20" y2="7" /><line x1="8" y1="12" x2="20" y2="12" /><line x1="8" y1="17" x2="20" y2="17" /><circle cx="4" cy="7" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="17" r="1" /></svg>
           </HButton>
           <div className={styles.railSpacer} />
           <HButton
             onClick={openProfile}
-            title={userName}
+            data-tip={userName}
             aria-label={userName}
-            className={styles.railBtn}
+            className={`${styles.railBtn} tip-right`}
             baseStyle={{ opacity: 0.95, color: side.fg }}
             hoverStyle={sideHover}
           >
@@ -96,7 +97,7 @@ export default function Sidebar({
         <div className={styles.panel}>
           <div className={styles.panelHead} style={{ borderBottom: "1px solid " + side.border }}>
             <div className={styles.panelHeadBrand}>
-              <div className={styles.logoIcon} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: "#2a6f97", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}><Logo size={24} /></div>
+              <div className={styles.logoIcon} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: PRIMARY, background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}><Logo size={24} /></div>
               <div className={styles.brandText} style={{ color: side.fg }}>
                 Turon<span className={styles.brandTextAi}> AI</span>
               </div>
@@ -123,7 +124,7 @@ export default function Sidebar({
               style={{ color: side.fg }}
             />
             {search && (
-              <button onClick={() => setSearch("")} title="Tozalash" aria-label="Tozalash" className={styles.searchClear}>
+              <button onClick={() => setSearch("")} data-tip="Tozalash" aria-label="Tozalash" className={styles.searchClear}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
               </button>
             )}
@@ -158,9 +159,9 @@ export default function Sidebar({
                             e.stopPropagation();
                             onRemoveChat(c.id);
                           }}
-                          title={removeChatLabel}
+                          data-tip={removeChatLabel}
                           aria-label={removeChatLabel}
-                          className={styles.removeBtn}
+                          className={`${styles.removeBtn} tip-right`}
                         >
                           <RiDeleteBin5Fill size={15} />
                         </button>

@@ -1,4 +1,4 @@
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
 import styles from "./RecentActivity.module.css";
 
 interface ActivityItem {
@@ -8,7 +8,7 @@ interface ActivityItem {
   c: string;
 }
 
-export default function RecentActivity({ items }: { items: ActivityItem[] }) {
+export default function RecentActivity({ items, t: admin }: { items: ActivityItem[]; t: AdminStrings }) {
   return (
     <div className={styles.card}>
       <div className={styles.title}>{admin.recentActivityTitle}</div>

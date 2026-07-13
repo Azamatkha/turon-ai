@@ -243,6 +243,23 @@
   animation: dot 1.3s infinite both;
 }
 
+.tokenMeter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Amallar qatorining o'ng tomoni: token soni + vaqt, bitta qatorda */
+.metaRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
 /* =====================
    Typography
    ===================== */

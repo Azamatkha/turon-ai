@@ -9,7 +9,7 @@ import styles from "./LoginForm.module.css";
 const STR: Record<Lang, {
   title: string; sub: string; fullName: string; fullNamePh: string;
   username: string; usernamePh: string; dept: string; deptPh: string;
-  password: string; submit: string; have: string; signin: string;
+  password: string; submit: string; have: string; signin: string; selectLanguage: string;
 }> = {
   uz: {
     title: "Ro‘yxatdan o‘tish", sub: "Yangi hisob yarating.",
@@ -17,6 +17,7 @@ const STR: Record<Lang, {
     username: "Login", usernamePh: "masalan, a.karimov",
     dept: "Bo‘lim", deptPh: "masalan, Chakana", password: "Parol",
     submit: "Ro‘yxatdan o‘tish", have: "Hisobingiz bormi?", signin: "Kirish",
+    selectLanguage: "Tilni tanlash",
   },
   uz_cyrl: {
     title: "Рўйхатдан ўтиш", sub: "Янги ҳисоб яратинг.",
@@ -24,6 +25,7 @@ const STR: Record<Lang, {
     username: "Логин", usernamePh: "масалан, a.karimov",
     dept: "Бўлим", deptPh: "масалан, Чакана", password: "Парол",
     submit: "Рўйхатдан ўтиш", have: "Ҳисобингиз борми?", signin: "Кириш",
+    selectLanguage: "Тилни танлаш",
   },
   ru: {
     title: "Регистрация", sub: "Создайте новый аккаунт.",
@@ -31,6 +33,7 @@ const STR: Record<Lang, {
     username: "Логин", usernamePh: "например, a.karimov",
     dept: "Отдел", deptPh: "например, Розница", password: "Пароль",
     submit: "Зарегистрироваться", have: "Уже есть аккаунт?", signin: "Войти",
+    selectLanguage: "Выбрать язык",
   },
 };
 
@@ -53,7 +56,7 @@ export default function RegisterForm(p: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.langSwitcherWrap}>
-        <LangSwitcher lang={p.lang} onChange={p.setLang} theme="light" align="right" />
+        <LangSwitcher lang={p.lang} onChange={p.setLang} theme="light" align="right" tip={t.selectLanguage} />
       </div>
 
       <div className={styles.formBox}>
@@ -96,7 +99,7 @@ export default function RegisterForm(p: Props) {
           <label className={styles.fieldLabel}>{t.password}</label>
           <div className={styles.field}>
             <input className={styles.input} value={p.password} onChange={(e) => p.setPassword(e.target.value)} onKeyDown={p.onKey} type={p.pwVisible ? "text" : "password"} placeholder="••••••••" autoComplete="new-password" />
-            <button onClick={() => p.setPwVisible((v) => !v)} tabIndex={-1} title="Show / hide password" className={styles.pwToggleBtn}>
+            <button onClick={() => p.setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
               {p.pwVisible ? (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.16 3.19M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.4-1.1" />

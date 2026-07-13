@@ -22,8 +22,17 @@
   z-index: 1;
 }
 
-/* Orqa fon nuqta qatlami — barcha kontent ostida, bosishni to'smaydi */
+/* Orqa fon gradient qatlami — barcha kontent ostida, bosishni to'smaydi */
 .bgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Nuqta qatlami — gradient ustida, kontent ostida, bosishni to'smaydi */
+.dotLayer {
   position: absolute;
   inset: 0;
   z-index: 0;

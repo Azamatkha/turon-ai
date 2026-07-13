@@ -1,3 +1,5 @@
+/* Havola orqali ma'lumot qo'shish oynasi — AddUserModal bilan bir xil uslub */
+
 /* =====================
    Layout
    ===================== */
@@ -29,23 +31,13 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+  gap: 12px;
 }
 
 .fields {
   display: flex;
   flex-direction: column;
   gap: 15px;
-}
-
-.gridTwo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 13px;
-}
-
-.roleRow {
-  display: flex;
-  gap: 6px;
 }
 
 /* =====================
@@ -66,42 +58,16 @@
   transition: all 0.15s ease;
 }
 
-.usernameField {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.input {
+  width: 100%;
   height: 44px;
   border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 0 13px;
-  background: var(--adm-input-bg);
-}
-
-.usernamePrefix {
-  color: var(--adm-text-muted-2);
-  font-size: 15px;
-  flex: 0 0 auto;
-}
-
-.usernameInput {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
   font-size: 14px;
   color: var(--adm-text-strong);
-  height: 100%;
-}
-
-.roleBtn {
-  flex: 1;
-  padding: 9px 4px;
-  border-radius: 9px;
-  cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 600;
-  transition: all 0.15s ease;
+  outline: none;
+  background: var(--adm-input-bg);
 }
 
 .submitBtn {
@@ -122,7 +88,6 @@
   transition: all 0.2s ease;
 }
 
-/* Bosilganda darhol fizik feedback (boshqa qaytuv/animatsiyani kutmasdan) */
 .submitBtn:active {
   transform: scale(0.98);
 }
@@ -142,16 +107,14 @@
   }
 }
 
-.input {
-  width: 100%;
-  height: 44px;
-  border: 1.6px solid var(--adm-border-input);
-  border-radius: 11px;
-  padding: 0 13px;
-  font-size: 14px;
-  color: var(--adm-text-strong);
-  outline: none;
-  background: var(--adm-input-bg);
+.errMsg {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--adm-danger);
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  border-radius: 9px;
+  padding: 9px 12px;
 }
 
 /* =====================
@@ -161,7 +124,6 @@
   font-size: 18px;
   font-weight: 700;
   color: var(--adm-text-strong);
-  white-space: nowrap;
 }
 
 .sub {
@@ -176,26 +138,4 @@
   font-weight: 600;
   color: var(--adm-text-body);
   margin-bottom: 7px;
-}
-
-.takenLabel {
-  color: var(--adm-danger);
-  font-size: 12px;
-  font-weight: 600;
-  flex: 0 0 auto;
-}
-
-/* =====================
-   States
-   ===================== */
-.roleBtnActive {
-  border: 1.4px solid var(--adm-accent);
-  color: var(--adm-accent);
-  background: rgba(47, 102, 144, 0.08);
-}
-
-.roleBtnInactive {
-  border: 1.4px solid var(--adm-border-input);
-  color: var(--adm-text-muted);
-  background: var(--adm-card);
 }

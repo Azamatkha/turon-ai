@@ -14,21 +14,35 @@ export interface ChatTurn {
   content: string;
 }
 
+export interface AskResult {
+  text: string;
+  // Debug: token statistikasi. finishReason === "length" bo'lsa, javob
+  // token yetmagani sabab kesilib qolgan bo'lishi mumkin.
+  finishReason: string;
+  completionTokens: number;
+  maxTokens: number;
+}
+
 // Haqiqiy javob: savol + oldingi suhbat (history) ni backend RAG endpointiga yuboradi
 export async function askReply(
   question: string,
   history: ChatTurn[] = []
-): Promise<string> {
+): Promise<AskResult> {
   try {
     const res = await apiFetch("/v1/chat/ask", {
       method: "POST",
       body: JSON.stringify({ question, history }),
     });
-    if (!res.ok) return FALLBACK;
+    if (!res.ok) return { text: FALLBACK, finishReason: "", completionTokens: 0, maxTokens: 0 };
     const data = await res.json();
     const answer = (data?.answer as string | undefined)?.trim();
-    return answer || FALLBACK;
+    return {
+      text: answer || FALLBACK,
+      finishReason: (data?.finish_reason as string | undefined) ?? "",
+      completionTokens: (data?.completion_tokens as number | undefined) ?? 0,
+      maxTokens: (data?.max_tokens as number | undefined) ?? 0,
+    };
   } catch {
-    return FALLBACK;
+    return { text: FALLBACK, finishReason: "", completionTokens: 0, maxTokens: 0 };
   }
 }

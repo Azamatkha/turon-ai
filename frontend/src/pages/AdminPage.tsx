@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTheme } from "../contexts/ThemeContext";
+import { useLang } from "../hooks/useLang";
+import { adminDict } from "../locales";
 import type { AdminRole, AdminUser, AdminView } from "../types/admin";
 import {
   listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole,
 } from "../services/adminService";
+import { scrapeUrl } from "../services/knowledgeService";
 import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
@@ -10,6 +14,7 @@ import DashboardView from "../components/admin/DashboardView";
 import KnowledgeListView from "../components/admin/KnowledgeListView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
+import ScrapeModal from "../components/admin/ScrapeModal";
 import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import styles from "./AdminPage.module.css";
@@ -28,6 +33,9 @@ const mapUser = (u: ApiUser): AdminUser => ({
 });
 
 export default function AdminPage() {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+  const { lang, setLang, t } = useLang(adminDict);
   const [view, setView] = useState<AdminView>("dashboard");
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
@@ -43,6 +51,12 @@ export default function AdminPage() {
   const [fDept, setFDept] = useState("");
   const [fPass, setFPass] = useState("");
   const [fRole, setFRole] = useState<AdminRole>("Xodim");
+
+  const [scrapeOpen, setScrapeOpen] = useState(false);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeUrlValue, setScrapeUrlValue] = useState("");
+  const [scrapeErr, setScrapeErr] = useState<string | null>(null);
+  const [knowledgeReloadKey, setKnowledgeReloadKey] = useState(0);
 
   // Foydalanuvchilarni serverdan yuklash (qidiruv/bo'lim o'zgarsa qayta)
   const load = async () => {
@@ -132,10 +146,32 @@ export default function AdminPage() {
   const handle = "@" + fUser.trim();
   const userTaken = !!fUser.trim() && users.some((u) => u.handle === handle);
 
+  const openScrape = () => {
+    setScrapeUrlValue(""); setScrapeErr(null); setScraping(false); setScrapeOpen(true);
+  };
+
+  const submitScrape = async () => {
+    if (!scrapeUrlValue.trim()) {
+      setScrapeErr(t.knowledgeUrlRequired);
+      return;
+    }
+    setScraping(true);
+    setScrapeErr(null);
+    try {
+      await scrapeUrl(scrapeUrlValue);
+      setScrapeOpen(false);
+      setKnowledgeReloadKey((k) => k + 1); // ro'yxatni qayta yuklash uchun KnowledgeListView'ni remount qilamiz
+    } catch (e) {
+      setScrapeErr(e instanceof Error ? e.message : t.knowledgeScrapeError);
+    } finally {
+      setScraping(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.bgLayer} aria-hidden="true">
-        <DotField dotRadius={3.5} dotSpacing={26} bulgeOnly bulgeStrength={18} cursorRadius={220} glowRadius={160} gradientFrom="#dbe0e7" gradientTo="#cfd6df" glowColor="rgba(42,111,151,0.07)" />
+        <DotField dotRadius={3.5} dotSpacing={26} bulgeOnly bulgeStrength={18} cursorRadius={220} glowRadius={160} gradientFrom={isDark ? "#22455c" : "#dbe0e7"} gradientTo={isDark ? "#2a5570" : "#cfd6df"} glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(42,111,151,0.07)"} />
       </div>
 
       <Sidebar
@@ -143,6 +179,7 @@ export default function AdminPage() {
         setView={setView}
         usersCount={users.length}
         collapsed={navCollapsed}
+        t={t}
       />
 
       <SidebarToggle
@@ -152,11 +189,15 @@ export default function AdminPage() {
       />
 
       <main className={styles.main}>
-        <PageHeader view={view} search={search} setSearch={setSearch} onAddUser={openAdd} />
+        <PageHeader
+          view={view} search={search} setSearch={setSearch} onAddUser={openAdd}
+          isDark={isDark} onToggleTheme={toggleTheme}
+          lang={lang} setLang={setLang} t={t}
+        />
 
         <div className={styles.content}>
-          {onDashboard && <DashboardView mounted={mounted} />}
-          {onKnowledgeList && <KnowledgeListView mounted={mounted} />}
+          {onDashboard && <DashboardView mounted={mounted} t={t} />}
+          {onKnowledgeList && <KnowledgeListView key={knowledgeReloadKey} mounted={mounted} t={t} onAddClick={openScrape} />}
           {onUsers && (
             <>
               <div style={{ marginBottom: 14 }}>
@@ -164,12 +205,12 @@ export default function AdminPage() {
                   value={dept}
                   onChange={setDept}
                   options={[
-                    { value: "", label: "Barcha bo‘limlar" },
+                    { value: "", label: t.allDepts },
                     ...allDepts.map((d) => ({ value: d, label: d })),
                   ]}
                 />
               </div>
-              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} />
+              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} />
             </>
           )}
         </div>
@@ -183,6 +224,16 @@ export default function AdminPage() {
             fRole={fRole} setFRole={setFRole}
             adding={adding} userTaken={userTaken}
             onClose={() => setAddOpen(false)} onSubmit={submitAdd}
+            t={t}
+          />
+        )}
+
+        {scrapeOpen && (
+          <ScrapeModal
+            url={scrapeUrlValue} setUrl={setScrapeUrlValue}
+            loading={scraping} error={scrapeErr}
+            onClose={() => setScrapeOpen(false)} onSubmit={submitScrape}
+            t={t}
           />
         )}
       </main>

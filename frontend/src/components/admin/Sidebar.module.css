@@ -8,7 +8,7 @@
   z-index: 1;
   width: 248px;
   flex: 0 0 auto;
-  background: #173f73;
+  background: var(--adm-sidebar);
   color: #eef2ef;
   height: 100%;
   display: flex;

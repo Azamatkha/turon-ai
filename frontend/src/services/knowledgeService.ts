@@ -8,6 +8,16 @@ export interface UploadResult {
   chunks: number;
 }
 
+// URL'ni ochib, toza matnini ajratib, bazaga yozadi
+export async function scrapeUrl(url: string): Promise<UploadResult> {
+  const res = await apiFetch("/v1/admin/knowledge/scrape", {
+    method: "POST",
+    body: JSON.stringify({ url: url.trim() }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Havoladan ma'lumot olishda xatolik"));
+  return res.json();
+}
+
 // Ro'yxatda ko'rsatiladigan bitta yuklangan ma'lumot (sarlavha bo'yicha guruhlangan)
 export interface KnowledgeItem {
   title: string;

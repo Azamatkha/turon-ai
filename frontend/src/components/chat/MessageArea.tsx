@@ -1,10 +1,12 @@
 import { Ref, useState } from "react";
+import { RiCopperCoinLine } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
-import { ACCENT } from "./theme";
-import MessageContent from "./MessageContent";
+import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
+import MessageContent, { toPlainText } from "./MessageContent";
+import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
 
 const suggIcons = ["✦", "✎", "◷", "‹/›"];
@@ -15,6 +17,17 @@ function fmtTime(iso?: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+// Hover hint uchun to'liq sana-vaqt: "13.07.2026 9:41:32"
+function fmtFullTime(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: false });
+  return `${day}.${month}.${d.getFullYear()} ${time}`;
 }
 
 interface MessageAreaProps {
@@ -43,7 +56,7 @@ export default function MessageArea({
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const copyMsg = (m: Msg) => {
-    navigator.clipboard?.writeText(m.text).then(() => {
+    navigator.clipboard?.writeText(toPlainText(m.text)).then(() => {
       setCopiedId(m.id);
       setTimeout(() => setCopiedId((id) => (id === m.id ? null : id)), 1400);
     });
@@ -57,7 +70,7 @@ export default function MessageArea({
     <div ref={scrollRef} className={styles.scrollArea}>
       {isEmpty && (
         <div className={styles.emptyState}>
-          <div className={styles.logoBadge} style={{ color: ACCENT }}><Logo size={64} /></div>
+          <div className={styles.logoBadge} style={{ color: isDark ? PRIMARY_ON_DARK : PRIMARY }}><Logo size={64} /></div>
           <div className={styles.greeting} style={{ color: tk.strong, whiteSpace: "pre-line" }}>{greeting}</div>
           <div className={styles.subtext} style={{ color: tk.muted }}>{sub}</div>
           <div className={styles.suggestions}>
@@ -108,7 +121,7 @@ export default function MessageArea({
                   {showActions && (
                     <div className={styles.footerRow}>
                     <div className={styles.actions} style={{ color: tk.muted }}>
-                      <button onClick={() => copyMsg(m)} className={styles.actBtn} title={copiedId === m.id ? s.copied : s.copy} aria-label={copiedId === m.id ? s.copied : s.copy}>
+                      <button onClick={() => copyMsg(m)} className={styles.actBtn} data-tip={copiedId === m.id ? s.copied : s.copy} aria-label={copiedId === m.id ? s.copied : s.copy}>
                         {copiedId === m.id ? (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f8a5b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         ) : (
@@ -116,21 +129,41 @@ export default function MessageArea({
                         )}
                       </button>
 
-                      <button onClick={() => vote(m.id, "up", v)} className={`${styles.actBtn} ${v === "up" ? styles.actBtnUp : ""}`} title={s.goodResponse} aria-label={s.goodResponse} aria-pressed={v === "up"}>
+                      <button onClick={() => vote(m.id, "up", v)} className={`${styles.actBtn} ${v === "up" ? styles.actBtnUp : ""}`} data-tip={s.goodResponse} aria-label={s.goodResponse} aria-pressed={v === "up"}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill={v === "up" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></svg>
                       </button>
 
-                      <button onClick={() => vote(m.id, "down", v)} className={`${styles.actBtn} ${v === "down" ? styles.actBtnDown : ""}`} title={s.badResponse} aria-label={s.badResponse} aria-pressed={v === "down"}>
+                      <button onClick={() => vote(m.id, "down", v)} className={`${styles.actBtn} ${v === "down" ? styles.actBtnDown : ""}`} data-tip={s.badResponse} aria-label={s.badResponse} aria-pressed={v === "down"}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill={v === "down" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></svg>
                       </button>
 
                       {isLast && (
-                        <button onClick={onRegenerate} className={styles.actBtn} title={s.regenerate} aria-label={s.regenerate}>
+                        <button onClick={onRegenerate} className={styles.actBtn} data-tip={s.regenerate} aria-label={s.regenerate}>
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
                         </button>
                       )}
                     </div>
-                    {m.time && <span className={styles.msgTimeBot} style={{ color: tk.muted }}>{fmtTime(m.time)}</span>}
+                    <div className={styles.metaRight} style={{ color: tk.muted }}>
+                      {/* Real-time token hisoblagichi — javob yozilishi bilan son o'zgaradi.
+                          finishReason === "length" bo'lsa (javob kesilgan) — qizil rangda. */}
+                      {m.debug && !!m.text && m.debug.completionTokens > 0 && (
+                        <span
+                          className={styles.tokenMeter}
+                          style={{ color: m.debug.finishReason === "length" ? "#c0392b" : tk.muted }}
+                        >
+                          <RiCopperCoinLine
+                            size={13}
+                            style={{ color: m.debug.finishReason === "length" ? "#c0392b" : ACCENT }}
+                          />
+                          {m.debug.completionTokens} token
+                        </span>
+                      )}
+                      {m.time && (
+                        <span className={`${styles.msgTimeBot} tip-end`} data-tip={fmtFullTime(m.time)}>
+                          {fmtTime(m.time)}
+                        </span>
+                      )}
+                    </div>
                     </div>
                   )}
                 </div>
@@ -142,9 +175,7 @@ export default function MessageArea({
             <div className={styles.typingRow}>
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
-                {[0, 0.18, 0.36].map((d) => (
-                  <span key={d} className={styles.typingDot} style={{ animationDelay: `${d}s` }} />
-                ))}
+                <TypingIndicator color={isDark ? "#7fb3d2" : "#3a7ca5"} />
               </div>
             </div>
           )}

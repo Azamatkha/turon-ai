@@ -66,6 +66,28 @@ function renderMarkdown(text: string): string {
   return out.join("");
 }
 
+// Markdown belgilarini olib tashlab, ekranda ko'ringan ko'rinishga mos toza matn qaytaradi
+// (nusxalash tugmasi shuni ishlatadi — xom "**", "[matn](url)" emas).
+function stripInline(s: string): string {
+  let out = s.replace(/\*\*(.+?)\*\*/g, "$1");
+  out = out.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    (_m, text: string, url: string) => (text === url ? url : `${text} (${url})`)
+  );
+  return out;
+}
+
+export function toPlainText(text: string): string {
+  const lines = text.split(/\r?\n/);
+  const out: string[] = [];
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    const bullet = line.match(/^\s*[*-]\s+(.*)$/);
+    out.push(bullet ? `• ${stripInline(bullet[1])}` : stripInline(line));
+  }
+  return out.join("\n");
+}
+
 export default function MessageContent({ text }: { text: string }) {
   return (
     <div

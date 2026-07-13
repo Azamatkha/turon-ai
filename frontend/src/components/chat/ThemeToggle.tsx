@@ -4,7 +4,7 @@ import styles from "./ThemeToggle.module.css";
 interface ThemeToggleProps {
   isDark: boolean;
   onToggle: () => void;
-  tk: ThemeTokens;
+  tk?: ThemeTokens;
   label?: string;
 }
 

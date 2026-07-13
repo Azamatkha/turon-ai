@@ -4,7 +4,7 @@ import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { AdminView } from "../../types/admin";
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
 import { fetchMe, logout, type Me } from "../../services/authService";
 import styles from "./Sidebar.module.css";
 
@@ -20,9 +20,10 @@ interface SidebarProps {
   setView: (v: AdminView) => void;
   usersCount: number;
   collapsed: boolean;
+  t: AdminStrings;
 }
 
-export default function Sidebar({ view, setView, usersCount, collapsed }: SidebarProps) {
+export default function Sidebar({ view, setView, usersCount, collapsed, t: admin }: SidebarProps) {
   const navigate = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -95,7 +96,6 @@ export default function Sidebar({ view, setView, usersCount, collapsed }: Sideba
             <HButton
               key={item.id}
               onClick={() => setView(item.id)}
-              title={collapsed ? item.label : undefined}
               className={`${styles.navItem} ${act ? styles.navItemActive : styles.navItemInactive}`}
               baseStyle={collapsed ? { justifyContent: "center" } : {}}
               hoverStyle={act ? {} : { background: "rgba(255,255,255,.06)", color: "#fff" }}
@@ -109,13 +109,12 @@ export default function Sidebar({ view, setView, usersCount, collapsed }: Sideba
 
         <HButton
           onClick={() => navigate("/")}
-          title={collapsed ? "Chatga o'tish" : undefined}
           className={`${styles.navItem} ${styles.navItemInactive}`}
           baseStyle={collapsed ? { justifyContent: "center" } : {}}
           hoverStyle={{ background: "rgba(255,255,255,.06)", color: "#fff" }}
         >
           <span className={styles.navIcon}><IoMdChatboxes size={20} /></span>
-          {!collapsed && <span className={styles.navLabel}>Chatga o‘tish</span>}
+          {!collapsed && <span className={styles.navLabel}>{admin.chatNav}</span>}
         </HButton>
       </nav>
 
@@ -156,21 +155,21 @@ export default function Sidebar({ view, setView, usersCount, collapsed }: Sideba
               bottom: "calc(100% + 8px)",
               left: 12,
               minWidth: 180,
-              background: "#fff",
-              border: "1px solid #e6eae3",
+              background: "var(--adm-card)",
+              border: "1px solid var(--adm-border)",
               borderRadius: 12,
               padding: 6,
               boxShadow: "0 12px 32px rgba(13,33,45,.28)",
               zIndex: 20,
             }}
           >
-            <div style={{ padding: "6px 10px 8px", borderBottom: "1px solid #eef1ec", marginBottom: 4 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#173f73", whiteSpace: "nowrap" }}>{meName}</div>
-              <div style={{ fontSize: 11.5, color: "#9aafb8" }}>{meHandle}</div>
+            <div style={{ padding: "6px 10px 8px", borderBottom: "1px solid var(--adm-border-3)", marginBottom: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--adm-text-strong)", whiteSpace: "nowrap" }}>{meName}</div>
+              <div style={{ fontSize: 11.5, color: "var(--adm-text-muted-2)" }}>{meHandle}</div>
             </div>
             <button
               onClick={doLogout}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#fdeceb")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--adm-danger-bg)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               style={{
                 display: "flex",
@@ -180,7 +179,7 @@ export default function Sidebar({ view, setView, usersCount, collapsed }: Sideba
                 padding: "9px 10px",
                 border: "none",
                 background: "transparent",
-                color: "#c0392b",
+                color: "var(--adm-danger)",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 13,

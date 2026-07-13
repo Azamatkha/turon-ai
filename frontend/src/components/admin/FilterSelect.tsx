@@ -47,9 +47,9 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
           padding: "9px 12px 9px 14px",
           minWidth: 180,
           borderRadius: 10,
-          border: "1px solid #dde2dc",
-          background: "#fff",
-          color: "#173f73",
+          border: "1px solid var(--adm-border-input)",
+          background: "var(--adm-card)",
+          color: "var(--adm-text-strong)",
           fontSize: 13,
           fontWeight: 600,
           cursor: "pointer",
@@ -62,7 +62,7 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
           height="14"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#7d909a"
+          stroke="var(--adm-text-muted)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -81,8 +81,8 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
             top: "calc(100% + 6px)",
             zIndex: 30,
             minWidth: "100%",
-            background: "#fff",
-            border: "1px solid #e6eae3",
+            background: "var(--adm-card)",
+            border: "1px solid var(--adm-border)",
             borderRadius: 12,
             boxShadow: "0 16px 40px rgba(13,33,45,.18)",
             padding: 6,
@@ -116,15 +116,21 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
                   cursor: "pointer",
                   fontSize: 13,
                   fontWeight: active ? 600 : 500,
-                  color: "#173f73",
-                  background: active ? "#eef3f6" : hovered ? "#f1f4ef" : "transparent",
+                  color: "var(--adm-text-strong)",
+                  background: active ? "rgba(47,102,144,.12)" : hovered ? "var(--adm-hover-2)" : "transparent",
                 }}
               >
                 <span>{o.label}</span>
                 {active && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2a6f97" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "var(--adm-accent)",
+                      flex: "0 0 auto",
+                    }}
+                  />
                 )}
               </button>
             );

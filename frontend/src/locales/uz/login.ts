@@ -19,4 +19,5 @@ export const login: LoginStrings = {
   pvUser: "Omonat depozit shartlarini tushuntirib bera olasizmi?",
   pvAI: "Albatta. Joriy stavka yiliga 18% — qisqacha bayon qilib beraymi?",
   statLabel: "Hal qilingan so‘rovlar",
+  selectLanguage: "Tilni tanlash",
 };

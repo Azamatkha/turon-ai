@@ -1,3 +1,5 @@
+import type { AdminRole, AdminStatus } from "./admin";
+
 // Tilga bog'liq lug'atlar uchun umumiy shakllar (uz/ru bir xil interfeysga mos kelishi kerak)
 export interface LoginStrings {
   badge: string;
@@ -18,6 +20,7 @@ export interface LoginStrings {
   pvUser: string;
   pvAI: string;
   statLabel: string;
+  selectLanguage: string;
 }
 
 export interface ChatStrings {
@@ -45,6 +48,8 @@ export interface ChatStaticStrings {
   supportHint: string;
   collapseSidebar: string;
   theme: string;
+  nightMode: string;
+  dayMode: string;
   adminPanel: string;
   send: string;
   stop: string;
@@ -65,4 +70,120 @@ export interface ChatStaticStrings {
   saveChanges: string;
   logOut: string;
   removeChat: string;
+  selectLanguage: string;
+}
+
+// Admin paneli matnlari (til almashtirgichga ulanadi)
+export interface AdminStrings {
+  panelLabel: string;
+  dashboardNav: string;
+  usersNav: string;
+  superAdmin: string;
+  usersTitle: string;
+  dashboardTitle: string;
+  usersSubtitle: string;
+  overview: string;
+  searchUsersPh: string;
+  addUser: string;
+  more: string;
+  noUsersFound: (q: string) => string;
+  weeklyMessagesTitle: string;
+  weeklyMessagesSub: string;
+  deptUsageTitle: string;
+  deptUsageSub: string;
+  recentActivityTitle: string;
+  tableUser: string;
+  tableDept: string;
+  tableRole: string;
+  tableStatus: string;
+  addUserModalTitle: string;
+  addUserModalSub: string;
+  fullName: string;
+  fullNamePh: string;
+  username: string;
+  usernamePh: string;
+  dept: string;
+  deptPh: string;
+  role: string;
+  taken: string;
+  create: string;
+  roleLabel: Record<AdminRole, string>;
+  statusLabel: Record<AdminStatus, string>;
+  editUser: string;
+  editUserModalTitle: string;
+  editUserModalSub: string;
+  newPassword: string;
+  newPasswordPh: string;
+  save: string;
+  delete: string;
+  changeRole: string;
+  makeAdmin: string;
+  makeXodim: string;
+  logout: string;
+  uploadNav: string;
+  uploadTitle: string;
+  uploadCardTitle: string;
+  uploadCardSub: string;
+  uploadTitleLabel: string;
+  uploadTitlePh: string;
+  uploadTextLabel: string;
+  uploadTextPh: string;
+  uploadOr: string;
+  uploadFileLabel: string;
+  uploadFileHint: string;
+  uploadFilePick: string;
+  uploadFileRemove: string;
+  uploadSubmit: string;
+  uploadNeedTitle: string;
+  uploadNeedContent: string;
+  uploadBadFile: string;
+  uploadSuccess: (n: number) => string;
+  uploadError: string;
+  knowledgeNav: string;
+  knowledgeTitle: string;
+  knowledgeReload: string;
+  knowledgeEmpty: string;
+  knowledgeLoadError: string;
+  knowledgeChunks: (n: number) => string;
+  knowledgeItemsCount: (n: number) => string;
+  knowledgeDetailError: string;
+  knowledgeChunkLabel: (i: number) => string;
+  knowledgeBack: string;
+  knowledgeEdit: string;
+  knowledgeDelete: string;
+  knowledgeSave: string;
+  knowledgeCancel: string;
+  knowledgeDeleteConfirm: string;
+  knowledgeEditTitle: string;
+  knowledgeSaveError: string;
+  knowledgeDeleteError: string;
+  knowledgeAdd: string;
+  knowledgeAddModalTitle: string;
+  knowledgeAddModalSub: string;
+  knowledgeUrlLabel: string;
+  knowledgeUrlPh: string;
+  knowledgeUrlRequired: string;
+  knowledgeScrapeError: string;
+  chatNav: string;
+  nightMode: string;
+  dayMode: string;
+  selectLanguage: string;
+  allDepts: string;
+  password: string;
+  nameLoginRequired: string;
+  passTooShort: string;
+  saveFailed: string;
+  statTotalUsers: string;
+  statTotalSessions: string;
+  statTotalMessages: string;
+  statOnline: string;
+  statLikes: string;
+  statDislikes: string;
+  actLogin: string;
+  actLogout: string;
+  actSession: string;
+  timeNow: string;
+  timeMinAgo: (m: number) => string;
+  timeHourAgo: (h: number) => string;
+  timeDayAgo: (d: number) => string;
 }

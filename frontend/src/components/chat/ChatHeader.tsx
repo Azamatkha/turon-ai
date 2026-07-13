@@ -40,7 +40,7 @@ export default function ChatHeader({
   };
 
   return (
-    <header className={styles.header} style={{ borderBottom: "1px solid " + tk.headBorder, background: tk.headBg }}>
+    <header className={styles.header} style={{ borderBottom: "none", background: "transparent" }}>
       <div className={styles.left}>
         {editing ? (
           <input
@@ -69,12 +69,12 @@ export default function ChatHeader({
               className={styles.title}
               style={{ color: tk.strong, cursor: editableTitle ? "text" : "default" }}
               onDoubleClick={startEdit}
-              title={editableTitle ? "Nomini o‘zgartirish uchun ikki marta bosing" : undefined}
+              data-tip={editableTitle ? "Nomini o‘zgartirish uchun ikki marta bosing" : undefined}
             >
               {title}
             </div>
             {editableTitle && (
-              <button onClick={startEdit} title="Suhbat nomini tahrirlash" aria-label="Suhbat nomini tahrirlash" className={styles.renameBtn} style={{ color: tk.muted }}>
+              <button onClick={startEdit} data-tip="Suhbat nomini tahrirlash" aria-label="Suhbat nomini tahrirlash" className={styles.renameBtn} style={{ color: tk.muted }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
               </button>
             )}
@@ -95,8 +95,8 @@ export default function ChatHeader({
             <MdOutlineAdminPanelSettings size={20} />
           </HButton>
         )}
-        <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" />
-        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={s.theme} />
+        <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />
+        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={isDark ? s.dayMode : s.nightMode} />
       </div>
     </header>
   );

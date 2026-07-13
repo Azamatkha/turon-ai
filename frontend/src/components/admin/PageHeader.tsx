@@ -1,6 +1,9 @@
 import HButton from "../common/HButton";
+import ThemeToggle from "../chat/ThemeToggle";
+import LangSwitcher from "../LangSwitcher";
 import type { AdminView } from "../../types/admin";
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
+import type { Lang } from "../../types/lang";
 import styles from "./PageHeader.module.css";
 
 interface PageHeaderProps {
@@ -8,27 +11,33 @@ interface PageHeaderProps {
   search: string;
   setSearch: (v: string) => void;
   onAddUser: () => void;
+  isDark: boolean;
+  onToggleTheme: () => void;
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: AdminStrings;
 }
 
-const TITLES: Record<AdminView, string> = {
-  dashboard: admin.dashboardTitle,
-  users: admin.usersTitle,
-  knowledgeList: admin.knowledgeTitle,
-};
-
-export default function PageHeader({ view, search, setSearch, onAddUser }: PageHeaderProps) {
+export default function PageHeader({ view, search, setSearch, onAddUser, isDark, onToggleTheme, lang, setLang, t: admin }: PageHeaderProps) {
   const onUsers = view === "users";
   // "Foydalanuvchi qo'shish" tugmasi faqat dashboard/users sahifalarida
   const showAddUser = view === "dashboard" || view === "users";
+  const titles: Record<AdminView, string> = {
+    dashboard: admin.dashboardTitle,
+    users: admin.usersTitle,
+    knowledgeList: admin.knowledgeTitle,
+  };
   return (
     <header className={styles.header}>
       <div>
-        <div className={styles.title}>{TITLES[view]}</div>
+        <div className={styles.title}>{titles[view]}</div>
       </div>
       <div className={styles.actions}>
+        <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={admin.selectLanguage} />
+        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} label={isDark ? admin.dayMode : admin.nightMode} />
         {onUsers && (
           <div className={styles.searchBox}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9aafb8" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--adm-text-muted-2)" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>
             <input className={styles.searchInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={admin.searchUsersPh} />
           </div>
         )}

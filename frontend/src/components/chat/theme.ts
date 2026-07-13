@@ -3,6 +3,12 @@ import type { ThemeTokens, SideTokens } from "../../types/chat";
 // Chat sahifasidagi xabar-bulutchalari va tugmalarning umumiy aksent rangi
 export const ACCENT = "#3a7ca5";
 
+// Turon Bank brend (primary) rangi — logo, mavzu almashtirgich va boshqa
+// brend elementlari shu navydan kelib chiqadi. Dark fonda ko'rinishi uchun
+// PRIMARY_ON_DARK ishlatiladi.
+export const PRIMARY = "#1B4B7A";
+export const PRIMARY_ON_DARK = "#7fb3d2";
+
 // Asosiy mavzu (light/dark) rang to'plami — ChatHeader, MessageArea, Composer
 // shu funksiyadan qaytgan obyektni o'qib, fonni/matn rangini moslashtiradi.
 // Bitta joyda turgani uchun light/dark farqi faqat shu yerda boshqariladi.

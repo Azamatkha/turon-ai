@@ -19,6 +19,29 @@
   margin-bottom: 16px;
 }
 
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2a6f97, #173f73);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(23, 63, 115, 0.2);
+  transition: all 0.15s ease;
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -31,8 +54,8 @@
   text-align: left;
   font: inherit;
   cursor: pointer;
-  background: #fff;
-  border: 1px solid #e4e8e2;
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border-2);
   border-radius: 14px;
   padding: 16px 18px;
   box-shadow: 0 4px 16px rgba(13, 33, 45, 0.05);
@@ -57,10 +80,10 @@
   gap: 7px;
   height: 38px;
   padding: 0 14px;
-  border: 1px solid #dde2dc;
+  border: 1px solid var(--adm-border-input);
   border-radius: 10px;
-  background: #fff;
-  color: #42565f;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -72,7 +95,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(47, 102, 144, 0.1);
-  color: #2a6f97;
+  color: var(--adm-accent);
   font-size: 12px;
   font-weight: 600;
 }
@@ -88,16 +111,16 @@
 }
 
 .empty {
-  background: #fff;
-  border: 1px dashed #cdd5cd;
-  color: #7d909a;
+  background: var(--adm-card);
+  border: 1px dashed var(--adm-border-input);
+  color: var(--adm-text-muted);
   font-size: 14px;
 }
 
 .errMsg {
-  background: #fdeceb;
-  border: 1px solid rgba(192, 57, 43, 0.25);
-  color: #c0392b;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
   font-size: 13px;
   font-weight: 600;
 }
@@ -105,21 +128,21 @@
 /* Typography */
 .count {
   font-size: 13px;
-  color: #7d909a;
+  color: var(--adm-text-muted);
   font-weight: 600;
 }
 
 .cardTitle {
   font-size: 15px;
   font-weight: 700;
-  color: #173f73;
+  color: var(--adm-text-strong);
   line-height: 1.35;
 }
 
 .preview {
   margin-top: 8px;
   font-size: 13px;
-  color: #5b6f78;
+  color: var(--adm-text-body-2);
   line-height: 1.5;
 }
 
@@ -128,15 +151,15 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #9aafb8;
+  color: var(--adm-text-muted-2);
 }
 
 .spinner {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2.6px solid #dde2dc;
-  border-top-color: #2a6f97;
+  border: 2.6px solid var(--adm-border-input);
+  border-top-color: var(--adm-accent);
   animation: spin 0.7s linear infinite;
 }
 

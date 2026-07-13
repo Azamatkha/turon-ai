@@ -78,6 +78,24 @@ export async function addMessage(
   return res.json();
 }
 
+// Birinchi xabar matnidan Qwen orqali qisqa suhbat sarlavhasi (ChatGPT uslubida)
+export async function generateTitle(text: string): Promise<string> {
+  const res = await apiFetch("/v1/chat/title", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Sarlavha yaratishda xatolik"));
+  const data = await res.json();
+  return (data?.title as string | undefined) ?? "";
+}
+
+export async function deleteMessage(sessionId: string, messageId: string): Promise<void> {
+  const res = await apiFetch(`/v1/chat/sessions/${sessionId}/messages/${messageId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(await readError(res, "Xabarni o'chirishda xatolik"));
+}
+
 export async function voteMessage(
   sessionId: string,
   messageId: string,

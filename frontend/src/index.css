@@ -5,6 +5,62 @@
   box-sizing: border-box;
 }
 
+/* Admin panel rang o'zgaruvchilari — light (default) va dark (<html class="dark">).
+   Dark palitra chat sahifasidagi theme.ts bilan bir xil (butun ilova bo'ylab izchil). */
+:root {
+  --adm-bg: #eef1f5;
+  --adm-card: #ffffff;
+  --adm-card-alt: #fafbf9;
+  --adm-hover: #f4f6f3;
+  --adm-hover-2: #f1f4ef;
+  --adm-input-bg: #fbfcfa;
+  --adm-border: #e6eae3;
+  --adm-border-2: #e4e8e2;
+  --adm-border-3: #eef1ec;
+  --adm-border-input: #dde2dc;
+  --adm-text-strong: #173f73;
+  --adm-text-muted: #7d909a;
+  --adm-text-muted-2: #9aafb8;
+  --adm-text-body: #42565f;
+  --adm-text-body-2: #5b6f78;
+  --adm-text-chunk: #2f4650;
+  --adm-accent: #2a6f97;
+  --adm-accent-2: #3a7ca5;
+  --adm-accent-light: #7fb3d2;
+  --adm-danger: #c0392b;
+  --adm-danger-bg: #fdeceb;
+  --adm-danger-border: #f0c4bf;
+  --adm-success: #1f8a5b;
+  --adm-sidebar: #173f73;
+}
+
+html.dark {
+  --adm-bg: #0e2735;
+  --adm-card: #16384a;
+  --adm-card-alt: #123043;
+  --adm-hover: #1c4257;
+  --adm-hover-2: #1c4257;
+  --adm-input-bg: #12313f;
+  --adm-border: rgba(255, 255, 255, 0.09);
+  --adm-border-2: rgba(255, 255, 255, 0.09);
+  --adm-border-3: rgba(255, 255, 255, 0.06);
+  --adm-border-input: rgba(255, 255, 255, 0.14);
+  --adm-text-strong: #e8eef2;
+  --adm-text-muted: #8aa1ae;
+  --adm-text-muted-2: #8aa1ae;
+  --adm-text-body: #b7c4cb;
+  --adm-text-body-2: #a9b8bf;
+  --adm-text-chunk: #dbe6ea;
+  --adm-accent: #5b9bc4;
+  --adm-accent-2: #6fa8c9;
+  --adm-accent-light: #7fb3d2;
+  --adm-danger: #e0685a;
+  --adm-danger-bg: rgba(224, 104, 90, 0.14);
+  --adm-danger-border: rgba(224, 104, 90, 0.35);
+  --adm-success: #3fb884;
+  --adm-sidebar: #102f41;
+}
+
 /* Light/Dark mavzu almashganda silliq o'tish (inline stillarga ham ta'sir qiladi) */
 body,
 body * {
@@ -21,8 +77,9 @@ body * {
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(-4px);
-  background: #173f73;
+  background: #0f2a4a;
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -32,11 +89,40 @@ body * {
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
   z-index: 200;
-  box-shadow: 0 6px 18px rgba(13, 33, 45, 0.22);
+  box-shadow: 0 6px 18px rgba(13, 33, 45, 0.32);
 }
 [data-tip]:hover::after {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+/* Dark rejimda tooltip teskari ranglarda (och fon, to'q matn) — <html class="dark"> */
+html.dark [data-tip]::after {
+  background: #e8eef2;
+  color: #173f73;
+  border-color: rgba(23, 63, 115, 0.14);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* Chekka (edge)ga yopishgan elementlar uchun — tooltip konteynerdan chiqib
+   ketmasligi (gorizontal scroll/kesilish) uchun o'ngga qarab ochiladi */
+[data-tip].tip-right::after {
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px);
+}
+[data-tip].tip-right:hover::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Konteynerning o'ng chekkasidagi elementlar uchun — tooltip faqat chapga
+   qarab ochiladi, o'ng chetdan tashqariga chiqmaydi */
+[data-tip].tip-end::after {
+  left: auto;
+  right: 0;
+  transform: translateY(-4px);
+}
+[data-tip].tip-end:hover::after {
+  transform: translateY(0);
 }
 
 /* Chiroyli scrollbar (default brauzer scrollbar o'rniga) */
@@ -138,6 +224,27 @@ input:-webkit-autofill {
 }
 @keyframes dot {
   0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* Bot javobini kutish — "yozyapti" animatsiyasi (TypingIndicator komponenti).
+   Global klass (CSS-module emas) — keyframe nomi hech qachon o'zgarmaydi. */
+.tu-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tu-typing > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: tu-typing-bounce 1.2s infinite ease-in-out both;
+}
+.tu-typing > span:nth-child(1) { animation-delay: -0.32s; }
+.tu-typing > span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes tu-typing-bounce {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.35; }
   40% { transform: scale(1); opacity: 1; }
 }
 @keyframes fadeIn {

@@ -27,6 +27,8 @@ export const chatStatic: ChatStaticStrings = {
   supportHint: "Yordam markazi raqami",
   collapseSidebar: "Panelni yig'ish",
   theme: "Rejim",
+  nightMode: "Tungi rejim",
+  dayMode: "Kunduzgi rejim",
   adminPanel: "Admin panel",
   send: "Yuborish",
   stop: "To‘xtatish",
@@ -47,4 +49,5 @@ export const chatStatic: ChatStaticStrings = {
   saveChanges: "O‘zgarishlarni saqlash",
   logOut: "Chiqish",
   removeChat: "Suhbatni o‘chirish",
+  selectLanguage: "Tilni tanlash",
 };

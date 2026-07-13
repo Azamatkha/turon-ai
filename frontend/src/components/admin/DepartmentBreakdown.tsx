@@ -1,4 +1,4 @@
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
 import styles from "./DepartmentBreakdown.module.css";
 
 interface DeptDef {
@@ -10,9 +10,10 @@ interface DeptDef {
 interface DepartmentBreakdownProps {
   departments: DeptDef[];
   mounted: boolean;
+  t: AdminStrings;
 }
 
-export default function DepartmentBreakdown({ departments, mounted }: DepartmentBreakdownProps) {
+export default function DepartmentBreakdown({ departments, mounted, t: admin }: DepartmentBreakdownProps) {
   return (
     <div className={styles.card}>
       <div className={styles.title}>{admin.deptUsageTitle}</div>

@@ -27,7 +27,7 @@ export default function SidebarToggle({
       onClick={onToggle}
       data-tip={open ? openLabel : closedLabel}
       aria-label={open ? openLabel : closedLabel}
-      className={styles.toggle}
+      className={`${styles.toggle} tip-right`}
       style={{
         left: `${left}px`,
         ...(isDark

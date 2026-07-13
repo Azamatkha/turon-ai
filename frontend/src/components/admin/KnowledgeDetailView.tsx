@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import HButton from "../common/HButton";
-import { admin } from "../../locales";
+import type { AdminStrings } from "../../types/i18n";
 import {
   getKnowledgeDetail,
   updateKnowledge,
@@ -13,10 +13,11 @@ interface Props {
   title: string;
   onBack: () => void;
   onChanged: () => void; // ro'yxatni yangilash uchun
+  t: AdminStrings;
 }
 
 // Bitta ma'lumotning to'liq sahifasi: ko'rish + tahrirlash + o'chirish.
-export default function KnowledgeDetailView({ title, onBack, onChanged }: Props) {
+export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin }: Props) {
   const [detail, setDetail] = useState<KnowledgeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);

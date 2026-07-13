@@ -1,7 +1,7 @@
 import type { AdminRole, AdminStatus } from "../../types/admin";
+import type { AdminStrings } from "../../types/i18n";
 
-// AdminPage'da til almashtirgich yo'q — matnlar doim o'zbekcha bo'lgan, shu holat saqlanadi
-export const admin = {
+export const admin: AdminStrings = {
   panelLabel: "Admin panel",
   dashboardNav: "Boshqaruv paneli",
   usersNav: "Foydalanuvchilar",
@@ -75,6 +75,7 @@ export const admin = {
   knowledgeEmpty: "Hali hech qanday ma’lumot yuklanmagan.",
   knowledgeLoadError: "Ro‘yxatni olishda xatolik.",
   knowledgeChunks: (n: number) => `${n} ta bo‘lak`,
+  knowledgeItemsCount: (n: number) => `${n} ta ma’lumot`,
   knowledgeDetailError: "Ma’lumotni olishda xatolik.",
   knowledgeChunkLabel: (i: number) => `Bo‘lak ${i + 1}`,
   knowledgeBack: "Orqaga",
@@ -86,4 +87,33 @@ export const admin = {
   knowledgeEditTitle: "Ma’lumotni tahrirlash",
   knowledgeSaveError: "Saqlashda xatolik.",
   knowledgeDeleteError: "O‘chirishda xatolik.",
-} as const;
+  knowledgeAdd: "Ma’lumot qo‘shish",
+  knowledgeAddModalTitle: "Havola orqali ma’lumot qo‘shish",
+  knowledgeAddModalSub: "Sahifa manzilini kiriting — matni avtomatik ajratib olinib, bazaga yoziladi.",
+  knowledgeUrlLabel: "Havola",
+  knowledgeUrlPh: "https://turonbank.uz/...",
+  knowledgeUrlRequired: "Havola manzilini kiriting.",
+  knowledgeScrapeError: "Havoladan ma’lumot olishda xatolik.",
+  chatNav: "Chatga o‘tish",
+  nightMode: "Tungi rejim",
+  dayMode: "Kunduzgi rejim",
+  selectLanguage: "Tilni tanlash",
+  allDepts: "Barcha bo‘limlar",
+  password: "Parol",
+  nameLoginRequired: "Ism va login bo‘sh bo‘lmasligi kerak.",
+  passTooShort: "Parol kamida 4 ta belgidan iborat bo‘lsin.",
+  saveFailed: "Saqlanmadi",
+  statTotalUsers: "Jami foydalanuvchilar",
+  statTotalSessions: "Jami suhbatlar",
+  statTotalMessages: "Jami so‘rovlar",
+  statOnline: "Hozir onlayn",
+  statLikes: "Layklar",
+  statDislikes: "Dislayklar",
+  actLogin: "tizimga kirdi",
+  actLogout: "tizimdan chiqdi",
+  actSession: "yangi suhbat ochdi",
+  timeNow: "hozir",
+  timeMinAgo: (m: number) => `${m} daq oldin`,
+  timeHourAgo: (h: number) => `${h} soat oldin`,
+  timeDayAgo: (d: number) => `${d} kun oldin`,
+};

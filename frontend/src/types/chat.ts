@@ -6,6 +6,8 @@ export interface Msg {
   text: string;
   time?: string; // ISO vaqt belgisi (yuborilgan/kelgan payt)
   vote?: "up" | "down" | null; // foydalanuvchi bahosi
+  // Debug: token statistikasi (faqat assistant xabarlarida bo'ladi)
+  debug?: { finishReason: string; completionTokens: number; maxTokens: number };
 }
 
 export interface Chat {

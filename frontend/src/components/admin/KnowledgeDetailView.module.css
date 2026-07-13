@@ -24,15 +24,15 @@
 }
 
 .chunk {
-  border: 1px solid #e6eae3;
+  border: 1px solid var(--adm-border);
   border-radius: 12px;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--adm-card);
 }
 
 .card {
-  background: #fff;
-  border: 1px solid #e4e8e2;
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border-2);
   border-radius: 16px;
   padding: 22px;
   box-shadow: 0 6px 22px rgba(13, 33, 45, 0.06);
@@ -49,8 +49,8 @@
   height: 38px;
   padding: 0 14px;
   border-radius: 10px;
-  border: 1px solid #dde2dc;
-  background: #fff;
+  border: 1px solid var(--adm-border-input);
+  background: var(--adm-card);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -58,16 +58,16 @@
 }
 
 .backBtn {
-  color: #42565f;
+  color: var(--adm-text-body);
 }
 .backBtn:hover {
-  background: #f1f4ef;
-  color: #173f73;
+  background: var(--adm-hover-2);
+  color: var(--adm-text-strong);
 }
 
 .editBtn {
-  color: #2a6f97;
-  border-color: #bcd6e6;
+  color: var(--adm-accent);
+  border-color: var(--adm-accent-light);
 }
 .editBtn:hover {
   background: rgba(47, 102, 144, 0.08);
@@ -75,12 +75,12 @@
 
 .delBtn,
 .delConfirmBtn {
-  color: #c0392b;
-  border-color: #f0c4bf;
-  background: #fff;
+  color: var(--adm-danger);
+  border-color: var(--adm-danger-border);
+  background: var(--adm-card);
 }
 .delBtn:hover {
-  background: #fdeceb;
+  background: var(--adm-danger-bg);
 }
 
 .saveBtn {
@@ -112,32 +112,32 @@
 .input {
   width: 100%;
   height: 44px;
-  border: 1.6px solid #dde2dc;
+  border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 0 13px;
   font-size: 14px;
-  color: #173f73;
+  color: var(--adm-text-strong);
   outline: none;
-  background: #fbfcfa;
+  background: var(--adm-input-bg);
 }
 
 .textarea {
   width: 100%;
-  border: 1.6px solid #dde2dc;
+  border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 11px 13px;
   font-size: 14px;
   line-height: 1.55;
-  color: #173f73;
+  color: var(--adm-text-strong);
   outline: none;
-  background: #fbfcfa;
+  background: var(--adm-input-bg);
   resize: vertical;
   font-family: inherit;
 }
 
 .input:focus,
 .textarea:focus {
-  border-color: #2a6f97;
+  border-color: var(--adm-accent);
 }
 
 /* ---- confirm overlay ---- */
@@ -156,7 +156,7 @@
 .confirm {
   width: 100%;
   max-width: 400px;
-  background: #fff;
+  background: var(--adm-card);
   border-radius: 16px;
   padding: 22px;
   box-shadow: 0 24px 70px rgba(13, 33, 45, 0.4);
@@ -166,7 +166,7 @@
 .title {
   font-size: 20px;
   font-weight: 700;
-  color: #173f73;
+  color: var(--adm-text-strong);
   margin-bottom: 16px;
   line-height: 1.3;
 }
@@ -174,7 +174,7 @@
 .cardTitle {
   font-size: 17px;
   font-weight: 700;
-  color: #173f73;
+  color: var(--adm-text-strong);
   margin-bottom: 16px;
 }
 
@@ -182,7 +182,7 @@
   display: block;
   font-size: 12.5px;
   font-weight: 600;
-  color: #42565f;
+  color: var(--adm-text-body);
   margin-bottom: 7px;
 }
 
@@ -190,20 +190,20 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #9aafb8;
+  color: var(--adm-text-muted-2);
   margin-bottom: 6px;
 }
 
 .chunkText {
   font-size: 14px;
-  color: #2f4650;
+  color: var(--adm-text-chunk);
   line-height: 1.6;
   white-space: pre-wrap;
 }
 
 .confirmText {
   font-size: 14px;
-  color: #42565f;
+  color: var(--adm-text-body);
   line-height: 1.5;
 }
 
@@ -217,9 +217,9 @@
 .errMsg {
   padding: 11px 14px;
   border-radius: 10px;
-  background: #fdeceb;
-  border: 1px solid rgba(192, 57, 43, 0.25);
-  color: #c0392b;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
   font-size: 13px;
   font-weight: 600;
 }
@@ -228,7 +228,7 @@
   height: 38px;
   padding: 0 16px;
   border-radius: 10px;
-  border: 1px solid #f0c4bf;
+  border: 1px solid var(--adm-danger-border);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -238,8 +238,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2.6px solid #dde2dc;
-  border-top-color: #2a6f97;
+  border: 2.6px solid var(--adm-border-input);
+  border-top-color: var(--adm-accent);
   animation: spin 0.7s linear infinite;
 }
 
