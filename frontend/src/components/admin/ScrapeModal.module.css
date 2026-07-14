@@ -70,6 +70,53 @@
   background: var(--adm-input-bg);
 }
 
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1.6px solid var(--adm-border-input);
+  border-radius: 11px;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--adm-text-strong);
+  outline: none;
+  background: var(--adm-input-bg);
+  resize: vertical;
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--adm-border-input);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2a6f97, #173f73);
+  transition: width 0.2s ease;
+}
+
+.progressLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-align: right;
+}
+
 .submitBtn {
   width: 100%;
   height: 48px;

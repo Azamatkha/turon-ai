@@ -9,6 +9,7 @@ export interface LoginStrings {
   signIn: string;
   welcome: string;
   invalid: string;
+  rateLimited: string;
   login: string;
   password: string;
   loginPh: string;
@@ -28,9 +29,6 @@ export interface ChatStrings {
   sub: string;
   placeholder: string;
   disclaimer: string;
-  today: string;
-  yest: string;
-  prev: string;
   sugg: string[];
   greeting: (name: string) => string;
 }
@@ -65,11 +63,19 @@ export interface ChatStaticStrings {
   usernamePh: string;
   newPassword: string;
   newPasswordPh: string;
+  confirmNewPassword: string;
+  passwordMismatch: string;
   taken: string;
   saved: string;
   saveChanges: string;
   logOut: string;
   removeChat: string;
+  pinChat: string;
+  unpinChat: string;
+  moreOptions: string;
+  pinnedSection: string;
+  recentsSection: string;
+  todayLabel: string;
   selectLanguage: string;
 }
 
@@ -160,7 +166,13 @@ export interface AdminStrings {
   knowledgeAdd: string;
   knowledgeAddModalTitle: string;
   knowledgeAddModalSub: string;
+  knowledgeSearchPh: string;
+  knowledgeSortTitle: string;
+  knowledgeSortChunks: string;
+  knowledgeNoResults: string;
   knowledgeUrlLabel: string;
+  knowledgeBulkProgress: (done: number, total: number) => string;
+  knowledgeBulkSummary: (ok: number, fail: number) => string;
   knowledgeUrlPh: string;
   knowledgeUrlRequired: string;
   knowledgeScrapeError: string;
@@ -173,6 +185,7 @@ export interface AdminStrings {
   nameLoginRequired: string;
   passTooShort: string;
   saveFailed: string;
+  usersLoadError: string;
   statTotalUsers: string;
   statTotalSessions: string;
   statTotalMessages: string;
@@ -182,6 +195,7 @@ export interface AdminStrings {
   actLogin: string;
   actLogout: string;
   actSession: string;
+  actMessage: string;
   timeNow: string;
   timeMinAgo: (m: number) => string;
   timeHourAgo: (h: number) => string;

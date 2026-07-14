@@ -14,7 +14,7 @@ import DashboardView from "../components/admin/DashboardView";
 import KnowledgeListView from "../components/admin/KnowledgeListView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
-import ScrapeModal from "../components/admin/ScrapeModal";
+import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
 import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import styles from "./AdminPage.module.css";
@@ -43,9 +43,12 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [allDepts, setAllDepts] = useState<string[]>([]); // filter uchun barqaror ro'yxat
   const [navCollapsed, setNavCollapsed] = useState(false);
+  // Ro'yxat yuklash/rol o'zgartirish/o'chirish kabi amallar uchun umumiy xato banneri
+  const [pageError, setPageError] = useState("");
 
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [addErr, setAddErr] = useState("");
   const [fName, setFName] = useState("");
   const [fUser, setFUser] = useState("");
   const [fDept, setFDept] = useState("");
@@ -56,6 +59,7 @@ export default function AdminPage() {
   const [scraping, setScraping] = useState(false);
   const [scrapeUrlValue, setScrapeUrlValue] = useState("");
   const [scrapeErr, setScrapeErr] = useState<string | null>(null);
+  const [scrapeProgress, setScrapeProgress] = useState<ScrapeProgress | null>(null);
   const [knowledgeReloadKey, setKnowledgeReloadKey] = useState(0);
 
   // Foydalanuvchilarni serverdan yuklash (qidiruv/bo'lim o'zgarsa qayta)
@@ -63,8 +67,10 @@ export default function AdminPage() {
     try {
       const data = await listUsers(search, dept);
       setUsers(data.map(mapUser));
-    } catch {
+      setPageError("");
+    } catch (e) {
       setUsers([]);
+      setPageError(e instanceof Error ? e.message : t.usersLoadError);
     }
   };
 
@@ -101,12 +107,13 @@ export default function AdminPage() {
 
   const openAdd = () => {
     setFName(""); setFUser(""); setFDept(""); setFPass(""); setFRole("Xodim");
-    setAdding(false); setAddOpen(true);
+    setAdding(false); setAddErr(""); setAddOpen(true);
   };
 
   const submitAdd = async () => {
     if (!fName.trim() || !fUser.trim() || !fPass.trim()) return;
     setAdding(true);
+    setAddErr("");
     try {
       await createUser({
         username: fUser.trim(),
@@ -118,21 +125,30 @@ export default function AdminPage() {
       setAddOpen(false);
       await load();
       await refreshDepts(); // yangi bo'lim qo'shilgan bo'lishi mumkin
-    } catch {
-      /* username band bo'lsa modal ochiq qoladi */
+    } catch (e) {
+      // masalan username band bo'lsa — modal ochiq qoladi va xato ko'rsatiladi
+      setAddErr(e instanceof Error ? e.message : t.saveFailed);
     } finally {
       setAdding(false);
     }
   };
 
   const onChangeRoleUser = async (id: string, role: AdminRole) => {
-    await changeRole(id, toBackendRole(role));
-    await load();
+    try {
+      await changeRole(id, toBackendRole(role));
+      await load();
+    } catch (e) {
+      setPageError(e instanceof Error ? e.message : t.saveFailed);
+    }
   };
 
   const onDeleteUser = async (id: string) => {
-    await deleteUser(id);
-    await load();
+    try {
+      await deleteUser(id);
+      await load();
+    } catch (e) {
+      setPageError(e instanceof Error ? e.message : t.saveFailed);
+    }
   };
 
   const onUpdateUser = async (
@@ -147,24 +163,56 @@ export default function AdminPage() {
   const userTaken = !!fUser.trim() && users.some((u) => u.handle === handle);
 
   const openScrape = () => {
-    setScrapeUrlValue(""); setScrapeErr(null); setScraping(false); setScrapeOpen(true);
+    setScrapeUrlValue(""); setScrapeErr(null); setScraping(false); setScrapeProgress(null); setScrapeOpen(true);
   };
 
   const submitScrape = async () => {
-    if (!scrapeUrlValue.trim()) {
+    // Har qatorda bitta havola — bo'sh qatorlar va dublikatlar tashlab yuboriladi
+    const urls = Array.from(
+      new Set(scrapeUrlValue.split("\n").map((u) => u.trim()).filter(Boolean))
+    );
+    if (urls.length === 0) {
       setScrapeErr(t.knowledgeUrlRequired);
       return;
     }
     setScraping(true);
     setScrapeErr(null);
-    try {
-      await scrapeUrl(scrapeUrlValue);
+
+    if (urls.length === 1) {
+      // Bitta havola — oddiy oqim, alohida bulk API shart emas
+      try {
+        await scrapeUrl(urls[0]);
+        setScrapeOpen(false);
+        setKnowledgeReloadKey((k) => k + 1);
+      } catch (e) {
+        setScrapeErr(e instanceof Error ? e.message : t.knowledgeScrapeError);
+      } finally {
+        setScraping(false);
+      }
+      return;
+    }
+
+    // Ko'p havola — ketma-ket (for loop), har birida progress yangilanadi.
+    // Jarayon davomida oyna yopilmaydi (ScrapeModal buni o'zi bloklaydi).
+    let ok = 0;
+    let fail = 0;
+    setScrapeProgress({ done: 0, total: urls.length });
+    for (const u of urls) {
+      try {
+        await scrapeUrl(u);
+        ok += 1;
+      } catch {
+        fail += 1;
+      }
+      setScrapeProgress({ done: ok + fail, total: urls.length });
+    }
+    setScraping(false);
+    setScrapeProgress(null);
+    setKnowledgeReloadKey((k) => k + 1);
+    if (fail > 0) {
+      setScrapeErr(t.knowledgeBulkSummary(ok, fail)); // xato bo'lsa oyna ochiq qoladi, natija ko'rinadi
+    } else {
       setScrapeOpen(false);
-      setKnowledgeReloadKey((k) => k + 1); // ro'yxatni qayta yuklash uchun KnowledgeListView'ni remount qilamiz
-    } catch (e) {
-      setScrapeErr(e instanceof Error ? e.message : t.knowledgeScrapeError);
-    } finally {
-      setScraping(false);
     }
   };
 
@@ -196,6 +244,12 @@ export default function AdminPage() {
         />
 
         <div className={styles.content}>
+          {onUsers && pageError && (
+            <div style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 10, background: "var(--adm-danger-bg)", border: "1px solid var(--adm-danger-border)", color: "var(--adm-danger)", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <span>{pageError}</span>
+              <button onClick={() => setPageError("")} aria-label={t.knowledgeCancel} style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+            </div>
+          )}
           {onDashboard && <DashboardView mounted={mounted} t={t} />}
           {onKnowledgeList && <KnowledgeListView key={knowledgeReloadKey} mounted={mounted} t={t} onAddClick={openScrape} />}
           {onUsers && (
@@ -222,7 +276,7 @@ export default function AdminPage() {
             fDept={fDept} setFDept={setFDept}
             fPass={fPass} setFPass={setFPass}
             fRole={fRole} setFRole={setFRole}
-            adding={adding} userTaken={userTaken}
+            adding={adding} userTaken={userTaken} error={addErr}
             onClose={() => setAddOpen(false)} onSubmit={submitAdd}
             t={t}
           />
@@ -231,7 +285,7 @@ export default function AdminPage() {
         {scrapeOpen && (
           <ScrapeModal
             url={scrapeUrlValue} setUrl={setScrapeUrlValue}
-            loading={scraping} error={scrapeErr}
+            loading={scraping} error={scrapeErr} progress={scrapeProgress}
             onClose={() => setScrapeOpen(false)} onSubmit={submitScrape}
             t={t}
           />

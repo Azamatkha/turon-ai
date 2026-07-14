@@ -36,6 +36,7 @@ from src.chat.schemas import (
     GenerateTitleRequest,
     GenerateTitleResult,
     MessageView,
+    PinSessionModel,
     RenameSessionModel,
     SessionDetailView,
     SessionView,
@@ -49,6 +50,7 @@ from src.chat.usecases import (
     GenerateTitleUseCase,
     GetSessionUseCase,
     ListSessionsUseCase,
+    PinSessionUseCase,
     RenameSessionUseCase,
     VoteMessageUseCase,
     get_add_message_use_case,
@@ -58,6 +60,7 @@ from src.chat.usecases import (
     get_generate_title_use_case,
     get_get_session_use_case,
     get_list_sessions_use_case,
+    get_pin_session_use_case,
     get_rename_session_use_case,
     get_vote_message_use_case,
 )
@@ -114,6 +117,19 @@ async def rename_session(
     """Suhbat nomini o'zgartirish."""
     return await use_case.execute(
         user_id=current_user.id, session_id=session_id, title=data.title
+    )
+
+
+@router.patch("/sessions/{session_id}/pin", response_model=SessionView)
+async def pin_session(
+    session_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: PinSessionModel,
+    use_case: Annotated[PinSessionUseCase, Depends(get_pin_session_use_case)],
+) -> SessionView:
+    """Suhbatni ro'yxat tepasiga qadash (pin) yoki qadamasdan qo'yish."""
+    return await use_case.execute(
+        user_id=current_user.id, session_id=session_id, is_pinned=data.is_pinned
     )
 
 

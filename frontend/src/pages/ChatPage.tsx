@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useChatHistory } from "../hooks/useChatHistory";
 import { useTheme } from "../contexts/ThemeContext";
@@ -19,11 +19,12 @@ import styles from "./ChatPage.module.css";
 
 export default function ChatPage() {
   const navigate = useNavigate();
+  const { sessionId } = useParams();
   const { lang, setLang, t: T } = useLang(chatDict);
   const S = chatStaticDict[lang]; // tanlangan tildagi statik matnlar
   const {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate, voteMsg,
+    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, voteMsg,
   } = useChatHistory(T.newChat);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -37,6 +38,8 @@ export default function ChatPage() {
   const [pFullName, setPFullName] = useState("");
   const [pUsername, setPUsername] = useState("");
   const [pPassword, setPPassword] = useState("");
+  const [pConfirmPassword, setPConfirmPassword] = useState("");
+  const [pError, setPError] = useState("");
 
   // Haqiqiy foydalanuvchini backenddan olamiz (login token bilan)
   useEffect(() => {
@@ -48,6 +51,19 @@ export default function ChatPage() {
       })
       .catch(() => navigate("/login"));
   }, [navigate]);
+
+  // URL → holat: manzildagi sessionId (to'g'ridan-to'g'ri link yoki refresh) faol suhbatga aylanadi
+  useEffect(() => {
+    if (sessionId && sessionId !== activeId) setActiveId(sessionId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  // Holat → URL: faol suhbat o'zgarsa manzil ham mos bo'ladi (/c/<uuid>), yangi chatda "/"
+  useEffect(() => {
+    if (activeId && activeId !== sessionId) navigate(`/c/${activeId}`);
+    else if (!activeId && sessionId) navigate("/");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
 
   const isDark = theme === "dark";
   const userName = fullName || "Foydalanuvchi";
@@ -70,6 +86,8 @@ export default function ChatPage() {
     setPFullName(fullName);
     setPUsername(username);
     setPPassword("");
+    setPConfirmPassword("");
+    setPError("");
     setSaved(false);
     setProfileOpen(true);
   };
@@ -77,17 +95,23 @@ export default function ChatPage() {
   const saveProfile = async () => {
     const u = pUsername.trim();
     if (!pFullName.trim() || !u) return;
+    setPError("");
+    // Parol kiritilgan bo'lsa — o'zi to'g'ri terganini tekshirish uchun tasdiqlash bilan solishtiramiz
+    if (pPassword && pPassword !== pConfirmPassword) {
+      setPError(S.passwordMismatch);
+      return;
+    }
     try {
-      // Parol kiritilgan bo'lsa — backendga yangi parolni yuboramiz
       if (pPassword) await changePassword(pPassword);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Parolni o'zgartirishda xatolik");
+      setPError(e instanceof Error ? e.message : "Parolni o'zgartirishda xatolik");
       return;
     }
     // Ism/login hozircha faqat ekranda yangilanadi (backendda /me yangilash endpointi hali yo'q)
     setFullName(pFullName.trim());
     setUsername(u);
     setPPassword("");
+    setPConfirmPassword("");
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };
@@ -95,15 +119,15 @@ export default function ChatPage() {
   const tk = getThemeTokens(isDark);
   const side = getSideTokens(isDark);
 
-  // Qidiruv matni bo'yicha suhbatlarni filtrlaymiz (sarlavha bo'yicha, registrga sezgir emas)
+  // Qidiruv matni bo'yicha suhbatlarni filtrlaymiz (sarlavha bo'yicha, registrga sezgir emas),
+  // so'ng yagona (guruhlarsiz) ro'yxatda pin qilinganlar tepada, qolgani oxirgi xabar vaqti
+  // bo'yicha (eng yangisi birinchi) chiqadi.
   const q = search.trim().toLowerCase();
   const visibleChats = q ? chats.filter((c) => (c.title || T.newChat).toLowerCase().includes(q)) : chats;
-
-  const order = ["Today", "Yesterday", "Previous 7 Days"];
-  const labelMap: Record<string, string> = { Today: T.today, Yesterday: T.yest, "Previous 7 Days": T.prev };
-  const groups = order
-    .map((label) => ({ label: labelMap[label], items: visibleChats.filter((c) => c.group === label) }))
-    .filter((g) => g.items.length);
+  const sortedChats = [...visibleChats].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+  });
 
   const usernameTaken = TAKEN_USERNAMES.includes(pUsername.trim()) && pUsername.trim() !== username;
   const usernameOk = !!pUsername.trim() && pUsername.trim() !== username && !TAKEN_USERNAMES.includes(pUsername.trim());
@@ -159,11 +183,18 @@ export default function ChatPage() {
         setOpen={setSidebarOpen}
         newChat={newChat}
         newChatLabel={T.newChat}
-        groups={groups}
+        chats={sortedChats}
         activeId={activeId}
         setActiveId={setActiveId}
         onRemoveChat={removeChat}
+        onTogglePin={togglePin}
         removeChatLabel={S.removeChat}
+        pinChatLabel={S.pinChat}
+        unpinChatLabel={S.unpinChat}
+        moreOptionsLabel={S.moreOptions}
+        pinnedSectionLabel={S.pinnedSection}
+        recentsSectionLabel={S.recentsSection}
+        todayLabel={S.todayLabel}
         search={search}
         setSearch={setSearch}
         searchPlaceholder={S.searchPlaceholder}
@@ -236,6 +267,9 @@ export default function ChatPage() {
             usernameOk={usernameOk}
             pPassword={pPassword}
             setPPassword={setPPassword}
+            pConfirmPassword={pConfirmPassword}
+            setPConfirmPassword={setPConfirmPassword}
+            error={pError}
             saved={saved}
             onClose={() => setProfileOpen(false)}
             onSave={saveProfile}

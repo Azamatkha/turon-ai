@@ -4,6 +4,7 @@ from starlette.datastructures import URL
 from loggers import get_logger
 from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
+from src.core.errors.exceptions import InstanceAlreadyExistsException
 from src.core.utils.security import hash_password
 from src.user.auth.schemas import CreateUserModel
 from src.user.schemas import UserProfileViewModel
@@ -19,6 +20,10 @@ class RegisterUseCase:
 
     async def execute(self, data: CreateUserModel) -> UserProfileViewModel:
         async with self.uow as uow:
+            existing = await uow.users.get_single(uow.session, username=data.username)
+            if existing:
+                raise InstanceAlreadyExistsException("Bu login allaqachon band")
+
             parts = data.full_name.strip().split(maxsplit=1)
             first_name = parts[0]
             last_name = parts[1] if len(parts) > 1 else ""

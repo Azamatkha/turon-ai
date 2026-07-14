@@ -42,6 +42,7 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
     login: { text: admin.actLogin, c: "#1f8a5b" },
     logout: { text: admin.actLogout, c: "#c0392b" },
     session: { text: admin.actSession, c: "#3a7ca5" },
+    message: { text: admin.actMessage, c: "#5b8fb0" },
   };
 
   const statDefs: StatDef[] = [

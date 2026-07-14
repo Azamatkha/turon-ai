@@ -150,6 +150,15 @@
   margin-bottom: 14px;
 }
 
+/* "Pin qilingan" / "Suhbatlar" bo'lim sarlavhalari */
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 4px 11px 7px;
+}
+
 .profileTrigger {
   display: flex;
   align-items: center;
@@ -237,20 +246,21 @@
   transition: all 0.18s ease;
 }
 
-.groupLabel {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  padding: 4px 11px 7px;
-}
-
-/* Tarixdagi bitta suhbat qatori: tanlash tugmasi + o'chirish ikonkasi yonma-yon */
+/* Tarixdagi bitta suhbat qatori: tanlash tugmasi + "..." menyu tugmasi bitta
+   yaxlit kartada — fon shu qatorga qo'yiladi (chatItem/moreBtn o'zining foniga ega emas),
+   shu sababli tugma karta ichida qoladi, "tashqarida" osilib qolmaydi */
 .chatRow {
   position: relative;
   display: flex;
   align-items: center;
   gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  transition: background 0.18s ease;
+}
+
+.chatRow:hover {
+  background: var(--row-hover-bg);
 }
 
 .chatItem {
@@ -259,48 +269,112 @@
   gap: 9px;
   flex: 1;
   min-width: 0;
-  padding: 9px 11px;
-  border-radius: 9px;
+  padding: 7px 8px;
+  border-radius: 7px;
   border: none;
+  background: transparent;
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-/* O'chirish tugmasi: doim bosish mumkin (touch'da ham), lekin hover/focus'da
-   to'liq ko'rinadi — sof hover'ga bog'lab qo'ymaslik uchun (touch'da hover yo'q) */
-.removeBtn {
+/* "..." menyu tugmasi: sukut bo'yicha butunlay yashirin — faqat shu qatorni
+   hover qilganda (yoki fokus/menyu ochiq bo'lganda) ko'rinadi */
+.moreBtn {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border: none;
   border-radius: 7px;
   background: transparent;
   color: inherit;
-  opacity: 0.45;
+  opacity: 0;
   cursor: pointer;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.chatRow:hover .removeBtn,
-.removeBtn:focus-visible {
+.chatRow:hover .moreBtn,
+.moreBtn:focus-visible,
+.moreBtnActive {
   opacity: 1;
 }
 
-.removeBtn:hover,
-.removeBtn:focus-visible {
-  background: rgba(192, 57, 43, 0.18);
-  color: #ff8a80;
+.moreBtn:hover,
+.moreBtn:focus-visible,
+.moreBtnActive {
+  background: rgba(255, 255, 255, 0.16);
 }
 
-.removeBtn:focus-visible {
+.moreBtn:focus-visible {
   outline: 2px solid #7fb3d2;
   outline-offset: 1px;
+}
+
+/* "..." bosilganda ochiladigan popover menyu — <body>ga portal qilinadi (position: fixed,
+   joylashuvi JS orqali beriladi), shuning uchun aniq/qattiq fonga ega bo'lishi va
+   sidebar rangi bilan qo'shilib ketmasligi uchun mustaqil ranglar beriladi */
+.moreMenu {
+  position: fixed;
+  z-index: 1000;
+  background: #1f3f63;
+  color: #eef2ef;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+  animation: menuIn 0.14s ease both;
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.moreMenuTime {
+  padding: 5px 9px 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(238, 242, 239, 0.6);
+}
+
+.moreMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 9px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.moreMenuItem:hover,
+.moreMenuItem:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.moreMenuItemDanger:hover,
+.moreMenuItemDanger:focus-visible {
+  background: rgba(192, 57, 43, 0.25);
+  color: #ff8a80;
 }
 
 .chatDot {

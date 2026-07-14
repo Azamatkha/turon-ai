@@ -11,6 +11,7 @@ ALLOWED_ROLES = {"user", "assistant"}
 class SessionView(Base):
     id: UUID
     title: str
+    is_pinned: bool
     created_at: datetime
     updated_at: datetime
 
@@ -33,6 +34,10 @@ class CreateSessionModel(Base):
 
 class RenameSessionModel(Base):
     title: str
+
+
+class PinSessionModel(Base):
+    is_pinned: bool
 
 
 class AddMessageModel(Base):

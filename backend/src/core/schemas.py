@@ -36,6 +36,6 @@ class StrongPasswordValidationMixin(BaseModel):
     def validate_password(cls, value: str) -> str:
         if not STRONG_PASSWORD_VALIDATOR.match(value):
             raise ValueError(
-                f"Password must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one non-alphanumeric non-space character. Printable ASCII characters are allowed."
+                f"Password must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long."
             )
         return value

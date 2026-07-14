@@ -302,3 +302,23 @@ async def handle_too_many_requests_exception(
         content=format_error_response(error_type, exc.message),
         headers=headers,
     )
+
+
+async def handle_unexpected_exception(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    """`CoreException` ierarxiyasiga kirmaydigan har qanday kutilmagan xato uchun
+    zaxira handler — foydalanuvchiga xom Python traceback/500 o'rniga doim bir xil
+    tuzilgan JSON javob qaytadi. Haqiqiy xato tafsilotlari faqat serverga (log) yoziladi."""
+    error_type = "Internal Server Error"
+    log_msg = format_log_message(
+        request, error_type, f"{type(exc).__name__}: {exc}", include_request_path=True
+    )
+    response_logger.exception(log_msg)
+    return JSONResponse(
+        status_code=500,
+        content=format_error_response(
+            error_type, "Kutilmagan xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+        ),
+    )

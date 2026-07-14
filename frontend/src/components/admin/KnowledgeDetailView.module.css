@@ -1,7 +1,7 @@
 /* Ma'lumot tafsiloti — to'liq sahifa (modal emas) */
 
 .wrap {
-  max-width: 820px;
+  max-width: 1400px;
 }
 
 .head {
@@ -21,6 +21,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  max-width: 900px;
 }
 
 .chunk {
@@ -31,6 +32,7 @@
 }
 
 .card {
+  max-width: 900px;
   background: var(--adm-card);
   border: 1px solid var(--adm-border-2);
   border-radius: 16px;

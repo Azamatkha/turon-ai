@@ -33,6 +33,7 @@ from src.core.errors.handlers import (
     handle_request_validation_exception,
     handle_too_many_requests_exception,
     handle_unauthorized_exception,
+    handle_unexpected_exception,
     handle_validation_error,
 )
 from src.admin import routers as admin_routers
@@ -97,6 +98,13 @@ EXCEPTION_HANDLERS: tuple[tuple[type[Exception], HandlerCallable], ...] = (
     (
         TooManyRequestsException,
         cast(HandlerCallable, handle_too_many_requests_exception),
+    ),
+    (
+        # Zaxira: CoreException ierarxiyasiga kirmaydigan har qanday kutilmagan xato
+        # (masalan scraper/embedder/vectorstore ichidan chiqadigan xom exception'lar)
+        # shu yerda ushlanadi — foydalanuvchiga hech qachon xom 500/traceback ko'rinmaydi.
+        Exception,
+        cast(HandlerCallable, handle_unexpected_exception),
     ),
 )
 

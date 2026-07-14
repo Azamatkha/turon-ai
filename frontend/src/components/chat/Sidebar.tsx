@@ -1,5 +1,6 @@
-import { CSSProperties, useRef } from "react";
-import { RiDeleteBin5Fill } from "react-icons/ri";
+import { CSSProperties, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiPushpin2Line } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import { PRIMARY } from "./theme";
@@ -9,21 +10,23 @@ import styles from "./Sidebar.module.css";
 const SW = 282;
 const COLL = 72;
 
-interface ChatGroup {
-  label: string;
-  items: Chat[];
-}
-
 interface SidebarProps {
   open: boolean;
   setOpen: (v: boolean) => void;
   newChat: () => void;
   newChatLabel: string;
-  groups: ChatGroup[];
+  chats: Chat[];
   activeId: string;
   setActiveId: (id: string) => void;
   onRemoveChat: (id: string) => void;
+  onTogglePin: (id: string) => void;
   removeChatLabel: string;
+  pinChatLabel: string;
+  unpinChatLabel: string;
+  moreOptionsLabel: string;
+  pinnedSectionLabel: string;
+  recentsSectionLabel: string;
+  todayLabel: string;
   search: string;
   setSearch: (v: string) => void;
   searchPlaceholder: string;
@@ -35,20 +38,78 @@ interface SidebarProps {
   openProfile: () => void;
 }
 
+// Oxirgi xabar vaqtini menyu uchun formatlaydi: bugun bo'lsa "Bugun · soat:daqiqa",
+// aks holda sana + vaqt (raqamli format — barcha tillarda bir xil ishlaydi)
+function formatLastMessageTime(iso: string, todayLabel: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (d.toDateString() === now.toDateString()) return `${todayLabel} · ${time}`;
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${time}`;
+}
+
 export default function Sidebar({
-  open, setOpen, newChat, newChatLabel, groups, activeId, setActiveId, onRemoveChat, removeChatLabel,
+  open, setOpen, newChat, newChatLabel, chats, activeId, setActiveId, onRemoveChat, onTogglePin,
+  removeChatLabel, pinChatLabel, unpinChatLabel, moreOptionsLabel, pinnedSectionLabel, recentsSectionLabel, todayLabel,
   search, setSearch, searchPlaceholder, noResultsLabel,
   side, userName, userHandle, initial, openProfile,
 }: SidebarProps) {
   const sideHover: CSSProperties = { background: "rgba(255,255,255,.08)" };
   const btnHover: CSSProperties = { background: "rgba(255,255,255,.13)" };
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  // Qaysi qatorning "..." menyusi ochiq (id + ekrandagi joylashuvi) — bir vaqtda faqat bittasi.
+  // Menyu <body>ga portal qilib chiqariladi — shunda sidebar ro'yxatining overflow/rang
+  // qatlamlariga qo'shilib ketmaydi va har doim yaxshi ko'rinadi.
+  const MENU_W = 180;
+  const [menu, setMenu] = useState<{ id: string; top: number; left: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const anchorElRef = useRef<HTMLElement | null>(null);
+
+  const openMenu = (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
+    e.stopPropagation();
+    if (menu?.id === id) { setMenu(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    anchorElRef.current = e.currentTarget;
+    setMenu({
+      id,
+      top: rect.bottom + 6,
+      left: Math.min(Math.max(rect.right - MENU_W, 8), window.innerWidth - MENU_W - 8),
+    });
+  };
+
+  // Menyu ochiq bo'lsa: tashqariga bosilganda yoki ro'yxat scroll qilinganda yopamiz
+  // (scroll'da yopamiz, chunki joylashuv fixed va qayta hisoblanmaydi)
+  useEffect(() => {
+    if (!menu) return;
+    const onDocMouseDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t)) return;
+      if (anchorElRef.current?.contains(t)) return;
+      setMenu(null);
+    };
+    const onScroll = () => setMenu(null);
+    document.addEventListener("mousedown", onDocMouseDown);
+    listRef.current?.addEventListener("scroll", onScroll);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown);
+      listRef.current?.removeEventListener("scroll", onScroll);
+    };
+  }, [menu]);
 
   // Qidiruv ikonkasi bosilganda: panelni ochib, qidiruv maydoniga fokus beramiz
   const openAndSearch = () => {
     setOpen(true);
     setTimeout(() => searchRef.current?.focus(), 80);
   };
+
+  // Pin qilinganlar alohida bo'lim (chats allaqachon pin-birinchi tartibda keladi)
+  const pinnedChats = chats.filter((c) => c.pinned);
+  const recentChats = chats.filter((c) => !c.pinned);
 
   return (
     <aside
@@ -130,47 +191,22 @@ export default function Sidebar({
             )}
           </div>
 
-          <div className={styles.chatList}>
-            {groups.length === 0 && (
+          <div className={styles.chatList} ref={listRef}>
+            {chats.length === 0 && (
               <div className={styles.noResults} style={{ color: side.sub }}>{noResultsLabel}</div>
             )}
-            {groups.map((g) => (
-              <div key={g.label}>
-                <div className={styles.groupLabel} style={{ color: side.sub }}>{g.label}</div>
-                <div className={styles.chatGroupItems}>
-                  {g.items.map((c) => {
-                    const act = c.id === activeId;
-                    return (
-                      // Qator: chap tomonda tanlash tugmasi, o'ngda — o'chirish ikonkasi.
-                      // Ikkisi alohida <button>, shuning uchun bosish hodisalari aralashmaydi.
-                      <div key={c.id} className={styles.chatRow}>
-                        <HButton
-                          onClick={() => setActiveId(c.id)}
-                          aria-current={act ? "true" : undefined}
-                          className={styles.chatItem}
-                          baseStyle={{ background: act ? side.active : "transparent", color: side.fg }}
-                          hoverStyle={{ background: side.active, transform: "translateX(3px)" }}
-                        >
-                          <span className={styles.chatDot} style={{ background: act ? side.logo : "transparent" }} />
-                          <span className={styles.chatTitle}>{c.title || newChatLabel}</span>
-                        </HButton>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveChat(c.id);
-                          }}
-                          data-tip={removeChatLabel}
-                          aria-label={removeChatLabel}
-                          className={`${styles.removeBtn} tip-right`}
-                        >
-                          <RiDeleteBin5Fill size={15} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+            {pinnedChats.length > 0 && (
+              <div className={styles.sectionLabel} style={{ color: side.sub }}>{pinnedSectionLabel}</div>
+            )}
+            <div className={styles.chatGroupItems}>
+              {pinnedChats.map((c) => renderRow(c))}
+            </div>
+            {pinnedChats.length > 0 && recentChats.length > 0 && (
+              <div className={styles.sectionLabel} style={{ color: side.sub }}>{recentsSectionLabel}</div>
+            )}
+            <div className={styles.chatGroupItems}>
+              {recentChats.map((c) => renderRow(c))}
+            </div>
           </div>
 
           <HButton onClick={openProfile} className={styles.profileTrigger} baseStyle={{ borderTop: "1px solid " + side.border, color: side.fg }} hoverStyle={{ background: "rgba(255,255,255,.07)" }}>
@@ -185,6 +221,79 @@ export default function Sidebar({
       )}
     </aside>
   );
+
+  function renderRow(c: Chat) {
+    const act = c.id === activeId;
+    const menuOpen = menu?.id === c.id;
+    const rowVars = { "--row-hover-bg": side.active } as CSSProperties;
+    return (
+      // Qator: butun fon (tanlash tugmasi + "..." tugmasi) birgalikda bitta
+      // yaxlit kartani hosil qiladi — ikkisi alohida <button>, bosish
+      // hodisalari aralashmasin deb.
+      <div
+        key={c.id}
+        className={styles.chatRow}
+        style={{ background: act ? side.active : undefined, ...rowVars }}
+      >
+        <HButton
+          onClick={() => setActiveId(c.id)}
+          aria-current={act ? "true" : undefined}
+          className={styles.chatItem}
+          baseStyle={{ color: side.fg }}
+          hoverStyle={{ transform: "translateX(3px)" }}
+        >
+          <span className={styles.chatDot} style={{ background: act ? side.logo : "transparent" }} />
+          <span className={styles.chatTitle}>{c.title || newChatLabel}</span>
+        </HButton>
+        <button
+          onClick={(e) => openMenu(e, c.id)}
+          data-tip={moreOptionsLabel}
+          aria-label={moreOptionsLabel}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className={`${styles.moreBtn} ${menuOpen ? styles.moreBtnActive : ""}`}
+        >
+          <RiMore2Fill size={15} />
+        </button>
+        {menuOpen &&
+          createPortal(
+            <div
+              ref={menuRef}
+              role="menu"
+              className={styles.moreMenu}
+              style={{ top: menu.top, left: menu.left, width: MENU_W }}
+            >
+              <div className={styles.moreMenuTime}>{formatLastMessageTime(c.lastMessageAt, todayLabel)}</div>
+              <button
+                role="menuitem"
+                className={styles.moreMenuItem}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePin(c.id);
+                  setMenu(null);
+                }}
+              >
+                {c.pinned ? <RiPushpin2Line size={15} /> : <RiPushpin2Fill size={15} />}
+                <span>{c.pinned ? unpinChatLabel : pinChatLabel}</span>
+              </button>
+              <button
+                role="menuitem"
+                className={`${styles.moreMenuItem} ${styles.moreMenuItemDanger}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveChat(c.id);
+                  setMenu(null);
+                }}
+              >
+                <RiDeleteBin5Fill size={15} />
+                <span>{removeChatLabel}</span>
+              </button>
+            </div>,
+            document.body
+          )}
+      </div>
+    );
+  }
 }
 
 export { SW, COLL };

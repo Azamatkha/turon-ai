@@ -16,12 +16,13 @@ class ChatSessionRepository(SoftDeleteRepository[ChatSession]):
     async def list_for_user(
         self, session: AsyncSession, user_id: UUID
     ) -> list[ChatSession]:
-        """Foydalanuvchining suhbatlari — eng so'nggi yangilangani birinchi."""
+        """Foydalanuvchining suhbatlari — pin qilinganlari tepada, ular ichida ham,
+        oddiylar ichida ham eng so'nggi yangilangani birinchi."""
         query = (
             select(self.model)
             .where(self.model.user_id == user_id)
             .where(self.model.is_deleted.is_(False))
-            .order_by(self.model.updated_at.desc())
+            .order_by(self.model.is_pinned.desc(), self.model.updated_at.desc())
         )
         result = await session.execute(query)
         return list(result.scalars().all())

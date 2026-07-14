@@ -12,8 +12,9 @@ export interface Msg {
 
 export interface Chat {
   id: string;
-  group: string;
   title: string;
+  pinned: boolean;
+  lastMessageAt: string; // ISO — oxirgi xabar/yangilanish vaqti (saralash va hover menyu uchun)
   messages: Msg[];
 }
 

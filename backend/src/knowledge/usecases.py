@@ -3,12 +3,13 @@ from typing import Any
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.ai.interfaces import BaseAIClient
 from src.core.errors.exceptions import (
+    InfrastructureException,
     InstanceNotFoundException,
     InstanceProcessingException,
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
-from src.knowledge.prompts import RAG_SYSTEM
+from src.knowledge.prompts import STRICT_RAG_SYSTEM
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
     AnswerResult,
@@ -35,24 +36,39 @@ class UploadKnowledgeUseCase:
 
         vectors: list[list[float]] = []
         payloads: list[dict[str, Any]] = []
-        for index, chunk in enumerate(chunks):
-            # Sarlavhani har bo'lakka qo'shib embed qilamiz — kontekst kuchayadi
-            vector = await self.embedder.embed(f"{title}\n\n{chunk}")
-            vectors.append(vector)
-            payloads.append(
-                {
-                    "title": title,
-                    "chunk_text": chunk,
-                    "chunk_index": index,
-                    "lang": "uz",
-                    "source_url": source_url,  # manba havolasi (parsing uchun)
-                }
-            )
+        try:
+            for index, chunk in enumerate(chunks):
+                # Sarlavhani har bo'lakka qo'shib embed qilamiz — kontekst kuchayadi
+                # Sarlavhani nafaqat embedding uchun, balki saqlanadigan matnning
+                # o'ziga ham yozamiz — shunda bo'lak yolg'iz o'qilganda ham
+                # (masalan boshqa kartalarnikiga aralashib qolmasdan) qaysi
+                # mahsulotga tegishli ekani aniq bo'ladi.
+                chunk_with_title = f"{title}\n\n{chunk}"
+                vector = await self.embedder.embed(chunk_with_title)
+                vectors.append(vector)
+                payloads.append(
+                    {
+                        "title": title,
+                        "chunk_text": chunk_with_title,
+                        "chunk_index": index,
+                        "lang": "uz",
+                        "source_url": source_url,  # manba havolasi (parsing uchun)
+                    }
+                )
+        except Exception as exc:
+            raise InfrastructureException(
+                f"Embedding xizmati bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
+            ) from exc
 
-        dim = len(vectors[0])
-        await self.store.ensure_collection(dim)
-        await self.store.upsert(vectors, payloads)
-        total = await self.store.count()
+        try:
+            dim = len(vectors[0])
+            await self.store.ensure_collection(dim)
+            await self.store.upsert(vectors, payloads)
+            total = await self.store.count()
+        except Exception as exc:
+            raise InfrastructureException(
+                f"Vektor bazasi (Qdrant) bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
+            ) from exc
         return UploadResult(chunks=len(chunks), vector_dim=dim, total_points=total)
 
 
@@ -70,6 +86,7 @@ class ScrapeUrlUseCase:
             raise InstanceProcessingException(
                 "Sahifadan matn ajratib bo'lmadi (bo'sh yoki nomatn sahifa)"
             )
+        title = await self._unique_title(title, url)
         # Qayta scrape qilinganda avvalgi bo'laklarni o'chiramiz — deterministic ID
         # bir xil chunk_index'larni ustiga yozadi, lekin chunk soni kamaysa
         # ortiqcha eski bo'laklar qolib ketmasligi uchun avval tozalaymiz.
@@ -77,6 +94,24 @@ class ScrapeUrlUseCase:
         return await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
         ).execute(title=title, text=text, source_url=url)
+
+    async def _unique_title(self, title: str, url: str) -> str:
+        """Boshqa (turli source_url'ga tegishli) yozuv bilan sarlavha
+        to'qnashsa — ustidan bosib o'chirib yubormaslik uchun sarlavhani
+        havola oxiridan ajratma qo'shib farqlaymiz."""
+        if not await self.store.exists():
+            return title
+        payloads = await self.store.scroll_all()
+        collides = any(
+            p.get("title") == title
+            and p.get("source_url")
+            and p.get("source_url") != url
+            for p in payloads
+        )
+        if not collides:
+            return title
+        slug = url.rstrip("/").rsplit("/", 1)[-1].replace("-", " ").strip()
+        return f"{title} ({slug})" if slug else title
 
 
 class ListKnowledgeUseCase:
@@ -214,7 +249,7 @@ class AnswerQuestionUseCase:
 
         gen = await self.ai_client.generate_text_with_usage(
             prompt,
-            system_prompt=RAG_SYSTEM,
+            system_prompt=STRICT_RAG_SYSTEM,
             temperature=self.TEMPERATURE,
             max_tokens=self.MAX_TOKENS,
         )

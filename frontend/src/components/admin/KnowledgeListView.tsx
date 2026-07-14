@@ -12,11 +12,15 @@ interface KnowledgeListViewProps {
 }
 
 // Vektor bazaga yuklangan ma'lumotlar ro'yxati (sarlavha bo'yicha guruhlangan).
+type SortKey = "title" | "chunks";
+
 export default function KnowledgeListView({ mounted, t: admin, onAddClick }: KnowledgeListViewProps) {
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("title");
 
   const load = async () => {
     setLoading(true);
@@ -46,6 +50,13 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
     );
   }
 
+  const q = search.trim().toLowerCase();
+  const visible = items
+    .filter((it) => !q || it.title.toLowerCase().includes(q) || it.preview.toLowerCase().includes(q))
+    .sort((a, b) =>
+      sortKey === "chunks" ? b.chunks - a.chunks : a.title.localeCompare(b.title)
+    );
+
   return (
     <div className={`${styles.wrap} ${mounted ? styles.in : ""}`}>
       <div className={styles.head}>
@@ -74,6 +85,25 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         </div>
       </div>
 
+      {!loading && !err && items.length > 0 && (
+        <div className={styles.toolbar}>
+          <input
+            className={styles.searchInput}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={admin.knowledgeSearchPh}
+          />
+          <select
+            className={styles.sortSelect}
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+          >
+            <option value="title">{admin.knowledgeSortTitle}</option>
+            <option value="chunks">{admin.knowledgeSortChunks}</option>
+          </select>
+        </div>
+      )}
+
       {loading ? (
         <div className={styles.state}>
           <span className={styles.spinner} />
@@ -82,9 +112,11 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         <div className={styles.errMsg}>{err}</div>
       ) : items.length === 0 ? (
         <div className={styles.empty}>{admin.knowledgeEmpty}</div>
+      ) : visible.length === 0 ? (
+        <div className={styles.empty}>{admin.knowledgeNoResults}</div>
       ) : (
         <div className={styles.list}>
-          {items.map((it) => (
+          {visible.map((it) => (
             <button
               key={it.title}
               className={styles.card}

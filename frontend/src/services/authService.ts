@@ -48,6 +48,16 @@ function clearStorage() {
   localStorage.removeItem(ME_KEY);
 }
 
+// HTTP status kodini saqlab qoladi — chaqiruvchi tomon (masalan LoginPage) xato turini
+// (429 — juda ko'p urinish, 409 — allaqachon mavjud) matndan emas, kod orqali aniqlay oladi.
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function readError(res: Response, fallback: string): Promise<string> {
   try {
     const data = await res.json();
@@ -106,7 +116,7 @@ export async function login(loginValue: string, password: string): Promise<strin
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username: loginValue.trim().toLowerCase(), password }),
   });
-  if (!res.ok) throw new Error(await readError(res, "Login yoki parol noto'g'ri"));
+  if (!res.ok) throw new ApiError(await readError(res, "Login yoki parol noto'g'ri"), res.status);
   storeTokens(await res.json());
   await fetchMe();
   return getToken()!;
@@ -128,7 +138,7 @@ export async function register(input: {
       password: input.password,
     }),
   });
-  if (!res.ok) throw new Error(await readError(res, "Ro'yxatdan o'tishda xatolik"));
+  if (!res.ok) throw new ApiError(await readError(res, "Ro'yxatdan o'tishda xatolik"), res.status);
   return login(input.username, input.password);
 }
 

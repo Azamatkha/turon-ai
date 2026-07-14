@@ -1,4 +1,4 @@
-import { KeyboardEvent } from "react";
+import { KeyboardEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { GrLogin } from "react-icons/gr";
 import LangSwitcher from "../LangSwitcher";
@@ -9,13 +9,14 @@ import styles from "./LoginForm.module.css";
 const STR: Record<Lang, {
   title: string; sub: string; fullName: string; fullNamePh: string;
   username: string; usernamePh: string; dept: string; deptPh: string;
-  password: string; submit: string; have: string; signin: string; selectLanguage: string;
+  password: string; confirmPassword: string; submit: string; have: string; signin: string; selectLanguage: string;
 }> = {
   uz: {
     title: "Ro‘yxatdan o‘tish", sub: "Yangi hisob yarating.",
     fullName: "To‘liq ism", fullNamePh: "masalan, Aziz Karimov",
     username: "Login", usernamePh: "masalan, a.karimov",
     dept: "Bo‘lim", deptPh: "masalan, Chakana", password: "Parol",
+    confirmPassword: "Parolni tasdiqlang",
     submit: "Ro‘yxatdan o‘tish", have: "Hisobingiz bormi?", signin: "Kirish",
     selectLanguage: "Tilni tanlash",
   },
@@ -24,6 +25,7 @@ const STR: Record<Lang, {
     fullName: "Тўлиқ исм", fullNamePh: "масалан, Азиз Каримов",
     username: "Логин", usernamePh: "масалан, a.karimov",
     dept: "Бўлим", deptPh: "масалан, Чакана", password: "Парол",
+    confirmPassword: "Паролни тасдиқланг",
     submit: "Рўйхатдан ўтиш", have: "Ҳисобингиз борми?", signin: "Кириш",
     selectLanguage: "Тилни танлаш",
   },
@@ -32,6 +34,7 @@ const STR: Record<Lang, {
     fullName: "Полное имя", fullNamePh: "например, Азиз Каримов",
     username: "Логин", usernamePh: "например, a.karimov",
     dept: "Отдел", deptPh: "например, Розница", password: "Пароль",
+    confirmPassword: "Подтвердите пароль",
     submit: "Зарегистрироваться", have: "Уже есть аккаунт?", signin: "Войти",
     selectLanguage: "Выбрать язык",
   },
@@ -44,7 +47,7 @@ interface Props {
   username: string; setUsername: (v: string) => void;
   department: string; setDepartment: (v: string) => void;
   password: string; setPassword: (v: string) => void;
-  pwVisible: boolean; setPwVisible: (fn: (v: boolean) => boolean) => void;
+  confirmPassword: string; setConfirmPassword: (v: string) => void;
   loading: boolean;
   error: string;
   submit: () => void;
@@ -53,6 +56,18 @@ interface Props {
 
 export default function RegisterForm(p: Props) {
   const t = STR[p.lang];
+  const [pwVisible, setPwVisible] = useState(false);
+  const [confirmPwVisible, setConfirmPwVisible] = useState(false);
+  const eyeIcon = (visible: boolean) => visible ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.16 3.19M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.4-1.1" />
+      <line x1="3" y1="3" x2="21" y2="21" />
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+    </svg>
+  );
   return (
     <div className={styles.panel}>
       <div className={styles.langSwitcherWrap}>
@@ -98,18 +113,19 @@ export default function RegisterForm(p: Props) {
         <div className={styles.fieldGroupTight}>
           <label className={styles.fieldLabel}>{t.password}</label>
           <div className={styles.field}>
-            <input className={styles.input} value={p.password} onChange={(e) => p.setPassword(e.target.value)} onKeyDown={p.onKey} type={p.pwVisible ? "text" : "password"} placeholder="••••••••" autoComplete="new-password" />
-            <button onClick={() => p.setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
-              {p.pwVisible ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.16 3.19M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.4-1.1" />
-                  <line x1="3" y1="3" x2="21" y2="21" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
+            <input className={styles.input} value={p.password} onChange={(e) => p.setPassword(e.target.value)} onKeyDown={p.onKey} type={pwVisible ? "text" : "password"} placeholder="••••••••" autoComplete="new-password" />
+            <button onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+              {eyeIcon(pwVisible)}
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.fieldGroupTight}>
+          <label className={styles.fieldLabel}>{t.confirmPassword}</label>
+          <div className={styles.field}>
+            <input className={styles.input} value={p.confirmPassword} onChange={(e) => p.setConfirmPassword(e.target.value)} onKeyDown={p.onKey} type={confirmPwVisible ? "text" : "password"} placeholder="••••••••" autoComplete="new-password" />
+            <button onClick={() => setConfirmPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+              {eyeIcon(confirmPwVisible)}
             </button>
           </div>
         </div>

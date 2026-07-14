@@ -103,7 +103,7 @@ class LoginEvent(Base, UUIDIDMixin, TimestampMixin):
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
-    # "login" | "logout" | "session"
+    # "login" | "logout" | "session" | "message"
     action: Mapped[str] = mapped_column(
         String(20), default="login", server_default="login"
     )

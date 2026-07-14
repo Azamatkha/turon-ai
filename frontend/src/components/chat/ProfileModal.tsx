@@ -1,4 +1,4 @@
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState } from "react";
 import HButton from "../common/HButton";
 import type { ChatStaticStrings } from "../../types/i18n";
 import styles from "./ProfileModal.module.css";
@@ -14,6 +14,9 @@ interface ProfileModalProps {
   usernameOk: boolean;
   pPassword: string;
   setPPassword: (v: string) => void;
+  pConfirmPassword: string;
+  setPConfirmPassword: (v: string) => void;
+  error: string;
   saved: boolean;
   onClose: () => void;
   onSave: () => void;
@@ -24,12 +27,25 @@ interface ProfileModalProps {
 
 export default function ProfileModal({
   initial, userHandle, pFullName, setPFullName, pUsername, setPUsername,
-  usernameTaken, usernameOk, pPassword, setPPassword, saved, onClose, onSave, onLogout, s, isDark,
+  usernameTaken, usernameOk, pPassword, setPPassword, pConfirmPassword, setPConfirmPassword,
+  error, saved, onClose, onSave, onLogout, s, isDark,
 }: ProfileModalProps) {
   // Dark rejim uchun inline override'lar
   const modalStyle = isDark ? { background: "#15303f", color: "#e8eef2", border: "1px solid rgba(255,255,255,.1)" } : {};
   const inputStyle = isDark ? { background: "#1c3e52", color: "#e8eef2", borderColor: "rgba(255,255,255,.16)" } : {};
   const labelStyle = isDark ? { color: "#aebfc8" } : {};
+  const [pwVisible, setPwVisible] = useState(false);
+  const [confirmPwVisible, setConfirmPwVisible] = useState(false);
+  const eyeIcon = (visible: boolean) => visible ? (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.16 3.19M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.4-1.1" />
+      <line x1="3" y1="3" x2="21" y2="21" />
+    </svg>
+  ) : (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+    </svg>
+  );
 
   return (
     <div onClick={onClose} className={styles.overlay}>
@@ -65,9 +81,34 @@ export default function ProfileModal({
           </div>
           <div>
             <label className={styles.fieldLabel} style={labelStyle}>{s.newPassword}</label>
-            <input className={styles.input} style={inputStyle} value={pPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPPassword(e.target.value)} type="password" placeholder={s.newPasswordPh} autoComplete="new-password" />
+            <div className={styles.pwField}>
+              <input className={styles.input} style={inputStyle} value={pPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPPassword(e.target.value)} type={pwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
+              <button type="button" onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+                {eyeIcon(pwVisible)}
+              </button>
+            </div>
           </div>
+          {pPassword && (
+            <div>
+              <label className={styles.fieldLabel} style={labelStyle}>{s.confirmNewPassword}</label>
+              <div className={styles.pwField}>
+                <input className={styles.input} style={inputStyle} value={pConfirmPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPConfirmPassword(e.target.value)} type={confirmPwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
+                <button type="button" onClick={() => setConfirmPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+                  {eyeIcon(confirmPwVisible)}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {error && (
+          <div className={styles.errorBox}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="13" /><line x1="12" y1="16.5" x2="12" y2="16.5" />
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
 
         <HButton onClick={onSave} className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : styles.saveBtnIdle}`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(23, 63, 115,.28)" }}>
           {saved ? (

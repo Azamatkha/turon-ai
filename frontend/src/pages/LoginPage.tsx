@@ -2,7 +2,7 @@ import { useState, KeyboardEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { loginDict } from "../locales";
-import { login as loginRequest, isAuthenticated } from "../services/authService";
+import { login as loginRequest, isAuthenticated, ApiError } from "../services/authService";
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
 import LoginForm from "../components/login/LoginForm";
@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [pwVisible, setPwVisible] = useState(false);
   const [focus, setFocus] = useState<"login" | "pw" | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"" | "invalid" | "rateLimited">("");
   const { lang, setLang, t } = useLang(loginDict);
 
   // Allaqachon login qilingan bo'lsa — to'g'ridan-to'g'ri bosh sahifaga
@@ -23,26 +23,26 @@ export default function LoginPage() {
 
   const setLogin = (v: string) => {
     setLoginValue(v);
-    setError(false);
+    setError("");
   };
   const setPassword = (v: string) => {
     setPasswordValue(v);
-    setError(false);
+    setError("");
   };
 
   const submit = async () => {
     if (loading) return;
     if (!login.trim() || !password.trim()) {
-      setError(true);
+      setError("invalid");
       return;
     }
     setLoading(true);
-    setError(false);
+    setError("");
     try {
       await loginRequest(login, password);
       navigate("/");
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError(e instanceof ApiError && e.status === 429 ? "rateLimited" : "invalid");
       setLoading(false);
     }
   };

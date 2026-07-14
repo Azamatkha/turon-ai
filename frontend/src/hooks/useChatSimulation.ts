@@ -27,7 +27,7 @@ export function useChatSimulation() {
 
   const newChat = () => {
     const id = "c" + Date.now();
-    setChats((cs) => [{ id, group: "Today", title: "", messages: [] }, ...cs]);
+    setChats((cs) => [{ id, pinned: false, lastMessageAt: new Date().toISOString(), title: "", messages: [] }, ...cs]);
     setActiveId(id);
     setDraft("");
     setThinking(false);
@@ -47,7 +47,7 @@ export function useChatSimulation() {
         } else {
           const freshId = "c" + Date.now();
           setActiveId(freshId);
-          return [{ id: freshId, group: "Today", title: "", messages: [] }];
+          return [{ id: freshId, pinned: false, lastMessageAt: new Date().toISOString(), title: "", messages: [] }];
         }
       }
       return next;

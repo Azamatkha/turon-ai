@@ -18,13 +18,14 @@ interface AddUserModalProps {
   setFRole: (r: AdminRole) => void;
   adding: boolean;
   userTaken: boolean;
+  error?: string;
   onClose: () => void;
   onSubmit: () => void;
   t: AdminStrings;
 }
 
 export default function AddUserModal({
-  fName, setFName, fUser, setFUser, fDept, setFDept, fPass, setFPass, fRole, setFRole, adding, userTaken, onClose, onSubmit, t: admin,
+  fName, setFName, fUser, setFUser, fDept, setFDept, fPass, setFPass, fRole, setFRole, adding, userTaken, error, onClose, onSubmit, t: admin,
 }: AddUserModalProps) {
   return (
     <div onClick={onClose} className={styles.overlay}>
@@ -36,6 +37,10 @@ export default function AddUserModal({
           </HButton>
         </div>
         <div className={styles.sub}>{admin.addUserModalSub}</div>
+
+        {error && (
+          <div style={{ margin: "0 0 14px", padding: "10px 13px", borderRadius: 10, background: "var(--adm-danger-bg)", border: "1px solid var(--adm-danger-border)", color: "var(--adm-danger)", fontSize: 13 }}>{error}</div>
+        )}
 
         <div className={styles.fields}>
           <div>

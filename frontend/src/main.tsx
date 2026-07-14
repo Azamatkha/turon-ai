@@ -14,6 +14,7 @@ import { RequireAuth, RequireAdmin } from "./components/RouteGuards";
 // Marshrutlar: "/" = chat (login bo'lsa), aks holda login sahifasiga yo'naltiradi
 const router = createBrowserRouter([
   { path: "/", element: <RequireAuth><ChatPage /></RequireAuth> },
+  { path: "/c/:sessionId", element: <RequireAuth><ChatPage /></RequireAuth> },
   { path: "/login", element: <LoginPage /> },
   { path: "/register", element: <RegisterPage /> },
   { path: "/chat", element: <Navigate to="/" replace /> },

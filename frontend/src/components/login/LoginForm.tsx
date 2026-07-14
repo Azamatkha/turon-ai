@@ -20,7 +20,7 @@ interface LoginFormProps {
   focus: "login" | "pw" | null;
   setFocus: (v: "login" | "pw" | null) => void;
   loading: boolean;
-  error: boolean;
+  error: "" | "invalid" | "rateLimited";
   submit: () => void;
   onKey: (e: KeyboardEvent) => void;
 }
@@ -53,7 +53,7 @@ export default function LoginForm({
               <line x1="12" y1="8" x2="12" y2="13" />
               <line x1="12" y1="16.5" x2="12" y2="16.5" />
             </svg>
-            <span>{t.invalid}</span>
+            <span>{error === "rateLimited" ? t.rateLimited : t.invalid}</span>
           </div>
         )}
 

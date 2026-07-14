@@ -8,6 +8,7 @@ export const login: LoginStrings = {
   signIn: "Войти",
   welcome: "Добро пожаловать. Введите данные для входа.",
   invalid: "Неверный логин или пароль. Попробуйте снова.",
+  rateLimited: "Слишком много попыток. Повторите через несколько минут.",
   login: "Логин",
   password: "Пароль",
   loginPh: "напр., a.karimov",

@@ -66,6 +66,7 @@ class GetSessionUseCase:
             return SessionDetailView(
                 id=s.id,
                 title=s.title,
+                is_pinned=s.is_pinned,
                 created_at=s.created_at,
                 updated_at=s.updated_at,
                 messages=[MessageView.model_validate(m) for m in messages],
@@ -86,6 +87,24 @@ class RenameSessionUseCase:
             if not s:
                 raise InstanceNotFoundException(SESSION_NOT_FOUND)
             s.title = title
+            await uow.commit()
+            return SessionView.model_validate(s)
+
+
+class PinSessionUseCase:
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(
+        self, user_id: UUID, session_id: UUID, is_pinned: bool
+    ) -> SessionView:
+        async with self.uow as uow:
+            s = await uow.chat_sessions.get_single(
+                uow.session, id=session_id, user_id=user_id
+            )
+            if not s:
+                raise InstanceNotFoundException(SESSION_NOT_FOUND)
+            s.is_pinned = is_pinned
             await uow.commit()
             return SessionView.model_validate(s)
 
@@ -129,6 +148,11 @@ class AddMessageUseCase:
             )
             # Suhbatni ro'yxat tepasiga ko'tarish uchun updated_at yangilanadi
             s.updated_at = get_utc_now()
+            if data.role == "user":
+                # So'nggi faollik: foydalanuvchi so'rov jo'natdi
+                await uow.login_events.create(
+                    uow.session, {"user_id": user_id, "action": "message"}
+                )
             await uow.commit()
             return MessageView.model_validate(message)
 
@@ -233,6 +257,12 @@ def get_delete_session_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> DeleteSessionUseCase:
     return DeleteSessionUseCase(uow=uow)
+
+
+def get_pin_session_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> PinSessionUseCase:
+    return PinSessionUseCase(uow=uow)
 
 
 def get_add_message_use_case(

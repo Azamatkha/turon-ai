@@ -1,8 +1,11 @@
 """Small text chunker.
 
-Splits on blank lines (paragraphs) and packs paragraphs into chunks of at most
-`max_chars`. If a single paragraph is too long, it is split on sentence
-boundaries, and only as a last resort on word boundaries — never mid-word.
+Splits on blank lines (paragraphs). Over-long paragraphs are broken down on
+sentence boundaries, then line boundaries, and only as a last resort on word
+boundaries — never mid-word. The resulting pieces are then packed into chunks
+between `min_chars` and `max_chars`: a short piece (e.g. a lone heading or a
+one-line leftover) is merged into its neighbour instead of becoming its own
+tiny chunk.
 """
 
 import re
@@ -49,34 +52,60 @@ def _pack_units(units: list[str], max_chars: int, joiner: str) -> list[str]:
     return chunks
 
 
-def chunk_text(text: str, max_chars: int = 800) -> list[str]:
+def _explode_paragraph(para: str, max_chars: int) -> list[str]:
+    """Bitta paragraf max_chars'dan uzun bo'lsa — uni kichikroq bo'laklarga
+    ajratadi: avval gaplarga, keyin qatorlarga, oxirida so'zlarga."""
+    sentences = _split_sentences(para)
+    if len(sentences) > 1:
+        return _pack_units(sentences, max_chars, " ")
+
+    # Nuqta topilmadi (masalan jadvaldan kelgan matn) — gap o'rtasidan xom
+    # kesib tashlamaslik uchun avval qator chegaralaridan (\n) foydalanamiz,
+    # faqat shundan keyin so'z chegarasiga o'tamiz.
+    lines = [ln for ln in para.split("\n") if ln.strip()]
+    if len(lines) > 1:
+        return _pack_units(lines, max_chars, "\n")
+
+    return _split_by_words(para, max_chars)
+
+
+def chunk_text(text: str, max_chars: int = 800, min_chars: int = 200) -> list[str]:
     text = text.strip()
     if not text:
         return []
 
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+
+    # 1) Butun matnni "bo'lak nomzodlari"ga tekislaymiz — max_chars'dan uzun
+    #    paragraflar avvaldan kichikroq bo'laklarga ajratib qo'yiladi.
+    units: list[str] = []
+    for para in paragraphs:
+        if len(para) <= max_chars:
+            units.append(para)
+        else:
+            units.extend(_explode_paragraph(para, max_chars))
+
+    # 2) Bo'laklarni ketma-ket paketlaymiz: sarlavha yoki bir jumlalik qoldiq
+    #    kabi kichik bo'lakni (< min_chars) navbatdagisiga qo'shib yuboramiz,
+    #    hatto shu bilan max_chars biroz oshsa ham — ko'plab mayda-chuyda
+    #    bo'laklarga bo'linib ketishidan ko'ra shu ma'qul.
     chunks: list[str] = []
     current = ""
-
-    for para in paragraphs:
-        if current and len(current) + len(para) + 2 > max_chars:
-            chunks.append(current)
-            current = ""
-
-        if len(para) <= max_chars:
-            current = f"{current}\n\n{para}" if current else para
+    for unit in units:
+        if not current:
+            current = unit
+            continue
+        candidate = f"{current}\n\n{unit}"
+        if len(candidate) <= max_chars or len(current) < min_chars:
+            current = candidate
         else:
-            # Paragraf o'zi juda uzun — avval gaplarga, kerak bo'lsa so'zlarga
-            # bo'lamiz. Xarakter bo'yicha qattiq kesish (so'z o'rtasidan) YO'Q.
-            if current:
-                chunks.append(current)
-                current = ""
-            sentences = _split_sentences(para)
-            if len(sentences) > 1:
-                chunks.extend(_pack_units(sentences, max_chars, " "))
-            else:
-                chunks.extend(_split_by_words(para, max_chars))
-
+            chunks.append(current)
+            current = unit
     if current:
-        chunks.append(current)
+        # Oxirgi qoldiq juda kichik bo'lsa — oldingi bo'lakka qo'shib yuboramiz
+        if chunks and len(current) < min_chars:
+            chunks[-1] = f"{chunks[-1]}\n\n{current}"
+        else:
+            chunks.append(current)
+
     return chunks

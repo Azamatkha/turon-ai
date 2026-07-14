@@ -8,6 +8,7 @@ export const login: LoginStrings = {
   signIn: "Kirish",
   welcome: "Xush kelibsiz. Davom etish uchun hisobingizga kiring.",
   invalid: "Login yoki parol noto‘g‘ri. Iltimos, qayta urinib ko‘ring.",
+  rateLimited: "Juda ko‘p urinish. Bir necha daqiqadan so‘ng qayta urinib ko‘ring.",
   login: "Login",
   password: "Parol",
   loginPh: "masalan, a.karimov",

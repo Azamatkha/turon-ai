@@ -2,23 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import type { Chat, Msg } from "../types/chat";
 import { askReply } from "../services/chatBotService";
 import {
-  listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle,
+  listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle, pinSession,
 } from "../services/chatHistoryService";
 
 // Vaqtinchalik (hali backend'ga saqlanmagan) xabar ID'lari "a"/"u" + timestamp
 // ko'rinishida (tire yo'q). Backend'dagi haqiqiy ID — UUID (tire bor).
 const isPersistedId = (id: string) => id.includes("-");
-
-// Sanaga qarab sidebar guruhini aniqlaydi
-function groupFor(iso: string): string {
-  const day = 24 * 3600 * 1000;
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const t = new Date(iso).getTime();
-  if (t >= startToday) return "Today";
-  if (t >= startToday - day) return "Yesterday";
-  return "Previous 7 Days";
-}
 
 // Chat tarixini BACKEND (PostgreSQL) bilan boshqaradi — foydalanuvchiga bog'langan.
 // useChatSimulation bilan bir xil interfeysni qaytaradi (ChatPage o'zgarmaydi).
@@ -39,7 +28,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       try {
         const sessions = await listSessions();
         const mapped: Chat[] = sessions.map((s) => ({
-          id: s.id, group: groupFor(s.updated_at), title: s.title, messages: [],
+          id: s.id, title: s.title, pinned: s.is_pinned, lastMessageAt: s.updated_at, messages: [],
         }));
         setChats(mapped);
         // Login'da avtomatik ochmaymiz — bo'sh (yangi) chat ko'rinadi, user o'zi tanlaydi
@@ -60,7 +49,13 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     try {
       const detail = await getSession(id);
       const msgs: Msg[] = detail.messages.map((m) => ({ id: m.id, role: m.role, text: m.content, time: m.created_at, vote: m.vote ?? null }));
-      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, title: detail.title, messages: msgs } : c)));
+      // upsert: ro'yxatda bo'lsa yangilaymiz, bo'lmasa (to'g'ridan-to'g'ri link/refresh
+      // — ro'yxat hali yuklanmagan) qo'shamiz
+      setChats((cs) =>
+        cs.some((c) => c.id === id)
+          ? cs.map((c) => (c.id === id ? { ...c, title: detail.title, messages: msgs } : c))
+          : [{ id, title: detail.title, pinned: detail.is_pinned, lastMessageAt: detail.updated_at, messages: msgs }, ...cs]
+      );
       loaded.current.add(id);
     } catch {
       /* ignore */
@@ -95,6 +90,19 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       if (id === activeId) setActiveIdState(next[0]?.id ?? "");
       return next;
     });
+  };
+
+  // Pin/unpin — mahalliy holatni darhol yangilaymiz (optimistic), xato bo'lsa qaytaramiz
+  const togglePin = async (id: string) => {
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return;
+    const next = !chat.pinned;
+    setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: next } : c)));
+    try {
+      await pinSession(id, next);
+    } catch {
+      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: !next } : c)));
+    }
   };
 
   const respond = async (
@@ -157,7 +165,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       try {
         const s = await createSession(newChatLabel);
         loaded.current.add(s.id);
-        setChats((cs) => [{ id: s.id, group: "Today", title: newChatLabel, messages: [] }, ...cs]);
+        setChats((cs) => [{ id: s.id, title: newChatLabel, pinned: false, lastMessageAt: s.updated_at, messages: [] }, ...cs]);
         setActiveIdState(s.id);
         sessionId = s.id;
       } catch { return; }
@@ -170,11 +178,12 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       .map((m) => ({ role: m.role, content: m.text }));
 
     const isFirstMessage = prevMsgs.length === 0;
-    const um: Msg = { id: "u" + Date.now(), role: "user", text, time: new Date().toISOString() };
+    const now = new Date().toISOString();
+    const um: Msg = { id: "u" + Date.now(), role: "user", text, time: now };
     setChats((cs) => cs.map((c) => {
       if (c.id !== sessionId) return c;
       const title = c.messages.length === 0 ? text.slice(0, 42) : c.title;
-      return { ...c, title, messages: [...c.messages, um] };
+      return { ...c, title, lastMessageAt: now, messages: [...c.messages, um] };
     }));
     setDraft("");
     setThinking(true);
@@ -248,6 +257,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
 
   return {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, renameChat, send, stop, regenerate, voteMsg,
+    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, voteMsg,
   };
 }

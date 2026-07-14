@@ -2,8 +2,8 @@ import re
 
 # Length constants
 # Minimum length required for a valid password
-# Example: Must have at least 8 characters
-PASSWORD_MIN_LENGTH = 8
+# Example: Must have at least 4 characters
+PASSWORD_MIN_LENGTH = 4
 # Maximum length allowed for a valid password
 # Example: Passwords longer than 128 characters are rejected
 PASSWORD_MAX_LENGTH = 128
@@ -52,11 +52,11 @@ SLUG_VALIDATOR = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 EMAIL_VALIDATOR = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-.]+$")
 
 # Security
-# Validates a strong password with at least one lowercase letter, one uppercase letter,
-# one digit, one non-alphanumeric non-space character, and printable ASCII characters only.
-# Example: "Passw0rd~"
+# Parol uchun murakkablik talab qilinmaydi (katta/kichik harf, raqam, belgi shart emas) —
+# faqat uzunlik chegarasi va bosiladigan ASCII belgilar tekshiriladi.
+# Example: "12345"
 STRONG_PASSWORD_VALIDATOR = re.compile(
-    rf"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])[ -~]{{{PASSWORD_MIN_LENGTH},{PASSWORD_MAX_LENGTH}}}$"
+    rf"^[ -~]{{{PASSWORD_MIN_LENGTH},{PASSWORD_MAX_LENGTH}}}$"
 )
 
 # Validates a JWT token format (three base64url-encoded segments separated by periods)

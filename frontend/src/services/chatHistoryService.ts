@@ -5,6 +5,7 @@ import { apiFetch } from "./authService";
 export interface ApiSession {
   id: string;
   title: string;
+  is_pinned: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +64,15 @@ export async function renameSession(id: string, title: string): Promise<ApiSessi
 export async function deleteSession(id: string): Promise<void> {
   const res = await apiFetch(`/v1/chat/sessions/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await readError(res, "Suhbatni o'chirishda xatolik"));
+}
+
+export async function pinSession(id: string, isPinned: boolean): Promise<ApiSession> {
+  const res = await apiFetch(`/v1/chat/sessions/${id}/pin`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_pinned: isPinned }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Pin qilishda xatolik"));
+  return res.json();
 }
 
 export async function addMessage(

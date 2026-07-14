@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,6 +19,7 @@ class ChatSession(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
         index=True,
     )
     title: Mapped[str] = mapped_column(String(255), default="")
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
 
 class ChatMessage(Base, UUIDIDMixin, TimestampMixin):
