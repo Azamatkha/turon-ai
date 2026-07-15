@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import HButton from "../common/HButton";
 import type { AdminStrings } from "../../types/i18n";
-import { listKnowledge, uploadEmployees, type KnowledgeItem } from "../../services/knowledgeService";
+import { listKnowledge, uploadEmployees, uploadEmployeesJson, type KnowledgeItem } from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
 import styles from "./KnowledgeListView.module.css";
 
@@ -33,7 +33,16 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
     setEmpUploading(true);
     setEmpMsg(null);
     try {
-      const res = await uploadEmployees(file);
+      const isJson = file.name.toLowerCase().endsWith(".json");
+      let res;
+      if (isJson) {
+        const parsed = JSON.parse(await file.text());
+        const records = Array.isArray(parsed) ? parsed : parsed.employees;
+        if (!Array.isArray(records)) throw new Error("JSON massiv bo'lishi kerak");
+        res = await uploadEmployeesJson(records);
+      } else {
+        res = await uploadEmployees(file);
+      }
       setEmpMsg(admin.knowledgeEmployeesResult(res.chunks));
       await load();
     } catch (err) {
@@ -97,7 +106,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           <input
             ref={fileRef}
             type="file"
-            accept=".xlsx"
+            accept=".xlsx,.json"
             style={{ display: "none" }}
             onChange={onEmployeesPicked}
           />

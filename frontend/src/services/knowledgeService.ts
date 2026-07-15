@@ -109,6 +109,17 @@ export async function uploadEmployees(file: File): Promise<UploadResult> {
   return res.json();
 }
 
+// Xodimlarni tayyor JSON ro'yxati orqali yozish (Excel'siz — backend rebuild
+// shart emas). records: [{department, division, position, fish, ip, phone}, ...]
+export async function uploadEmployeesJson(records: unknown[]): Promise<UploadResult> {
+  const res = await apiFetch("/v1/admin/knowledge/employees-json", {
+    method: "POST",
+    body: JSON.stringify(records),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Xodimlar (JSON) yuklashda xatolik"));
+  return res.json();
+}
+
 // .docx faylni yuborish — multipart/form-data
 export async function uploadFile(title: string, file: File): Promise<UploadResult> {
   const form = new FormData();

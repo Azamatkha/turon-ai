@@ -1,3 +1,4 @@
+import re
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -11,7 +12,12 @@ from src.core.errors.exceptions import (
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
-from src.knowledge.prompts import NO_INFO_REPLY, STRICT_RAG_SYSTEM
+from src.knowledge.prompts import (
+    EMPLOYEE_ASK_REPLY,
+    EMPLOYEE_SYSTEM,
+    NO_INFO_REPLY,
+    STRICT_RAG_SYSTEM,
+)
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
     AnswerResult,
@@ -22,6 +28,90 @@ from src.knowledge.schemas import (
     SourceRef,
     UploadResult,
 )
+
+
+# ------- Xodim (telefon/IP ma'lumotnoma) qidiruv yordamchilari ------- #
+# Xodimlar ma'lumoti STRUKTURAVIY — IP/telefon/ism bo'yicha ANIQ moslash embedding
+# semantik qidiruvidan ishonchliroq (raqamlar semantik qidiruvda yomon topiladi).
+
+_NAME_STOP = {"ogli", "ugli", "qizi", "kizi"}
+_DEPT_STOP = {
+    "departamenti", "departament", "departmenti", "dep", "bolim", "bolimi",
+    "boshqarish", "boshqarmasi", "xodimlar", "xodimlarni", "xodim", "va", "ip",
+    "raqam", "raqami", "raqamlari", "telefon", "markazi", "xizmatlari", "xizmat",
+    "nazorat", "hisobini", "yuritish", "bosh", "menejer", "direktori",
+}
+
+
+def _words(s: str) -> list[str]:
+    return re.findall(r"[0-9a-zа-яёўқғҳ]+", s.lower())
+
+
+def _match_employees(
+    emps: list[dict[str, Any]], q_lower: str
+) -> list[dict[str, Any]]:
+    """Savolga mos xodimlarni ANIQ moslash bilan topadi: IP raqami, telefon,
+    bo'lim nomi yoki F.I.SH bo'yicha. Topilmasa bo'sh ro'yxat."""
+    qwords = set(_words(q_lower))
+    nums = re.findall(r"\d{3,}", q_lower)
+
+    # 1) IP (qisqa raqam) — aniq tenglik
+    ip_targets = {n for n in nums if len(n) <= 5}
+    if ip_targets:
+        hit = [e for e in emps if str(e.get("ip", "")).strip() in ip_targets]
+        if hit:
+            return hit
+
+    # 2) Telefon (uzun raqam) — raqamlarini solishtirib qism moslash
+    phone_targets = [re.sub(r"\D", "", n) for n in nums if len(n) >= 7]
+    if phone_targets:
+        hit = [
+            e
+            for e in emps
+            if any(
+                pt and pt in re.sub(r"\D", "", str(e.get("phone", "")))
+                for pt in phone_targets
+            )
+        ]
+        if hit:
+            return hit
+
+    # 3) Bo'lim nomi — turkumning o'ziga xos so'zi savolda bo'lsa, o'sha bo'lim hammasi.
+    # Qo'shimchalarni (masalan "riskdan") ushlash uchun uzunroq so'zlarda substring.
+    for dept in {str(e.get("department", "")) for e in emps}:
+        distinctive = [
+            t for t in _words(dept) if len(t) >= 2 and t not in _DEPT_STOP
+        ]
+        if distinctive and any(
+            t in qwords or (len(t) >= 4 and t in q_lower) for t in distinctive
+        ):
+            return [e for e in emps if str(e.get("department", "")) == dept]
+
+    # 4) F.I.SH — ismning muhim so'zlari (deyarli hammasi) savolda bo'lsa.
+    # substring: o'zbekcha qo'shimcha (-ning, -ga ...) ismga yopishsa ham topsin.
+    named: list[dict[str, Any]] = []
+    for e in emps:
+        toks = [
+            t
+            for t in _words(str(e.get("fish", "")))
+            if len(t) >= 3 and t not in _NAME_STOP
+        ]
+        if len(toks) < 2:
+            continue
+        present = sum(1 for t in toks if t in q_lower)
+        if present >= 2 and present >= len(toks) - 1:
+            named.append(e)
+    return named
+
+
+def _is_generic_employee_request(q_lower: str) -> bool:
+    """"Xodimlar raqamlari" kabi umumiy (aniq xodim/bo'limsiz) so'rovmi —
+    aniqlashtirishni so'rash uchun."""
+    has_emp = "xodim" in q_lower or "ходим" in q_lower
+    has_num = any(
+        w in q_lower for w in ("raqam", "ip", "telefon", "рақам", "телефон")
+    )
+    return has_emp and has_num and len(_words(q_lower)) <= 5
 
 
 class UploadKnowledgeUseCase:
@@ -99,12 +189,40 @@ class UploadEmployeesUseCase:
         return ". ".join(parts) + "."
 
     async def execute(self, file_bytes: bytes) -> UploadResult:
+        """Excel (.xlsx) baytlaridan o'qib yozadi."""
         records = parse_employees(file_bytes)
         if not records:
             raise InstanceProcessingException(
                 "Excel'dan xodim topilmadi — sarlavha va ustunlarni tekshiring."
             )
+        return await self._ingest(records)
 
+    async def execute_records(
+        self, records: list[dict[str, str]]
+    ) -> UploadResult:
+        """Tayyor JSON ro'yxatidan yozadi (Excel'siz — openpyxl kerak emas)."""
+        def g(r: dict[str, str], k: str) -> str:
+            return str(r.get(k) or "").strip()
+
+        clean = [
+            {
+                "department": g(r, "department"),
+                "division": g(r, "division"),
+                "position": g(r, "position"),
+                "fish": g(r, "fish"),
+                "ip": g(r, "ip"),
+                "phone": g(r, "phone"),
+            }
+            for r in records
+            if g(r, "fish") or g(r, "ip") or g(r, "phone")
+        ]
+        if not clean:
+            raise InstanceProcessingException(
+                "Ro'yxat bo'sh yoki majburiy maydonlar (fish/ip/phone) topilmadi."
+            )
+        return await self._ingest(clean)
+
+    async def _ingest(self, records: list[dict[str, str]]) -> UploadResult:
         vectors: list[list[float]] = []
         payloads: list[dict[str, Any]] = []
         try:
@@ -341,6 +459,42 @@ class AnswerQuestionUseCase:
         blocks = [f"### {cat}\n" + "\n".join(items) for cat, items in groups.items()]
         return "\n\n".join(blocks)
 
+    async def _employee_route(
+        self, question: str
+    ) -> tuple[str, list[dict[str, Any]]] | None:
+        """Savol xodim (telefon/IP) haqida bo'lsa yo'naltiradi:
+        ("answer", [xodimlar]) — mos xodim(lar) topildi;
+        ("ask", []) — umumiy so'rov, aniqlashtirish kerak;
+        None — bu xodim savoli emas (mahsulot RAG'ga o'tadi)."""
+        emps = await self.store.search_by_field(
+            "doc_type", "employee", limit=2000
+        )
+        if not emps:
+            return None
+        matched = _match_employees(emps, question.lower())
+        if matched:
+            return "answer", matched[:60]
+        if _is_generic_employee_request(question.lower()):
+            return "ask", []
+        return None
+
+    def _employee_prompt(
+        self,
+        question: str,
+        history: list[ChatTurn] | None,
+        emps: list[dict[str, Any]],
+    ) -> str:
+        context = "\n\n".join(str(e.get("chunk_text", "")) for e in emps)
+        base = f"XODIMLAR MA'LUMOTI:\n{context}\n\nSAVOL: {question}"
+        if history:
+            recent = history[-self.HISTORY_LIMIT :]
+            convo = "\n".join(
+                f"{'Foydalanuvchi' if t.role == 'user' else 'Yordamchi'}: {t.content}"
+                for t in recent
+            )
+            return f"Oldingi suhbat:\n{convo}\n\n{base}"
+        return base
+
     async def _assemble(
         self,
         question: str,
@@ -406,6 +560,33 @@ class AnswerQuestionUseCase:
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
         {"type":"delta","text":...}; oxirida token statistikasi bilan
         {"type":"done", ...}."""
+        # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
+        route = await self._employee_route(question)
+        if route is not None:
+            kind, emps = route
+            if kind == "ask":
+                yield {"type": "delta", "text": EMPLOYEE_ASK_REPLY}
+                yield {
+                    "type": "done",
+                    "completion_tokens": 0,
+                    "finish_reason": "stop",
+                    "max_tokens": self.MAX_TOKENS,
+                    "sources": [],
+                }
+                return
+            emp_prompt = self._employee_prompt(question, history, emps)
+            async for ev in self.ai_client.stream_generate(
+                emp_prompt,
+                system_prompt=EMPLOYEE_SYSTEM,
+                temperature=self.TEMPERATURE,
+                max_tokens=self.MAX_TOKENS,
+            ):
+                if ev.get("type") == "done":
+                    ev["max_tokens"] = self.MAX_TOKENS
+                    ev["sources"] = []
+                yield ev
+            return
+
         query_vector = await self.embedder.embed(question)
         results = await self.store.search(query_vector, top_k=self.TOP_K)
 
@@ -437,6 +618,33 @@ class AnswerQuestionUseCase:
     async def execute(
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AnswerResult:
+        # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
+        route = await self._employee_route(question)
+        if route is not None:
+            kind, emps = route
+            if kind == "ask":
+                return AnswerResult(
+                    answer=EMPLOYEE_ASK_REPLY,
+                    sources=[],
+                    finish_reason="stop",
+                    completion_tokens=0,
+                    max_tokens=self.MAX_TOKENS,
+                )
+            emp_prompt = self._employee_prompt(question, history, emps)
+            gen = await self.ai_client.generate_text_with_usage(
+                emp_prompt,
+                system_prompt=EMPLOYEE_SYSTEM,
+                temperature=self.TEMPERATURE,
+                max_tokens=self.MAX_TOKENS,
+            )
+            return AnswerResult(
+                answer=gen.text.strip(),
+                sources=[],
+                finish_reason=gen.finish_reason,
+                completion_tokens=gen.completion_tokens,
+                max_tokens=gen.max_tokens,
+            )
+
         query_vector = await self.embedder.embed(question)
         results = await self.store.search(query_vector, top_k=self.TOP_K)
 

@@ -11,8 +11,6 @@ that follow.
 from io import BytesIO
 from typing import Any
 
-from openpyxl import load_workbook
-
 
 def _txt(value: Any) -> str:
     return "" if value is None else str(value).strip()
@@ -27,25 +25,34 @@ def _find_header(
 ) -> tuple[int, dict[str, int]] | None:
     """Header qatorini (matn bo'yicha) topib, mantiqiy ustunlarni indeksga
     moslaydi. Topilmasa None."""
+    def is_fish(s: str) -> bool:
+        return "fish" in s or "fio" in s or "фиш" in s or "фио" in s
+
+    def is_phone(s: str) -> bool:
+        return "telefon" in s or "телефон" in s
+
+    def is_ip(s: str) -> bool:
+        return "ichkiraqam" in s or "(ip)" in s or "ip)" in s or "ички" in s
+
+    def is_pos(s: str) -> bool:
+        return "tuzilma" in s or "lavozim" in s or "тузилма" in s or "лавозим" in s
+
     for i, row in enumerate(rows):
         joined = "".join(_norm(c) for c in row)
-        has_fish = "fish" in joined or "fio" in joined
-        has_ip = "ichkiraqam" in joined or "(ip)" in joined or "ip)" in joined
-        has_phone = "telefon" in joined
-        if not (has_fish and has_ip and has_phone):
+        if not (is_fish(joined) and is_ip(joined) and is_phone(joined)):
             continue
         col: dict[str, int] = {}
         for j, c in enumerate(row):
             cn = _norm(c)
             if not cn:
                 continue
-            if ("fish" in cn or "fio" in cn) and "fish" not in col:
+            if is_fish(cn) and "fish" not in col:
                 col["fish"] = j
-            elif "telefon" in cn and "phone" not in col:
+            elif is_phone(cn) and "phone" not in col:
                 col["phone"] = j
-            elif ("ichkiraqam" in cn or "ip" in cn) and "ip" not in col:
+            elif is_ip(cn) and "ip" not in col:
                 col["ip"] = j
-            elif ("tuzilma" in cn or "lavozim" in cn) and "position" not in col:
+            elif is_pos(cn) and "position" not in col:
                 col["position"] = j
         return i, col
     return None
@@ -54,6 +61,10 @@ def _find_header(
 def parse_employees(file_bytes: bytes) -> list[dict[str, str]]:
     """Excel baytlaridan xodimlar ro'yxatini qaytaradi.
     Har biri: {department, division, position, fish, ip, phone}."""
+    # Lazy import — openpyxl o'rnatilmagan bo'lsa ilova ishga tushishi buzilmasin
+    # (faqat shu funksiya chaqirilganda xato beradi).
+    from openpyxl import load_workbook
+
     wb = load_workbook(BytesIO(file_bytes), read_only=True, data_only=True)
     records: list[dict[str, str]] = []
     try:

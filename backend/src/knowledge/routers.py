@@ -18,6 +18,7 @@ from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.schemas import (
     AnswerResult,
+    EmployeeIn,
     KnowledgeDetail,
     KnowledgeItem,
     QuestionRequest,
@@ -142,6 +143,22 @@ async def upload_employees(
     content = await file.read()
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     return await use_case.execute(file_bytes=content)
+
+
+@router.post("/employees-json", response_model=UploadResult)
+async def upload_employees_json(
+    data: list[EmployeeIn],
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+) -> UploadResult:
+    """Admin: xodimlarni tayyor JSON ro'yxati orqali yozadi (Excel'siz —
+    openpyxl kerak emas). Body: [{department, division, position, fish, ip, phone}, ...]."""
+    records = [r.model_dump() for r in data]
+    use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
+    return await use_case.execute_records(records=records)
 
 
 @router.post("/scrape", response_model=UploadResult)

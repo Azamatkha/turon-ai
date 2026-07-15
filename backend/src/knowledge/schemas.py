@@ -15,6 +15,16 @@ class UploadResult(Base):
     total_points: int    # kolleksiyadagi jami point soni (tasdiq uchun)
 
 
+class EmployeeIn(Base):
+    """Bitta xodim yozuvi (JSON orqali yuklash uchun — Excel'siz)."""
+    department: str = Field(min_length=1)   # bo'lim (sheet nomi)
+    division: str = ""                      # ichki bo'linma (ixtiyoriy)
+    position: str = ""                      # lavozim
+    fish: str = ""                          # F.I.SH
+    ip: str = ""                            # ichki raqam (IP)
+    phone: str = ""                         # telefon
+
+
 class ScrapeRequest(Base):
     url: str = Field(min_length=1)   # parse qilinadigan sahifa manzili
 
