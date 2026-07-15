@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Chat, Msg } from "../types/chat";
-import { askReply } from "../services/chatBotService";
+import { askReply, askReplyStream } from "../services/chatBotService";
 import {
   listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle, pinSession,
 } from "../services/chatHistoryService";
@@ -14,13 +14,21 @@ const isPersistedId = (id: string) => id.includes("-");
 export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const loaded = useRef<Set<string>>(new Set());
 
   const [chats, setChats] = useState<Chat[]>([]);
+  // `chats`ning doim eng oxirgi qiymati — event handler'lar stale closure'ga
+  // tushmasligi uchun (masalan togglePin joriy `pinned`ni shu yerdan o'qiydi).
+  const chatsRef = useRef<Chat[]>([]);
+  chatsRef.current = chats;
   const [activeId, setActiveIdState] = useState("");
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // Javob oqim (streaming) paytidagi jonli token soni — yuklanish indikatorida
+  // real vaqtda ko'rsatiladi.
+  const [liveTokens, setLiveTokens] = useState(0);
 
   // Boshlang'ich yuklash: suhbatlar ro'yxati + birinchisining xabarlari
   useEffect(() => {
@@ -39,6 +47,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (pendingRef.current) clearTimeout(pendingRef.current);
+      if (abortRef.current) abortRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -92,17 +101,53 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     });
   };
 
-  // Pin/unpin — mahalliy holatni darhol yangilaymiz (optimistic), xato bo'lsa qaytaramiz
+  // Pin/unpin — mahalliy holatni darhol yangilaymiz (optimistic), xato bo'lsa qaytaramiz.
+  // MUHIM: joriy `pinned` qiymatini eski render'dagi `chats`dan emas, doim eng oxirgi
+  // holatni ushlab turadigan `chatsRef`dan o'qiymiz — aks holda stale closure tufayli
+  // parity buzilib, bir suhbatni belgilash uchun ikki marta bosishga to'g'ri kelardi.
   const togglePin = async (id: string) => {
-    const chat = chats.find((c) => c.id === id);
+    const chat = chatsRef.current.find((c) => c.id === id);
     if (!chat) return;
     const next = !chat.pinned;
     setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: next } : c)));
     try {
-      await pinSession(id, next);
+      const updated = await pinSession(id, next);
+      // Backend javobini haqiqat manbai sifatida qabul qilamiz (moslik uchun)
+      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: updated.is_pinned } : c)));
     } catch {
       setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: !next } : c)));
     }
+  };
+
+  // Vaqtinchalik assistant xabarini haqiqiy javob bilan yakunlab, DB ga saqlaydi
+  const finalizeAssistant = (
+    sessionId: string,
+    tempId: string,
+    res: { text: string; finishReason: string; completionTokens: number; maxTokens: number }
+  ) => {
+    setActiveMsgs(sessionId, (m) =>
+      m.map((x) =>
+        x.id === tempId
+          ? {
+              ...x,
+              text: res.text,
+              debug: {
+                finishReason: res.finishReason,
+                completionTokens: res.completionTokens,
+                maxTokens: res.maxTokens,
+              },
+            }
+          : x
+      )
+    );
+    setGenerating(false);
+    setLiveTokens(0);
+    // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
+    addMessage(sessionId, "assistant", res.text)
+      .then((saved) =>
+        setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
+      )
+      .catch(() => {});
   };
 
   const respond = async (
@@ -110,49 +155,69 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     userText: string,
     history: { role: string; content: string }[] = []
   ) => {
-    // Backend RAG endpointidan haqiqiy javobni olamiz (Qdrant qidiruv + Qwen + history)
-    const res = await askReply(userText, history);
-    const full = res.text;
-    const totalTokens = res.completionTokens;
     const tempId = "a" + Date.now();
-    setThinking(false);
-    // Boshida completionTokens = 0 — matn yozilishi bilan real vaqt oshib boradi
-    setActiveMsgs(sessionId, (m) => [
-      ...m,
-      {
-        id: tempId,
-        role: "assistant",
-        text: "",
-        time: new Date().toISOString(),
-        debug: { finishReason: res.finishReason, completionTokens: 0, maxTokens: res.maxTokens },
-      },
-    ]);
-    const parts = full.split(/(\s+)/);
-    let i = 0;
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      i++;
-      const partial = parts.slice(0, i).join("");
-      // Yozilgan ulushga mutanosib token soni — oxirgi qadamda aniq totalTokens'ga tushadi
-      const liveTokens = Math.round((totalTokens * Math.min(i, parts.length)) / parts.length);
-      setActiveMsgs(sessionId, (m) =>
-        m.map((x) =>
-          x.id === tempId
-            ? { ...x, text: partial, debug: x.debug ? { ...x.debug, completionTokens: liveTokens } : x.debug }
-            : x
-        )
+    const abort = new AbortController();
+    abortRef.current = abort;
+    setLiveTokens(0);
+
+    // Birinchi token kelmaguncha "thinking" indikatori turadi — bo'sh bubble
+    // ko'rinmasin. Birinchi token (yoki yakun) kelganda assistant xabarini qo'shamiz.
+    let started = false;
+    const ensureStarted = () => {
+      if (started) return;
+      started = true;
+      setThinking(false);
+      setActiveMsgs(sessionId, (m) => [
+        ...m,
+        {
+          id: tempId,
+          role: "assistant",
+          text: "",
+          time: new Date().toISOString(),
+          debug: { finishReason: "", completionTokens: 0, maxTokens: 0 },
+        },
+      ]);
+    };
+
+    try {
+      // Streaming: backend token-token yuboradi — real vaqtda matn va token o'sib boradi
+      const res = await askReplyStream(
+        userText,
+        history,
+        (fullText, estTokens) => {
+          ensureStarted();
+          setLiveTokens(estTokens);
+          setActiveMsgs(sessionId, (m) =>
+            m.map((x) =>
+              x.id === tempId
+                ? { ...x, text: fullText, debug: x.debug ? { ...x.debug, completionTokens: estTokens } : x.debug }
+                : x
+            )
+          );
+        },
+        abort.signal
       );
-      if (i >= parts.length && timerRef.current) {
-        clearInterval(timerRef.current);
+      ensureStarted();
+      finalizeAssistant(sessionId, tempId, res);
+    } catch {
+      // Foydalanuvchi to'xtatgan bo'lsa — hozirgi matnni qoldiramiz, xato deb ko'rsatmaymiz
+      if (abort.signal.aborted) {
         setGenerating(false);
-        // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
-        addMessage(sessionId, "assistant", full)
-          .then((saved) =>
-            setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
-          )
-          .catch(() => {});
+        setLiveTokens(0);
+        return;
       }
-    }, 26);
+      // Streaming ishlamadi — eski (oqimsiz) yo'lga qaytamiz
+      try {
+        const res = await askReply(userText, history);
+        ensureStarted();
+        finalizeAssistant(sessionId, tempId, res);
+      } catch {
+        setThinking(false);
+        setGenerating(false);
+      }
+    } finally {
+      if (abortRef.current === abort) abortRef.current = null;
+    }
   };
 
   const send = async (forced?: string) => {
@@ -206,13 +271,14 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
         });
     }
 
-    pendingRef.current = setTimeout(() => respond(sessionId, text, history), 750);
+    pendingRef.current = setTimeout(() => respond(sessionId, text, history), 150);
   };
 
   const stop = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (pendingRef.current) clearTimeout(pendingRef.current);
-    setThinking(false); setGenerating(false);
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
+    setThinking(false); setGenerating(false); setLiveTokens(0);
   };
 
   const regenerate = () => {
@@ -239,7 +305,45 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       return copy;
     });
     setThinking(true); setGenerating(true);
-    pendingRef.current = setTimeout(() => respond(activeId, lastUser, history), 600);
+    pendingRef.current = setTimeout(() => respond(activeId, lastUser, history), 150);
+  };
+
+  // Sahifa javob kutilayotganda yangilansa (refresh) — foydalanuvchi xabari DB'da
+  // qoladi-yu, javob hech qachon saqlanmaydi (chunki u faqat "typing" animatsiyasi
+  // tugagach saqlanadi). Natijada oxirgi xabar "user" bo'lib qolib ketadi va javob
+  // kelmaydi. Bu funksiya o'sha holatda so'rovni qayta yuboradi.
+  const resendLast = () => {
+    if (generating || !activeId) return;
+    const msgs = chats.find((c) => c.id === activeId)?.messages || [];
+    const last = msgs[msgs.length - 1];
+    if (!last || last.role !== "user") return;
+    const history = msgs.slice(0, -1).filter((m) => m.text).map((m) => ({ role: m.role, content: m.text }));
+    setThinking(true); setGenerating(true);
+    pendingRef.current = setTimeout(() => respond(activeId, last.text, history), 400);
+  };
+
+  // Foydalanuvchi o'z xabarini tahrirlab qayta yuboradi: shu xabardan keyingi
+  // hamma narsa (eski javob) o'chiriladi va tahrirlangan matn yangi so'rov sifatida
+  // yuboriladi. Bazada ham eski xabar+javoblar o'chirilib, yangisi qo'shiladi.
+  const editAndResend = (messageId: string, newText: string) => {
+    const text = newText.trim();
+    if (generating || !activeId || !text) return;
+    const msgs = chats.find((c) => c.id === activeId)?.messages || [];
+    const idx = msgs.findIndex((m) => m.id === messageId);
+    if (idx === -1 || msgs[idx].role !== "user") return;
+
+    // Shu xabardan boshlab (eski user + undan keyingi javoblar) bazadan o'chiramiz
+    for (const m of msgs.slice(idx)) {
+      if (isPersistedId(m.id)) deleteMessage(activeId, m.id).catch(() => {});
+    }
+
+    const history = msgs.slice(0, idx).filter((m) => m.text).map((m) => ({ role: m.role, content: m.text }));
+    const now = new Date().toISOString();
+    const newId = "u" + Date.now();
+    setActiveMsgs(activeId, (m) => [...m.slice(0, idx), { id: newId, role: "user", text, time: now }]);
+    addMessage(activeId, "user", text).catch(() => {});
+    setThinking(true); setGenerating(true);
+    pendingRef.current = setTimeout(() => respond(activeId, text, history), 150);
   };
 
   // Xabarga like/dislike — mahalliy holatni yangilab, DB ga saqlaymiz
@@ -257,6 +361,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
 
   return {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, voteMsg,
+    draft, setDraft, thinking, generating, liveTokens, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
   };
 }

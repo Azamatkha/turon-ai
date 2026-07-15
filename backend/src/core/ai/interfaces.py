@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from typing import Any
 
 from src.core.ai.schemas import CallResult, DiagnosticResponse, TextGenResult
@@ -28,6 +29,18 @@ class BaseAIClient(ABC):
     ) -> TextGenResult:
         """generate_text bilan bir xil, lekin token statistikasini ham qaytaradi
         (debug: javob token yetishmovchiligidan kesilib qolganini bilish uchun)."""
+        raise NotImplementedError
+
+    def stream_generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        system_prompt: str | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Javobni oqim (token-token) tarzida qaytaradi. Har bir provayder
+        qo'llab-quvvatlamasligi mumkin — standart holatda amalga oshirilmagan."""
         raise NotImplementedError
 
     @abstractmethod

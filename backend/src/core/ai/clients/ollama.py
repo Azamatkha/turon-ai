@@ -1,5 +1,6 @@
 import json
 import time
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -26,6 +27,7 @@ class OllamaClient(BaseAIClient):
     def __init__(self, http: httpx.AsyncClient) -> None:
         self.base_url = config.ai.OLLAMA_BASE_URL.rstrip("/")
         self.model = config.ai.OLLAMA_MODEL
+        self.num_ctx = config.ai.OLLAMA_NUM_CTX
         self.timeout = config.ai.TIMEOUT_SECONDS
         self.default_temperature = config.ai.DEFAULT_TEMPERATURE
         self.http = http
@@ -63,6 +65,9 @@ class OllamaClient(BaseAIClient):
                     else self.default_temperature
                 ),
                 "num_predict": max_tokens,
+                # Kontekst oynasini aniq belgilaymiz — aks holda Ollama standart
+                # 2048'da RAG kontekst + system prompt'ni oldidan kesib tashlaydi.
+                "num_ctx": self.num_ctx,
             },
         }
         try:
@@ -121,6 +126,63 @@ class OllamaClient(BaseAIClient):
             completion_tokens=int(data.get("eval_count", 0)),
             max_tokens=max_tokens,
         )
+
+    async def stream_generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        system_prompt: str | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Javobni token-token (oqim) qaytaradi — real vaqtda ko'rsatish uchun.
+        Har bir bo'lak: {"type": "delta", "text": ...}; oxirida:
+        {"type": "done", "completion_tokens": N, "finish_reason": ...}."""
+        messages = self._build_messages(prompt, system_prompt)
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+            "think": False,
+            "options": {
+                "temperature": (
+                    temperature
+                    if temperature is not None
+                    else self.default_temperature
+                ),
+                "num_predict": max_tokens,
+                "num_ctx": self.num_ctx,
+            },
+        }
+        try:
+            async with self.http.stream(
+                "POST",
+                f"{self.base_url}/api/chat",
+                json=payload,
+                timeout=self.timeout,
+            ) as resp:
+                if resp.status_code != 200:
+                    body = await resp.aread()
+                    raise InfrastructureException(
+                        f"Ollama error {resp.status_code}: {body[:200]!r}"
+                    )
+                async for line in resp.aiter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    message = data.get("message") or {}
+                    delta = str(message.get("content", ""))
+                    if delta:
+                        yield {"type": "delta", "text": delta}
+                    if data.get("done"):
+                        yield {
+                            "type": "done",
+                            "completion_tokens": int(data.get("eval_count", 0)),
+                            "finish_reason": str(data.get("done_reason", "stop")),
+                        }
+        except httpx.HTTPError as exc:
+            raise InfrastructureException(f"Ollama connection error: {exc}") from exc
 
     async def generate_json(
         self,

@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from typing import Any
 
 from src.core.ai.embeddings import OllamaEmbedder
@@ -9,7 +10,7 @@ from src.core.errors.exceptions import (
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
-from src.knowledge.prompts import STRICT_RAG_SYSTEM
+from src.knowledge.prompts import NO_INFO_REPLY, STRICT_RAG_SYSTEM
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
     AnswerResult,
@@ -202,10 +203,14 @@ class AnswerQuestionUseCase:
     """RAG: savolni embed qiladi, Qdrant'dan eng yaqin bo'laklarni topadi va
     ularni kontekst sifatida Qwen'ga berib javob oldiradi."""
 
-    TOP_K = 4
+    TOP_K = 8
     TEMPERATURE = 0.2
     MAX_TOKENS = 2048  # qwen "o'ylash" + javob sig'ishi uchun yetarli
     HISTORY_LIMIT = 10  # oxirgi shuncha xabar (mavzu davomiyligi uchun)
+    # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
+    # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
+    # chaqirmasdan tayyor "ma'lumotim yo'q" javobini qaytaramiz (tez javob uchun).
+    MIN_SCORE = 0.35
 
     def __init__(
         self,
@@ -217,24 +222,76 @@ class AnswerQuestionUseCase:
         self.store = store
         self.ai_client = ai_client
 
-    async def execute(
-        self, question: str, history: list[ChatTurn] | None = None
-    ) -> AnswerResult:
-        query_vector = await self.embedder.embed(question)
-        results = await self.store.search(query_vector, top_k=self.TOP_K)
+    @staticmethod
+    def _category_label(source_url: str) -> str:
+        """source_url yo'lidan mahsulot turkumini aniqlaydi — katalogni
+        guruhlash uchun (kartalar / kreditlar / omonatlar ...)."""
+        url = source_url.lower()
+        if "plastic-card" in url or "/cards" in url or "karta" in url:
+            return "Bank kartalari"
+        if "credit" in url or "loan" in url or "kredit" in url:
+            return "Kreditlar"
+        if "deposit" in url or "omonat" in url:
+            return "Omonatlar"
+        if "transfer" in url or "otkazma" in url or "o-tkazma" in url:
+            return "Pul o'tkazmalari"
+        return "Boshqa xizmatlar"
 
-        # HOZIRCHA: kontekst topilsa — undan foydalanamiz; topilmasa — umumiy javob.
-        if results:
-            blocks = []
-            for payload, _ in results:
-                title = payload.get("title", "")
-                source_url = payload.get("source_url", "")
-                header = f"[{title}] (Manba: {source_url})" if source_url else f"[{title}]"
-                blocks.append(f"{header}\n{payload.get('chunk_text', '')}")
-            context = "\n\n---\n\n".join(blocks)
-            base = f"MA'LUMOT (kontekst):\n{context}\n\nSAVOL: {question}"
-        else:
-            base = f"SAVOL: {question}"
+    async def _build_catalog(self) -> str:
+        """Bazadagi BARCHA mahsulotlarning to'liq ro'yxati (title bo'yicha noyob),
+        turkumlarga ajratilgan. Semantik qidiruv faqat eng yaqin bir nechtasini
+        topadi — bu esa keng savolga ("barcha kredit turlari") TO'LIQ javob berish
+        uchun butun katalogni beradi."""
+        payloads = await self.store.scroll_all(limit=2000)
+        # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan)
+        seen: dict[str, str] = {}
+        for p in payloads:
+            title = str(p.get("title", "")).strip()
+            if title and title not in seen:
+                seen[title] = str(p.get("source_url", ""))
+        if not seen:
+            return ""
+        # turkumlarga ajratamiz
+        groups: dict[str, list[str]] = {}
+        for title, url in seen.items():
+            label = self._category_label(url)
+            line = f"- {title}" + (f" (Manba: {url})" if url else "")
+            groups.setdefault(label, []).append(line)
+        blocks = [f"### {cat}\n" + "\n".join(items) for cat, items in groups.items()]
+        return "\n\n".join(blocks)
+
+    async def _assemble(
+        self,
+        question: str,
+        history: list[ChatTurn] | None,
+        results: list[tuple[dict[str, Any], float]],
+    ) -> tuple[str, list[SourceRef]]:
+        """Topilgan bo'laklar + to'liq katalog + suhbat tarixidan yakuniy promptni
+        va manbalar ro'yxatini quradi (execute va execute_stream uchun umumiy)."""
+        # Batafsil kontekst (tanlangan mavzuga oid eng yaqin bo'laklar) —
+        # aniq mahsulot bo'yicha to'liq (raqam/shart) javob berish uchun.
+        blocks = []
+        for payload, _ in results:
+            title = payload.get("title", "")
+            source_url = payload.get("source_url", "")
+            header = f"[{title}] (Manba: {source_url})" if source_url else f"[{title}]"
+            blocks.append(f"{header}\n{payload.get('chunk_text', '')}")
+        context = "\n\n---\n\n".join(blocks)
+
+        # To'liq katalog — keng savolga (turkumdagi HAMMA mahsulot) javob berish uchun.
+        catalog = await self._build_catalog()
+        catalog_block = (
+            f"MAHSULOTLAR TO'LIQ KATALOGI (bazadagi barcha mavjud mahsulotlar, "
+            f"turkumlar bo'yicha — keng/umumiy savolga shu ro'yxatdan foydalan):\n"
+            f"{catalog}\n\n"
+            if catalog
+            else ""
+        )
+        base = (
+            f"{catalog_block}"
+            f"BATAFSIL MA'LUMOT (tanlangan mavzuga oid kontekst):\n{context}\n\n"
+            f"SAVOL: {question}"
+        )
 
         # Oldingi suhbatni (oxirgi HISTORY_LIMIT ta) promptga qo'shamiz
         if history:
@@ -247,13 +304,6 @@ class AnswerQuestionUseCase:
         else:
             prompt = base
 
-        gen = await self.ai_client.generate_text_with_usage(
-            prompt,
-            system_prompt=STRICT_RAG_SYSTEM,
-            temperature=self.TEMPERATURE,
-            max_tokens=self.MAX_TOKENS,
-        )
-
         # Manbalarni sarlavha bo'yicha takrorlanmas qilib yig'amiz
         sources: list[SourceRef] = []
         seen: set[str] = set()
@@ -262,6 +312,71 @@ class AnswerQuestionUseCase:
             if title and title not in seen:
                 seen.add(title)
                 sources.append(SourceRef(title=title, score=round(score, 3)))
+
+        return prompt, sources
+
+    async def execute_stream(
+        self, question: str, history: list[ChatTurn] | None = None
+    ) -> AsyncIterator[dict[str, Any]]:
+        """execute bilan bir xil RAG mantiqi, lekin javobni token-token (oqim)
+        qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
+        {"type":"delta","text":...}; oxirida token statistikasi bilan
+        {"type":"done", ...}."""
+        query_vector = await self.embedder.embed(question)
+        results = await self.store.search(query_vector, top_k=self.TOP_K)
+
+        top_score = results[0][1] if results else 0.0
+        if not results or top_score < self.MIN_SCORE:
+            yield {"type": "delta", "text": NO_INFO_REPLY}
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
+        prompt, sources = await self._assemble(question, history, results)
+        src_dump = [{"title": s.title, "score": s.score} for s in sources]
+        async for ev in self.ai_client.stream_generate(
+            prompt,
+            system_prompt=STRICT_RAG_SYSTEM,
+            temperature=self.TEMPERATURE,
+            max_tokens=self.MAX_TOKENS,
+        ):
+            if ev.get("type") == "done":
+                ev["max_tokens"] = self.MAX_TOKENS
+                ev["sources"] = src_dump
+            yield ev
+
+    async def execute(
+        self, question: str, history: list[ChatTurn] | None = None
+    ) -> AnswerResult:
+        query_vector = await self.embedder.embed(question)
+        results = await self.store.search(query_vector, top_k=self.TOP_K)
+
+        # Mos kontekst yo'q (yoki eng yaqini ham juda uzoq) — LLM'ni chaqirmasdan
+        # darrov "ma'lumotim yo'q" deb qaytaramiz. Bu bema'ni/aloqasiz savolga
+        # modelning uzoq (bir necha daqiqa) "o'ylab" javob berishini oldini oladi.
+        top_score = results[0][1] if results else 0.0
+        if not results or top_score < self.MIN_SCORE:
+            return AnswerResult(
+                answer=NO_INFO_REPLY,
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
+            )
+
+        prompt, sources = await self._assemble(question, history, results)
+
+        gen = await self.ai_client.generate_text_with_usage(
+            prompt,
+            system_prompt=STRICT_RAG_SYSTEM,
+            temperature=self.TEMPERATURE,
+            max_tokens=self.MAX_TOKENS,
+        )
 
         return AnswerResult(
             answer=gen.text.strip(),

@@ -54,6 +54,10 @@ export interface ChatStaticStrings {
   copy: string;
   copied: string;
   regenerate: string;
+  resend: string;
+  editMessage: string;
+  saveEdit: string;
+  cancelEdit: string;
   goodResponse: string;
   badResponse: string;
   close: string;

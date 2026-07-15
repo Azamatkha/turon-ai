@@ -134,6 +134,10 @@ class AIConfig(BaseModel):
     AI_PROVIDER: str = "ollama"
     OLLAMA_BASE_URL: str = ""
     OLLAMA_MODEL: str = "qwen3.5:latest"
+    # Kontekst oynasi (token). Ollama'ning standarti atigi 2048 — RAG kontekst +
+    # system prompt + suhbat tarixi shunga sig'may, oldingi qismi (system prompt!)
+    # jimgina kesilib qolardi. Qwen kattaroq oynani bemalol ko'taradi.
+    OLLAMA_NUM_CTX: int = 8192
 
     # Embedding (matn -> vektor). Same Ollama server, different model.
     EMBEDDING_MODEL: str = "mxbai-embed-large:latest"

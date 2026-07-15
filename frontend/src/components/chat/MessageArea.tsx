@@ -41,7 +41,10 @@ interface MessageAreaProps {
   rawMsgs: Msg[];
   thinking: boolean;
   generating: boolean;
+  liveTokens: number;
   onRegenerate: () => void;
+  onResend: () => void;
+  onEditResend: (id: string, text: string) => void;
   tk: ThemeTokens;
   isDark: boolean;
   s: ChatStaticStrings;
@@ -51,9 +54,20 @@ interface MessageAreaProps {
 type Vote = "up" | "down";
 
 export default function MessageArea({
-  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, onRegenerate, tk, isDark, s, onVote,
+  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, liveTokens, onRegenerate, onResend, onEditResend, tk, isDark, s, onVote,
 }: MessageAreaProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Tahrirlanayotgan foydalanuvchi xabari (id) va uning matni
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const startEdit = (m: Msg) => { setEditId(m.id); setEditText(m.text); };
+  const cancelEdit = () => { setEditId(null); setEditText(""); };
+  const saveEdit = (id: string) => {
+    const t = editText.trim();
+    if (t) onEditResend(id, t);
+    cancelEdit();
+  };
   // Foydalanuvchi xabari foni sidebar rangi bilan bir xil (light mode uchun so'ralgan)
   const side = getSideTokens(isDark);
 
@@ -97,11 +111,52 @@ export default function MessageArea({
           {rawMsgs.map((m, idx) => {
             const isUser = m.role === "user";
             if (isUser) {
+              // Oxirgi xabar shu (user) bo'lib, unga hali javob kelmagan bo'lsa —
+              // sahifa yangilanganda (refresh) javob abadiy tushib qolgan bo'ladi
+              // (assistant javobi faqat "typing" animatsiyasi tugagach saqlanadi).
+              // Shunday holatda qayta yuborish tugmasini ko'rsatamiz.
+              const isDangling = idx === rawMsgs.length - 1 && !thinking && !generating;
+              const isEditing = editId === m.id;
               return (
                 <div key={m.id} className={`${styles.messageRow} ${styles.messageRowUser}`}>
                   <div className={styles.bubbleColUser}>
-                    <div className={styles.bubbleUser} style={{ background: side.bg }}>{m.text}</div>
-                    {m.time && <div className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>}
+                    {isEditing ? (
+                      <div className={styles.editBox} style={{ background: side.bg, borderColor: tk.cardBorder }}>
+                        <textarea
+                          className={styles.editArea}
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(m.id); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          autoFocus
+                          rows={Math.min(6, editText.split("\n").length)}
+                          style={{ color: tk.strong }}
+                        />
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.editBtnGhost} style={{ color: tk.muted }}>{s.cancelEdit}</button>
+                          <button onClick={() => saveEdit(m.id)} className={styles.editBtnPrimary} disabled={!editText.trim()}>{s.saveEdit}</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={styles.bubbleUser} style={{ background: side.bg }}>{m.text}</div>
+                    )}
+                    {!isEditing && m.time && <div className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>}
+                    {!isEditing && !generating && !thinking && (
+                      <div className={styles.userActions}>
+                        <button onClick={() => startEdit(m)} className={styles.resendBtn} aria-label={s.editMessage}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                          {s.editMessage}
+                        </button>
+                        {isDangling && (
+                          <button onClick={onResend} className={styles.resendBtn} aria-label={s.resend}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+                            {s.resend}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -112,7 +167,9 @@ export default function MessageArea({
             // Amal tugmalari javob tugagach ko'rinadi; token hisoblagichi esa yozilish
             // paytida ham ko'rinadi (real vaqtda 1,2,3... sanab boradi).
             const showActions = !!m.text && !isStreaming;
-            const hasTokens = !!m.debug && !!m.text && m.debug.completionTokens > 0;
+            // Streaming paytida token yuklanish indikatorida ko'rsatiladi — bu yerda
+            // faqat javob tugagach (yakuniy aniq son) ko'rsatamiz (takror bo'lmasin).
+            const hasTokens = !!m.debug && !!m.text && m.debug.completionTokens > 0 && !isStreaming;
             const showFooter = showActions || hasTokens;
             const v = m.vote;
 
@@ -177,11 +234,18 @@ export default function MessageArea({
             );
           })}
 
-          {thinking && (
+          {(thinking || generating) && (
             <div className={styles.typingRow}>
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
                 <TypingIndicator color={isDark ? "#7fb3d2" : "#3a7ca5"} />
+                {/* Javob yozilayotgan paytda real vaqtda o'sib boruvchi token soni */}
+                {liveTokens > 0 && (
+                  <span className={styles.tokenMeter} style={{ color: tk.muted, marginLeft: 4 }}>
+                    <RiCopperCoinLine size={13} style={{ color: ACCENT }} />
+                    {liveTokens} token
+                  </span>
+                )}
               </div>
             </div>
           )}

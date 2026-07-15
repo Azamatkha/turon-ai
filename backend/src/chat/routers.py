@@ -15,10 +15,13 @@ suhbatini ko'rib/o'zgartirib bo'lmaydi (get_single user_id bilan filtrlanadi).
 ─────────────────────────────────────────────────────────────────────────────
 """
 
+import json
+from collections.abc import AsyncIterator
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
@@ -205,3 +208,34 @@ async def ask(
         embedder=embedder, store=store, ai_client=ai_client
     )
     return await use_case.execute(question=data.question, history=data.history)
+
+
+@router.post("/ask/stream")
+async def ask_stream(
+    data: QuestionRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+) -> StreamingResponse:
+    """Xuddi /ask kabi, lekin javobni token-token (SSE oqim) qaytaradi —
+    frontend real vaqtda matn va token sonini ko'rsatishi uchun."""
+    use_case = AnswerQuestionUseCase(
+        embedder=embedder, store=store, ai_client=ai_client
+    )
+
+    async def event_stream() -> AsyncIterator[str]:
+        try:
+            async for ev in use_case.execute_stream(
+                question=data.question, history=data.history
+            ):
+                yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
+        except Exception as exc:  # noqa: BLE001 - oqim uzilsa, xatoni klientga yuboramiz
+            payload = {"type": "error", "message": str(exc)}
+            yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

@@ -131,6 +131,98 @@
   opacity: 0.7;
 }
 
+.resendBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 4px 0 0;
+  padding: 6px 12px;
+  border: 1px solid rgba(58, 124, 165, 0.3);
+  border-radius: 99px;
+  background: transparent;
+  color: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.resendBtn:hover {
+  background: rgba(58, 124, 165, 0.12);
+}
+
+.resendBtn:active {
+  transform: scale(0.96);
+}
+
+/* Foydalanuvchi xabari tagidagi amal tugmalari (tahrirlash / qayta yuborish) */
+.userActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.18s ease;
+}
+
+.messageRowUser:hover .userActions {
+  opacity: 1;
+}
+
+/* Inline tahrirlash qutisi */
+.editBox {
+  width: min(560px, 78vw);
+  max-width: 100%;
+  border: 1px solid;
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px rgba(23, 63, 115, 0.1);
+}
+
+.editArea {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font: inherit;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.editBtnGhost {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.editBtnGhost:hover {
+  background: rgba(58, 124, 165, 0.1);
+}
+
+.editBtnPrimary {
+  border: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #224f6b, #173f73);
+  color: #fff;
+}
+
+.editBtnPrimary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .msgTimeBot {
   font-size: 11px;
   margin: 0;
