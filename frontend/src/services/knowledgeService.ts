@@ -96,6 +96,19 @@ export async function updateKnowledge(
   return res.json();
 }
 
+// Xodimlar ma'lumotnomasi (Excel .xlsx) — har sheet bir bo'lim. Backend har
+// xodimni alohida (doc_type=employee) Qdrant'ga yozadi. multipart/form-data.
+export async function uploadEmployees(file: File): Promise<UploadResult> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await apiFetch("/v1/admin/knowledge/employees", {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readError(res, "Xodimlar faylini yuklashda xatolik"));
+  return res.json();
+}
+
 // .docx faylni yuborish — multipart/form-data
 export async function uploadFile(title: string, file: File): Promise<UploadResult> {
   const form = new FormData();

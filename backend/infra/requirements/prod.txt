@@ -67,6 +67,8 @@ email-validator==2.3.0
     # via
     #   -r base.in
     #   fastapi-mail
+et-xmlfile==2.0.0
+    # via openpyxl  (qo'lda qo'shildi)
 fastapi==0.136.0
     # via -r base.in
 fastapi-mail==1.6.2
@@ -98,6 +100,8 @@ markupsafe==3.0.3
     # via
     #   jinja2
     #   mako
+openpyxl==3.1.5
+    # via -r base.in  (qo'lda qo'shildi; Excel .xlsx xodimlar faylini o'qish uchun)
 packaging==26.0
     # via
     #   gunicorn

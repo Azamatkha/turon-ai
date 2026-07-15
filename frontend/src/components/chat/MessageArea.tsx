@@ -1,5 +1,5 @@
-import { Ref, useState } from "react";
-import { RiCopperCoinLine } from "react-icons/ri";
+import { Ref, useEffect, useRef, useState } from "react";
+import { RiCopperCoinLine, RiMore2Fill } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
@@ -9,7 +9,7 @@ import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
 
-const suggIcons = ["✦", "✎", "◷", "‹/›"];
+const suggIcons = ["✦", "✎", "◷", "⌂", "☎"];
 
 // ISO vaqtni "14:05" ko'rinishida ko'rsatadi
 function fmtTime(iso?: string): string {
@@ -41,9 +41,7 @@ interface MessageAreaProps {
   rawMsgs: Msg[];
   thinking: boolean;
   generating: boolean;
-  liveTokens: number;
   onRegenerate: () => void;
-  onResend: () => void;
   onEditResend: (id: string, text: string) => void;
   tk: ThemeTokens;
   isDark: boolean;
@@ -54,12 +52,38 @@ interface MessageAreaProps {
 type Vote = "up" | "down";
 
 export default function MessageArea({
-  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, liveTokens, onRegenerate, onResend, onEditResend, tk, isDark, s, onVote,
+  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, onRegenerate, onEditResend, tk, isDark, s, onVote,
 }: MessageAreaProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // Tahrirlanayotgan foydalanuvchi xabari (id) va uning matni
   const [editId, setEditId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  // Qaysi xabar ustidagi "..." menyu ochiq (hover'da chiqadigan menyu)
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const menuWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Menyu ochiq bo'lsa — tashqariga bosilganda yopamiz
+  useEffect(() => {
+    if (!menuId) return;
+    const onDown = (e: MouseEvent) => {
+      if (!menuWrapRef.current?.contains(e.target as Node)) setMenuId(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuId]);
+
+  // Yuklanish (javob kutish) davomida o'tgan vaqtni soniyalab ko'rsatamiz —
+  // uzoq kutishda foydalanuvchi jarayon ketayotganini bilib turadi.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!(thinking || generating)) {
+      setElapsed(0);
+      return;
+    }
+    const start = Date.now();
+    const id = setInterval(() => setElapsed((Date.now() - start) / 1000), 200);
+    return () => clearInterval(id);
+  }, [thinking, generating]);
 
   const startEdit = (m: Msg) => { setEditId(m.id); setEditText(m.text); };
   const cancelEdit = () => { setEditId(null); setEditText(""); };
@@ -111,17 +135,16 @@ export default function MessageArea({
           {rawMsgs.map((m, idx) => {
             const isUser = m.role === "user";
             if (isUser) {
-              // Oxirgi xabar shu (user) bo'lib, unga hali javob kelmagan bo'lsa —
-              // sahifa yangilanganda (refresh) javob abadiy tushib qolgan bo'ladi
-              // (assistant javobi faqat "typing" animatsiyasi tugagach saqlanadi).
-              // Shunday holatda qayta yuborish tugmasini ko'rsatamiz.
-              const isDangling = idx === rawMsgs.length - 1 && !thinking && !generating;
+              // Har bir foydalanuvchi xabari ustida (hover) "..." menyu chiqadi —
+              // undan Tahrirlash yoki Qayta yuborish tanlanadi. "Qayta yuborish"
+              // shu xabarni (o'sha matn bilan) qaytadan yuboradi — sahifa
+              // yangilangach javob tushib qolган bo'lsa ham qo'l keladi.
               const isEditing = editId === m.id;
               return (
                 <div key={m.id} className={`${styles.messageRow} ${styles.messageRowUser}`}>
                   <div className={styles.bubbleColUser}>
                     {isEditing ? (
-                      <div className={styles.editBox} style={{ background: side.bg, borderColor: tk.cardBorder }}>
+                      <div className={styles.editBox} style={{ background: tk.card, borderColor: tk.cardBorder }}>
                         <textarea
                           className={styles.editArea}
                           value={editText}
@@ -142,18 +165,33 @@ export default function MessageArea({
                     ) : (
                       <div className={styles.bubbleUser} style={{ background: side.bg }}>{m.text}</div>
                     )}
-                    {!isEditing && m.time && <div className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</div>}
-                    {!isEditing && !generating && !thinking && (
-                      <div className={styles.userActions}>
-                        <button onClick={() => startEdit(m)} className={styles.resendBtn} aria-label={s.editMessage}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                          {s.editMessage}
-                        </button>
-                        {isDangling && (
-                          <button onClick={onResend} className={styles.resendBtn} aria-label={s.resend}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
-                            {s.resend}
-                          </button>
+                    {!isEditing && (
+                      <div className={styles.userMeta}>
+                        {m.time && <span className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</span>}
+                        {!generating && !thinking && (
+                          <div className={styles.msgMenuWrap} ref={menuId === m.id ? menuWrapRef : undefined}>
+                            <button
+                              onClick={() => setMenuId((cur) => (cur === m.id ? null : m.id))}
+                              className={`${styles.msgMenuBtn} ${menuId === m.id ? styles.msgMenuBtnActive : ""}`}
+                              aria-label={s.moreOptions}
+                              aria-haspopup="menu"
+                              aria-expanded={menuId === m.id}
+                            >
+                              <RiMore2Fill size={15} />
+                            </button>
+                            {menuId === m.id && (
+                              <div role="menu" className={styles.msgMenu} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, color: tk.strong }}>
+                                <button role="menuitem" className={styles.msgMenuItem} onClick={() => { setMenuId(null); startEdit(m); }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                                  <span>{s.editMessage}</span>
+                                </button>
+                                <button role="menuitem" className={styles.msgMenuItem} onClick={() => { setMenuId(null); onEditResend(m.id, m.text); }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+                                  <span>{s.resend}</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
@@ -239,11 +277,10 @@ export default function MessageArea({
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
                 <TypingIndicator color={isDark ? "#7fb3d2" : "#3a7ca5"} />
-                {/* Javob yozilayotgan paytda real vaqtda o'sib boruvchi token soni */}
-                {liveTokens > 0 && (
+                {/* Javob kutilayotgan vaqt (soniya) — uzoq kutishda jarayon ketayotgani bilinadi */}
+                {elapsed >= 1 && (
                   <span className={styles.tokenMeter} style={{ color: tk.muted, marginLeft: 4 }}>
-                    <RiCopperCoinLine size={13} style={{ color: ACCENT }} />
-                    {liveTokens} token
+                    {elapsed.toFixed(1)}s
                   </span>
                 )}
               </div>

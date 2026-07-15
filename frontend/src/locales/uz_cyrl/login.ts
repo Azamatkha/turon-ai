@@ -22,4 +22,6 @@ export const login: LoginStrings = {
   pvAI: "Албатта. Жорий ставка йилига 18% — қисқача баён қилиб берайми?",
   statLabel: "Ҳал қилинган сўровлар",
   selectLanguage: "Тилни танлаш",
+  showPassword: "Паролни кўрсатиш",
+  hidePassword: "Паролни яшириш",
 };

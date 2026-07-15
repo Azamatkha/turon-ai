@@ -65,6 +65,8 @@ email-validator==2.3.0
     # via
     #   -r base.in
     #   fastapi-mail
+et-xmlfile==2.0.0
+    # via openpyxl
 fastapi==0.136.0
     # via -r base.in
 fastapi-mail==1.6.2
@@ -96,6 +98,8 @@ markupsafe==3.0.3
     # via
     #   jinja2
     #   mako
+openpyxl==3.1.5
+    # via -r base.in
 packaging==26.0
     # via
     #   gunicorn

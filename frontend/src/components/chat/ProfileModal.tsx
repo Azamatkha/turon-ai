@@ -83,7 +83,7 @@ export default function ProfileModal({
             <label className={styles.fieldLabel} style={labelStyle}>{s.newPassword}</label>
             <div className={styles.pwField}>
               <input className={styles.input} style={inputStyle} value={pPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPPassword(e.target.value)} type={pwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
-              <button type="button" onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+              <button type="button" onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip={pwVisible ? s.hidePassword : s.showPassword} aria-label={pwVisible ? s.hidePassword : s.showPassword} className={styles.pwToggleBtn}>
                 {eyeIcon(pwVisible)}
               </button>
             </div>
@@ -93,7 +93,7 @@ export default function ProfileModal({
               <label className={styles.fieldLabel} style={labelStyle}>{s.confirmNewPassword}</label>
               <div className={styles.pwField}>
                 <input className={styles.input} style={inputStyle} value={pConfirmPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPConfirmPassword(e.target.value)} type={confirmPwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
-                <button type="button" onClick={() => setConfirmPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+                <button type="button" onClick={() => setConfirmPwVisible((v) => !v)} tabIndex={-1} data-tip={confirmPwVisible ? s.hidePassword : s.showPassword} aria-label={confirmPwVisible ? s.hidePassword : s.showPassword} className={styles.pwToggleBtn}>
                   {eyeIcon(confirmPwVisible)}
                 </button>
               </div>

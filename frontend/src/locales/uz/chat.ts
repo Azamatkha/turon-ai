@@ -6,7 +6,7 @@ export const chat: ChatStrings = {
   sub: "Bank mahsulotlari bo‘yicha savolingizni yozing — mavjud ma’lumotlar asosida javob beraman.",
   placeholder: "Turon AI’ga yozing…",
   disclaimer: "Yangi qatorga o‘tish uchun Shift+Enter · javoblar biroz kechikishi mumkin.",
-  sugg: ["Kredit turlari", "Bank kartalari", "Omonatlar", "Tariflar va komissiyalar"],
+  sugg: ["Kredit turlari", "Bank kartalari", "Omonatlar", "Filiallar", "Telefon raqamlari"],
   greeting: (n: string) => `Assalom aleykum, ${n}!\nSizga qanday yordam beraman?`,
 };
 
@@ -59,4 +59,6 @@ export const chatStatic: ChatStaticStrings = {
   recentsSection: "Suhbatlar",
   todayLabel: "Bugun",
   selectLanguage: "Tilni tanlash",
+  showPassword: "Parolni ko‘rsatish",
+  hidePassword: "Parolni yashirish",
 };

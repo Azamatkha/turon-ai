@@ -5,7 +5,7 @@ export const chat: ChatStrings = {
   sub: "Задайте вопрос по банковским продуктам — отвечу на основе доступной информации.",
   placeholder: "Напишите Turon AI…",
   disclaimer: "Shift+Enter — новая строка · ответы могут приходить с задержкой.",
-  sugg: ["Виды кредитов", "Банковские карты", "Вклады", "Тарифы и комиссии"],
+  sugg: ["Виды кредитов", "Банковские карты", "Вклады", "Филиалы", "Телефонные номера"],
   greeting: (n: string) => `Здравствуйте, ${n}!\nЧем могу помочь?`,
 };
 
@@ -56,4 +56,6 @@ export const chatStatic: ChatStaticStrings = {
   recentsSection: "Чаты",
   todayLabel: "Сегодня",
   selectLanguage: "Выбрать язык",
+  showPassword: "Показать пароль",
+  hidePassword: "Скрыть пароль",
 };

@@ -8,7 +8,7 @@ SWAGGER'DA TEKSHIRISH:
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
@@ -33,6 +33,7 @@ from src.knowledge.usecases import (
     ListKnowledgeUseCase,
     ScrapeUrlUseCase,
     UpdateKnowledgeUseCase,
+    UploadEmployeesUseCase,
     UploadKnowledgeUseCase,
 )
 from src.user.auth.permissions.checker import require_permission
@@ -125,6 +126,22 @@ async def upload_knowledge(
     """Admin: matnni bo'laklarga bo'lib, embed qilib, sarlavha bilan Qdrant'ga yozadi."""
     use_case = UploadKnowledgeUseCase(embedder=embedder, store=store)
     return await use_case.execute(title=data.title, text=data.text)
+
+
+@router.post("/employees", response_model=UploadResult)
+async def upload_employees(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    file: Annotated[UploadFile, File()],
+) -> UploadResult:
+    """Admin: xodimlar Excel (.xlsx) faylini o'qib, har xodimni alohida
+    (doc_type=employee) Qdrant'ga yozadi. Har sheet — bir bo'lim."""
+    content = await file.read()
+    use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
+    return await use_case.execute(file_bytes=content)
 
 
 @router.post("/scrape", response_model=UploadResult)

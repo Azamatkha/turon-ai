@@ -92,6 +92,35 @@ class QdrantStore:
         )
         return [(dict(point.payload or {}), point.score) for point in result.points]
 
+    async def delete_by_field(self, key: str, value: str) -> None:
+        """Delete every point whose payload[key] == value."""
+        if not await self.exists():
+            return
+        await self.client.delete(
+            collection_name=self.collection,
+            points_selector=Filter(
+                must=[FieldCondition(key=key, match=MatchValue(value=value))]
+            ),
+        )
+
+    async def search_by_field(
+        self, key: str, value: str, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """Return payloads of points whose payload[key] == value (exact filter,
+        no vector search) — used for reverse lookups (e.g. IP -> employee)."""
+        if not await self.exists():
+            return []
+        records, _ = await self.client.scroll(
+            collection_name=self.collection,
+            scroll_filter=Filter(
+                must=[FieldCondition(key=key, match=MatchValue(value=value))]
+            ),
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+        return [dict(r.payload or {}) for r in records]
+
     async def delete_by_title(self, title: str) -> None:
         """Delete every point whose payload.title matches (one uploaded item)."""
         if not await self.exists():

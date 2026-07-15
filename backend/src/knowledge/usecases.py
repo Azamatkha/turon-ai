@@ -10,6 +10,7 @@ from src.core.errors.exceptions import (
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
+from src.knowledge.employee_parser import parse_employees
 from src.knowledge.prompts import NO_INFO_REPLY, STRICT_RAG_SYSTEM
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
@@ -71,6 +72,79 @@ class UploadKnowledgeUseCase:
                 f"Vektor bazasi (Qdrant) bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
             ) from exc
         return UploadResult(chunks=len(chunks), vector_dim=dim, total_points=total)
+
+
+class UploadEmployeesUseCase:
+    """Excel (.xlsx) xodimlar ma'lumotnomasini o'qib, har xodimni alohida nuqta
+    sifatida Qdrant'ga yozadi (doc_type=employee, strukturaviy payload bilan).
+    Har yuklashda avvalgi xodim nuqtalari tozalanib, fayldagi to'liq ro'yxat
+    qayta yoziladi (fayl — yagona haqiqat manbai)."""
+
+    def __init__(self, embedder: OllamaEmbedder, store: QdrantStore) -> None:
+        self.embedder = embedder
+        self.store = store
+
+    @staticmethod
+    def _format(r: dict[str, str]) -> str:
+        parts = [f"Bo'lim: {r['department']}"]
+        if r["division"]:
+            parts.append(f"Bo'linma: {r['division']}")
+        if r["position"]:
+            parts.append(f"Lavozim: {r['position']}")
+        parts.append(f"F.I.SH: {r['fish']}")
+        if r["ip"]:
+            parts.append(f"Ichki raqam (IP): {r['ip']}")
+        if r["phone"]:
+            parts.append(f"Telefon: {r['phone']}")
+        return ". ".join(parts) + "."
+
+    async def execute(self, file_bytes: bytes) -> UploadResult:
+        records = parse_employees(file_bytes)
+        if not records:
+            raise InstanceProcessingException(
+                "Excel'dan xodim topilmadi — sarlavha va ustunlarni tekshiring."
+            )
+
+        vectors: list[list[float]] = []
+        payloads: list[dict[str, Any]] = []
+        try:
+            for index, r in enumerate(records):
+                text = self._format(r)
+                vector = await self.embedder.embed(text)
+                vectors.append(vector)
+                payloads.append(
+                    {
+                        "title": r["department"],
+                        "chunk_text": text,
+                        "chunk_index": index,
+                        "lang": "uz",
+                        "source_url": "",
+                        "doc_type": "employee",
+                        "department": r["department"],
+                        "division": r["division"],
+                        "position": r["position"],
+                        "fish": r["fish"],
+                        "ip": r["ip"],
+                        "phone": r["phone"],
+                    }
+                )
+        except Exception as exc:
+            raise InfrastructureException(
+                f"Embedding xizmati bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
+            ) from exc
+
+        try:
+            dim = len(vectors[0])
+            await self.store.ensure_collection(dim)
+            # Eski xodim nuqtalarini tozalab, fayldagi to'liq ro'yxatni yozamiz
+            await self.store.delete_by_field("doc_type", "employee")
+            await self.store.upsert(vectors, payloads)
+            total = await self.store.count()
+        except Exception as exc:
+            raise InfrastructureException(
+                f"Vektor bazasi (Qdrant) bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
+            ) from exc
+        return UploadResult(chunks=len(records), vector_dim=dim, total_points=total)
 
 
 class ScrapeUrlUseCase:
@@ -203,10 +277,13 @@ class AnswerQuestionUseCase:
     """RAG: savolni embed qiladi, Qdrant'dan eng yaqin bo'laklarni topadi va
     ularni kontekst sifatida Qwen'ga berib javob oldiradi."""
 
-    TOP_K = 8
+    TOP_K = 6
     TEMPERATURE = 0.2
-    MAX_TOKENS = 2048  # qwen "o'ylash" + javob sig'ishi uchun yetarli
-    HISTORY_LIMIT = 10  # oxirgi shuncha xabar (mavzu davomiyligi uchun)
+    # Javob yozish vaqti taxminan token soniga proporsional — sekin hardware'da
+    # cheklovni pasaytirsak eng yomon holatdagi kutish qisqaradi. Javoblar odatda
+    # 500 tokendan qisqa, shuning uchun 1024 yetarli.
+    MAX_TOKENS = 1024
+    HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
     # chaqirmasdan tayyor "ma'lumotim yo'q" javobini qaytaramiz (tez javob uchun).
@@ -243,20 +320,24 @@ class AnswerQuestionUseCase:
         topadi — bu esa keng savolga ("barcha kredit turlari") TO'LIQ javob berish
         uchun butun katalogni beradi."""
         payloads = await self.store.scroll_all(limit=2000)
-        # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan)
+        # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan).
+        # Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
         seen: dict[str, str] = {}
         for p in payloads:
+            if p.get("doc_type") == "employee":
+                continue
             title = str(p.get("title", "")).strip()
             if title and title not in seen:
                 seen[title] = str(p.get("source_url", ""))
         if not seen:
             return ""
-        # turkumlarga ajratamiz
+        # turkumlarga ajratamiz — katalogda faqat NOMLAR (URL kerak emas, chunki
+        # ro'yxatda havola qo'yilmaydi; havola aniq mahsulot javobida kontekstdan
+        # olinadi). URL'larni tushirish promptni ancha yengillashtiradi.
         groups: dict[str, list[str]] = {}
         for title, url in seen.items():
             label = self._category_label(url)
-            line = f"- {title}" + (f" (Manba: {url})" if url else "")
-            groups.setdefault(label, []).append(line)
+            groups.setdefault(label, []).append(f"- {title}")
         blocks = [f"### {cat}\n" + "\n".join(items) for cat, items in groups.items()]
         return "\n\n".join(blocks)
 
@@ -267,7 +348,10 @@ class AnswerQuestionUseCase:
         results: list[tuple[dict[str, Any], float]],
     ) -> tuple[str, list[SourceRef]]:
         """Topilgan bo'laklar + to'liq katalog + suhbat tarixidan yakuniy promptni
-        va manbalar ro'yxatini quradi (execute va execute_stream uchun umumiy)."""
+        va manbalar ro'yxatini quradi (execute/execute_stream uchun umumiy). Katalog
+        HAR DOIM qo'shiladi — keng savolda (masalan "Bank kartalari") modelning
+        faqat bitta mahsulotni qaytarib qo'yishini oldini oladi; aniq mahsulot
+        savolida esa system prompt baribir bitta mahsulot bo'yicha javob berdiradi."""
         # Batafsil kontekst (tanlangan mavzuga oid eng yaqin bo'laklar) —
         # aniq mahsulot bo'yicha to'liq (raqam/shart) javob berish uchun.
         blocks = []
@@ -278,7 +362,7 @@ class AnswerQuestionUseCase:
             blocks.append(f"{header}\n{payload.get('chunk_text', '')}")
         context = "\n\n---\n\n".join(blocks)
 
-        # To'liq katalog — keng savolga (turkumdagi HAMMA mahsulot) javob berish uchun.
+        # To'liq katalog — turkumdagi HAMMA mahsulotni sanash uchun (keng savol).
         catalog = await self._build_catalog()
         catalog_block = (
             f"MAHSULOTLAR TO'LIQ KATALOGI (bazadagi barcha mavjud mahsulotlar, "

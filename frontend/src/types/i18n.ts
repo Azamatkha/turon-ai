@@ -22,6 +22,8 @@ export interface LoginStrings {
   pvAI: string;
   statLabel: string;
   selectLanguage: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 export interface ChatStrings {
@@ -81,6 +83,8 @@ export interface ChatStaticStrings {
   recentsSection: string;
   todayLabel: string;
   selectLanguage: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 // Admin paneli matnlari (til almashtirgichga ulanadi)
@@ -168,6 +172,9 @@ export interface AdminStrings {
   knowledgeSaveError: string;
   knowledgeDeleteError: string;
   knowledgeAdd: string;
+  knowledgeEmployees: string;
+  knowledgeEmployeesResult: (n: number) => string;
+  knowledgeEmployeesError: string;
   knowledgeAddModalTitle: string;
   knowledgeAddModalSub: string;
   knowledgeSearchPh: string;

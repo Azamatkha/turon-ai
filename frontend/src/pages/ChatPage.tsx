@@ -24,7 +24,7 @@ export default function ChatPage() {
   const S = chatStaticDict[lang]; // tanlangan tildagi statik matnlar
   const {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, liveTokens, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
+    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, editAndResend, voteMsg,
   } = useChatHistory(T.newChat);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -234,9 +234,7 @@ export default function ChatPage() {
           rawMsgs={rawMsgs}
           thinking={thinking}
           generating={generating}
-          liveTokens={liveTokens}
           onRegenerate={regenerate}
-          onResend={resendLast}
           onEditResend={editAndResend}
           tk={tk}
           isDark={isDark}

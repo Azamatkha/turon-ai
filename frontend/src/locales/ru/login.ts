@@ -21,4 +21,6 @@ export const login: LoginStrings = {
   pvAI: "Конечно. Текущая ставка — 18% годовых. Сделать краткую сводку?",
   statLabel: "Решённые запросы",
   selectLanguage: "Выбрать язык",
+  showPassword: "Показать пароль",
+  hidePassword: "Скрыть пароль",
 };

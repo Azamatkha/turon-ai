@@ -154,17 +154,85 @@
   transform: scale(0.96);
 }
 
-/* Foydalanuvchi xabari tagidagi amal tugmalari (tahrirlash / qayta yuborish) */
-.userActions {
+/* Foydalanuvchi xabari tagidagi qator: vaqt + "..." menyu tugmasi */
+.userMeta {
   display: flex;
-  gap: 8px;
   align-items: center;
-  opacity: 0.6;
-  transition: opacity 0.18s ease;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
-.messageRowUser:hover .userActions {
+.msgMenuWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* "..." tugmasi — odatda ko'rinmas, xabar ustiga hover qilinganda chiqadi */
+.msgMenuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.messageRowUser:hover .msgMenuBtn,
+.msgMenuBtnActive {
+  opacity: 0.7;
+}
+
+.msgMenuBtn:hover,
+.msgMenuBtnActive {
+  background: rgba(58, 124, 165, 0.12);
   opacity: 1;
+}
+
+/* Ochiladigan menyu (Tahrirlash / Qayta yuborish) — tugma tagida, o'ngga tekis */
+.msgMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 168px;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(23, 63, 115, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: msgMenuIn 0.14s ease both;
+}
+
+.msgMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.msgMenuItem:hover {
+  background: rgba(58, 124, 165, 0.1);
+}
+
+@keyframes msgMenuIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Inline tahrirlash qutisi */

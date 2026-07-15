@@ -10,6 +10,7 @@ const STR: Record<Lang, {
   title: string; sub: string; fullName: string; fullNamePh: string;
   username: string; usernamePh: string; dept: string; deptPh: string;
   password: string; confirmPassword: string; submit: string; have: string; signin: string; selectLanguage: string;
+  showPassword: string; hidePassword: string;
 }> = {
   uz: {
     title: "Ro‘yxatdan o‘tish", sub: "Yangi hisob yarating.",
@@ -19,6 +20,7 @@ const STR: Record<Lang, {
     confirmPassword: "Parolni tasdiqlang",
     submit: "Ro‘yxatdan o‘tish", have: "Hisobingiz bormi?", signin: "Kirish",
     selectLanguage: "Tilni tanlash",
+    showPassword: "Parolni ko‘rsatish", hidePassword: "Parolni yashirish",
   },
   uz_cyrl: {
     title: "Рўйхатдан ўтиш", sub: "Янги ҳисоб яратинг.",
@@ -28,6 +30,7 @@ const STR: Record<Lang, {
     confirmPassword: "Паролни тасдиқланг",
     submit: "Рўйхатдан ўтиш", have: "Ҳисобингиз борми?", signin: "Кириш",
     selectLanguage: "Тилни танлаш",
+    showPassword: "Паролни кўрсатиш", hidePassword: "Паролни яшириш",
   },
   ru: {
     title: "Регистрация", sub: "Создайте новый аккаунт.",
@@ -37,6 +40,7 @@ const STR: Record<Lang, {
     confirmPassword: "Подтвердите пароль",
     submit: "Зарегистрироваться", have: "Уже есть аккаунт?", signin: "Войти",
     selectLanguage: "Выбрать язык",
+    showPassword: "Показать пароль", hidePassword: "Скрыть пароль",
   },
 };
 
@@ -114,7 +118,7 @@ export default function RegisterForm(p: Props) {
           <label className={styles.fieldLabel}>{t.password}</label>
           <div className={styles.field}>
             <input className={styles.input} value={p.password} onChange={(e) => p.setPassword(e.target.value)} onKeyDown={p.onKey} type={pwVisible ? "text" : "password"} placeholder="••••••••" autoComplete="new-password" />
-            <button onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+            <button onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip={pwVisible ? t.hidePassword : t.showPassword} aria-label={pwVisible ? t.hidePassword : t.showPassword} className={styles.pwToggleBtn}>
               {eyeIcon(pwVisible)}
             </button>
           </div>
@@ -124,7 +128,7 @@ export default function RegisterForm(p: Props) {
           <label className={styles.fieldLabel}>{t.confirmPassword}</label>
           <div className={styles.field}>
             <input className={styles.input} value={p.confirmPassword} onChange={(e) => p.setConfirmPassword(e.target.value)} onKeyDown={p.onKey} type={confirmPwVisible ? "text" : "password"} placeholder="••••••••" autoComplete="new-password" />
-            <button onClick={() => setConfirmPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+            <button onClick={() => setConfirmPwVisible((v) => !v)} tabIndex={-1} data-tip={confirmPwVisible ? t.hidePassword : t.showPassword} aria-label={confirmPwVisible ? t.hidePassword : t.showPassword} className={styles.pwToggleBtn}>
               {eyeIcon(confirmPwVisible)}
             </button>
           </div>

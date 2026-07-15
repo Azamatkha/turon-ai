@@ -94,7 +94,7 @@ export default function LoginForm({
               placeholder="••••••••"
               autoComplete="current-password"
             />
-            <button onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip="Show / hide password" aria-label="Show / hide password" className={styles.pwToggleBtn}>
+            <button onClick={() => setPwVisible((v) => !v)} tabIndex={-1} data-tip={pwVisible ? t.hidePassword : t.showPassword} aria-label={pwVisible ? t.hidePassword : t.showPassword} className={styles.pwToggleBtn}>
               {pwVisible ? (
                 // parol KO'RINIB turibdi -> "yopiq ko'z" (bosilsa yashiradi)
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

@@ -10,6 +10,7 @@ fastapi
 fastapi_mail
 gunicorn
 httpx
+openpyxl
 passlib
 pydantic
 pydantic-settings

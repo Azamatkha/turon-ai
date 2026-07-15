@@ -19,8 +19,8 @@
   --adm-border-3: #eef1ec;
   --adm-border-input: #dde2dc;
   --adm-text-strong: #173f73;
-  --adm-text-muted: #7d909a;
-  --adm-text-muted-2: #9aafb8;
+  --adm-text-muted: #5f7480;
+  --adm-text-muted-2: #7c909b;
   --adm-text-body: #42565f;
   --adm-text-body-2: #5b6f78;
   --adm-text-chunk: #2f4650;
@@ -46,8 +46,8 @@ html.dark {
   --adm-border-3: rgba(255, 255, 255, 0.06);
   --adm-border-input: rgba(255, 255, 255, 0.14);
   --adm-text-strong: #e8eef2;
-  --adm-text-muted: #8aa1ae;
-  --adm-text-muted-2: #8aa1ae;
+  --adm-text-muted: #a1b6c1;
+  --adm-text-muted-2: #93a9b5;
   --adm-text-body: #b7c4cb;
   --adm-text-body-2: #a9b8bf;
   --adm-text-chunk: #dbe6ea;

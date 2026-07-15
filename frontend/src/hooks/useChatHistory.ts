@@ -26,9 +26,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [generating, setGenerating] = useState(false);
-  // Javob oqim (streaming) paytidagi jonli token soni — yuklanish indikatorida
-  // real vaqtda ko'rsatiladi.
-  const [liveTokens, setLiveTokens] = useState(0);
 
   // Boshlang'ich yuklash: suhbatlar ro'yxati + birinchisining xabarlari
   useEffect(() => {
@@ -141,7 +138,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       )
     );
     setGenerating(false);
-    setLiveTokens(0);
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
     addMessage(sessionId, "assistant", res.text)
       .then((saved) =>
@@ -158,7 +154,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     const tempId = "a" + Date.now();
     const abort = new AbortController();
     abortRef.current = abort;
-    setLiveTokens(0);
 
     // Birinchi token kelmaguncha "thinking" indikatori turadi — bo'sh bubble
     // ko'rinmasin. Birinchi token (yoki yakun) kelganda assistant xabarini qo'shamiz.
@@ -184,13 +179,12 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       const res = await askReplyStream(
         userText,
         history,
-        (fullText, estTokens) => {
+        (fullText) => {
           ensureStarted();
-          setLiveTokens(estTokens);
           setActiveMsgs(sessionId, (m) =>
             m.map((x) =>
               x.id === tempId
-                ? { ...x, text: fullText, debug: x.debug ? { ...x.debug, completionTokens: estTokens } : x.debug }
+                ? { ...x, text: fullText }
                 : x
             )
           );
@@ -203,7 +197,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       // Foydalanuvchi to'xtatgan bo'lsa — hozirgi matnni qoldiramiz, xato deb ko'rsatmaymiz
       if (abort.signal.aborted) {
         setGenerating(false);
-        setLiveTokens(0);
         return;
       }
       // Streaming ishlamadi — eski (oqimsiz) yo'lga qaytamiz
@@ -278,7 +271,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     if (timerRef.current) clearInterval(timerRef.current);
     if (pendingRef.current) clearTimeout(pendingRef.current);
     if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
-    setThinking(false); setGenerating(false); setLiveTokens(0);
+    setThinking(false); setGenerating(false);
   };
 
   const regenerate = () => {
@@ -361,6 +354,6 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
 
   return {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, liveTokens, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
+    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
   };
 }

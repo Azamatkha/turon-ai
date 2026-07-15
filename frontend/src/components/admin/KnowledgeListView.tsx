@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HButton from "../common/HButton";
 import type { AdminStrings } from "../../types/i18n";
-import { listKnowledge, type KnowledgeItem } from "../../services/knowledgeService";
+import { listKnowledge, uploadEmployees, type KnowledgeItem } from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
 import styles from "./KnowledgeListView.module.css";
 
@@ -21,6 +21,27 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("title");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [empUploading, setEmpUploading] = useState(false);
+  const [empMsg, setEmpMsg] = useState<string | null>(null);
+
+  // Xodimlar Excel (.xlsx) faylini yuklash — backend har xodimni Qdrant'ga yozadi
+  const onEmployeesPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // bir xil faylni qayta tanlash mumkin bo'lsin
+    if (!file) return;
+    setEmpUploading(true);
+    setEmpMsg(null);
+    try {
+      const res = await uploadEmployees(file);
+      setEmpMsg(admin.knowledgeEmployeesResult(res.chunks));
+      await load();
+    } catch (err) {
+      setEmpMsg(err instanceof Error ? err.message : admin.knowledgeEmployeesError);
+    } finally {
+      setEmpUploading(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -73,6 +94,22 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {admin.knowledgeAdd}
           </HButton>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx"
+            style={{ display: "none" }}
+            onChange={onEmployeesPicked}
+          />
+          <HButton
+            onClick={() => fileRef.current?.click()}
+            className={styles.reloadBtn}
+            baseStyle={{ opacity: empUploading ? 0.6 : 1 }}
+            hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+            {empUploading ? "…" : admin.knowledgeEmployees}
+          </HButton>
           <HButton
             onClick={load}
             className={styles.reloadBtn}
@@ -84,6 +121,10 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           </HButton>
         </div>
       </div>
+
+      {empMsg && (
+        <div className={styles.empBanner} onClick={() => setEmpMsg(null)}>{empMsg}</div>
+      )}
 
       {!loading && !err && items.length > 0 && (
         <div className={styles.toolbar}>
