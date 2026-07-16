@@ -2,7 +2,7 @@ import { KeyboardEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { GrLogin } from "react-icons/gr";
 import LangSwitcher from "../LangSwitcher";
-import { DEPARTMENTS, deptLabel } from "../../services/departments";
+import DepartmentSelect from "./DepartmentSelect";
 import type { Lang } from "../../types/lang";
 import styles from "./LoginForm.module.css";
 
@@ -17,7 +17,7 @@ const STR: Record<Lang, {
     title: "Ro‘yxatdan o‘tish", sub: "Yangi hisob yarating.",
     fullName: "To‘liq ism", fullNamePh: "masalan, Aziz Karimov",
     username: "Login", usernamePh: "masalan, a.karimov",
-    dept: "Bo‘lim", deptPh: "Bo‘limni tanlang", password: "Parol",
+    dept: "Departament", deptPh: "Departamentni tanlang", password: "Parol",
     confirmPassword: "Parolni tasdiqlang",
     submit: "Ro‘yxatdan o‘tish", have: "Hisobingiz bormi?", signin: "Kirish",
     selectLanguage: "Tilni tanlash",
@@ -27,7 +27,7 @@ const STR: Record<Lang, {
     title: "Рўйхатдан ўтиш", sub: "Янги ҳисоб яратинг.",
     fullName: "Тўлиқ исм", fullNamePh: "масалан, Азиз Каримов",
     username: "Логин", usernamePh: "масалан, a.karimov",
-    dept: "Бўлим", deptPh: "Бўлимни танланг", password: "Парол",
+    dept: "Департамент", deptPh: "Департаментни танланг", password: "Парол",
     confirmPassword: "Паролни тасдиқланг",
     submit: "Рўйхатдан ўтиш", have: "Ҳисобингиз борми?", signin: "Кириш",
     selectLanguage: "Тилни танлаш",
@@ -37,7 +37,7 @@ const STR: Record<Lang, {
     title: "Регистрация", sub: "Создайте новый аккаунт.",
     fullName: "Полное имя", fullNamePh: "например, Азиз Каримов",
     username: "Логин", usernamePh: "например, a.karimov",
-    dept: "Отдел", deptPh: "Выберите отдел", password: "Пароль",
+    dept: "Департамент", deptPh: "Выберите департамент", password: "Пароль",
     confirmPassword: "Подтвердите пароль",
     submit: "Зарегистрироваться", have: "Уже есть аккаунт?", signin: "Войти",
     selectLanguage: "Выбрать язык",
@@ -110,19 +110,12 @@ export default function RegisterForm(p: Props) {
 
         <div className={styles.fieldGroupTight}>
           <label className={styles.fieldLabel}>{t.dept}</label>
-          <div className={styles.field}>
-            <select
-              className={styles.select}
-              value={p.department}
-              onChange={(e) => p.setDepartment(e.target.value)}
-              style={{ color: p.department ? "#173f73" : "#9aafb8" }}
-            >
-              <option value="" disabled>{t.deptPh}</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d.uz} value={d.uz}>{deptLabel(d, p.lang)}</option>
-              ))}
-            </select>
-          </div>
+          <DepartmentSelect
+            value={p.department}
+            onChange={p.setDepartment}
+            lang={p.lang}
+            placeholder={t.deptPh}
+          />
         </div>
 
         <div className={styles.fieldGroupTight}>

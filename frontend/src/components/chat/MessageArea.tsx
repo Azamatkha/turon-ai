@@ -9,7 +9,7 @@ import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
 
-const suggIcons = ["✦", "✎", "◷", "⌂", "☎"];
+const suggIcons = ["✦", "✎", "◷", "⌂", "☎", "⇄"];
 
 // ISO vaqtni "14:05" ko'rinishida ko'rsatadi
 function fmtTime(iso?: string): string {

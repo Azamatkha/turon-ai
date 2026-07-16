@@ -31,6 +31,7 @@ celery_app.conf.update(
     include=[
         "src.user.tasks",
         "src.core.email_service.tasks",
+        "src.knowledge.tasks",
     ],
     timezone="UTC",
     enable_utc=True,
@@ -40,5 +41,11 @@ celery_app.conf.beat_schedule = {
     "cleanup_unverified_users_every_10_hours": {
         "task": "cleanup_unverified_users",
         "schedule": crontab(minute=0, hour="*/10"),
+    },
+    # Valyuta kurslarini har kuni yangilab turamiz.
+    # Celery timezone = UTC, Toshkent = UTC+5 => 11:00 Toshkent = 06:00 UTC.
+    "scrape_exchange_rates_daily_11_tashkent": {
+        "task": "scrape_exchange_rates",
+        "schedule": crontab(minute=0, hour=6),
     },
 }

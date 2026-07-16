@@ -6,7 +6,7 @@ export const chat: ChatStrings = {
   sub: "Bank mahsulotlari bo‘yicha savolingizni yozing — mavjud ma’lumotlar asosida javob beraman.",
   placeholder: "Turon AI’ga yozing…",
   disclaimer: "Yangi qatorga o‘tish uchun Shift+Enter · javoblar biroz kechikishi mumkin.",
-  sugg: ["Kredit turlari", "Bank kartalari", "Omonatlar", "Filiallar", "Xodimlar raqamlari"],
+  sugg: ["Kredit turlari", "Bank kartalari", "Omonatlar", "Filiallar", "Xodimlar raqamlari", "Valyuta kursi"],
   greeting: (n: string) => `Assalom aleykum, ${n}!\nSizga qanday yordam beraman?`,
 };
 

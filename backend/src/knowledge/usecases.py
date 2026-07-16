@@ -441,7 +441,9 @@ class AnswerQuestionUseCase:
     """RAG: savolni embed qiladi, Qdrant'dan eng yaqin bo'laklarni topadi va
     ularni kontekst sifatida Qwen'ga berib javob oldiradi."""
 
-    TOP_K = 6
+    # Bitta mahsulotning bir necha bo'lagi bo'ladi (masalan omonatning aniq
+    # shartlari alohida qisqa bo'lakda) — hammasi tushishi uchun yetarlicha keng.
+    TOP_K = 8
     TEMPERATURE = 0.2
     # Javob yozish vaqti taxminan token soniga proporsional — sekin hardware'da
     # cheklovni pasaytirsak eng yomon holatdagi kutish qisqaradi. Javoblar odatda

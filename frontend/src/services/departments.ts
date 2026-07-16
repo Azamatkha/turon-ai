@@ -16,11 +16,12 @@ export interface Department {
 }
 
 export const DEPARTMENTS: Department[] = [
+  { uz: "Boshqa", ru: "Другое", uz_cyrl: "Бошқа" },
+  { uz: "Axborot texnologiyalar departamenti", ru: "Департамент информационных технологий", uz_cyrl: "Ахборот технологиялар департаменти" },
   { uz: "Ijro nazorati departamenti", ru: "Департамент контроля исполнения", uz_cyrl: "Ижро назорати департаменти" },
   { uz: "Buxgalteriya departamenti", ru: "Департамент бухгалтерии", uz_cyrl: "Бухгалтерия департаменти" },
   { uz: "Xavfsizlik departamenti", ru: "Департамент безопасности", uz_cyrl: "Хавфсизлик департаменти" },
   { uz: "Muammoli aktivlar bilan ishlash departamenti", ru: "Департамент по работе с проблемными активами", uz_cyrl: "Муаммоли активлар билан ишлаш департаменти" },
-  { uz: "Axborot texnologiyalar departamenti", ru: "Департамент информационных технологий", uz_cyrl: "Ахборот технологиялар департаменти" },
   { uz: "Chakana biznes departamenti", ru: "Департамент розничного бизнеса", uz_cyrl: "Чакана бизнес департаменти" },
   { uz: "Mijozlar servisi va marketing departamenti", ru: "Департамент клиентского сервиса и маркетинга", uz_cyrl: "Мижозлар сервиси ва маркетинг департаменти" },
   { uz: "Korporativ biznes departamenti", ru: "Департамент корпоративного бизнеса", uz_cyrl: "Корпоратив бизнес департаменти" },
@@ -37,7 +38,6 @@ export const DEPARTMENTS: Department[] = [
   { uz: "Risk departamenti", ru: "Департамент рисков", uz_cyrl: "Риск департаменти" },
   { uz: "Ichki audit departamenti", ru: "Департамент внутреннего аудита", uz_cyrl: "Ички аудит департаменти" },
   { uz: "Komplaens nazorat departamenti", ru: "Департамент комплаенс-контроля", uz_cyrl: "Комплаенс назорат департаменти" },
-  { uz: "Boshqa", ru: "Другое", uz_cyrl: "Бошқа" },
 ];
 
 // Foydalanuvchi tiliga mos ko'rsatiladigan nom (backendga baribir uz yuboriladi)
