@@ -410,7 +410,7 @@ class AnswerQuestionUseCase:
     # Javob yozish vaqti taxminan token soniga proporsional — sekin hardware'da
     # cheklovni pasaytirsak eng yomon holatdagi kutish qisqaradi. Javoblar odatda
     # 500 tokendan qisqa, shuning uchun 1024 yetarli.
-    MAX_TOKENS = 1024
+    MAX_TOKENS = 2048
     HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
