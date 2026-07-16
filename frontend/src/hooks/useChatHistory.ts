@@ -263,7 +263,14 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     setDraft("");
     setThinking(true);
     setGenerating(true);
-    addMessage(sessionId, "user", text).catch(() => {});  // DB ga saqlash
+    // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz —
+    // busiz keyinchalik tahrirlash/qayta yuborishda bu xabarni bazadan o'chirib
+    // bo'lmasdi (id vaqtinchalik bo'lgani uchun) va xabar ikki marta qolib ketardi.
+    addMessage(sessionId, "user", text)
+      .then((saved) =>
+        setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === um.id ? { ...x, id: saved.id } : x)))
+      )
+      .catch(() => {});
 
     if (isFirstMessage) {
       // Birinchi xabar — Qwen orqali qisqa sarlavha (ChatGPT uslubida) yasab,
@@ -351,7 +358,13 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     const now = new Date().toISOString();
     const newId = "u" + Date.now();
     setActiveMsgs(activeId, (m) => [...m.slice(0, idx), { id: newId, role: "user", text, time: now }]);
-    addMessage(activeId, "user", text).catch(() => {});
+    // Vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz — keyingi tahrir/qayta
+    // yuborishda bu xabar ham bazadan o'chirilishi mumkin bo'lsin (dublikat bo'lmasin).
+    addMessage(activeId, "user", text)
+      .then((saved) =>
+        setActiveMsgs(activeId, (m) => m.map((x) => (x.id === newId ? { ...x, id: saved.id } : x)))
+      )
+      .catch(() => {});
     setThinking(true); setGenerating(true);
     pendingRef.current = setTimeout(() => respond(activeId, text, history), 150);
   };

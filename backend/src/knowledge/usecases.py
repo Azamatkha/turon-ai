@@ -109,6 +109,33 @@ def _match_employees(
     return []
 
 
+# Foydalanuvchi ro'yxatdan faqat RAQAM yozib tanlashi mumkin ("53"). Bunda
+# savolni oldingi javobdagi ro'yxatning o'sha bandi nomi bilan almashtiramiz —
+# aks holda "53" embed qilinib, hech narsa topilmasdi.
+_NUM_ONLY_RE = re.compile(r"^\s*(\d{1,3})\s*[.)]?\s*$")
+_LIST_ITEM_RE = re.compile(r"^\s*(\d{1,3})\s*[.)]\s*(.+?)\s*$", re.MULTILINE)
+
+
+def _resolve_list_choice(
+    question: str, history: list[ChatTurn] | None
+) -> str | None:
+    """Savol faqat raqam bo'lsa — oxirgi assistant javobidagi raqamlangan
+    ro'yxatdan o'sha bandning nomini qaytaradi. Aks holda None."""
+    m = _NUM_ONLY_RE.match(question)
+    if not m or not history:
+        return None
+    want = m.group(1)
+    for turn in reversed(history):
+        if turn.role != "assistant":
+            continue
+        for num, text in _LIST_ITEM_RE.findall(turn.content):
+            if num == want:
+                cleaned = text.strip().strip("*").strip()
+                return cleaned or None
+        return None  # faqat eng oxirgi assistant javobiga qaraymiz
+    return None
+
+
 def _has_employee_intent(q_lower: str) -> bool:
     """Savol aniq XODIMLAR haqidami — bo'lim bo'yicha yo'naltirishni faqat shunda
     yoqamiz. Aks holda "Toshkent shahar BANK xizmatlari markazi" kabi filial nomi
@@ -609,6 +636,10 @@ class AnswerQuestionUseCase:
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
         {"type":"delta","text":...}; oxirida token statistikasi bilan
         {"type":"done", ...}."""
+        # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
+        # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
+        question = _resolve_list_choice(question, history) or question
+
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
         route = await self._employee_route(question)
         if route is not None:
@@ -667,6 +698,10 @@ class AnswerQuestionUseCase:
     async def execute(
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AnswerResult:
+        # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
+        # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
+        question = _resolve_list_choice(question, history) or question
+
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
         route = await self._employee_route(question)
         if route is not None:

@@ -69,6 +69,10 @@ STRICT_RAG_SYSTEM = (
     "\n\n"
     "Agar javob mahsulot haqida BO'LMASA (masalan filial manzili, telefon raqami, "
     "umumiy ma'lumot) — javob oxiriga hech qanday savol qo'shma."
+    "\n\n"
+    f"Agar kontekstda so'ralgan ma'lumot UMUMAN bo'lmasa — faqat \"{NO_INFO_REPLY}\" "
+    "deb ayt va hech qanday davom savolini (\"Yana qaysi...\") QO'SHMA. Hech qachon "
+    "faqat savoldan iborat, mazmunsiz javob berma."
 )
 
 # Xodimlar (telefon/IP ma'lumotnoma) uchun alohida rejim — mahsulot katalogisiz.
