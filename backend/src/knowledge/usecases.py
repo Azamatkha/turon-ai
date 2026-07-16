@@ -76,18 +76,7 @@ def _match_employees(
         if hit:
             return hit
 
-    # 3) Bo'lim nomi — turkumning o'ziga xos so'zi savolda bo'lsa, o'sha bo'lim hammasi.
-    # Qo'shimchalarni (masalan "riskdan") ushlash uchun uzunroq so'zlarda substring.
-    for dept in {str(e.get("department", "")) for e in emps}:
-        distinctive = [
-            t for t in _words(dept) if len(t) >= 2 and t not in _DEPT_STOP
-        ]
-        if distinctive and any(
-            t in qwords or (len(t) >= 4 and t in q_lower) for t in distinctive
-        ):
-            return [e for e in emps if str(e.get("department", "")) == dept]
-
-    # 4) F.I.SH — ismning muhim so'zlari (deyarli hammasi) savolda bo'lsa.
+    # 3) F.I.SH — ismning muhim so'zlari (deyarli hammasi) savolda bo'lsa.
     # substring: o'zbekcha qo'shimcha (-ning, -ga ...) ismga yopishsa ham topsin.
     named: list[dict[str, Any]] = []
     for e in emps:
@@ -101,7 +90,35 @@ def _match_employees(
         present = sum(1 for t in toks if t in q_lower)
         if present >= 2 and present >= len(toks) - 1:
             named.append(e)
-    return named
+    if named:
+        return named
+
+    # 4) Bo'lim nomi — FAQAT savolda aniq xodim-niyat (xodim/ip) bo'lsa. Aks holda
+    # filial/manzil so'rovlari ("...bank xizmatlari markazi") xodim bo'limiga
+    # noto'g'ri tushib ketardi.
+    if _has_employee_intent(q_lower):
+        for dept in {str(e.get("department", "")) for e in emps}:
+            distinctive = [
+                t for t in _words(dept) if len(t) >= 2 and t not in _DEPT_STOP
+            ]
+            if distinctive and any(
+                t in qwords or (len(t) >= 4 and t in q_lower) for t in distinctive
+            ):
+                return [e for e in emps if str(e.get("department", "")) == dept]
+
+    return []
+
+
+def _has_employee_intent(q_lower: str) -> bool:
+    """Savol aniq XODIMLAR haqidami — bo'lim bo'yicha yo'naltirishni faqat shunda
+    yoqamiz. Aks holda "Toshkent shahar BANK xizmatlari markazi" kabi filial nomi
+    xodim bo'limiga (masalan "Bank karta...") noto'g'ri tushib ketardi."""
+    if "ip" in set(_words(q_lower)):
+        return True
+    return any(
+        w in q_lower
+        for w in ("xodim", "hodim", "ходим", "ichki raqam", "ички рақам")
+    )
 
 
 def _is_generic_employee_request(q_lower: str) -> bool:
