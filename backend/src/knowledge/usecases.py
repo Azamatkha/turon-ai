@@ -121,6 +121,25 @@ def _has_employee_intent(q_lower: str) -> bool:
     )
 
 
+def _strip_stray_followup(text: str) -> str:
+    """Aniq (bitta mahsulot) javobda "Batafsil:" havolasi bo'ladi. Model ba'zan
+    bunday aniq javobga ham keraksiz "Shu turlardan qaysi biri..." savolini
+    qo'shib qo'yadi — uni oxiridan olib tashlaymiz (ro'yxat javobiga tegmaymiz)."""
+    if "batafsil:" not in text.lower():
+        return text
+    lines = text.rstrip().split("\n")
+    while lines:
+        low = lines[-1].lower().strip()
+        if not low:
+            lines.pop()
+            continue
+        if ("qaysi biri" in low or "qaysinisi" in low) and "beray" in low:
+            lines.pop()
+            continue
+        break
+    return "\n".join(lines).rstrip()
+
+
 def _is_generic_employee_request(q_lower: str) -> bool:
     """"Xodimlar raqamlari" kabi umumiy (aniq xodim/bo'limsiz) so'rovmi —
     aniqlashtirishni so'rash uchun."""
@@ -699,7 +718,7 @@ class AnswerQuestionUseCase:
         )
 
         return AnswerResult(
-            answer=gen.text.strip(),
+            answer=_strip_stray_followup(gen.text.strip()),
             sources=sources,
             finish_reason=gen.finish_reason,
             completion_tokens=gen.completion_tokens,

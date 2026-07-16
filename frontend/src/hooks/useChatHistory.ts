@@ -9,6 +9,24 @@ import {
 // ko'rinishida (tire yo'q). Backend'dagi haqiqiy ID — UUID (tire bor).
 const isPersistedId = (id: string) => id.includes("-");
 
+// Aniq (bitta mahsulot) javobda "Batafsil:" havolasi bo'ladi. Model ba'zan bunday
+// javobga ham keraksiz "Shu turlardan qaysi biri..." savolini qo'shib qo'yadi —
+// uni oxiridan olib tashlaymiz (ro'yxat javobiga tegmaymiz).
+function stripStrayFollowup(text: string): string {
+  if (!/batafsil:/i.test(text)) return text;
+  const lines = text.replace(/\s+$/, "").split("\n");
+  while (lines.length) {
+    const low = lines[lines.length - 1].toLowerCase().trim();
+    if (!low) { lines.pop(); continue; }
+    if ((low.includes("qaysi biri") || low.includes("qaysinisi")) && low.includes("beray")) {
+      lines.pop();
+      continue;
+    }
+    break;
+  }
+  return lines.join("\n").replace(/\s+$/, "");
+}
+
 // Chat tarixini BACKEND (PostgreSQL) bilan boshqaradi — foydalanuvchiga bog'langan.
 // useChatSimulation bilan bir xil interfeysni qaytaradi (ChatPage o'zgarmaydi).
 export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
@@ -106,14 +124,12 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     const chat = chatsRef.current.find((c) => c.id === id);
     if (!chat) return;
     const next = !chat.pinned;
+    // Faqat optimistik — darrov ko'rinadi. Xato bo'lsa ham QAYTARMAYMIZ (rename
+    // kabi): backend odatda saqlaydi (refresh'da ko'rinardi), lekin javobda
+    // xato qaytarsa revert optimistik yangilanishni bekor qilib, "refresh
+    // qilmaguncha o'zgarmadi" degan taassurot qoldirardi.
     setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: next } : c)));
-    try {
-      const updated = await pinSession(id, next);
-      // Backend javobini haqiqat manbai sifatida qabul qilamiz (moslik uchun)
-      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: updated.is_pinned } : c)));
-    } catch {
-      setChats((cs) => cs.map((c) => (c.id === id ? { ...c, pinned: !next } : c)));
-    }
+    pinSession(id, next).catch(() => {});
   };
 
   // Vaqtinchalik assistant xabarini haqiqiy javob bilan yakunlab, DB ga saqlaydi
@@ -122,12 +138,13 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     tempId: string,
     res: { text: string; finishReason: string; completionTokens: number; maxTokens: number }
   ) => {
+    const finalText = stripStrayFollowup(res.text);
     setActiveMsgs(sessionId, (m) =>
       m.map((x) =>
         x.id === tempId
           ? {
               ...x,
-              text: res.text,
+              text: finalText,
               debug: {
                 finishReason: res.finishReason,
                 completionTokens: res.completionTokens,
@@ -139,7 +156,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     );
     setGenerating(false);
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
-    addMessage(sessionId, "assistant", res.text)
+    addMessage(sessionId, "assistant", finalText)
       .then((saved) =>
         setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
       )
@@ -223,7 +240,7 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       try {
         const s = await createSession(newChatLabel);
         loaded.current.add(s.id);
-        setChats((cs) => [{ id: s.id, title: newChatLabel, pinned: false, lastMessageAt: s.updated_at, messages: [] }, ...cs]);
+        setChats((cs) => [{ id: s.id, title: newChatLabel, pinned: false, lastMessageAt: s.updated_at || new Date().toISOString(), messages: [] }, ...cs]);
         setActiveIdState(s.id);
         sessionId = s.id;
       } catch { return; }

@@ -51,7 +51,7 @@ export const chatStatic: ChatStaticStrings = {
   logOut: "Чиқиш",
   removeChat: "Суҳбатни ўчириш",
   pinChat: "Белгилаш",
-  unpinChat: "Белгидан чиқариш",
+  unpinChat: "Бекор қилиш",
   moreOptions: "Кўпроқ",
   pinnedSection: "Белгиланган",
   recentsSection: "Суҳбатлар",

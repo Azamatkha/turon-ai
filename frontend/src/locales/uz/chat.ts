@@ -53,7 +53,7 @@ export const chatStatic: ChatStaticStrings = {
   logOut: "Chiqish",
   removeChat: "Suhbatni o‘chirish",
   pinChat: "Belgilash",
-  unpinChat: "Belgidan chiqarish",
+  unpinChat: "Bekor qilish",
   moreOptions: "Ko‘proq",
   pinnedSection: "Belgilangan",
   recentsSection: "Suhbatlar",

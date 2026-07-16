@@ -124,9 +124,15 @@ export default function ChatPage() {
   // bo'yicha (eng yangisi birinchi) chiqadi.
   const q = search.trim().toLowerCase();
   const visibleChats = q ? chats.filter((c) => (c.title || T.newChat).toLowerCase().includes(q)) : chats;
+  // Vaqtni xavfsiz songa aylantiramiz — noto'g'ri/bo'sh sana NaN bermasin
+  // (NaN saralashni beqaror qiladi: suhbat goh tepaga, goh o'rtaga tushardi).
+  const ts = (v: string): number => {
+    const t = new Date(v).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  };
   const sortedChats = [...visibleChats].sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+    return ts(b.lastMessageAt) - ts(a.lastMessageAt);
   });
 
   const usernameTaken = TAKEN_USERNAMES.includes(pUsername.trim()) && pUsername.trim() !== username;

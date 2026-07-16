@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiPushpin2Line } from "react-icons/ri";
+import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiUnpinLine } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import { PRIMARY } from "./theme";
@@ -273,7 +273,7 @@ export default function Sidebar({
                   setMenu(null);
                 }}
               >
-                {c.pinned ? <RiPushpin2Line size={15} /> : <RiPushpin2Fill size={15} />}
+                {c.pinned ? <RiUnpinLine size={15} /> : <RiPushpin2Fill size={15} />}
                 <span>{c.pinned ? unpinChatLabel : pinChatLabel}</span>
               </button>
               <button
