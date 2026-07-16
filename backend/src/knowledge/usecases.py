@@ -119,8 +119,14 @@ _LIST_ITEM_RE = re.compile(r"^\s*(\d{1,3})\s*[.)]\s*(.+?)\s*$", re.MULTILINE)
 def _resolve_list_choice(
     question: str, history: list[ChatTurn] | None
 ) -> str | None:
-    """Savol faqat raqam bo'lsa — oxirgi assistant javobidagi raqamlangan
-    ro'yxatdan o'sha bandning nomini qaytaradi. Aks holda None."""
+    """Savol faqat raqam bo'lsa — oldingi javoblardagi TANLOV RO'YXATIdan o'sha
+    bandning nomini qaytaradi. Aks holda None.
+
+    Eng oxirgi assistant javobi ro'yxat bo'lmasligi mumkin (foydalanuvchi avval
+    bitta bandni tanlab javob olgan, keyin yana raqam yozadi) — shuning uchun
+    orqaga qarab tanlov ro'yxatini qidiramiz. Mahsulot javobidagi qisqa
+    "1-2-3 qadam" ro'yxatlari bilan chalkashmaslik uchun kamida 4 bandli
+    ro'yxatni tanlov ro'yxati deb hisoblaymiz."""
     m = _NUM_ONLY_RE.match(question)
     if not m or not history:
         return None
@@ -128,11 +134,14 @@ def _resolve_list_choice(
     for turn in reversed(history):
         if turn.role != "assistant":
             continue
-        for num, text in _LIST_ITEM_RE.findall(turn.content):
+        items = _LIST_ITEM_RE.findall(turn.content)
+        if len(items) < 4:
+            continue  # tanlov ro'yxati emas (masalan javobdagi qadamlar)
+        for num, text in items:
             if num == want:
                 cleaned = text.strip().strip("*").strip()
                 return cleaned or None
-        return None  # faqat eng oxirgi assistant javobiga qaraymiz
+        return None  # eng yaqin tanlov ro'yxati topildi, unda bunday raqam yo'q
     return None
 
 
