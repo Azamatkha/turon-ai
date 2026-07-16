@@ -173,6 +173,7 @@ export interface AdminStrings {
   knowledgeDeleteError: string;
   knowledgeAdd: string;
   knowledgeEmployees: string;
+  knowledgeEmployeesCheck: string;
   knowledgeEmployeesResult: (n: number) => string;
   knowledgeEmployeesError: string;
   knowledgeAddModalTitle: string;

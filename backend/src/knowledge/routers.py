@@ -6,7 +6,7 @@ SWAGGER'DA TEKSHIRISH:
 3) Qdrant dashboard (http://localhost:6333/dashboard) da point paydo bo'ladi.
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
 
@@ -143,6 +143,34 @@ async def upload_employees(
     content = await file.read()
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     return await use_case.execute(file_bytes=content)
+
+
+@router.get("/employee-stats")
+async def employee_stats(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+) -> dict[str, Any]:
+    """Diagnostika: bazada xodim (doc_type=employee) nuqtalari bor-yo'qligini
+    va bo'limlar bo'yicha sonini ko'rsatadi."""
+    recs = await store.scroll_all_records(limit=10000)
+    emps = [p for _, p in recs if p.get("doc_type") == "employee"]
+    depts: dict[str, int] = {}
+    for p in emps:
+        d = str(p.get("department", "?"))
+        depts[d] = depts.get(d, 0) + 1
+    sample = emps[0] if emps else None
+    return {
+        "total_points": len(recs),
+        "employee_count": len(emps),
+        "departments": depts,
+        "sample": (
+            {k: sample.get(k) for k in ("doc_type", "department", "fish", "ip", "phone")}
+            if sample
+            else None
+        ),
+    }
 
 
 @router.post("/employees-json", response_model=UploadResult)

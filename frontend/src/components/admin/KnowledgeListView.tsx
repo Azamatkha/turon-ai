@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import HButton from "../common/HButton";
 import type { AdminStrings } from "../../types/i18n";
-import { listKnowledge, uploadEmployees, uploadEmployeesJson, type KnowledgeItem } from "../../services/knowledgeService";
+import { employeeStats, listKnowledge, uploadEmployees, uploadEmployeesJson, type KnowledgeItem } from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
 import styles from "./KnowledgeListView.module.css";
 
@@ -47,6 +47,30 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
       await load();
     } catch (err) {
       setEmpMsg(err instanceof Error ? err.message : admin.knowledgeEmployeesError);
+    } finally {
+      setEmpUploading(false);
+    }
+  };
+
+  // Diagnostika: bazada nechta xodim borligini ko'rsatadi (API'ni chaqirmasdan)
+  const checkStats = async () => {
+    setEmpUploading(true);
+    setEmpMsg(null);
+    try {
+      const s = await employeeStats();
+      const depts = Object.entries(s.departments)
+        .map(([d, n]) => `${d} (${n})`)
+        .join(", ");
+      const smp = s.sample
+        ? ` · Namuna: ${s.sample.fish ?? "?"} — IP: ${s.sample.ip ?? "?"} (doc_type: ${s.sample.doc_type ?? "?"})`
+        : "";
+      setEmpMsg(
+        `Bazada ${s.employee_count} ta xodim (jami ${s.total_points} nuqta).` +
+          (depts ? ` Bo'limlar: ${depts}.` : "") +
+          smp
+      );
+    } catch (err) {
+      setEmpMsg(err instanceof Error ? err.message : "Tekshirishda xatolik");
     } finally {
       setEmpUploading(false);
     }
@@ -118,6 +142,15 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
             {empUploading ? "…" : admin.knowledgeEmployees}
+          </HButton>
+          <HButton
+            onClick={checkStats}
+            className={styles.reloadBtn}
+            baseStyle={{ opacity: empUploading ? 0.6 : 1 }}
+            hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>
+            {admin.knowledgeEmployeesCheck}
           </HButton>
           <HButton
             onClick={load}

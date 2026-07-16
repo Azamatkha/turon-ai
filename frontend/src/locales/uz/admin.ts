@@ -89,6 +89,7 @@ export const admin: AdminStrings = {
   knowledgeDeleteError: "O‘chirishda xatolik.",
   knowledgeAdd: "Ma’lumot qo‘shish",
   knowledgeEmployees: "Xodimlar (Excel/JSON)",
+  knowledgeEmployeesCheck: "Xodimlarni tekshirish",
   knowledgeEmployeesResult: (n: number) => `${n} ta xodim yuklandi`,
   knowledgeEmployeesError: "Excel faylni yuklashda xatolik",
   knowledgeSearchPh: "Sarlavha bo‘yicha qidirish…",

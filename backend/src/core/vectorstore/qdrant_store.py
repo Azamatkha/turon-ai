@@ -14,6 +14,7 @@ from qdrant_client.models import (
     FieldCondition,
     Filter,
     MatchValue,
+    PointIdsList,
     PointStruct,
     VectorParams,
 )
@@ -77,6 +78,29 @@ class QdrantStore:
             with_vectors=False,
         )
         return [dict(record.payload or {}) for record in records]
+
+    async def scroll_all_records(
+        self, limit: int = 5000
+    ) -> list[tuple[Any, dict[str, Any]]]:
+        """Return (point_id, payload) for all points — id o'chirish uchun kerak."""
+        if not await self.exists():
+            return []
+        records, _ = await self.client.scroll(
+            collection_name=self.collection,
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+        return [(r.id, dict(r.payload or {})) for r in records]
+
+    async def delete_ids(self, ids: list[Any]) -> None:
+        """Delete points by their ids (payload-filtr indeksiga bog'liq emas)."""
+        if not ids or not await self.exists():
+            return
+        await self.client.delete(
+            collection_name=self.collection,
+            points_selector=PointIdsList(points=ids),
+        )
 
     async def search(
         self, query_vector: list[float], top_k: int = 4

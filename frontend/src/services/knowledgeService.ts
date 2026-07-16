@@ -109,6 +109,26 @@ export async function uploadEmployees(file: File): Promise<UploadResult> {
   return res.json();
 }
 
+// Diagnostika: bazadagi xodim (doc_type=employee) nuqtalari haqida
+export interface EmployeeStats {
+  total_points: number;
+  employee_count: number;
+  departments: Record<string, number>;
+  sample: {
+    doc_type?: string;
+    department?: string;
+    fish?: string;
+    ip?: string;
+    phone?: string;
+  } | null;
+}
+
+export async function employeeStats(): Promise<EmployeeStats> {
+  const res = await apiFetch("/v1/admin/knowledge/employee-stats");
+  if (!res.ok) throw new Error(await readError(res, "Tekshirishda xatolik"));
+  return res.json();
+}
+
 // Xodimlarni tayyor JSON ro'yxati orqali yozish (Excel'siz — backend rebuild
 // shart emas). records: [{department, division, position, fish, ip, phone}, ...]
 export async function uploadEmployeesJson(records: unknown[]): Promise<UploadResult> {

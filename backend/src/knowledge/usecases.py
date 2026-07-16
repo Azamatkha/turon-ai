@@ -254,8 +254,18 @@ class UploadEmployeesUseCase:
         try:
             dim = len(vectors[0])
             await self.store.ensure_collection(dim)
-            # Eski xodim nuqtalarini tozalab, fayldagi to'liq ro'yxatni yozamiz
-            await self.store.delete_by_field("doc_type", "employee")
+            # FAQAT shu fayldagi bo'limlar xodimlarini almashtiramiz — boshqa
+            # bo'limlar saqlanadi (ko'p faylni ketma-ket yuklash mumkin), va
+            # o'sha bo'limni qayta yuklaganda dublikat qolmaydi.
+            new_depts = {r["department"] for r in records}
+            existing = await self.store.scroll_all_records(limit=10000)
+            stale = [
+                pid
+                for pid, p in existing
+                if p.get("doc_type") == "employee"
+                and p.get("department") in new_depts
+            ]
+            await self.store.delete_ids(stale)
             await self.store.upsert(vectors, payloads)
             total = await self.store.count()
         except Exception as exc:
@@ -466,9 +476,10 @@ class AnswerQuestionUseCase:
         ("answer", [xodimlar]) — mos xodim(lar) topildi;
         ("ask", []) — umumiy so'rov, aniqlashtirish kerak;
         None — bu xodim savoli emas (mahsulot RAG'ga o'tadi)."""
-        emps = await self.store.search_by_field(
-            "doc_type", "employee", limit=2000
-        )
+        # scroll_all + Python filtr — Qdrant'ning payload-filtr indeksi (doc_type)
+        # sozlanmagan bo'lsa ham ishonchli ishlaydi (katalog ham shu yo'l bilan).
+        all_payloads = await self.store.scroll_all(limit=5000)
+        emps = [p for p in all_payloads if p.get("doc_type") == "employee"]
         if not emps:
             return None
         matched = _match_employees(emps, question.lower())

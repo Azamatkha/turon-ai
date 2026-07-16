@@ -39,14 +39,58 @@ function inline(s: string): string {
   return out.replace(/\x00(\d+)\x00/g, (_m, i: string) => links[Number(i)]);
 }
 
-// Yengil markdown -> HTML: paragraf, "* " / "- " ro'yxatlar, qalin, link
+// Jadval qatorini kataklarga bo'ladi: "| a | b |" -> ["a", "b"]
+function splitTableRow(line: string): string[] {
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+}
+
+const isTableRow = (l: string): boolean => /^\s*\|.*\|\s*$/.test(l);
+// Ajratgich qator: faqat |, :, -, bo'sh joy va kamida bitta "-"
+const isTableSep = (l: string): boolean =>
+  /^\s*\|?[\s:|-]+\|?\s*$/.test(l) && l.includes("-");
+
+function renderTable(header: string[], rows: string[][]): string {
+  const th = header.map((c) => `<th>${inline(c)}</th>`).join("");
+  const trs = rows
+    .map((r) => {
+      let cells = "";
+      for (let k = 0; k < header.length; k++) cells += `<td>${inline(r[k] ?? "")}</td>`;
+      return `<tr>${cells}</tr>`;
+    })
+    .join("");
+  return `<div class="${styles.tableWrap}"><table class="${styles.table}"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table></div>`;
+}
+
+// Yengil markdown -> HTML: paragraf, ro'yxatlar, qalin, link, JADVAL
 function renderMarkdown(text: string): string {
   const lines = escapeHtml(text).split(/\r?\n/);
   const out: string[] = [];
   let inList = false;
+  const closeList = () => {
+    if (inList) {
+      out.push("</ul>");
+      inList = false;
+    }
+  };
 
-  for (const raw of lines) {
-    const line = raw.trimEnd();
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trimEnd();
+
+    // Jadval: joriy qator + keyingisi ajratgich bo'lsa
+    if (isTableRow(line) && i + 1 < lines.length && isTableSep(lines[i + 1])) {
+      closeList();
+      const header = splitTableRow(line);
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && isTableRow(lines[i].trimEnd())) {
+        rows.push(splitTableRow(lines[i].trimEnd()));
+        i++;
+      }
+      out.push(renderTable(header, rows));
+      continue;
+    }
+
     const bullet = line.match(/^\s*[*-]\s+(.*)$/);
     if (bullet) {
       if (!inList) {
@@ -55,14 +99,12 @@ function renderMarkdown(text: string): string {
       }
       out.push(`<li>${inline(bullet[1])}</li>`);
     } else {
-      if (inList) {
-        out.push("</ul>");
-        inList = false;
-      }
+      closeList();
       if (line.trim() !== "") out.push(`<p>${inline(line)}</p>`);
     }
+    i++;
   }
-  if (inList) out.push("</ul>");
+  closeList();
   return out.join("");
 }
 
