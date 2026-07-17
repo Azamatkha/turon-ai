@@ -1,11 +1,20 @@
 import { useState } from "react";
 import type { AdminUser, AdminRole, AdminStatus } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
+import type { Lang } from "../../types/lang";
 import EditUserModal from "./EditUserModal";
 import styles from "./UsersTable.module.css";
 
-const roleColor: Record<AdminRole, string> = { Admin: "#5b8fb0", Xodim: "#3a7ca5" };
-const statusColor: Record<AdminStatus, string> = { Active: "#1f8a5b", Suspended: "#c0392b" };
+// Ranglar CSS o'zgaruvchilaridan — dark mode'da avtomatik yorqinlashadi
+// (avval hardcoded edi va qorong'u fonda o'qilmasdi).
+const roleColor: Record<AdminRole, { c: string; bg: string }> = {
+  Admin: { c: "var(--adm-info)", bg: "var(--adm-info-bg)" },
+  Xodim: { c: "var(--adm-accent-2)", bg: "var(--adm-accent-2-bg)" },
+};
+const statusColor: Record<AdminStatus, { c: string; bg: string }> = {
+  Active: { c: "var(--adm-success)", bg: "var(--adm-success-bg)" },
+  Suspended: { c: "var(--adm-danger)", bg: "var(--adm-danger-bg)" },
+};
 
 interface Props {
   users: AdminUser[];
@@ -14,6 +23,7 @@ interface Props {
   onDelete: (id: string) => void;
   onUpdate: (id: string, input: { username?: string; full_name?: string; department?: string; password?: string }) => Promise<void>;
   t: AdminStrings;
+  lang: Lang;
 }
 
 // Hoverlanadigan jadval qatori + amallar menyusi (tahrirlash / rol / o'chirish)
@@ -43,8 +53,8 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin }: 
         </div>
       </div>
       <span className={styles.deptCell}>{u.dept}</span>
-      <span className={styles.cellCenter}><span className={styles.rolePill} style={{ color: roleColor[u.role], background: roleColor[u.role] + "16" }}>{admin.roleLabel[u.role]}</span></span>
-      <span className={styles.cellCenter}><span className={styles.statusPill} style={{ color: statusColor[u.status], background: statusColor[u.status] + "14" }}><span className={styles.statusDot} style={{ background: statusColor[u.status] }} />{admin.statusLabel[u.status]}</span></span>
+      <span className={styles.cellCenter}><span className={styles.rolePill} style={{ color: roleColor[u.role].c, background: roleColor[u.role].bg }}>{admin.roleLabel[u.role]}</span></span>
+      <span className={styles.cellCenter}><span className={styles.statusPill} style={{ color: statusColor[u.status].c, background: statusColor[u.status].bg }}><span className={styles.statusDot} style={{ background: statusColor[u.status].c }} />{admin.statusLabel[u.status]}</span></span>
       <button data-tip={admin.more} aria-label={admin.more} className={styles.moreBtn} onClick={() => setMenu((m) => !m)}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
       </button>
@@ -73,7 +83,7 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin }: 
   );
 }
 
-export default function UsersTable({ users, search, onChangeRole, onDelete, onUpdate, t: admin }: Props) {
+export default function UsersTable({ users, search, onChangeRole, onDelete, onUpdate, t: admin, lang }: Props) {
   const [editing, setEditing] = useState<AdminUser | null>(null);
   return (
     <div className={styles.table}>
@@ -91,6 +101,7 @@ export default function UsersTable({ users, search, onChangeRole, onDelete, onUp
           onClose={() => setEditing(null)}
           onSubmit={(input) => onUpdate(editing.id, input)}
           t={admin}
+          lang={lang}
         />
       )}
     </div>

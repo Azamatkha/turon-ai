@@ -9,14 +9,20 @@ interface FilterSelectProps {
   value: string;
   options: Option[];
   onChange: (v: string) => void;
+  fullWidth?: boolean;   // modal ichidagi maydon uchun — to'liq kenglik
+  // Berilsa: hech narsa tanlanmaganda tugmada kulrang matn ko'rinadi va u
+  // ro'yxatda option sifatida CHIQMAYDI (ya'ni uni tanlab bo'lmaydi).
+  placeholder?: string;
 }
 
 // Maxsus dropdown (native <select> emas) — ichidagi optionlar ham styling qilinadi.
-export default function FilterSelect({ value, options, onChange }: FilterSelectProps) {
+export default function FilterSelect({ value, options, onChange, fullWidth, placeholder }: FilterSelectProps) {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const current = options.find((o) => o.value === value) ?? options[0];
+  const selected = options.find((o) => o.value === value);
+  const showPlaceholder = !selected && !!placeholder;
+  const current = selected ?? (placeholder ? undefined : options[0]);
 
   useEffect(() => {
     if (!open) return;
@@ -35,7 +41,15 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
   }, [open]);
 
   return (
-    <div ref={rootRef} style={{ position: "relative", display: "inline-block" }}>
+    <div
+      ref={rootRef}
+      style={{
+        position: "relative",
+        display: fullWidth ? "block" : "inline-block",
+        width: fullWidth ? "100%" : undefined,
+        minWidth: fullWidth ? 0 : undefined,
+      }}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
@@ -45,7 +59,11 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
           alignItems: "center",
           gap: 8,
           padding: "9px 12px 9px 14px",
-          minWidth: 180,
+          minWidth: fullWidth ? 0 : 180,
+          maxWidth: fullWidth ? "100%" : 320,
+          width: fullWidth ? "100%" : undefined,
+          boxSizing: "border-box",
+          whiteSpace: "nowrap",
           borderRadius: 10,
           border: "1px solid var(--adm-border-input)",
           background: "var(--adm-card)",
@@ -56,7 +74,20 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
           boxShadow: "0 1px 2px rgba(23,63,115,.05)",
         }}
       >
-        <span style={{ flex: 1, textAlign: "left" }}>{current?.label}</span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            textAlign: "left",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            color: showPlaceholder ? "var(--adm-text-muted-2)" : undefined,
+            fontWeight: showPlaceholder ? 500 : undefined,
+          }}
+        >
+          {showPlaceholder ? placeholder : current?.label}
+        </span>
         <svg
           width="14"
           height="14"
@@ -81,6 +112,8 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
             top: "calc(100% + 6px)",
             zIndex: 30,
             minWidth: "100%",
+            maxWidth: fullWidth ? "100%" : undefined,
+            boxSizing: "border-box",
             background: "var(--adm-card)",
             border: "1px solid var(--adm-border)",
             borderRadius: 12,
@@ -116,11 +149,14 @@ export default function FilterSelect({ value, options, onChange }: FilterSelectP
                   cursor: "pointer",
                   fontSize: 13,
                   fontWeight: active ? 600 : 500,
+                  textAlign: "left",
                   color: "var(--adm-text-strong)",
                   background: active ? "rgba(47,102,144,.12)" : hovered ? "var(--adm-hover-2)" : "transparent",
                 }}
               >
-                <span>{o.label}</span>
+                {/* modalda (fullWidth) uzun nomlar o'ralsin — quti tashqarisiga
+                    chiqmasin; filtr rejimida bir qatorda qolsin */}
+                <span style={{ whiteSpace: fullWidth ? "normal" : "nowrap" }}>{o.label}</span>
                 {active && (
                   <span
                     style={{

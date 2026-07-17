@@ -95,6 +95,8 @@ export const admin: AdminStrings = {
   knowledgeSearchPh: "Sarlavha bo‘yicha qidirish…",
   knowledgeSortTitle: "Nomi bo‘yicha (A-Z)",
   knowledgeSortChunks: "Bo‘laklar soni bo‘yicha",
+  knowledgeSortNewest: "Sana bo‘yicha (yangi)",
+  knowledgeSortOldest: "Sana bo‘yicha (eski)",
   knowledgeNoResults: "Hech narsa topilmadi.",
   knowledgeAddModalTitle: "Havola orqali ma’lumot qo‘shish",
   knowledgeAddModalSub: "Sahifa manzilini kiriting — matni avtomatik ajratib olinib, bazaga yoziladi. Bir nechta havola bo‘lsa, har birini alohida qatorga joylashtiring.",

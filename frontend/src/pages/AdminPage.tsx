@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLang } from "../hooks/useLang";
 import { adminDict } from "../locales";
@@ -23,6 +24,18 @@ import styles from "./AdminPage.module.css";
 const toAdminRole = (r: BackendRole): AdminRole => (r === "admin" ? "Admin" : "Xodim");
 const toBackendRole = (r: AdminRole): BackendRole => (r === "Admin" ? "admin" : "user");
 
+// Ochiq sahifa <-> manzildagi bo'lak (/admin/users, /admin/knowledge ...)
+const VIEW_TO_PATH: Record<AdminView, string> = {
+  dashboard: "dashboard",
+  users: "users",
+  knowledgeList: "knowledge",
+};
+const PATH_TO_VIEW: Record<string, AdminView> = {
+  dashboard: "dashboard",
+  users: "users",
+  knowledge: "knowledgeList",
+};
+
 const mapUser = (u: ApiUser): AdminUser => ({
   id: u.id,
   name: u.full_name,
@@ -36,7 +49,27 @@ export default function AdminPage() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
   const { lang, setLang, t } = useLang(adminDict);
-  const [view, setView] = useState<AdminView>("dashboard");
+  // Manzildagi bo'lak <-> ochiq sahifa. Shu tufayli refresh qilinganda yoki
+  // to'g'ridan-to'g'ri link ochilganda o'sha sahifa qoladi (dashboardga qaytmaydi).
+  const { view: viewParam } = useParams();
+  const navigate = useNavigate();
+  const [view, setView] = useState<AdminView>(
+    () => PATH_TO_VIEW[viewParam ?? ""] ?? "dashboard"
+  );
+
+  // URL -> holat (orqaga/oldinga tugmalari, to'g'ridan-to'g'ri link)
+  useEffect(() => {
+    const v = PATH_TO_VIEW[viewParam ?? ""];
+    if (v && v !== view) setView(v);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewParam]);
+
+  // Holat -> URL (sahifa almashsa manzil ham mos bo'ladi)
+  useEffect(() => {
+    const path = VIEW_TO_PATH[view];
+    if (viewParam !== path) navigate(`/admin/${path}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [dept, setDept] = useState("");
@@ -264,7 +297,7 @@ export default function AdminPage() {
                   ]}
                 />
               </div>
-              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} />
+              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
             </>
           )}
         </div>
@@ -279,6 +312,7 @@ export default function AdminPage() {
             adding={adding} userTaken={userTaken} error={addErr}
             onClose={() => setAddOpen(false)} onSubmit={submitAdd}
             t={t}
+            lang={lang}
           />
         )}
 

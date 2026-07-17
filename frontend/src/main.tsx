@@ -19,6 +19,8 @@ const router = createBrowserRouter([
   { path: "/register", element: <RegisterPage /> },
   { path: "/chat", element: <Navigate to="/" replace /> },
   { path: "/admin", element: <RequireAdmin><AdminPage /></RequireAdmin> },
+  // Admin ichidagi sahifa manzilda saqlanadi — refresh qilinganda o'sha sahifa ochiladi
+  { path: "/admin/:view", element: <RequireAdmin><AdminPage /></RequireAdmin> },
   { path: "*", element: <NotFoundPage /> },
 ]);
 

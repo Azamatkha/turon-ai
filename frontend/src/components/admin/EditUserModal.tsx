@@ -1,7 +1,10 @@
 import { useState } from "react";
 import HButton from "../common/HButton";
+import FilterSelect from "./FilterSelect";
+import { DEPARTMENTS, deptLabel } from "../../services/departments";
 import type { AdminUser } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
+import type { Lang } from "../../types/lang";
 import styles from "./AddUserModal.module.css";
 
 interface Props {
@@ -9,10 +12,11 @@ interface Props {
   onClose: () => void;
   onSubmit: (input: { username?: string; full_name?: string; department?: string; password?: string }) => Promise<void>;
   t: AdminStrings;
+  lang: Lang;
 }
 
-// Foydalanuvchini tahrirlash: ism, login, bo'lim va (ixtiyoriy) yangi parol.
-export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Props) {
+// Foydalanuvchini tahrirlash: ism, login, departament va (ixtiyoriy) yangi parol.
+export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang }: Props) {
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.handle.replace(/^@/, ""));
   const [dept, setDept] = useState(user.dept === "—" ? "" : user.dept);
@@ -78,7 +82,13 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
           </div>
           <div>
             <label className={styles.fieldLabel}>{admin.dept}</label>
-            <input value={dept} onChange={(e) => setDept(e.target.value)} className={styles.input} placeholder={admin.deptPh} />
+            <FilterSelect
+              value={dept}
+              onChange={setDept}
+              fullWidth
+              placeholder={admin.deptPh}
+              options={DEPARTMENTS.map((d) => ({ value: d.uz, label: deptLabel(d, lang) }))}
+            />
           </div>
         </div>
 

@@ -91,6 +91,8 @@ export const admin: AdminStrings = {
   knowledgeSearchPh: "Поиск по названию…",
   knowledgeSortTitle: "По названию (А-Я)",
   knowledgeSortChunks: "По числу блоков",
+  knowledgeSortNewest: "По дате (новые)",
+  knowledgeSortOldest: "По дате (старые)",
   knowledgeNoResults: "Ничего не найдено.",
   knowledgeAddModalTitle: "Добавить данные по ссылке",
   knowledgeAddModalSub: "Введите адрес страницы — текст будет автоматически извлечён и записан в базу. Если ссылок несколько, разместите каждую на отдельной строке.",

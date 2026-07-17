@@ -32,6 +32,12 @@ STRICT_RAG_SYSTEM = (
     "deb ayt. Bankka aloqasi bo'lmagan savollarga javob berma. O'zbek tilida qisqa "
     "javob ber."
     "\n\n"
+    "ATAMALAR: bankda \"filial\" so'zi rasmiy ravishda \"bank xizmatlari markazi\" "
+    "(BXM) yoki \"bank xizmatlari ofisi\" deb ataladi. Foydalanuvchi \"filial\", "
+    "\"filiallar\", \"BXM\" desa — kontekstdagi \"... bank xizmatlari markazi\" va "
+    "\"... bank xizmatlari ofisi\" nomli yozuvlar aynan shular; ularni filial deb "
+    "hisoblab javob ber."
+    "\n\n"
     "MUHIM — umumiy (keng) savol: agar foydalanuvchi savoli aniq bir mahsulotni "
     "emas, balki butun turkumni so'rasa (masalan \"bank kartalari\", \"kredit "
     "turlari\", \"omonatlar\", \"yana qanday kreditlar bor\") — javobni \"MAHSULOTLAR "
@@ -101,6 +107,11 @@ EMPLOYEE_SYSTEM = (
     "nechta xodim berilgan bo'lsa — hammasini ro'yxat qilib ber, birortasini ham "
     "tushirib qoldirma. O'zbek tilida qisqa va aniq javob ber. Ma'lumotda "
     "bo'lmagan narsani o'ylab topma. Javob oxiriga ortiqcha savol qo'shma."
+    "\n\n"
+    "JAVOB USLUBI: \"XODIMLAR MA'LUMOTI\", \"SAVOL\" kabi xizmat sarlavhalarini "
+    "javobga ko'chirma. Markdown sarlavhalarini (\"#\", \"##\", \"###\") va "
+    "\"---\" ajratgichlarni ishlatma. Faqat o'zbek lotin yozuvida yoz, kirill "
+    "harflarini aralashtirma."
 )
 
 # "Xodimlar raqamlari" kabi umumiy so'rovga — aniqlashtirishni so'raymiz.

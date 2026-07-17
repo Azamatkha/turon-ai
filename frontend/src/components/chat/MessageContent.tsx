@@ -91,6 +91,16 @@ function renderMarkdown(text: string): string {
       continue;
     }
 
+    // Markdown sarlavha ("## Matn") — model ba'zan chiqarib qoladi, xom "###"
+    // bo'lib ko'rinmasligi uchun qalin sarlavha qilib beramiz.
+    const heading = line.match(/^\s*#{1,6}\s+(.*)$/);
+    if (heading) {
+      closeList();
+      out.push(`<div class="${styles.heading}">${inline(heading[1])}</div>`);
+      i++;
+      continue;
+    }
+
     const bullet = line.match(/^\s*[*-]\s+(.*)$/);
     if (bullet) {
       if (!inList) {

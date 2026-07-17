@@ -24,6 +24,8 @@ export interface KnowledgeItem {
   chunks: number;
   lang: string;
   preview: string;
+  // Yuklangan vaqti (ISO). Eski yozuvlarda bo'lmasligi mumkin — bo'sh satr.
+  uploaded_at?: string;
 }
 
 export interface KnowledgeChunk {

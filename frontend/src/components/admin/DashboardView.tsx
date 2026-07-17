@@ -38,20 +38,21 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
   const fmt = (n: number) => n.toLocaleString();
 
   // So'nggi faollik amali -> matn + rang
-  const ACTIVITY: Record<string, { text: string; c: string }> = {
-    login: { text: admin.actLogin, c: "#1f8a5b" },
-    logout: { text: admin.actLogout, c: "#c0392b" },
-    session: { text: admin.actSession, c: "#3a7ca5" },
-    message: { text: admin.actMessage, c: "#5b8fb0" },
+  // Ranglar CSS o'zgaruvchilaridan — dark mode'da avtomatik yorqinlashadi
+  const ACTIVITY: Record<string, { text: string; c: string; bg: string }> = {
+    login: { text: admin.actLogin, c: "var(--adm-success)", bg: "var(--adm-success-bg)" },
+    logout: { text: admin.actLogout, c: "var(--adm-danger)", bg: "var(--adm-danger-bg)" },
+    session: { text: admin.actSession, c: "var(--adm-accent-2)", bg: "var(--adm-accent-2-bg)" },
+    message: { text: admin.actMessage, c: "var(--adm-info)", bg: "var(--adm-info-bg)" },
   };
 
   const statDefs: StatDef[] = [
-    { icon: usersIcon, value: stats ? fmt(stats.total_users) : "—", label: admin.statTotalUsers, trend: "", tint: "#2a6f97" },
-    { icon: chatIcon, value: stats ? fmt(stats.total_sessions) : "—", label: admin.statTotalSessions, trend: "", tint: "#3a7ca5" },
-    { icon: msgIcon, value: stats ? fmt(stats.total_messages) : "—", label: admin.statTotalMessages, trend: "", tint: "#5b8fb0" },
-    { icon: onlineIcon, value: stats ? fmt(stats.online) : "—", label: admin.statOnline, trend: "", tint: "#1f8a5b" },
-    { icon: likeIcon, value: stats ? fmt(stats.total_likes) : "—", label: admin.statLikes, trend: "", tint: "#1f8a5b" },
-    { icon: dislikeIcon, value: stats ? fmt(stats.total_dislikes) : "—", label: admin.statDislikes, trend: "", tint: "#c0392b" },
+    { icon: usersIcon, value: stats ? fmt(stats.total_users) : "—", label: admin.statTotalUsers, trend: "", tint: "var(--adm-accent)", tintBg: "var(--adm-accent-bg)" },
+    { icon: chatIcon, value: stats ? fmt(stats.total_sessions) : "—", label: admin.statTotalSessions, trend: "", tint: "var(--adm-accent-2)", tintBg: "var(--adm-accent-2-bg)" },
+    { icon: msgIcon, value: stats ? fmt(stats.total_messages) : "—", label: admin.statTotalMessages, trend: "", tint: "var(--adm-info)", tintBg: "var(--adm-info-bg)" },
+    { icon: onlineIcon, value: stats ? fmt(stats.online) : "—", label: admin.statOnline, trend: "", tint: "var(--adm-success)", tintBg: "var(--adm-success-bg)" },
+    { icon: likeIcon, value: stats ? fmt(stats.total_likes) : "—", label: admin.statLikes, trend: "", tint: "var(--adm-success)", tintBg: "var(--adm-success-bg)" },
+    { icon: dislikeIcon, value: stats ? fmt(stats.total_dislikes) : "—", label: admin.statDislikes, trend: "", tint: "var(--adm-danger)", tintBg: "var(--adm-danger-bg)" },
   ];
 
   const deptDefs = (stats?.departments ?? []).map((d, i) => ({
@@ -64,8 +65,12 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
   const barMax = Math.max(1, ...barData.map((b) => b.value));
 
   const activity = (stats?.recent_activity ?? []).map((a) => {
-    const info = ACTIVITY[a.action] ?? { text: a.action, c: "#9aafb8" };
-    return { who: a.name, what: info.text, when: relTime(a.when, admin), c: info.c };
+    const info = ACTIVITY[a.action] ?? {
+      text: a.action,
+      c: "var(--adm-text-muted)",
+      bg: "var(--adm-border)",
+    };
+    return { who: a.name, what: info.text, when: relTime(a.when, admin), c: info.c, bg: info.bg };
   });
 
   return (

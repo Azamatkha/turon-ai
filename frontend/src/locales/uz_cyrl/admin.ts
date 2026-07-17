@@ -92,6 +92,8 @@ export const admin: AdminStrings = {
   knowledgeSearchPh: "Сарлавҳа бўйича қидириш…",
   knowledgeSortTitle: "Номи бўйича (А-Я)",
   knowledgeSortChunks: "Бўлаклар сони бўйича",
+  knowledgeSortNewest: "Сана бўйича (янги)",
+  knowledgeSortOldest: "Сана бўйича (эски)",
   knowledgeNoResults: "Ҳеч нарса топилмади.",
   knowledgeAddModalTitle: "Ҳавола орқали маълумот қўшиш",
   knowledgeAddModalSub: "Саҳифа манзилини киритинг — матни автоматик ажратиб олиниб, базага ёзилади. Бир нечта ҳавола бўлса, ҳар бирини алоҳида қаторга жойлаштиринг.",

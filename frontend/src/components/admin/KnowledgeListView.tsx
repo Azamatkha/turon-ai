@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import HButton from "../common/HButton";
+import FilterSelect from "./FilterSelect";
 import type { AdminStrings } from "../../types/i18n";
 import { employeeStats, listKnowledge, uploadEmployees, uploadEmployeesJson, type KnowledgeItem } from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
@@ -12,7 +13,15 @@ interface KnowledgeListViewProps {
 }
 
 // Vektor bazaga yuklangan ma'lumotlar ro'yxati (sarlavha bo'yicha guruhlangan).
-type SortKey = "title" | "chunks";
+type SortKey = "title" | "chunks" | "newest" | "oldest";
+
+// Sanani solishtirish uchun xavfsiz son (bo'sh/noto'g'ri sana -> 0).
+// Eski yozuvlarda `uploaded_at` bo'lmasligi mumkin — ular oxirida turadi.
+const ts = (v?: string): number => {
+  if (!v) return 0;
+  const t = new Date(v).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
 
 export default function KnowledgeListView({ mounted, t: admin, onAddClick }: KnowledgeListViewProps) {
   const [items, setItems] = useState<KnowledgeItem[]>([]);
@@ -107,9 +116,12 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const q = search.trim().toLowerCase();
   const visible = items
     .filter((it) => !q || it.title.toLowerCase().includes(q) || it.preview.toLowerCase().includes(q))
-    .sort((a, b) =>
-      sortKey === "chunks" ? b.chunks - a.chunks : a.title.localeCompare(b.title)
-    );
+    .sort((a, b) => {
+      if (sortKey === "chunks") return b.chunks - a.chunks;
+      if (sortKey === "newest") return ts(b.uploaded_at) - ts(a.uploaded_at);
+      if (sortKey === "oldest") return ts(a.uploaded_at) - ts(b.uploaded_at);
+      return a.title.localeCompare(b.title);
+    });
 
   return (
     <div className={`${styles.wrap} ${mounted ? styles.in : ""}`}>
@@ -176,14 +188,16 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             onChange={(e) => setSearch(e.target.value)}
             placeholder={admin.knowledgeSearchPh}
           />
-          <select
-            className={styles.sortSelect}
+          <FilterSelect
             value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as SortKey)}
-          >
-            <option value="title">{admin.knowledgeSortTitle}</option>
-            <option value="chunks">{admin.knowledgeSortChunks}</option>
-          </select>
+            onChange={(v) => setSortKey(v as SortKey)}
+            options={[
+              { value: "title", label: admin.knowledgeSortTitle },
+              { value: "chunks", label: admin.knowledgeSortChunks },
+              { value: "newest", label: admin.knowledgeSortNewest },
+              { value: "oldest", label: admin.knowledgeSortOldest },
+            ]}
+          />
         </div>
       )}
 

@@ -31,6 +31,12 @@
   --adm-danger-bg: #fdeceb;
   --adm-danger-border: #f0c4bf;
   --adm-success: #1f8a5b;
+  --adm-success-bg: rgba(31, 138, 91, 0.12);
+  /* "info" (Admin roli, xabarlar statistikasi) — dark'da yorqinlashadi */
+  --adm-info: #5b8fb0;
+  --adm-info-bg: rgba(91, 143, 176, 0.12);
+  --adm-accent-bg: rgba(42, 111, 151, 0.12);
+  --adm-accent-2-bg: rgba(58, 124, 165, 0.12);
   --adm-sidebar: #173f73;
 }
 
@@ -58,6 +64,12 @@ html.dark {
   --adm-danger-bg: rgba(224, 104, 90, 0.14);
   --adm-danger-border: rgba(224, 104, 90, 0.35);
   --adm-success: #3fb884;
+  --adm-success-bg: rgba(63, 184, 132, 0.16);
+  /* Qorong'u fonda o'qilishi uchun yorqinroq ko'k */
+  --adm-info: #8ec2e0;
+  --adm-info-bg: rgba(142, 194, 224, 0.16);
+  --adm-accent-bg: rgba(91, 155, 196, 0.16);
+  --adm-accent-2-bg: rgba(111, 168, 201, 0.16);
   --adm-sidebar: #102f41;
 }
 

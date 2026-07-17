@@ -34,6 +34,8 @@ class KnowledgeItem(Base):
     chunks: int          # shu sarlavha ostidagi bo'laklar soni
     lang: str            # tili (hozircha "uz")
     preview: str         # birinchi bo'lakning qisqa ko'rinishi
+    # Yuklangan vaqti (ISO). Eski yozuvlarda bo'lmasligi mumkin — bo'sh satr.
+    uploaded_at: str = ""
 
 
 class KnowledgeChunk(Base):

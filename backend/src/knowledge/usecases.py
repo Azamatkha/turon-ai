@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from src.core.ai.embeddings import OllamaEmbedder
+from src.core.utils.datetime_utils import get_utc_now
 from src.core.ai.interfaces import BaseAIClient
 from src.core.errors.exceptions import (
     InfrastructureException,
@@ -145,6 +146,24 @@ def _resolve_list_choice(
     return None
 
 
+# Saytdagi rasmiy nomlar foydalanuvchi ishlatadigan so'zdan farq qiladi
+# (masalan "filial" so'zi bazada umuman yo'q — "bank xizmatlari markazi/ofisi"
+# deb yozilgan). Embedding qidiruvi mos kelishi uchun savolni kengaytiramiz.
+_QUERY_SYNONYMS: list[tuple[str, str]] = [
+    ("filial", "bank xizmatlari markazi bank xizmatlari ofisi BXM"),
+    ("bxm", "bank xizmatlari markazi"),
+    ("bo'lim", "bank xizmatlari ofisi"),
+]
+
+
+def _expand_query(question: str) -> str:
+    """Qidiruv (embedding) uchun savolga rasmiy sinonimlarni qo'shadi.
+    Foydalanuvchiga ko'rinadigan savol o'zgarmaydi."""
+    q = question.lower()
+    extra = [syn for key, syn in _QUERY_SYNONYMS if key in q]
+    return f"{question} {' '.join(extra)}" if extra else question
+
+
 def _has_employee_intent(q_lower: str) -> bool:
     """Savol aniq XODIMLAR haqidami — bo'lim bo'yicha yo'naltirishni faqat shunda
     yoqamiz. Aks holda "Toshkent shahar BANK xizmatlari markazi" kabi filial nomi
@@ -198,6 +217,7 @@ class UploadKnowledgeUseCase:
         if not chunks:
             raise InstanceProcessingException("Matn bo'sh — yozadigan narsa yo'q")
 
+        uploaded_at = get_utc_now().isoformat()
         vectors: list[list[float]] = []
         payloads: list[dict[str, Any]] = []
         try:
@@ -217,6 +237,7 @@ class UploadKnowledgeUseCase:
                         "chunk_index": index,
                         "lang": "uz",
                         "source_url": source_url,  # manba havolasi (parsing uchun)
+                        "uploaded_at": uploaded_at,  # sana bo'yicha saralash uchun
                     }
                 )
         except Exception as exc:
@@ -406,12 +427,21 @@ class ListKnowledgeUseCase:
             title = str(payload.get("title", ""))
             group = grouped.setdefault(
                 title,
-                {"chunks": 0, "lang": str(payload.get("lang", "")), "preview": ""},
+                {
+                    "chunks": 0,
+                    "lang": str(payload.get("lang", "")),
+                    "preview": "",
+                    "uploaded_at": "",
+                },
             )
             group["chunks"] += 1
             # Birinchi bo'lak (chunk_index == 0) matnidan qisqa ko'rinish olamiz
             if payload.get("chunk_index") == 0:
                 group["preview"] = str(payload.get("chunk_text", ""))[:160]
+            # Sana — eng kechki bo'lak vaqti (eski yozuvlarda bo'lmasligi mumkin)
+            at = str(payload.get("uploaded_at", ""))
+            if at > str(group["uploaded_at"]):
+                group["uploaded_at"] = at
 
         return [
             KnowledgeItem(
@@ -419,6 +449,7 @@ class ListKnowledgeUseCase:
                 chunks=data["chunks"],
                 lang=data["lang"],
                 preview=data["preview"],
+                uploaded_at=data["uploaded_at"],
             )
             for title, data in grouped.items()
         ]
@@ -502,9 +533,14 @@ class AnswerQuestionUseCase:
         self.ai_client = ai_client
 
     @staticmethod
-    def _category_label(source_url: str) -> str:
-        """source_url yo'lidan mahsulot turkumini aniqlaydi — katalogni
-        guruhlash uchun (kartalar / kreditlar / omonatlar ...)."""
+    def _category_label(source_url: str, title: str = "") -> str:
+        """Mahsulot turkumini aniqlaydi — katalogni guruhlash uchun
+        (kartalar / kreditlar / omonatlar / filiallar ...)."""
+        # Filiallar saytda "filial" deb emas, "bank xizmatlari markazi/ofisi"
+        # deb nomlangan — turkumni SARLAVHA bo'yicha aniqlaymiz.
+        t = title.lower()
+        if "bank xizmatlari markazi" in t or "bank xizmatlari ofisi" in t:
+            return "Filiallar (bank xizmatlari markazlari va ofislari)"
         url = source_url.lower()
         if "plastic-card" in url or "/cards" in url or "karta" in url:
             return "Bank kartalari"
@@ -538,7 +574,7 @@ class AnswerQuestionUseCase:
         # olinadi). URL'larni tushirish promptni ancha yengillashtiradi.
         groups: dict[str, list[str]] = {}
         for title, url in seen.items():
-            label = self._category_label(url)
+            label = self._category_label(url, title)
             groups.setdefault(label, []).append(f"- {title}")
         blocks = [f"### {cat}\n" + "\n".join(items) for cat, items in groups.items()]
         return "\n\n".join(blocks)
@@ -676,7 +712,9 @@ class AnswerQuestionUseCase:
                 yield ev
             return
 
-        query_vector = await self.embedder.embed(question)
+        # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank
+        # xizmatlari markazi/ofisi"), promptdagi SAVOL esa asl holicha qoladi.
+        query_vector = await self.embedder.embed(_expand_query(question))
         results = await self.store.search(query_vector, top_k=self.TOP_K)
 
         top_score = results[0][1] if results else 0.0
@@ -738,7 +776,9 @@ class AnswerQuestionUseCase:
                 max_tokens=gen.max_tokens,
             )
 
-        query_vector = await self.embedder.embed(question)
+        # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank
+        # xizmatlari markazi/ofisi"), promptdagi SAVOL esa asl holicha qoladi.
+        query_vector = await self.embedder.embed(_expand_query(question))
         results = await self.store.search(query_vector, top_k=self.TOP_K)
 
         # Mos kontekst yo'q (yoki eng yaqini ham juda uzoq) — LLM'ni chaqirmasdan

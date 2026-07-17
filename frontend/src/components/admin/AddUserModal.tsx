@@ -1,6 +1,9 @@
 import HButton from "../common/HButton";
+import FilterSelect from "./FilterSelect";
+import { DEPARTMENTS, deptLabel } from "../../services/departments";
 import type { AdminRole } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
+import type { Lang } from "../../types/lang";
 import styles from "./AddUserModal.module.css";
 
 const ROLES: AdminRole[] = ["Xodim", "Admin"];
@@ -22,10 +25,11 @@ interface AddUserModalProps {
   onClose: () => void;
   onSubmit: () => void;
   t: AdminStrings;
+  lang: Lang;
 }
 
 export default function AddUserModal({
-  fName, setFName, fUser, setFUser, fDept, setFDept, fPass, setFPass, fRole, setFRole, adding, userTaken, error, onClose, onSubmit, t: admin,
+  fName, setFName, fUser, setFUser, fDept, setFDept, fPass, setFPass, fRole, setFRole, adding, userTaken, error, onClose, onSubmit, t: admin, lang,
 }: AddUserModalProps) {
   return (
     <div onClick={onClose} className={styles.overlay}>
@@ -59,18 +63,23 @@ export default function AddUserModal({
             <label className={styles.fieldLabel}>{admin.password}</label>
             <input value={fPass} onChange={(e) => setFPass(e.target.value)} type="password" className={styles.input} placeholder="••••••••" autoComplete="new-password" />
           </div>
-          <div className={styles.gridTwo}>
-            <div>
-              <label className={styles.fieldLabel}>{admin.dept}</label>
-              <input value={fDept} onChange={(e) => setFDept(e.target.value)} className={styles.input} placeholder={admin.deptPh} />
-            </div>
-            <div>
-              <label className={styles.fieldLabel}>{admin.role}</label>
-              <div className={styles.roleRow}>
-                {ROLES.map((r) => (
-                  <button key={r} onClick={() => setFRole(r)} className={`${styles.roleBtn} ${fRole === r ? styles.roleBtnActive : styles.roleBtnInactive}`}>{admin.roleLabel[r]}</button>
-                ))}
-              </div>
+          {/* Departament nomlari uzun — alohida to'liq qatorda, Rol esa ostida */}
+          <div>
+            <label className={styles.fieldLabel}>{admin.dept}</label>
+            <FilterSelect
+              value={fDept}
+              onChange={setFDept}
+              fullWidth
+              placeholder={admin.deptPh}
+              options={DEPARTMENTS.map((d) => ({ value: d.uz, label: deptLabel(d, lang) }))}
+            />
+          </div>
+          <div>
+            <label className={styles.fieldLabel}>{admin.role}</label>
+            <div className={styles.roleRow}>
+              {ROLES.map((r) => (
+                <button key={r} onClick={() => setFRole(r)} className={`${styles.roleBtn} ${fRole === r ? styles.roleBtnActive : styles.roleBtnInactive}`}>{admin.roleLabel[r]}</button>
+              ))}
             </div>
           </div>
         </div>

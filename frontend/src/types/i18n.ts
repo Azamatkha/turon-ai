@@ -181,6 +181,8 @@ export interface AdminStrings {
   knowledgeSearchPh: string;
   knowledgeSortTitle: string;
   knowledgeSortChunks: string;
+  knowledgeSortNewest: string;
+  knowledgeSortOldest: string;
   knowledgeNoResults: string;
   knowledgeUrlLabel: string;
   knowledgeBulkProgress: (done: number, total: number) => string;
