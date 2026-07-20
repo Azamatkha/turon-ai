@@ -526,6 +526,23 @@ class UpdateKnowledgeUseCase:
         ).execute(title=title, text=text)
 
 
+# Turkum nomi (— _category_label qaytaradigan label bilan AYNAN mos kelishi
+# shart) -> savolda uchrashi mumkin bo'lgan kalit so'zlar. _broad_category_reply
+# shu asosida savol qaysi turkum haqida ekanini aniqlaydi.
+_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "Bank kartalari": ("karta",),
+    "Kreditlar": ("kredit", "ipoteka", "qarz", "mikroqarz", "mikrokredit"),
+    "Omonatlar": ("omonat", "depozit"),
+    "Pul o'tkazmalari": ("o'tkazma", "otkazma", "o'tkazish", "otkazish"),
+    "Filiallar (bank xizmatlari markazlari va ofislari)": (
+        "filial",
+        "bxm",
+        "bank xizmatlari markazi",
+        "bank xizmatlari ofisi",
+    ),
+}
+
+
 class AnswerQuestionUseCase:
     """RAG: savolni embed qiladi, Qdrant'dan eng yaqin bo'laklarni topadi va
     ularni kontekst sifatida Qwen'ga berib javob oldiradi."""
@@ -574,11 +591,11 @@ class AnswerQuestionUseCase:
             return "Pul o'tkazmalari"
         return "Boshqa xizmatlar"
 
-    async def _build_catalog(self) -> str:
+    async def _catalog_groups(self) -> dict[str, list[str]]:
         """Bazadagi BARCHA mahsulotlarning to'liq ro'yxati (title bo'yicha noyob),
-        turkumlarga ajratilgan. Semantik qidiruv faqat eng yaqin bir nechtasini
-        topadi — bu esa keng savolga ("barcha kredit turlari") TO'LIQ javob berish
-        uchun butun katalogni beradi."""
+        turkumlarga ajratilgan (faqat nomlar, URL'siz). _build_catalog (LLM uchun
+        matn) va _broad_category_reply (keng savolga deterministik javob) shu
+        yerdan foydalanadi."""
         payloads = await self.store.scroll_all(limit=2000)
         # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan).
         # Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
@@ -589,17 +606,60 @@ class AnswerQuestionUseCase:
             title = str(p.get("title", "")).strip()
             if title and title not in seen:
                 seen[title] = str(p.get("source_url", ""))
-        if not seen:
-            return ""
-        # turkumlarga ajratamiz — katalogda faqat NOMLAR (URL kerak emas, chunki
-        # ro'yxatda havola qo'yilmaydi; havola aniq mahsulot javobida kontekstdan
-        # olinadi). URL'larni tushirish promptni ancha yengillashtiradi.
         groups: dict[str, list[str]] = {}
         for title, url in seen.items():
             label = self._category_label(url, title)
-            groups.setdefault(label, []).append(f"- {title}")
-        blocks = [f"### {cat}\n" + "\n".join(items) for cat, items in groups.items()]
+            groups.setdefault(label, []).append(title)
+        return groups
+
+    async def _build_catalog(self) -> str:
+        """Semantik qidiruv faqat eng yaqin bir nechtasini topadi — bu esa keng
+        savolga ("barcha kredit turlari") TO'LIQ javob berish uchun butun
+        katalogni matn ko'rinishida beradi."""
+        groups = await self._catalog_groups()
+        if not groups:
+            return ""
+        blocks = [
+            f"### {cat}\n" + "\n".join(f"- {t}" for t in items)
+            for cat, items in groups.items()
+        ]
         return "\n\n".join(blocks)
+
+    async def _broad_category_reply(self, question: str) -> str | None:
+        """Savol aniq bir mahsulotni emas, balki butun turkumni so'rasa (masalan
+        "omonatlar", "kredit turlari") — nomlarni katalogdan DETERMINISTIK
+        tarzda, LLM'ni chaqirmasdan, raqamlangan ro'yxat qilib qaytaradi.
+
+        LLM'ga qoldirilganda format izchil bo'lmay qolgan (masalan "Omonatlar"
+        uchun ba'zan vergul bilan sanab o'tish, ba'zan raqamlangan ro'yxat
+        chiqib turgan) — bu yerda natijani kodning o'zi kafolatlaydi. Bunga
+        qo'shimcha: keyingi "3-bandni tanladim" javobi ham FAQAT raqamlangan
+        "N. nom" formatidan ishlaydi (_resolve_list_choice), shuning uchun
+        format barqarorligi funksional jihatdan ham muhim."""
+        groups = await self._catalog_groups()
+        if not groups:
+            return None
+
+        q = question.lower()
+
+        # Savolda aniq mahsulot nomi tilga olingan bo'lsa — bu keng savol emas,
+        # LLM aniq javob bersin deb oddiy RAG yo'liga qoldiramiz.
+        for items in groups.values():
+            for title in items:
+                toks = [t for t in _words(title) if len(t) >= 4]
+                if toks and all(t in q for t in toks[: min(2, len(toks))]):
+                    return None
+
+        for label, keywords in _CATEGORY_KEYWORDS.items():
+            items = groups.get(label)
+            if not items or not any(kw in q for kw in keywords):
+                continue
+            numbered = "\n".join(f"{i}. {t}" for i, t in enumerate(items, 1))
+            return (
+                f"{numbered}\n\nShu turlardan qaysi biri bo'yicha "
+                "batafsil ma'lumot beray?"
+            )
+        return None
 
     async def _employee_route(
         self, question: str
@@ -734,6 +794,21 @@ class AnswerQuestionUseCase:
                 yield ev
             return
 
+        # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
+        # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
+        # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
+        broad_reply = await self._broad_category_reply(question)
+        if broad_reply is not None:
+            yield {"type": "delta", "text": broad_reply}
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
         # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank
         # xizmatlari markazi/ofisi"), promptdagi SAVOL esa asl holicha qoladi.
         query_vector = await self.embedder.embed(_expand_query(question))
@@ -796,6 +871,19 @@ class AnswerQuestionUseCase:
                 finish_reason=gen.finish_reason,
                 completion_tokens=gen.completion_tokens,
                 max_tokens=gen.max_tokens,
+            )
+
+        # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
+        # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
+        # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
+        broad_reply = await self._broad_category_reply(question)
+        if broad_reply is not None:
+            return AnswerResult(
+                answer=broad_reply,
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
             )
 
         # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank

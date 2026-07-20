@@ -9,13 +9,18 @@ import {
 // ko'rinishida (tire yo'q). Backend'dagi haqiqiy ID — UUID (tire bor).
 const isPersistedId = (id: string) => id.includes("-");
 
-// lastMessageAt bo'yicha eng yangisi tepada — xabar yuborilgach/kelgach ro'yxat
-// refresh qilmasdan ham darhol qayta tartiblansin (backend refresh'da xuddi
-// shunday saralab qaytaradi, shuning uchun bu yerda ham bir xil mantiq).
-function sortByLastMessage(cs: Chat[]): Chat[] {
-  return [...cs].sort(
-    (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-  );
+// Suhbatni ro'yxat tepasiga ko'taradigan vaqt belgisi.
+// MUHIM: brauzer soati bilan server soati bir xil bo'lmasligi mumkin (server
+// oldinda/orqada yursa, `new Date()` eski suhbatlarning server vaqtidan kichik
+// bo'lib qolib, yangi xabar yozilgan suhbat tepaga chiqmasdi). Shuning uchun
+// mavjud eng katta vaqtdan kafolatli katta qiymat olamiz — tartib soat farqiga
+// bog'liq bo'lmaydi.
+function bumpedTimestamp(cs: Chat[]): string {
+  const maxMs = cs.reduce((mx, c) => {
+    const t = new Date(c.lastMessageAt).getTime();
+    return Number.isNaN(t) ? mx : Math.max(mx, t);
+  }, 0);
+  return new Date(Math.max(Date.now(), maxMs + 1000)).toISOString();
 }
 
 // Aniq (bitta mahsulot) javobda "Batafsil:" havolasi bo'ladi. Model ba'zan bunday
@@ -186,11 +191,10 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     );
     setGenerating(false);
     // AI javobi ham faollik — suhbat sidebarda tepaga chiqsin (refresh kutmasdan)
-    setChats((cs) =>
-      sortByLastMessage(
-        cs.map((c) => (c.id === sessionId ? { ...c, lastMessageAt: new Date().toISOString() } : c))
-      )
-    );
+    setChats((cs) => {
+      const bumped = bumpedTimestamp(cs);
+      return cs.map((c) => (c.id === sessionId ? { ...c, lastMessageAt: bumped } : c));
+    });
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
     addMessage(sessionId, "assistant", finalText)
       .then((saved) =>
@@ -276,7 +280,10 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       try {
         const s = await createSession(newChatLabel);
         loaded.current.add(s.id);
-        setChats((cs) => [{ id: s.id, title: newChatLabel, pinned: false, lastMessageAt: s.updated_at || new Date().toISOString(), messages: [] }, ...cs]);
+        setChats((cs) => [
+          { id: s.id, title: newChatLabel, pinned: false, lastMessageAt: bumpedTimestamp(cs), messages: [] },
+          ...cs,
+        ]);
         setActiveIdState(s.id);
         sessionId = s.id;
       } catch { return; }
@@ -291,11 +298,14 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     const isFirstMessage = prevMsgs.length === 0;
     const now = new Date().toISOString();
     const um: Msg = { id: "u" + Date.now(), role: "user", text, time: now };
-    setChats((cs) => sortByLastMessage(cs.map((c) => {
-      if (c.id !== sessionId) return c;
-      const title = c.messages.length === 0 ? text.slice(0, 42) : c.title;
-      return { ...c, title, lastMessageAt: now, messages: [...c.messages, um] };
-    })));
+    setChats((cs) => {
+      const bumped = bumpedTimestamp(cs);
+      return cs.map((c) => {
+        if (c.id !== sessionId) return c;
+        const title = c.messages.length === 0 ? text.slice(0, 42) : c.title;
+        return { ...c, title, lastMessageAt: bumped, messages: [...c.messages, um] };
+      });
+    });
     setDraft("");
     setThinking(true);
     setGenerating(true);
