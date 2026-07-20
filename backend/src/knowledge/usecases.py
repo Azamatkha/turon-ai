@@ -4,6 +4,11 @@ from typing import Any
 
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.utils.datetime_utils import get_utc_now
+from src.core.utils.uzbek_script import (
+    StreamingTransliterator,
+    is_cyrillic_text,
+    to_cyrillic,
+)
 from src.core.ai.interfaces import BaseAIClient
 from src.core.errors.exceptions import (
     InfrastructureException,
@@ -166,6 +171,27 @@ def _resolve_list_choice(
                 return cleaned or None
         return None  # eng yaqin tanlov ro'yxati topildi, unda bunday raqam yo'q
     return None
+
+
+def _wants_cyrillic(question: str, history: list[ChatTurn] | None) -> bool:
+    """Javobni kirillga o'girish kerakmi — foydalanuvchi kirillcha yozganmi
+    shundan aniqlanadi. AI hamisha lotincha javob beradi (STRICT_RAG_SYSTEM),
+    bu yerda esa kerak bo'lsa natijani foydalanuvchi kutgan alifboga o'giramiz.
+
+    Savol faqat raqamdan iborat bo'lsa (ro'yxatdan tanlash, "3" kabi) — o'zida
+    harf yo'q, shuning uchun suhbatdagi oxirgi matnli xabardan skriptni
+    meros qilib olamiz (aks holda ro'yxatdan tanlagach javob "qaytib"
+    lotinchaga o'tib qolardi)."""
+    if is_cyrillic_text(question):
+        return True
+    if any(c.isalpha() for c in question):
+        return False
+    if not history:
+        return False
+    for turn in reversed(history):
+        if turn.role == "user" and any(c.isalpha() for c in turn.content):
+            return is_cyrillic_text(turn.content)
+    return False
 
 
 # Saytdagi rasmiy nomlar foydalanuvchi ishlatadigan so'zdan farq qiladi
@@ -763,6 +789,12 @@ class AnswerQuestionUseCase:
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
         {"type":"delta","text":...}; oxirida token statistikasi bilan
         {"type":"done", ...}."""
+        # Javobni kirillga o'girish kerakmi — savol (raqamga almashtirilishidan
+        # OLDIN) qaysi alifboda yozilganiga qarab. AI hamisha lotincha yozadi
+        # (STRICT_RAG_SYSTEM), foydalanuvchi kirillcha yozgan bo'lsa shu yerda
+        # javobni uning alifbosiga o'giramiz.
+        want_cyrillic = _wants_cyrillic(question, history)
+
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
         question = _resolve_list_choice(question, history) or question
@@ -772,7 +804,8 @@ class AnswerQuestionUseCase:
         if route is not None:
             kind, emps = route
             if kind == "ask":
-                yield {"type": "delta", "text": EMPLOYEE_ASK_REPLY}
+                text = to_cyrillic(EMPLOYEE_ASK_REPLY) if want_cyrillic else EMPLOYEE_ASK_REPLY
+                yield {"type": "delta", "text": text}
                 yield {
                     "type": "done",
                     "completion_tokens": 0,
@@ -782,13 +815,18 @@ class AnswerQuestionUseCase:
                 }
                 return
             emp_prompt = self._employee_prompt(question, history, emps)
+            tr = StreamingTransliterator() if want_cyrillic else None
             async for ev in self.ai_client.stream_generate(
                 emp_prompt,
                 system_prompt=EMPLOYEE_SYSTEM,
                 temperature=self.TEMPERATURE,
                 max_tokens=self.MAX_TOKENS,
             ):
+                if tr is not None and ev.get("type") == "delta":
+                    ev = {**ev, "text": tr.feed(ev["text"])}
                 if ev.get("type") == "done":
+                    if tr is not None and (rest := tr.flush()):
+                        yield {"type": "delta", "text": rest}
                     ev["max_tokens"] = self.MAX_TOKENS
                     ev["sources"] = []
                 yield ev
@@ -799,7 +837,8 @@ class AnswerQuestionUseCase:
         # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
         broad_reply = await self._broad_category_reply(question)
         if broad_reply is not None:
-            yield {"type": "delta", "text": broad_reply}
+            text = to_cyrillic(broad_reply) if want_cyrillic else broad_reply
+            yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
                 "completion_tokens": 0,
@@ -816,7 +855,8 @@ class AnswerQuestionUseCase:
 
         top_score = results[0][1] if results else 0.0
         if not results or top_score < self.MIN_SCORE:
-            yield {"type": "delta", "text": NO_INFO_REPLY}
+            text = to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY
+            yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
                 "completion_tokens": 0,
@@ -828,13 +868,18 @@ class AnswerQuestionUseCase:
 
         prompt, sources = await self._assemble(question, history, results)
         src_dump = [{"title": s.title, "score": s.score} for s in sources]
+        tr = StreamingTransliterator() if want_cyrillic else None
         async for ev in self.ai_client.stream_generate(
             prompt,
             system_prompt=STRICT_RAG_SYSTEM,
             temperature=self.TEMPERATURE,
             max_tokens=self.MAX_TOKENS,
         ):
+            if tr is not None and ev.get("type") == "delta":
+                ev = {**ev, "text": tr.feed(ev["text"])}
             if ev.get("type") == "done":
+                if tr is not None and (rest := tr.flush()):
+                    yield {"type": "delta", "text": rest}
                 ev["max_tokens"] = self.MAX_TOKENS
                 ev["sources"] = src_dump
             yield ev
@@ -842,6 +887,10 @@ class AnswerQuestionUseCase:
     async def execute(
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AnswerResult:
+        # Javobni kirillga o'girish kerakmi — savol (raqamga almashtirilishidan
+        # OLDIN) qaysi alifboda yozilganiga qarab.
+        want_cyrillic = _wants_cyrillic(question, history)
+
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
         question = _resolve_list_choice(question, history) or question
@@ -851,8 +900,9 @@ class AnswerQuestionUseCase:
         if route is not None:
             kind, emps = route
             if kind == "ask":
+                answer = to_cyrillic(EMPLOYEE_ASK_REPLY) if want_cyrillic else EMPLOYEE_ASK_REPLY
                 return AnswerResult(
-                    answer=EMPLOYEE_ASK_REPLY,
+                    answer=answer,
                     sources=[],
                     finish_reason="stop",
                     completion_tokens=0,
@@ -865,8 +915,9 @@ class AnswerQuestionUseCase:
                 temperature=self.TEMPERATURE,
                 max_tokens=self.MAX_TOKENS,
             )
+            answer = gen.text.strip()
             return AnswerResult(
-                answer=gen.text.strip(),
+                answer=to_cyrillic(answer) if want_cyrillic else answer,
                 sources=[],
                 finish_reason=gen.finish_reason,
                 completion_tokens=gen.completion_tokens,
@@ -879,7 +930,7 @@ class AnswerQuestionUseCase:
         broad_reply = await self._broad_category_reply(question)
         if broad_reply is not None:
             return AnswerResult(
-                answer=broad_reply,
+                answer=to_cyrillic(broad_reply) if want_cyrillic else broad_reply,
                 sources=[],
                 finish_reason="stop",
                 completion_tokens=0,
@@ -897,7 +948,7 @@ class AnswerQuestionUseCase:
         top_score = results[0][1] if results else 0.0
         if not results or top_score < self.MIN_SCORE:
             return AnswerResult(
-                answer=NO_INFO_REPLY,
+                answer=to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY,
                 sources=[],
                 finish_reason="stop",
                 completion_tokens=0,
@@ -913,8 +964,9 @@ class AnswerQuestionUseCase:
             max_tokens=self.MAX_TOKENS,
         )
 
+        answer = _strip_stray_followup(gen.text.strip())
         return AnswerResult(
-            answer=_strip_stray_followup(gen.text.strip()),
+            answer=to_cyrillic(answer) if want_cyrillic else answer,
             sources=sources,
             finish_reason=gen.finish_reason,
             completion_tokens=gen.completion_tokens,

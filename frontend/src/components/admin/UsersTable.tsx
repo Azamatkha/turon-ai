@@ -2,8 +2,17 @@ import { useState } from "react";
 import type { AdminUser, AdminRole, AdminStatus } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import type { Lang } from "../../types/lang";
+import { DEPARTMENTS, deptLabel } from "../../services/departments";
 import EditUserModal from "./EditUserModal";
 import styles from "./UsersTable.module.css";
+
+// Backend'dan doim lotincha (`uz`) qiymat keladi — jadvalda joriy tilga mos
+// nomni ko'rsatamiz. Ro'yxatda topilmasa (masalan eski/qo'lda kiritilgan
+// qiymat) — borini shunday qoldiramiz.
+function displayDept(dept: string, lang: Lang): string {
+  const d = DEPARTMENTS.find((d) => d.uz === dept);
+  return d ? deptLabel(d, lang) : dept;
+}
 
 // Ranglar CSS o'zgaruvchilaridan — dark mode'da avtomatik yorqinlashadi
 // (avval hardcoded edi va qorong'u fonda o'qilmasdi).
@@ -27,12 +36,13 @@ interface Props {
 }
 
 // Hoverlanadigan jadval qatori + amallar menyusi (tahrirlash / rol / o'chirish)
-function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin }: {
+function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin, lang }: {
   user: AdminUser; last: boolean; index: number;
   onChangeRole: (id: string, role: AdminRole) => void;
   onDelete: (id: string) => void;
   onEdit: (u: AdminUser) => void;
   admin: AdminStrings;
+  lang: Lang;
 }) {
   const [hovered, setHovered] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -52,7 +62,7 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin }: 
           <div className={styles.userHandle}>{u.handle}</div>
         </div>
       </div>
-      <span className={styles.deptCell}>{u.dept}</span>
+      <span className={styles.deptCell}>{displayDept(u.dept, lang)}</span>
       <span className={styles.cellCenter}><span className={styles.rolePill} style={{ color: roleColor[u.role].c, background: roleColor[u.role].bg }}>{admin.roleLabel[u.role]}</span></span>
       <span className={styles.cellCenter}><span className={styles.statusPill} style={{ color: statusColor[u.status].c, background: statusColor[u.status].bg }}><span className={styles.statusDot} style={{ background: statusColor[u.status].c }} />{admin.statusLabel[u.status]}</span></span>
       <button data-tip={admin.more} aria-label={admin.more} className={styles.moreBtn} onClick={() => setMenu((m) => !m)}>
@@ -91,7 +101,7 @@ export default function UsersTable({ users, search, onChangeRole, onDelete, onUp
         <span>{admin.tableUser}</span><span>{admin.tableDept}</span><span>{admin.tableRole}</span><span>{admin.tableStatus}</span><span />
       </div>
       {users.map((u, i) => (
-        <HoverRow key={u.id} user={u} last={i === users.length - 1} index={i} onChangeRole={onChangeRole} onDelete={onDelete} onEdit={setEditing} admin={admin} />
+        <HoverRow key={u.id} user={u} last={i === users.length - 1} index={i} onChangeRole={onChangeRole} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />
       ))}
       {users.length === 0 && <div className={styles.empty}>{admin.noUsersFound(search)}</div>}
 
