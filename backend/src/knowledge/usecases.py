@@ -8,6 +8,7 @@ from src.core.utils.uzbek_script import (
     StreamingTransliterator,
     is_cyrillic_text,
     to_cyrillic,
+    to_latin,
 )
 from src.core.ai.interfaces import BaseAIClient
 from src.core.errors.exceptions import (
@@ -168,7 +169,10 @@ def _resolve_list_choice(
         for num, text in items:
             if num == want:
                 cleaned = text.strip().strip("*").strip()
-                return cleaned or None
+                # Ro'yxat kirillcha ko'rsatilgan bo'lishi mumkin, baza esa
+                # LOTINCHA — nomni lotinga keltirmasak qidiruv hech narsa
+                # topmasdi ("15" -> "ma'lumotim yo'q" bo'lib qolardi).
+                return to_latin(cleaned) if cleaned else None
         return None  # eng yaqin tanlov ro'yxati topildi, unda bunday raqam yo'q
     return None
 
@@ -693,7 +697,10 @@ class AnswerQuestionUseCase:
         if not groups:
             return None
 
-        q = question.lower()
+        # Turkum kalit so'zlari va mahsulot nomlari LOTINCHA — savol kirillcha
+        # yozilgan bo'lsa ("Кредит турлари") lotinga keltiramiz, aks holda
+        # hech biri mos kelmay, ro'yxat o'rniga LLM javob berib qolardi.
+        q = to_latin(question).lower()
 
         # Savolda aniq mahsulot nomi tilga olingan bo'lsa — bu keng savol emas,
         # LLM aniq javob bersin deb oddiy RAG yo'liga qoldiramiz.
@@ -708,7 +715,10 @@ class AnswerQuestionUseCase:
             if not items or not any(kw in q for kw in keywords):
                 continue
             numbered = "\n".join(f"{i}. {t}" for i, t in enumerate(items, 1))
-            closing = "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray?"
+            closing = (
+                "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray? "
+                "Nomini yoki tartib raqamini yozing."
+            )
             if want_cyrillic:
                 closing = to_cyrillic(closing)
             return f"{numbered}\n\n{closing}"

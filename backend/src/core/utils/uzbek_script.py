@@ -84,6 +84,45 @@ def to_cyrillic(text: str) -> str:
 _CYRILLIC_RE = re.compile("[Ѐ-ӿ]")
 _LATIN_RE = re.compile("[a-zA-Z]")
 
+# Teskari yo'nalish: kirill -> lotin. Kerak, chunki BAZA va barcha ichki
+# moslashtirish (mahsulot nomlari, turkum kalit so'zlari, embedding qidiruvi)
+# LOTINCHA ishlaydi — foydalanuvchi kirillcha yozganda savolni shu yerda
+# lotinga keltiramiz.
+_CYR_TO_LAT: dict[str, str] = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo",
+    "ж": "j", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "x", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sh",
+    "ъ": "'", "ы": "i", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+    "ў": "o'", "қ": "q", "ғ": "g'", "ҳ": "h",
+}
+
+_CYR_PATTERN = re.compile("|".join(sorted(_CYR_TO_LAT, key=len, reverse=True)), re.IGNORECASE)
+
+
+def _sub_lat(m: re.Match[str]) -> str:
+    cyr = m.group(0)
+    lat = _CYR_TO_LAT.get(cyr.lower(), cyr)
+    if not lat:
+        return ""
+    if cyr.isupper() and len(cyr) > 1:
+        return lat.upper()
+    if cyr[:1].isupper():
+        return lat[0].upper() + lat[1:]
+    return lat
+
+
+def to_latin(text: str) -> str:
+    """Kirillcha o'zbek matnni lotinga o'giradi (URL'larga tegmaydi).
+    Lotincha matn o'zgarishsiz qaytadi."""
+    parts = _URL_RE.split(text)
+    urls = _URL_RE.findall(text)
+    out = [_CYR_PATTERN.sub(_sub_lat, parts[0])]
+    for url, rest in zip(urls, parts[1:]):
+        out.append(url)
+        out.append(_CYR_PATTERN.sub(_sub_lat, rest))
+    return "".join(out)
+
 
 def is_cyrillic_text(text: str) -> bool:
     """Matnda lotincha harflarga qaraganda kirillcha harflar ko'proq (yoki
