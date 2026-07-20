@@ -45,6 +45,8 @@ services:
     container_name: template-app
     image: template-app-image:latest
     env_file: ../.env
+    environment:
+      TZ: ${LOCAL_TIMEZONE}
     command: gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:${APP_BACKEND_PORT} --worker-connections 1000 --keep-alive 10 src.main.web:app
     restart: on-failure
     healthcheck:
@@ -69,6 +71,8 @@ services:
     container_name: template-celery-worker
     image: template-app-image:latest
     env_file: ../.env
+    environment:
+      TZ: ${LOCAL_TIMEZONE}
     command: python -m celery -A celery_tasks.main worker --pool=solo --loglevel=info -E
     restart: unless-stopped
     depends_on:
@@ -90,6 +94,8 @@ services:
     container_name: template-celery-beat
     image: template-app-image:latest
     env_file: ../.env
+    environment:
+      TZ: ${LOCAL_TIMEZONE}
     command: python -m celery -A celery_tasks.main beat --loglevel=info --schedule /data/celerybeat-schedule
     restart: unless-stopped
     volumes:

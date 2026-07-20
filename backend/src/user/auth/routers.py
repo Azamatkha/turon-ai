@@ -50,7 +50,7 @@ async def signup_user(
 @router.post(
     "/login",
     response_model=TokenModel,
-    dependencies=[Depends(RateLimiter(times=2, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=5, seconds=60))],
 )
 async def login_user(
     login_form_data: LoginUserModel,

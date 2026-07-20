@@ -148,11 +148,6 @@ class AddMessageUseCase:
             )
             # Suhbatni ro'yxat tepasiga ko'tarish uchun updated_at yangilanadi
             s.updated_at = get_utc_now()
-            if data.role == "user":
-                # So'nggi faollik: foydalanuvchi so'rov jo'natdi
-                await uow.login_events.create(
-                    uow.session, {"user_id": user_id, "action": "message"}
-                )
             await uow.commit()
             return MessageView.model_validate(message)
 
