@@ -9,6 +9,15 @@ import {
 // ko'rinishida (tire yo'q). Backend'dagi haqiqiy ID — UUID (tire bor).
 const isPersistedId = (id: string) => id.includes("-");
 
+// lastMessageAt bo'yicha eng yangisi tepada — xabar yuborilgach/kelgach ro'yxat
+// refresh qilmasdan ham darhol qayta tartiblansin (backend refresh'da xuddi
+// shunday saralab qaytaradi, shuning uchun bu yerda ham bir xil mantiq).
+function sortByLastMessage(cs: Chat[]): Chat[] {
+  return [...cs].sort(
+    (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+  );
+}
+
 // Aniq (bitta mahsulot) javobda "Batafsil:" havolasi bo'ladi. Model ba'zan bunday
 // javobga ham keraksiz "Shu turlardan qaysi biri..." savolini qo'shib qo'yadi —
 // uni oxiridan olib tashlaymiz (ro'yxat javobiga tegmaymiz).
@@ -176,9 +185,11 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       )
     );
     setGenerating(false);
-    // AI javobi ham faollik — suhbat sidebarda tepaga chiqsin
+    // AI javobi ham faollik — suhbat sidebarda tepaga chiqsin (refresh kutmasdan)
     setChats((cs) =>
-      cs.map((c) => (c.id === sessionId ? { ...c, lastMessageAt: new Date().toISOString() } : c))
+      sortByLastMessage(
+        cs.map((c) => (c.id === sessionId ? { ...c, lastMessageAt: new Date().toISOString() } : c))
+      )
     );
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
     addMessage(sessionId, "assistant", finalText)
@@ -280,11 +291,11 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     const isFirstMessage = prevMsgs.length === 0;
     const now = new Date().toISOString();
     const um: Msg = { id: "u" + Date.now(), role: "user", text, time: now };
-    setChats((cs) => cs.map((c) => {
+    setChats((cs) => sortByLastMessage(cs.map((c) => {
       if (c.id !== sessionId) return c;
       const title = c.messages.length === 0 ? text.slice(0, 42) : c.title;
       return { ...c, title, lastMessageAt: now, messages: [...c.messages, um] };
-    }));
+    })));
     setDraft("");
     setThinking(true);
     setGenerating(true);
