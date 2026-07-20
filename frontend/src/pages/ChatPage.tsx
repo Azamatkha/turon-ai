@@ -132,7 +132,11 @@ export default function ChatPage() {
   };
   const sortedChats = [...visibleChats].sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    return ts(b.lastMessageAt) - ts(a.lastMessageAt);
+    const byTime = ts(b.lastMessageAt) - ts(a.lastMessageAt);
+    if (byTime !== 0) return byTime;
+    // Vaqtlar teng (yoki noto'g'ri) bo'lsa — barqaror tartib, aks holda ro'yxat
+    // tasodifiy joylashib qolardi
+    return a.id < b.id ? 1 : -1;
   });
 
   const usernameTaken = TAKEN_USERNAMES.includes(pUsername.trim()) && pUsername.trim() !== username;
