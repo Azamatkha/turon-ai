@@ -176,6 +176,10 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       )
     );
     setGenerating(false);
+    // AI javobi ham faollik — suhbat sidebarda tepaga chiqsin
+    setChats((cs) =>
+      cs.map((c) => (c.id === sessionId ? { ...c, lastMessageAt: new Date().toISOString() } : c))
+    );
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
     addMessage(sessionId, "assistant", finalText)
       .then((saved) =>
