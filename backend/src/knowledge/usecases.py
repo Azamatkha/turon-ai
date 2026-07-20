@@ -44,6 +44,18 @@ _DEPT_STOP = {
 }
 
 
+# Savoldagi ism deb hisoblanmaydigan umumiy so'zlar (aks holda "raqami" kabi
+# so'z tasodifan biror ismning boshiga mos kelib qolardi)
+_QUERY_STOP = {
+    "ip", "raqam", "raqami", "raqamlari", "raqamini", "nomer", "ichki",
+    "xodim", "xodimi", "xodimlar", "xodimlari", "xodimning", "hodim",
+    "telefon", "telefoni", "kim", "kimniki", "kimning", "qaysi", "qanday",
+    "nima", "necha", "bering", "ber", "beray", "top", "toping", "kerak",
+    "departament", "departamenti", "bolim", "bolimi", "bolimning",
+    "boshqarma", "boshqarmasi", "lavozim", "lavozimi", "haqida", "bilan",
+}
+
+
 def _words(s: str) -> list[str]:
     return re.findall(r"[0-9a-zа-яёўқғҳ]+", s.lower())
 
@@ -77,26 +89,10 @@ def _match_employees(
         if hit:
             return hit
 
-    # 3) F.I.SH — ismning muhim so'zlari (deyarli hammasi) savolda bo'lsa.
-    # substring: o'zbekcha qo'shimcha (-ning, -ga ...) ismga yopishsa ham topsin.
-    named: list[dict[str, Any]] = []
-    for e in emps:
-        toks = [
-            t
-            for t in _words(str(e.get("fish", "")))
-            if len(t) >= 3 and t not in _NAME_STOP
-        ]
-        if len(toks) < 2:
-            continue
-        present = sum(1 for t in toks if t in q_lower)
-        if present >= 2 and present >= len(toks) - 1:
-            named.append(e)
-    if named:
-        return named
-
-    # 4) Bo'lim nomi — FAQAT savolda aniq xodim-niyat (xodim/ip) bo'lsa. Aks holda
+    # 3) Bo'lim nomi — FAQAT savolda aniq xodim-niyat (xodim/ip) bo'lsa. Aks holda
     # filial/manzil so'rovlari ("...bank xizmatlari markazi") xodim bo'limiga
-    # noto'g'ri tushib ketardi.
+    # noto'g'ri tushib ketardi. Ism qidiruvidan OLDIN turadi, chunki bo'lim nomi
+    # tasodifan biror ismning boshiga o'xshab qolishi mumkin.
     if _has_employee_intent(q_lower):
         for dept in {str(e.get("department", "")) for e in emps}:
             distinctive = [
@@ -106,6 +102,32 @@ def _match_employees(
                 t in qwords or (len(t) >= 4 and t in q_lower) for t in distinctive
             ):
                 return [e for e in emps if str(e.get("department", "")) == dept]
+
+    # 4) F.I.SH — QISMAN moslash: savoldagi so'z ism/familiyaning boshiga mos
+    # kelsa yetarli ("Shaxzod" -> "Shaxzodbek", "Jasur" -> "Jasurbek"). Eng ko'p
+    # so'zi mos kelgan xodim(lar) qaytariladi — bir nechta bo'lsa hammasi, model
+    # ularni ro'yxat qilib qaysi biri kerakligini so'raydi.
+    qtokens = [
+        t for t in _words(q_lower) if len(t) >= 3 and t not in _QUERY_STOP
+    ]
+    if not qtokens:
+        return []
+    scored: list[tuple[int, dict[str, Any]]] = []
+    for e in emps:
+        toks = [
+            t
+            for t in _words(str(e.get("fish", "")))
+            if len(t) >= 3 and t not in _NAME_STOP
+        ]
+        score = 0
+        for nt in toks:
+            if any(nt.startswith(qt) or qt.startswith(nt) for qt in qtokens):
+                score += 1
+        if score:
+            scored.append((score, e))
+    if scored:
+        best = max(s for s, _ in scored)
+        return [e for s, e in scored if s == best]
 
     return []
 
