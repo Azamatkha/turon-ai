@@ -53,7 +53,28 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
         const mapped: Chat[] = sessions.map((s) => ({
           id: s.id, title: s.title, pinned: s.is_pinned, lastMessageAt: s.updated_at, messages: [],
         }));
-        setChats(mapped);
+        // MUHIM: almashtirmaymiz, BIRLASHTIRAMIZ. Ro'yxat so'rovi xabarlar
+        // so'rovidan kech kelsa, oddiy setChats(mapped) yuklangan xabarlarni va
+        // yangi lastMessageAt'ni o'chirib yuborardi (refresh'da xabarlar yo'qolib,
+        // suhbat tartibi eskiga qaytardi).
+        setChats((cs) => {
+          const merged = mapped.map((m) => {
+            const ex = cs.find((c) => c.id === m.id);
+            if (!ex) return m;
+            const exTime = new Date(ex.lastMessageAt).getTime();
+            const mTime = new Date(m.lastMessageAt).getTime();
+            const exNewer = !Number.isNaN(exTime) && (Number.isNaN(mTime) || exTime > mTime);
+            return {
+              ...m,
+              messages: ex.messages.length ? ex.messages : m.messages,
+              title: ex.messages.length ? ex.title : m.title,
+              lastMessageAt: exNewer ? ex.lastMessageAt : m.lastMessageAt,
+            };
+          });
+          // Faqat mahalliy mavjud (hali ro'yxatga tushmagan) suhbatlarni saqlaymiz
+          const localOnly = cs.filter((c) => !mapped.some((m) => m.id === c.id));
+          return [...localOnly, ...merged];
+        });
         // Login'da avtomatik ochmaymiz — bo'sh (yangi) chat ko'rinadi, user o'zi tanlaydi
       } catch {
         /* backend tayyor emas — bo'sh holat */
