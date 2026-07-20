@@ -194,6 +194,26 @@ def _wants_cyrillic(question: str, history: list[ChatTurn] | None) -> bool:
     return False
 
 
+def _translit_preserving_titles(text: str, titles: list[str]) -> str:
+    """Matnni kirillga o'giradi, lekin berilgan mahsulot NOMLARINI (Visa,
+    MasterCard, UzCard kabi brend nomlari ham bo'ladi) lotincha holicha
+    qoldiradi — ularni harf-baharf kirillga o'girish g'alati ko'rinardi."""
+    ordered = sorted({t for t in titles if t}, key=len, reverse=True)
+    masked = text
+    placeholders: dict[str, str] = {}
+    for i, title in enumerate(ordered):
+        if title in masked:
+            # Token faqat boshqaruv belgisi + raqamdan iborat — harf bo'lmasin,
+            # aks holda to_cyrillic uni ham o'girib, tiklab bo'lmay qolardi.
+            token = f"\x00{i}\x00"
+            placeholders[token] = title
+            masked = masked.replace(title, token)
+    converted = to_cyrillic(masked)
+    for token, title in placeholders.items():
+        converted = converted.replace(token, title)
+    return converted
+
+
 # Saytdagi rasmiy nomlar foydalanuvchi ishlatadigan so'zdan farq qiladi
 # (masalan "filial" so'zi bazada umuman yo'q — "bank xizmatlari markazi/ofisi"
 # deb yozilgan). Embedding qidiruvi mos kelishi uchun savolni kengaytiramiz.
@@ -651,7 +671,9 @@ class AnswerQuestionUseCase:
         ]
         return "\n\n".join(blocks)
 
-    async def _broad_category_reply(self, question: str) -> str | None:
+    async def _broad_category_reply(
+        self, question: str, want_cyrillic: bool
+    ) -> str | None:
         """Savol aniq bir mahsulotni emas, balki butun turkumni so'rasa (masalan
         "omonatlar", "kredit turlari") — nomlarni katalogdan DETERMINISTIK
         tarzda, LLM'ni chaqirmasdan, raqamlangan ro'yxat qilib qaytaradi.
@@ -661,7 +683,12 @@ class AnswerQuestionUseCase:
         chiqib turgan) — bu yerda natijani kodning o'zi kafolatlaydi. Bunga
         qo'shimcha: keyingi "3-bandni tanladim" javobi ham FAQAT raqamlangan
         "N. nom" formatidan ishlaydi (_resolve_list_choice), shuning uchun
-        format barqarorligi funksional jihatdan ham muhim."""
+        format barqarorligi funksional jihatdan ham muhim.
+
+        Mahsulot NOMLARI (Visa, MasterCard, UzCard kabi brend nomlari ham bor)
+        kirillcha bo'lsa ham HAR DOIM lotincha qoladi — ularni harf-baharf
+        kirillga o'girish g'alati ko'rinardi; faqat atrofidagi savol matni
+        o'giriladi."""
         groups = await self._catalog_groups()
         if not groups:
             return None
@@ -681,10 +708,10 @@ class AnswerQuestionUseCase:
             if not items or not any(kw in q for kw in keywords):
                 continue
             numbered = "\n".join(f"{i}. {t}" for i, t in enumerate(items, 1))
-            return (
-                f"{numbered}\n\nShu turlardan qaysi biri bo'yicha "
-                "batafsil ma'lumot beray?"
-            )
+            closing = "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray?"
+            if want_cyrillic:
+                closing = to_cyrillic(closing)
+            return f"{numbered}\n\n{closing}"
         return None
 
     async def _employee_route(
@@ -835,10 +862,9 @@ class AnswerQuestionUseCase:
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
         # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
         # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
-        broad_reply = await self._broad_category_reply(question)
+        broad_reply = await self._broad_category_reply(question, want_cyrillic)
         if broad_reply is not None:
-            text = to_cyrillic(broad_reply) if want_cyrillic else broad_reply
-            yield {"type": "delta", "text": text}
+            yield {"type": "delta", "text": broad_reply}
             yield {
                 "type": "done",
                 "completion_tokens": 0,
@@ -927,10 +953,10 @@ class AnswerQuestionUseCase:
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
         # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
         # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
-        broad_reply = await self._broad_category_reply(question)
+        broad_reply = await self._broad_category_reply(question, want_cyrillic)
         if broad_reply is not None:
             return AnswerResult(
-                answer=to_cyrillic(broad_reply) if want_cyrillic else broad_reply,
+                answer=broad_reply,
                 sources=[],
                 finish_reason="stop",
                 completion_tokens=0,
@@ -965,8 +991,10 @@ class AnswerQuestionUseCase:
         )
 
         answer = _strip_stray_followup(gen.text.strip())
+        if want_cyrillic:
+            answer = _translit_preserving_titles(answer, [s.title for s in sources])
         return AnswerResult(
-            answer=to_cyrillic(answer) if want_cyrillic else answer,
+            answer=answer,
             sources=sources,
             finish_reason=gen.finish_reason,
             completion_tokens=gen.completion_tokens,

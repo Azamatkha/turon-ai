@@ -10,6 +10,7 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.schemas import SuccessResponse
 from src.core.utils.datetime_utils import get_utc_now
+from src.core.utils.uzbek_script import is_cyrillic_text, to_cyrillic
 from src.chat.prompts import TITLE_SYSTEM
 from src.chat.schemas import (
     AddMessageModel,
@@ -174,6 +175,10 @@ class GenerateTitleUseCase:
             title = text.strip()[:42]
         if len(title) > self.MAX_LEN:
             title = title[: self.MAX_LEN].rstrip()
+        # TITLE_SYSTEM sarlavhani doim lotincha yozadi — foydalanuvchi
+        # kirillcha yozgan bo'lsa, sarlavhani ham shu alifboga o'giramiz.
+        if is_cyrillic_text(text):
+            title = to_cyrillic(title)
         return GenerateTitleResult(title=title)
 
 
