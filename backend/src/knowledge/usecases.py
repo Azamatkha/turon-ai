@@ -292,6 +292,11 @@ _QUERY_SYNONYMS: list[tuple[str, str]] = [
     ("filial", "bank xizmatlari markazi bank xizmatlari ofisi BXM"),
     ("bxm", "bank xizmatlari markazi"),
     ("bo'lim", "bank xizmatlari ofisi"),
+    # "Bosh ofis" so'rovlari ko'pincha aniq manzil/xodim bo'laklarini emas,
+    # umumiy "about" sahifasini topib, qisqa/noaniq javob berardi — bazadagi
+    # aniq band nomini qo'shib, to'g'ri bo'lakka yo'naltiramiz.
+    ("bosh ofis", "Toshkent shahar bank xizmatlari markazi Turonbank Bosh ofis"),
+    ("bosh idora", "Toshkent shahar bank xizmatlari markazi Turonbank Bosh ofis"),
 ]
 
 
