@@ -188,7 +188,18 @@ def _resolve_list_choice(
         return None
     num_match = _NUM_ONLY_RE.match(question)
     want_num = num_match.group(1) if num_match else None
-    q_words = [] if want_num else [w for w in _words(to_latin(question)) if len(w) >= 3]
+    # MUHIM: savoldagi so'zlardan ham xuddi band matnidagidek umumiy so'zlar
+    # olib tashlanadi — aks holda "markazi" (deyarli har bir bandda bor)
+    # "market" so'ziga, "shahar" esa "Shahrisabz"ga tasodifan prefiks bo'yicha
+    # mos kelib, butunlay boshqa band tanlanib qolardi.
+    q_words = (
+        []
+        if want_num
+        else [
+            w for w in _words(to_latin(question))
+            if len(w) >= 3 and w not in _LIST_MATCH_STOPWORDS
+        ]
+    )
     if want_num is None and not q_words:
         return None
 
@@ -209,7 +220,12 @@ def _resolve_list_choice(
                     return to_latin(cleaned) if cleaned else None
             return None  # tanlov ro'yxati topildi, unda bunday raqam yo'q
 
-        # Raqam emas — bandning NOMI bilan yozgan bo'lishi mumkin.
+        # Raqam emas — bandning NOMI bilan yozgan bo'lishi mumkin. ENG YAXSHI
+        # mos kelgan bandni tanlaymiz (birinchi mos kelganini emas) — aks
+        # holda tasodifiy 1-so'zlik moslik (masalan boshqa bandning nomi)
+        # haqiqiy tanlovdan OLDIN kelib qolsa, noto'g'ri band qaytardi.
+        best: str | None = None
+        best_hits = 0
         for _, text in items:
             cleaned = to_latin(text.strip().strip("*").strip())
             toks = [
@@ -219,9 +235,12 @@ def _resolve_list_choice(
             if not toks:
                 continue
             hits = sum(1 for t in toks if any(_prefix_match(t, qw) for qw in q_words))
-            if hits >= max(1, len(toks) - 1):
-                return cleaned
-        return None
+            # Qisqa (1-2 so'zlik) nomda BARCHA so'z mos kelishi shart —
+            # bitta tasodifiy prefiks moslikdan xato band tanlanmasin.
+            need = len(toks) if len(toks) <= 2 else len(toks) - 1
+            if hits >= need and hits > best_hits:
+                best, best_hits = cleaned, hits
+        return best
     return None
 
 
