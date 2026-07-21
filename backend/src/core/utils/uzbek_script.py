@@ -41,10 +41,6 @@ _PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Ikki harfli birikmaning BIRINCHI harfi bo'lishi mumkin bo'lgan belgilar —
-# oqim (streaming) rejimida bo'lak chegarasida ushlab turish uchun ishlatiladi.
-_DIGRAPH_STARTERS = set("scyong")
-
 
 def _apply_case(cyr: str, latin: str) -> str:
     if latin.isupper() and len(latin) > 1:
@@ -65,19 +61,47 @@ def _sub(m: re.Match[str]) -> str:
     return _apply_case(cyr, latin) if cyr else latin
 
 
+# Bank/moliya sohasida tez-tez uchraydigan INGLIZCHA/BREND so'zlar — bularni
+# harf-baharf kirillga o'girish ("MasterCard" -> "Мастеркард") g'alati va
+# noqulay ko'rinadi, shuning uchun bunday so'zlar HAR DOIM original (lotincha)
+# holicha qoldiriladi, matnning qolgan qismi kabi o'girilmaydi.
+BRAND_WORDS: set[str] = {
+    "visa", "mastercard", "master", "card", "humo", "uzcard", "unionpay",
+    "unpay", "paypal", "swift", "iban", "atm", "pos", "pin", "cvv", "cvc",
+    "sms", "id", "otp", "online", "secure", "3d",
+    "gold", "classic", "standard", "standart", "business", "platinum",
+    "premium", "world", "electron", "instant",
+}
+
+_WORD_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9'‘’.\-]*")
+
+
+def _translit_word(m: re.Match[str]) -> str:
+    word = m.group(0)
+    bare = word.strip(".-").lower()
+    if bare in BRAND_WORDS:
+        return word  # inglizcha/brend so'z — o'zgarishsiz
+    return _PATTERN.sub(_sub, word)
+
+
 _URL_RE = re.compile(r"https?://\S+")
 
 
 def to_cyrillic(text: str) -> str:
-    """Lotincha o'zbek matnni kirillga o'giradi. URL manzillar (masalan
-    "Batafsil: <url>" qatoridagi havola) O'ZGARTIRILMAYDI — aks holda havola
-    ishlamay qolardi."""
+    """Lotincha o'zbek matnni kirillga o'giradi.
+
+    Ikki narsa O'ZGARTIRILMAYDI:
+    - URL manzillar (masalan "Batafsil: <url>" qatoridagi havola) — aks holda
+      havola ishlamay qolardi;
+    - BRAND_WORDS ro'yxatidagi inglizcha/brend so'zlar (Visa, MasterCard,
+      UzCard, Gold, 3D, Secure...) — ularni harf-baharf o'girish noqulay
+      ko'rinadi."""
     parts = _URL_RE.split(text)
     urls = _URL_RE.findall(text)
-    out = [_PATTERN.sub(_sub, parts[0])]
+    out = [_WORD_RE.sub(_translit_word, parts[0])]
     for url, rest in zip(urls, parts[1:]):
         out.append(url)
-        out.append(_PATTERN.sub(_sub, rest))
+        out.append(_WORD_RE.sub(_translit_word, rest))
     return "".join(out)
 
 
@@ -133,84 +157,30 @@ def is_cyrillic_text(text: str) -> bool:
     return cyr > 0 and cyr >= lat
 
 
-# "http"/"https" so'zi qurilayotganda bo'lak chegarasida chala transliteratsiya
-# qilib qo'ymaslik uchun — buferning oxiri shu prefikslardan biriga
-# BOSHLANISHI mumkin bo'lsa, to'liq URL yoki uning yo'qligi aniq bo'lguncha
-# kutamiz.
-_URL_START_PREFIXES = ["https://", "http://"]
-
-
-def _url_start_hold_len(buf: str) -> int:
-    """Buferning oxiri "http"/"https://" prefiksining BOSHLANG'ICH qismiga mos
-    kelsa (masalan "...matn htt") va bu SO'Z BOSHIDA bo'lsa (harfdan keyin
-    emas — aks holda "sh", "boshqa" kabi so'zlar oxiri ham noto'g'ri "URL
-    boshlanishi" deb ushlab qolinardi), shu qismni ushlab turish uchun
-    uzunlikni qaytaradi. Aks holda 0."""
-    low = buf.lower()
-    max_len = max(len(p) for p in _URL_START_PREFIXES)
-    for n in range(min(len(buf), max_len), 0, -1):
-        start = len(buf) - n
-        if start > 0 and buf[start - 1].isalnum():
-            continue  # so'z ichida — URL boshlanishi emas
-        tail = low[start:]
-        if any(p.startswith(tail) for p in _URL_START_PREFIXES):
-            return n
-    return 0
-
-
 class StreamingTransliterator:
-    """Oqim (streaming) bo'laklarini kirillga XAVFSIZ o'giradi:
-    - ikki harfli birikmalar (sh, ch, yo, yu, ya, ng, o', g') ikki bo'lak
-      orasida bo'linib qolsa noto'g'ri o'girilib qolmasligi uchun, bo'lak
-      oxiridagi "boshlovchi" belgini keyingi bo'lak kelguncha ushlab turadi;
-    - URL manzil ("https://...") boshlanayotganini sezsa, butun URL tugab
-      (bo'sh joy/qator oxiri kelguncha) hech narsani o'girmaydi — aks holda
-      havola harf-baharf (noto'g'ri) o'girilib qolardi."""
+    """Oqim (streaming) bo'laklarini kirillga XAVFSIZ o'giradi.
+
+    Harf-baharf emas, SO'Z CHEGARASI bo'yicha buferlaydi: bo'lak oxiridagi
+    hali tugamagan so'z (bo'shliqqача yetib kelmagan) navbatdagi bo'lak
+    kelguncha ushlab turiladi, keyin to'liq so'z bir yo'la `to_cyrillic`ga
+    beriladi. Bu digraflarning ("sh", "ch", "o'"...), URL manzillarning va
+    BRAND_WORDS so'zlarining (masalan "MasterCard") ikki bo'lak orasida
+    bo'linib, noto'g'ri o'girilib qolishining oldini butunlay oladi —
+    chunki ular hech qachon TO'LIQ bo'lmagan holda `to_cyrillic`ga
+    yuborilmaydi."""
 
     def __init__(self) -> None:
         self._pending = ""
-        self._in_url = False
 
     def feed(self, delta: str) -> str:
         buf = self._pending + delta
-        out: list[str] = []
-
-        if self._in_url:
-            m = re.search(r"\s", buf)
-            if m is None:
-                self._pending = buf
-                return ""
-            out.append(buf[: m.end()])  # URL + undan keyingi bo'shliq — o'zgarmaydi
-            buf = buf[m.end() :]
-            self._in_url = False
-
-        url_m = _URL_RE.search(buf)
-        if url_m:
-            out.append(to_cyrillic(buf[: url_m.start()]))
-            if url_m.end() == len(buf):
-                # URL hali tugamagan bo'lishi mumkin (keyingi bo'lakda davom etadi)
-                out.append(buf[url_m.start() :])
-                self._pending = ""
-                self._in_url = True
-                return "".join(out)
-            out.append(buf[url_m.start() : url_m.end()])
-            buf = buf[url_m.end() :]
-            self._pending = ""
-        # qolgan qismda URL yo'q — oddiy (digraf va "http" boshlanishi xavfsizligi bilan)
-        hold = max(
-            1 if buf and buf[-1].lower() in _DIGRAPH_STARTERS else 0,
-            _url_start_hold_len(buf),
-        )
-        if hold:
-            safe, self._pending = buf[:-hold], buf[-hold:]
+        m = re.search(r"\S+\Z", buf)
+        if m is None:
+            complete, self._pending = buf, ""
         else:
-            safe, self._pending = buf, ""
-        out.append(to_cyrillic(safe))
-        return "".join(out)
+            complete, self._pending = buf[: m.start()], buf[m.start() :]
+        return to_cyrillic(complete) if complete else ""
 
     def flush(self) -> str:
         rest, self._pending = self._pending, ""
-        if self._in_url or rest.lower().startswith(("http://", "https://")):
-            self._in_url = False
-            return rest
-        return to_cyrillic(rest)
+        return to_cyrillic(rest) if rest else ""

@@ -880,6 +880,12 @@ class AnswerQuestionUseCase:
         # javobni uning alifbosiga o'giramiz.
         want_cyrillic = _wants_cyrillic(question, history)
 
+        # Ichki barcha mantiq (xodim qidiruvi, turkum kalit so'zlari, embedding
+        # qidiruvi, baza) LOTINCHA ishlaydi — savolni shu yerdayoq lotinga
+        # keltiramiz. Aks holda kirillcha savol embedding'ga kirillcha
+        # ketib, mos kontekst topilmay "ma'lumotim yo'q" qaytardi.
+        question = to_latin(question)
+
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
         # Bu MAHSULOT ro'yxatidan tanlov ekani ANIQ — shuning uchun xodim
@@ -978,6 +984,12 @@ class AnswerQuestionUseCase:
         # Javobni kirillga o'girish kerakmi — savol (raqamga almashtirilishidan
         # OLDIN) qaysi alifboda yozilganiga qarab.
         want_cyrillic = _wants_cyrillic(question, history)
+
+        # Ichki barcha mantiq (xodim qidiruvi, turkum kalit so'zlari, embedding
+        # qidiruvi, baza) LOTINCHA ishlaydi — savolni shu yerdayoq lotinga
+        # keltiramiz. Aks holda kirillcha savol embedding'ga kirillcha
+        # ketib, mos kontekst topilmay "ma'lumotim yo'q" qaytardi.
+        question = to_latin(question)
 
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
