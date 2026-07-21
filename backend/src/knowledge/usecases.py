@@ -648,6 +648,39 @@ class UpdateKnowledgeUseCase:
         ).execute(title=title, text=text)
 
 
+# Keng savolda TURKUMNI emas, savolning o'zini bildiruvchi so'zlar — turkum
+# ichida qo'shimcha filtr ("Toshkentdagi filiallar") izlaganda hisobga
+# olinmaydi, aks holda "turlari", "ro'yxati" kabi so'zlar filtr deb qabul
+# qilinib, hech narsa topilmasdi.
+_BROAD_QUESTION_STOPWORDS = {
+    "turlari", "turlarini", "turi", "royxati", "royxatini", "ronxat",
+    "qanday", "qaysi", "qanaqa", "nima", "necha", "bormi", "bor", "mavjud",
+    "menga", "meni", "sizda", "bizda", "kerak", "korsat", "korsating",
+    "ayting", "aytib", "bering", "ber", "beringchi", "hammasi", "hamma",
+    "barcha", "butun", "yana", "haqida", "boyicha", "uchun", "bilan",
+    "malumot", "malumotlar", "malumotlarini", "malumotini", "batafsil",
+    "iltimos", "bank", "banki", "bankning", "turonbank", "turonbankning",
+    "ochiq", "yaqin", "eng",
+}
+
+
+def _matches_filters(text: str, filters: list[str]) -> bool:
+    """Mahsulot matni savoldagi qo'shimcha shart(lar)ga mos keladimi.
+
+    So'z BOSHI bo'yicha solishtiriladi — o'zbekcha qo'shimchalar tufayli
+    ("Toshkentdagi" -> "Toshkent", "Samarqanddagi" -> "Samarqand") aynan
+    tenglik ishlamaydi. Bir nechta filtr bo'lsa, kamida bittasi mos kelishi
+    yetarli (savolda odatda bitta hudud nomi bo'ladi, qolgani shovqin)."""
+    words = set(_words(to_latin(text)))
+    for f in filters:
+        for w in words:
+            if w.startswith(f) or f.startswith(w):
+                # Juda qisqa umumiy bo'lakdan tasodifiy moslik bo'lmasin
+                if min(len(w), len(f)) >= 4:
+                    return True
+    return False
+
+
 # Turkum nomi (— _category_label qaytaradigan label bilan AYNAN mos kelishi
 # shart) -> savolda uchrashi mumkin bo'lgan kalit so'zlar. _broad_category_reply
 # shu asosida savol qaysi turkum haqida ekanini aniqlaydi.
@@ -681,7 +714,13 @@ class AnswerQuestionUseCase:
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
     # chaqirmasdan tayyor "ma'lumotim yo'q" javobini qaytaramiz (tez javob uchun).
-    MIN_SCORE = 0.35
+    #
+    # PAST chegara ATAYIN: avval 0.35 edi va bu erkin yozilgan (tugma orqali
+    # emas) savollarning ko'pini LLM'ga yetib bormasdan turib rad etardi —
+    # foydalanuvchi "faqat tugmalar ishlayapti" deb shikoyat qilgan sabab shu.
+    # Endi faqat CHINDAN aloqasiz (bema'ni) savol kesiladi; qolganida
+    # kontekst LLM'ga beriladi va u yetarli ma'lumot yo'qligini o'zi aytadi.
+    MIN_SCORE = 0.15
 
     def __init__(
         self,
@@ -718,20 +757,36 @@ class AnswerQuestionUseCase:
         turkumlarga ajratilgan (faqat nomlar, URL'siz). _build_catalog (LLM uchun
         matn) va _broad_category_reply (keng savolga deterministik javob) shu
         yerdan foydalanadi."""
+        detailed = await self._catalog_groups_detailed()
+        return {cat: [t for t, _ in items] for cat, items in detailed.items()}
+
+    async def _catalog_groups_detailed(self) -> dict[str, list[tuple[str, str]]]:
+        """_catalog_groups bilan bir xil, lekin har bir mahsulot uchun uning
+        BUTUN matni ham qaytariladi: (nom, to'liq matn).
+
+        Matn kerak, chunki foydalanuvchi turkum ichida QO'SHIMCHA shart bilan
+        so'rashi mumkin ("Toshkentdagi filiallar") — manzil/hudud faqat
+        mahsulot matnida bo'ladi, nomida emas."""
         payloads = await self.store.scroll_all(limit=2000)
         # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan).
         # Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
-        seen: dict[str, str] = {}
+        urls: dict[str, str] = {}
+        texts: dict[str, list[str]] = {}
         for p in payloads:
             if p.get("doc_type") == "employee":
                 continue
             title = str(p.get("title", "")).strip()
-            if title and title not in seen:
-                seen[title] = str(p.get("source_url", ""))
-        groups: dict[str, list[str]] = {}
-        for title, url in seen.items():
+            if not title:
+                continue
+            urls.setdefault(title, str(p.get("source_url", "")))
+            # Bitta mahsulot bir necha bo'lakdan iborat — hammasini yig'amiz,
+            # manzil qaysi bo'lakda bo'lishidan qat'i nazar topilsin.
+            texts.setdefault(title, []).append(str(p.get("chunk_text", "")))
+
+        groups: dict[str, list[tuple[str, str]]] = {}
+        for title, url in urls.items():
             label = self._category_label(url, title)
-            groups.setdefault(label, []).append(title)
+            groups.setdefault(label, []).append((title, " ".join(texts[title])))
         return groups
 
     async def _build_catalog(self) -> str:
@@ -765,7 +820,7 @@ class AnswerQuestionUseCase:
         kirillcha bo'lsa ham HAR DOIM lotincha qoladi — ularni harf-baharf
         kirillga o'girish g'alati ko'rinardi; faqat atrofidagi savol matni
         o'giriladi."""
-        groups = await self._catalog_groups()
+        groups = await self._catalog_groups_detailed()
         if not groups:
             return None
 
@@ -777,7 +832,7 @@ class AnswerQuestionUseCase:
         # Savolda aniq mahsulot nomi tilga olingan bo'lsa — bu keng savol emas,
         # LLM aniq javob bersin deb oddiy RAG yo'liga qoldiramiz.
         for items in groups.values():
-            for title in items:
+            for title, _ in items:
                 toks = [t for t in _words(title) if len(t) >= 4]
                 if toks and all(t in q for t in toks[: min(2, len(toks))]):
                     return None
@@ -786,14 +841,39 @@ class AnswerQuestionUseCase:
             items = groups.get(label)
             if not items or not any(kw in q for kw in keywords):
                 continue
-            numbered = "\n".join(f"{i}. {t}" for i, t in enumerate(items, 1))
+
+            # Turkum ichida QO'SHIMCHA shart bormi ("Toshkentdagi filiallar",
+            # "Samarqand BXM") — savoldan turkum/savol so'zlarini olib
+            # tashlagach qolgan so'zlar bo'yicha filtrlaymiz. Manzil mahsulot
+            # NOMIDA emas, MATNIDA bo'lgani uchun matn bo'yicha qidiriladi.
+            filters = [
+                w for w in _words(q)
+                if len(w) >= 4
+                and w not in _BROAD_QUESTION_STOPWORDS
+                and not any(w.startswith(kw) or kw.startswith(w) for kw in keywords)
+            ]
+            shown = items
+            note = ""
+            if filters:
+                matched = [
+                    (title, text) for title, text in items
+                    if _matches_filters(f"{title} {text}", filters)
+                ]
+                # Faqat haqiqiy toraytirish bo'lsa qo'llaymiz: hech narsa
+                # topilmasa yoki hammasi mos kelsa — to'liq ro'yxat qaytadi.
+                if matched and len(matched) < len(items):
+                    shown = matched
+                    note = f"\"{' '.join(filters)}\" bo'yicha topilganlar:\n\n"
+
+            numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
             closing = (
                 "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray? "
                 "Nomini yoki tartib raqamini yozing."
             )
             if want_cyrillic:
                 closing = to_cyrillic(closing)
-            return f"{numbered}\n\n{closing}"
+                note = to_cyrillic(note)
+            return f"{note}{numbered}\n\n{closing}"
         return None
 
     async def _employee_route(
