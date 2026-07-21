@@ -59,7 +59,32 @@ _QUERY_STOP = {
     "nima", "necha", "bering", "ber", "beray", "top", "toping", "kerak",
     "departament", "departamenti", "bolim", "bolimi", "bolimning",
     "boshqarma", "boshqarmasi", "lavozim", "lavozimi", "haqida", "bilan",
+    # Kundalik olmosh/yordamchi so'zlar — bularsiz "men" so'zi "MENGLIYEV"
+    # familiyasining boshiga mos kelib, filial savolini xodim qidiruviga
+    # tortib ketardi.
+    "men", "menga", "meni", "mening", "sen", "senga", "siz", "sizga",
+    "sizning", "biz", "bizga", "bizning", "ular", "ularga", "shu", "shuni",
+    "bor", "bormi", "yoq", "hozir", "hozirda", "yaqin", "eng", "ham",
+    "uchun", "lekin", "ammo", "yana", "faqat", "kabi", "yoki", "agar",
+    "iltimos", "salom", "rahmat", "mumkin", "boladi", "qilib", "deb",
 }
+
+
+# Savol XODIMLAR haqida EMAS, balki bank mahsuloti/filiali haqida ekanini
+# bildiruvchi so'zlar. Bunday so'z bo'lsa (va aniq xodim-niyat bo'lmasa),
+# xodim qidiruvi umuman ishga tushmaydi — aks holda oddiy so'zlar tasodifan
+# xodim ismiga mos kelib, mutlaqo boshqa javob qaytarardi.
+_NON_EMPLOYEE_SIGNALS = (
+    "filial", "bxm", "bank xizmatlari", "manzil", "kocha", "tuman",
+    "viloyat", "shahar", "yaqin", "joylash", "kredit", "karta", "omonat",
+    "depozit", "ipoteka", "mikroqarz", "qarz", "valyuta", "kurs",
+    "otkazma", "foiz", "stavka", "ish tartibi", "ish vaqti",
+)
+
+
+def _has_non_employee_signal(q_lower: str) -> bool:
+    """Savolda mahsulot/filial mavzusiga oid aniq belgi bormi."""
+    return any(s in q_lower for s in _NON_EMPLOYEE_SIGNALS)
 
 
 def _words(s: str) -> list[str]:
@@ -113,8 +138,18 @@ def _match_employees(
     # kelsa yetarli ("Shaxzod" -> "Shaxzodbek", "Jasur" -> "Jasurbek"). Eng ko'p
     # so'zi mos kelgan xodim(lar) qaytariladi — bir nechta bo'lsa hammasi, model
     # ularni ro'yxat qilib qaysi biri kerakligini so'raydi.
+    #
+    # MUHIM: savol aniq mahsulot/filial haqida bo'lsa (va xodim-niyat
+    # bildirilmagan bo'lsa) bu bosqich UMUMAN ishlamaydi — aks holda oddiy
+    # so'zlar tasodifan ismga mos kelib, "qaysi filial yaqin" savoliga
+    # xodimlar ro'yxati qaytarilardi.
+    if _has_non_employee_signal(q_lower) and not _has_employee_intent(q_lower):
+        return []
+
+    # Kamida 4 harf: 3 harfli bo'laklar ("men", "shu") juda ko'p familiyaning
+    # boshiga tasodifan mos keladi.
     qtokens = [
-        t for t in _words(q_lower) if len(t) >= 3 and t not in _QUERY_STOP
+        t for t in _words(q_lower) if len(t) >= 4 and t not in _QUERY_STOP
     ]
     if not qtokens:
         return []
@@ -127,7 +162,12 @@ def _match_employees(
         ]
         score = 0
         for nt in toks:
-            if any(nt.startswith(qt) or qt.startswith(nt) for qt in qtokens):
+            # Mos kelgan prefiks yetarlicha uzun bo'lishi shart — qisqa
+            # tasodifiy ustma-ustliklar ism deb qabul qilinmasin.
+            if any(
+                (nt.startswith(qt) or qt.startswith(nt)) and min(len(nt), len(qt)) >= 4
+                for qt in qtokens
+            ):
                 score += 1
         if score:
             scored.append((score, e))
@@ -863,7 +903,15 @@ class AnswerQuestionUseCase:
                 # topilmasa yoki hammasi mos kelsa — to'liq ro'yxat qaytadi.
                 if matched and len(matched) < len(items):
                     shown = matched
-                    note = f"\"{' '.join(filters)}\" bo'yicha topilganlar:\n\n"
+                    # Sarlavhada FAQAT haqiqatan mos kelgan so'zlarni
+                    # ko'rsatamiz — savoldagi qolgan so'zlarni ("hozir" kabi)
+                    # ham yozib qo'yish javobni chalkash qilardi.
+                    used = [
+                        f for f in filters
+                        if any(_matches_filters(f"{t} {x}", [f]) for t, x in matched)
+                    ]
+                    label_txt = ", ".join(used) if used else ""
+                    note = f"{label_txt} bo'yicha topilganlar:\n\n" if label_txt else ""
 
             numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
             closing = (
