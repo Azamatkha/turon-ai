@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Turon-AI API hujjatlari</title>
+<style>
+  :root {
+    --bg: transparent;
+    --surface: #ffffff;
+    --surface-2: #f3f6f9;
+    --border: #e2e7ee;
+    --border-strong: #d3dae2;
+    --ink: #1f3a58;
+    --ink-muted: #5f7480;
+    --ink-faint: #7c909b;
+    --accent: #173f73;
+    --code-bg: rgba(15,30,50,.05);
+    --code-ink: #1f3a58;
+    --code-key: #7a4ec2;
+    --code-str: #1a7f4b;
+    --code-num: #b1580a;
+    /* Swagger method ranglari */
+    --get: #61affe;   --get-bg: rgba(97,175,254,.10);
+    --post: #49cc90;  --post-bg: rgba(73,204,144,.10);
+    --put: #fca130;   --put-bg: rgba(252,161,48,.10);
+    --patch: #50e3c2; --patch-bg: rgba(80,227,194,.12);
+    --delete: #f93e3e; --delete-bg: rgba(249,62,62,.10);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: transparent; --surface: #16384a; --surface-2: #123043; --border: rgba(255,255,255,.10);
+      --border-strong: rgba(255,255,255,.16); --ink: #e8eef2; --ink-muted: #a1b6c1; --ink-faint: #93a9b5;
+      --accent: #6ea8d8; --code-bg: rgba(0,0,0,.22); --code-ink: #d5e2ea;
+      --code-key: #c39bff; --code-str: #85e0a3; --code-num: #f5b45a;
+      --get-bg: rgba(97,175,254,.16); --post-bg: rgba(73,204,144,.16);
+      --put-bg: rgba(252,161,48,.16); --patch-bg: rgba(80,227,194,.18); --delete-bg: rgba(249,62,62,.16);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: transparent; --surface: #16384a; --surface-2: #123043; --border: rgba(255,255,255,.10);
+    --border-strong: rgba(255,255,255,.16); --ink: #e8eef2; --ink-muted: #a1b6c1; --ink-faint: #93a9b5;
+    --accent: #6ea8d8; --code-bg: rgba(0,0,0,.22); --code-ink: #d5e2ea;
+    --code-key: #c39bff; --code-str: #85e0a3; --code-num: #f5b45a;
+    --get-bg: rgba(97,175,254,.16); --post-bg: rgba(73,204,144,.16);
+    --put-bg: rgba(252,161,48,.16); --patch-bg: rgba(80,227,194,.18); --delete-bg: rgba(249,62,62,.16);
+  }
+  :root[data-theme="light"] {
+    --bg: transparent; --surface: #ffffff; --surface-2: #f3f6f9; --border: #e2e7ee;
+    --border-strong: #d3dae2; --ink: #1f3a58; --ink-muted: #5f7480; --ink-faint: #7c909b;
+    --accent: #173f73; --code-bg: rgba(15,30,50,.05); --code-ink: #1f3a58;
+    --code-key: #7a4ec2; --code-str: #1a7f4b; --code-num: #b1580a;
+    --get-bg: rgba(97,175,254,.10); --post-bg: rgba(73,204,144,.10);
+    --put-bg: rgba(252,161,48,.10); --patch-bg: rgba(80,227,194,.12); --delete-bg: rgba(249,62,62,.10);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 22px clamp(14px, 3vw, 34px) 60px; }
+
+  /* Topbar */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+  .title { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+  .title .ver { font-size: 12px; font-weight: 700; color: #fff; background: var(--accent); padding: 2px 8px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
+  .baseurl { font-size: 13px; color: var(--ink-muted); }
+  .baseurl code { font-family: var(--mono); color: var(--accent); }
+  .lead { font-size: 14px; color: var(--ink-muted); max-width: 74ch; margin: 6px 0 18px; }
+
+  /* Info panel */
+  .info { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 760px){ .info { grid-template-columns: 1fr; } }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .card h4 { margin: 0 0 9px; font-size: 13px; letter-spacing: .01em; }
+  .card .kv { display: grid; grid-template-columns: max-content 1fr; gap: 5px 12px; font-size: 12.5px; }
+  .card .kv dt { color: var(--ink-faint); }
+  .card .kv dd { margin: 0; color: var(--ink-muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 11px; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--border-strong); color: var(--ink-muted); font-family: var(--mono); }
+  code.inl { font-family: var(--mono); font-size: 12px; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+  /* Filter */
+  .filter { width: 100%; padding: 10px 13px; font-size: 13.5px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--ink); font-family: var(--sans); margin-bottom: 8px; }
+  .filter:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+
+  /* Tag group */
+  .tag { margin-top: 22px; }
+  .tag-head { display: flex; align-items: center; gap: 12px; cursor: pointer; padding-bottom: 6px; border-bottom: 1px solid var(--border); user-select: none; }
+  .tag-head h3 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
+  .tag-head .tcount { font-size: 12px; color: var(--ink-faint); font-family: var(--mono); }
+  .tag-head .tcaret { margin-left: auto; color: var(--ink-faint); transition: transform .18s; font-size: 13px; }
+  .tag.collapsed .tcaret { transform: rotate(-90deg); }
+  .tag.collapsed .tag-body { display: none; }
+  .tag-body { padding-top: 10px; }
+
+  /* Operation (endpoint) — Swagger uslubi */
+  .op { border: 1px solid; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+  .op.get { border-color: var(--get); background: var(--get-bg); }
+  .op.post { border-color: var(--post); background: var(--post-bg); }
+  .op.put { border-color: var(--put); background: var(--put-bg); }
+  .op.patch { border-color: var(--patch); background: var(--patch-bg); }
+  .op.delete { border-color: var(--delete); background: var(--delete-bg); }
+
+  .op-head { display: flex; align-items: center; gap: 11px; padding: 6px 10px; cursor: pointer; }
+  .op-method { color: #fff; font-weight: 700; font-size: 12.5px; letter-spacing: .02em; text-transform: uppercase; min-width: 82px; text-align: center; padding: 7px 0; border-radius: 4px; flex: none; font-family: var(--sans); }
+  .op.get .op-method { background: var(--get); }
+  .op.post .op-method { background: var(--post); }
+  .op.put .op-method { background: var(--put); }
+  .op.patch .op-method { background: var(--patch); }
+  .op.delete .op-method { background: var(--delete); }
+  .op-path { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--ink); word-break: break-all; }
+  .op-path .base { color: var(--ink-faint); font-weight: 400; }
+  .op-sum { font-size: 13px; color: var(--ink-muted); margin-left: 4px; }
+  .op-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+  .op-auth { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .auth-public { background: color-mix(in srgb, var(--post) 22%, transparent); color: color-mix(in srgb, var(--post) 70%, #000 30%); }
+  .auth-user { background: color-mix(in srgb, var(--get) 24%, transparent); color: color-mix(in srgb, var(--get) 62%, #000 38%); }
+  .auth-admin { background: color-mix(in srgb, var(--delete) 20%, transparent); color: color-mix(in srgb, var(--delete) 72%, #000 28%); }
+  .stage2 { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .03em; background: color-mix(in srgb, var(--put) 26%, transparent); color: color-mix(in srgb, var(--put) 66%, #000 34%); white-space: nowrap; }
+  @media (prefers-color-scheme: dark) {
+    .auth-public { color: #8ff0bf; } .auth-user { color: #9cc8ff; } .auth-admin { color: #ff9d9d; } .stage2 { color: #f7c47a; }
+  }
+  :root[data-theme="dark"] .auth-public { color: #8ff0bf; }
+  :root[data-theme="dark"] .auth-user { color: #9cc8ff; }
+  :root[data-theme="dark"] .auth-admin { color: #ff9d9d; }
+  :root[data-theme="dark"] .stage2 { color: #f7c47a; }
+
+  .op-body { display: none; padding: 4px 14px 16px; background: var(--surface); border-top: 1px solid var(--border); }
+  .op.open .op-body { display: block; }
+
+  .block-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--ink-faint); margin: 15px 0 7px; }
+  table.params { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.params th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 4px 10px 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  table.params td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.params td.name { font-family: var(--mono); color: var(--ink); font-weight: 600; white-space: nowrap; }
+  table.params td.type { font-family: var(--mono); color: var(--accent); white-space: nowrap; font-size: 12px; }
+  table.params .req { color: var(--delete); font-weight: 700; }
+  table.params .opt { color: var(--ink-faint); }
+
+  .code { position: relative; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; margin: 0; overflow: hidden; }
+  .code pre { margin: 0; padding: 12px 14px; overflow-x: auto; }
+  .code code { font-family: var(--mono); font-size: 12.5px; color: var(--code-ink); line-height: 1.6; white-space: pre; }
+  .code .copy { position: absolute; top: 7px; right: 7px; background: var(--surface); color: var(--ink-muted); border: 1px solid var(--border-strong); border-radius: 6px; font-size: 11px; padding: 3px 9px; cursor: pointer; font-family: var(--sans); }
+  .code .copy:hover { border-color: var(--accent); color: var(--accent); }
+  .tok-key { color: var(--code-key); } .tok-str { color: var(--code-str); } .tok-num { color: var(--code-num); } .tok-cmd { color: var(--code-num); font-weight: 700; }
+
+  .resp-row { display: flex; align-items: center; gap: 9px; margin: 14px 0 7px; }
+  .status { font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 5px; background: color-mix(in srgb, var(--post) 20%, transparent); color: color-mix(in srgb, var(--post) 66%, #000 34%); }
+  :root[data-theme="dark"] .status { color: #8ff0bf; }
+  @media (prefers-color-scheme: dark){ .status { color: #8ff0bf; } }
+  .note { font-size: 12.5px; color: var(--ink-muted); background: var(--surface-2); border-left: 3px solid var(--accent); padding: 9px 13px; border-radius: 0 8px 8px 0; margin: 14px 0 0; }
+  .hidden { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="title">Turon-AI API <span class="ver">v1</span></div>
+    <div class="baseurl">Base URL: <code>http://localhost:8100</code></div>
+  </div>
+  <p class="lead">Ichki bank AI-chatboti backend'ining REST API ma'lumotnomasi. Har bir endpoint: manzil, so'rov (request), javob (response), kirish huquqi va <code class="inl">curl</code> namunasi bilan. Mobil ilova uchun mo'ljallangan.</p>
+
+  <div class="info">
+    <div class="card">
+      <h4>Kirish (auth) &amp; qoidalar</h4>
+      <dl class="kv">
+        <dt>Auth</dt><dd>JWT <b>Bearer</b>: <code class="inl">Authorization: Bearer &lt;access_token&gt;</code></dd>
+        <dt>Token</dt><dd>Login <code class="inl">access_token</code> + <code class="inl">refresh_token</code> beradi. 401 da <code class="inl">/auth/login/refresh</code>.</dd>
+        <dt>Format</dt><dd><code class="inl">application/json</code> (fayldan tashqari)</dd>
+        <dt>username</dt><dd>kichik harf; 4–60 belgi. password 4–128.</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h4>Xato kodlari</h4>
+      <p style="margin:0 0 9px;font-size:12.5px;color:var(--ink-muted)">Biznes-xatolar: <code class="inl">{ "error": "...", "message": "..." }</code></p>
+      <div class="chips">
+        <span class="chip">400 noto'g'ri</span>
+        <span class="chip">401 token</span>
+        <span class="chip">403 huquq</span>
+        <span class="chip">404 topilmadi</span>
+        <span class="chip">409 mavjud</span>
+        <span class="chip">422 validatsiya</span>
+        <span class="chip">429 ko'p urinish</span>
+      </div>
+    </div>
+  </div>
+
+  <input id="filter" class="filter" type="text" placeholder="Filter by tag — masalan: login, chat, users" autocomplete="off" />
+  <div id="content"></div>
+</div>
+
+<script>
+  // ── Endpointlar (backend Swagger teglariga mos: Users / Chat / Admin / Knowledge / System) ──
+  var GROUPS = [
+    { tag: "Users", eps: [
+      { m:"post", p:"/v1/users/auth/register", auth:"public", sum:"Signup User — yangi foydalanuvchi ro'yxatdan o'tkazish.",
+        body:{ full_name:"Ali Valiyev", username:"alivaliyev", department:"IT bo'limi", password:"Parol123!" },
+        bodyNote:"department ixtiyoriy (null bo'lishi mumkin).", params:[], st:"201",
+        resp:{ id:"1a2b3c...", first_name:"Ali", last_name:"Valiyev", full_name:"Ali Valiyev", username:"alivaliyev", department:"IT bo'limi", role:"USER", email:"alivaliyev@turonbank.uz", phone_number:null, is_verified:true } },
+      { m:"post", p:"/v1/users/auth/login", auth:"public", sum:"Login User — kirish, access va refresh token qaytaradi.",
+        body:{ username:"admin123", password:"admin123" }, params:[], st:"200",
+        resp:{ access_token:"eyJhbGciOiJIUzI1Ni...", refresh_token:"eyJhbGciOiJIUzI1Ni..." }, note:"Rate limit: 60 soniyada 5 marta." },
+      { m:"post", p:"/v1/users/auth/login/refresh", auth:"refresh", sum:"Get Access By Refresh — access token'ni yangilash.",
+        body:null, headerNote:"Authorization: Bearer <refresh_token>", params:[], st:"200",
+        resp:{ access_token:"yangi access...", refresh_token:"yangi refresh..." }, note:"Eski refresh token bekor qilinadi (rotatsiya)." },
+      { m:"post", p:"/v1/users/auth/logout", auth:"user", sum:"Logout User — sessiya(lar)dan chiqish.",
+        body:{ terminate_all_sessions:false }, bodyNote:"body ixtiyoriy. true — barcha qurilmalardan chiqaradi.", params:[], st:"200", resp:{ success:true } },
+      { m:"get", p:"/v1/users/me", auth:"user", sum:"Get User Profile — joriy foydalanuvchi ma'lumotlari.", body:null, params:[], st:"200",
+        resp:{ id:"1a2b3c...", first_name:"Ali", last_name:"Valiyev", full_name:"Ali Valiyev", username:"alivaliyev", department:"IT bo'limi", role:"USER", email:"alivaliyev@turonbank.uz", phone_number:null, is_verified:true } },
+      { m:"get", p:"/v1/users/{user_id}", auth:"admin", sum:"Get User Info By Id — bitta foydalanuvchi (qisqacha).",
+        params:[ {n:"user_id",in:"path",t:"UUID",req:true,d:"foydalanuvchi id"} ], body:null, st:"200",
+        resp:{ id:"1a2b3c...", first_name:"Ali", last_name:"Valiyev", username:"alivaliyev" } },
+      { m:"patch", p:"/v1/users/{user_id}", auth:"admin", sum:"Update User Admin — ma'lumot yoki rolni yangilash.",
+        params:[ {n:"user_id",in:"path",t:"UUID",req:true,d:"foydalanuvchi id"} ],
+        body:{ full_name:"Ali Valiyev", department:"Xavfsizlik", role:"ADMIN", password:"YangiParol1!" },
+        bodyNote:"Barcha maydonlar ixtiyoriy — faqat o'zgartirilayotganini yuboring.", st:"200",
+        resp:{ id:"1a2b3c...", username:"alivaliyev", full_name:"Ali Valiyev", department:"Xavfsizlik", role:"ADMIN", is_active:true } },
+      { m:"delete", p:"/v1/users/{user_id}", auth:"admin", sum:"Delete User Admin — foydalanuvchini o'chirish (yumshoq).",
+        params:[ {n:"user_id",in:"path",t:"UUID",req:true,d:"foydalanuvchi id"} ], body:null, st:"200", resp:{ success:true } },
+      { m:"patch", p:"/v1/users/me/password", auth:"user", sum:"Update User Password — o'z parolini o'zgartirish.",
+        body:{ password:"YangiParol1!" }, params:[], st:"200", resp:{ success:true }, note:"Rate limit: 60 daqiqada 5 marta." },
+      { m:"get", p:"/v1/users", auth:"admin", sum:"List Users — ro'yxat, qidiruv va bo'lim filtri.",
+        params:[ {n:"search",in:"query",t:"string",req:false,d:"ism yoki username bo'yicha qidiruv"}, {n:"department",in:"query",t:"string",req:false,d:"bo'lim bo'yicha filtr"} ], body:null, st:"200",
+        resp:[ { id:"1a2b3c...", username:"alivaliyev", full_name:"Ali Valiyev", department:"IT bo'limi", role:"USER", is_active:true } ] },
+      { m:"post", p:"/v1/users", auth:"admin", sum:"Create User — admin yangi foydalanuvchi yaratadi.",
+        body:{ full_name:"Nodira Karimova", username:"nodira", department:"Buxgalteriya", password:"Parol123!", role:"MODERATOR" },
+        bodyNote:"role ixtiyoriy (standart: USER).", params:[], st:"201",
+        resp:{ id:"9x8y7z...", username:"nodira", full_name:"Nodira Karimova", department:"Buxgalteriya", role:"MODERATOR", is_active:true } }
+    ]},
+    { tag: "Chat", eps: [
+      { m:"post", p:"/v1/chat/title", auth:"user", sum:"Generate Title — birinchi xabardan qisqa sarlavha.", body:{ text:"Kredit foizlari qanday?" }, params:[], st:"200", resp:{ title:"Kredit foizlari" } },
+      { m:"get", p:"/v1/chat/sessions", auth:"user", sum:"List Sessions — barcha suhbatlar.", body:null, params:[], st:"200",
+        resp:[ { id:"s1...", title:"Kredit shartlari", is_pinned:false, created_at:"2026-07-22T09:00:00", updated_at:"2026-07-22T09:10:00" } ] },
+      { m:"post", p:"/v1/chat/sessions", auth:"user", sum:"Create Session — yangi suhbat.", body:{ title:"Birinchi suhbat" }, bodyNote:"title bo'sh bo'lishi mumkin.", params:[], st:"201",
+        resp:{ id:"s1...", title:"Birinchi suhbat", is_pinned:false, created_at:"2026-07-22T09:00:00", updated_at:"2026-07-22T09:00:00" } },
+      { m:"get", p:"/v1/chat/sessions/{session_id}", auth:"user", sum:"Get Session — suhbat va xabarlari.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"} ], body:null, st:"200",
+        resp:{ id:"s1...", title:"Kredit shartlari", is_pinned:false, created_at:"2026-07-22T09:00:00", updated_at:"2026-07-22T09:10:00", messages:[ {id:"m1...",role:"user",content:"Salom",created_at:"2026-07-22T09:01:00",vote:null} ] } },
+      { m:"patch", p:"/v1/chat/sessions/{session_id}", auth:"user", sum:"Rename Session — nomni o'zgartirish.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"} ], body:{ title:"Yangi nom" }, st:"200",
+        resp:{ id:"s1...", title:"Yangi nom", is_pinned:false, created_at:"2026-07-22T09:00:00", updated_at:"2026-07-22T09:15:00" } },
+      { m:"patch", p:"/v1/chat/sessions/{session_id}/pin", auth:"user", sum:"Pin Session — tepaga qadash.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"} ], body:{ is_pinned:true }, st:"200",
+        resp:{ id:"s1...", title:"Kredit shartlari", is_pinned:true, created_at:"2026-07-22T09:00:00", updated_at:"2026-07-22T09:16:00" } },
+      { m:"delete", p:"/v1/chat/sessions/{session_id}", auth:"user", sum:"Delete Session — suhbatni o'chirish.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"} ], body:null, st:"200", resp:{ success:true } },
+      { m:"post", p:"/v1/chat/sessions/{session_id}/messages", auth:"user", sum:"Add Message — suhbatga xabar qo'shish.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"} ], body:{ role:"user", content:"Salom" }, bodyNote:"role: 'user' yoki 'assistant'.", st:"201",
+        resp:{ id:"m1...", role:"user", content:"Salom", created_at:"2026-07-22T09:01:00", vote:null } },
+      { m:"delete", p:"/v1/chat/sessions/{session_id}/messages/{message_id}", auth:"user", sum:"Delete Message — xabarni o'chirish.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"}, {n:"message_id",in:"path",t:"UUID",req:true,d:"xabar id"} ], body:null, st:"200", resp:{ success:true } },
+      { m:"patch", p:"/v1/chat/sessions/{session_id}/messages/{message_id}/vote", auth:"user", sum:"Vote Message — like/dislike.",
+        params:[ {n:"session_id",in:"path",t:"UUID",req:true,d:"suhbat id"}, {n:"message_id",in:"path",t:"UUID",req:true,d:"xabar id"} ], body:{ vote:"up" }, bodyNote:"vote: 'up' | 'down' | null.", st:"200",
+        resp:{ id:"m1...", role:"assistant", content:"Salom! Qanday yordam bera olaman?", created_at:"2026-07-22T09:02:00", vote:"up" } },
+      { m:"post", p:"/v1/chat/ask", auth:"user", stage2:true, sum:"Ask — savol → vektor qidiruv → LLM javob (RAG).",
+        body:{ question:"Ipoteka shartlari qanday?", history:[{role:"user",content:"Salom"}] }, bodyNote:"history ixtiyoriy — mavzu davomiyligi uchun.", st:"200",
+        resp:{ answer:"Ipoteka krediti 20 yilgacha...", sources:[{title:"Kredit qoidalari",score:0.87}], finish_reason:"stop", completion_tokens:210, max_tokens:2000 } },
+      { m:"post", p:"/v1/chat/ask/stream", auth:"user", stage2:true, sum:"Ask Stream — javobni token-token (SSE oqim).",
+        body:{ question:"Ipoteka shartlari qanday?", history:[] }, st:"200",
+        respRaw:"text/event-stream (SSE):\ndata: {\"type\":\"token\",\"text\":\"Ipoteka\"}\ndata: {\"type\":\"token\",\"text\":\" krediti\"}\ndata: {\"type\":\"done\",\"completion_tokens\":210}",
+        note:"Javob JSON emas — SSE oqimi." }
+    ]},
+    { tag: "Admin", eps: [
+      { m:"get", p:"/v1/admin/stats", auth:"admin", sum:"Dashboard Stats — userlar, suhbatlar, xabarlar, bo'limlar.", body:null, params:[], st:"200",
+        resp:{ total_users:42, total_sessions:310, total_messages:1580, total_departments:6, online:3, total_likes:120, total_dislikes:8,
+          departments:[{name:"IT bo'limi",count:12,pct:29}], weekly:[{label:"Du",count:40}], recent_activity:[{name:"Ali Valiyev",action:"login",when:"2026-07-22T09:30:00"}] } }
+    ]},
+    { tag: "Knowledge", eps: [
+      { m:"get", p:"/v1/admin/knowledge", auth:"admin", stage2:true, sum:"List Knowledge — yuklangan ma'lumotlar ro'yxati.", body:null, params:[], st:"200",
+        resp:[ { title:"Kredit qoidalari", chunks:5, lang:"uz", preview:"Ipoteka krediti...", uploaded_at:"2026-07-20T12:00:00" } ] },
+      { m:"post", p:"/v1/admin/knowledge/upload", auth:"admin", stage2:true, sum:"Upload — matnni bo'laklab bazaga yozadi.",
+        body:{ title:"Kredit qoidalari", text:"Ipoteka krediti 20 yilgacha beriladi..." }, params:[], st:"200", resp:{ chunks:5, vector_dim:1024, total_points:120 } },
+      { m:"put", p:"/v1/admin/knowledge", auth:"admin", stage2:true, sum:"Update — ma'lumotni tahrirlash.",
+        body:{ old_title:"Kredit qoidalari", title:"Kredit shartlari 2026", text:"Yangilangan matn..." }, params:[], st:"200", resp:{ chunks:6, vector_dim:1024, total_points:121 } },
+      { m:"delete", p:"/v1/admin/knowledge", auth:"admin", stage2:true, sum:"Delete — sarlavha ostidagi bo'laklarni o'chiradi.",
+        params:[ {n:"title",in:"query",t:"string",req:true,d:"o'chiriladigan sarlavha"} ], body:null, st:"200", resp:{ success:true } },
+      { m:"get", p:"/v1/admin/knowledge/detail", auth:"admin", stage2:true, sum:"Detail — sarlavha ostidagi to'liq matn.",
+        params:[ {n:"title",in:"query",t:"string",req:true,d:"sarlavha"} ], body:null, st:"200",
+        resp:{ title:"Kredit qoidalari", lang:"uz", chunks:[ {chunk_index:0,text:"Ipoteka krediti..."} ] } },
+      { m:"post", p:"/v1/admin/knowledge/ask", auth:"admin", stage2:true, sum:"Ask — admin test: savol → qidiruv → LLM javob.",
+        body:{ question:"Ipoteka shartlari?", history:[] }, st:"200",
+        resp:{ answer:"Ipoteka krediti...", sources:[{title:"Kredit qoidalari",score:0.87}], finish_reason:"stop", completion_tokens:210, max_tokens:2000 } },
+      { m:"post", p:"/v1/admin/knowledge/employees", auth:"admin", stage2:true, sum:"Upload Employees — xodimlar Excel (.xlsx).",
+        multipart:true, params:[ {n:"file",in:"form-data",t:"file (.xlsx)",req:true,d:"xodimlar jadvali, har sheet — bir bo'lim"} ], body:null, st:"200", resp:{ chunks:80, vector_dim:1024, total_points:200 } },
+      { m:"post", p:"/v1/admin/knowledge/employees-json", auth:"admin", stage2:true, sum:"Upload Employees JSON — Excel'siz JSON ro'yxat.",
+        body:[ { department:"IT bo'limi", division:"Tarmoq", position:"Muhandis", fish:"Ali Valiyev", ip:"101", phone:"+998901234567" } ], params:[], st:"200", resp:{ chunks:1, vector_dim:1024, total_points:201 } },
+      { m:"get", p:"/v1/admin/knowledge/employee-stats", auth:"admin", stage2:true, sum:"Employee Stats — diagnostika: xodimlar soni/bo'limlar.", body:null, params:[], st:"200",
+        resp:{ total_points:201, employee_count:80, departments:{ "IT bo'limi":12 }, sample:{ doc_type:"employee", department:"IT bo'limi", fish:"Ali Valiyev", ip:"101", phone:"+998901234567" } } },
+      { m:"post", p:"/v1/admin/knowledge/scrape", auth:"admin", stage2:true, sum:"Scrape — URL'ni ochib matnini bazaga yozadi.",
+        body:{ url:"https://turonbank.uz/kreditlar" }, params:[], st:"200", resp:{ chunks:12, vector_dim:1024, total_points:213 } }
+    ]},
+    { tag: "System", eps: [
+      { m:"get", p:"/health/", auth:"public", root:true, sum:"Health — xizmat va bog'liqliklar holati.", body:null, params:[], st:"200", resp:{ status:"ok" } },
+      { m:"get", p:"/time/", auth:"public", root:true, sum:"Time — joriy UTC vaqti (ISO).", body:null, params:[], st:"200", resp:{ time:"2026-07-22T09:30:00" } },
+      { m:"get", p:"/diagnostic", auth:"public", root:true, sum:"Diagnostic — AI (LLM) ulanishini tekshiradi.", body:null, params:[], st:"200",
+        resp:{ ok:true, latency_ms:820, used_model:"claude-opus-4-8", fallback_used:false, total_attempts:1, model_chain:["claude-opus-4-8"], attempts:[], response:null } }
+    ]}
+  ];
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function hlJSON(obj){
+    var j = esc(JSON.stringify(obj, null, 2));
+    j = j.replace(/&quot;([^&]+?)&quot;(\s*:)/g, '<span class="tok-key">&quot;$1&quot;</span>$2');
+    j = j.replace(/:\s*&quot;([^&]*?)&quot;/g, ': <span class="tok-str">&quot;$1&quot;</span>');
+    j = j.replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="tok-num">$1</span>');
+    j = j.replace(/:\s*(true|false|null)/g, ': <span class="tok-num">$1</span>');
+    return j;
+  }
+  function codeBlock(html){ return '<div class="code"><button class="copy" type="button">Nusxa</button><pre><code>'+html+'</code></pre></div>'; }
+  function curlFor(ep){
+    var url = "http://localhost:8100" + ep.p.replace("{user_id}","<id>").replace("{session_id}","<id>").replace("{message_id}","<id>");
+    var c = '<span class="tok-cmd">curl</span> -X '+ep.m.toUpperCase()+' \\\n  \''+esc(url)+'\'';
+    if (ep.auth==="user"||ep.auth==="admin") c += ' \\\n  -H \'Authorization: Bearer &lt;access_token&gt;\'';
+    if (ep.auth==="refresh") c += ' \\\n  -H \'Authorization: Bearer &lt;refresh_token&gt;\'';
+    if (ep.multipart) { c += ' \\\n  -F \'file=@xodimlar.xlsx\''; return c; }
+    if (ep.body!=null){ c += ' \\\n  -H \'Content-Type: application/json\''; c += ' \\\n  -d \''+esc(JSON.stringify(ep.body))+'\''; }
+    return c;
+  }
+  var authMeta = { public:{cls:"auth-public",txt:"Ochiq"}, user:{cls:"auth-user",txt:"Token"}, refresh:{cls:"auth-user",txt:"Refresh"}, admin:{cls:"auth-admin",txt:"ADMIN"} };
+  function epId(ep){ return (ep.m+"-"+ep.p).replace(/[^a-z0-9]+/gi,"-").toLowerCase(); }
+
+  function renderEndpoint(ep){
+    var a = authMeta[ep.auth];
+    var lastSlash = ep.p.lastIndexOf("/");
+    var el = document.createElement("div");
+    el.className = "op " + ep.m; el.id = epId(ep);
+    el.dataset.search = (ep.m+" "+ep.p+" "+ep.sum).toLowerCase();
+
+    var params = "";
+    if (ep.params && ep.params.length){
+      params = '<div class="block-label">Parametrlar</div><table class="params"><thead><tr><th>Nomi</th><th>Joyi</th><th>Turi</th><th>Majburiy</th><th>Izoh</th></tr></thead><tbody>';
+      ep.params.forEach(function(pr){ params += '<tr><td class="name">'+esc(pr.n)+'</td><td>'+pr.in+'</td><td class="type">'+esc(pr.t)+'</td><td>'+(pr.req?'<span class="req">ha</span>':'<span class="opt">yo\'q</span>')+'</td><td>'+esc(pr.d)+'</td></tr>'; });
+      params += '</tbody></table>';
+    }
+    var bodyBlock = "";
+    if (ep.multipart){ bodyBlock = '<div class="block-label">So\'rov tanasi</div><div class="note" style="margin-top:0">multipart/form-data — <code class="inl">file</code> maydonida .xlsx fayl.</div>'; }
+    else if (ep.body!=null){ bodyBlock = '<div class="block-label">So\'rov tanasi (request body)</div>'+codeBlock(hlJSON(ep.body)); if (ep.bodyNote) bodyBlock += '<div class="note">'+esc(ep.bodyNote)+'</div>'; }
+    else if (ep.headerNote){ bodyBlock = '<div class="block-label">Header</div><div class="note" style="margin-top:0"><code class="inl">'+esc(ep.headerNote)+'</code></div>'; }
+
+    var respBlock = '<div class="resp-row"><span class="block-label" style="margin:0">Javob</span><span class="status">'+ep.st+'</span></div>';
+    respBlock += ep.respRaw ? codeBlock(esc(ep.respRaw)) : codeBlock(hlJSON(ep.resp));
+    var noteBlock = ep.note ? '<div class="note">'+esc(ep.note)+'</div>' : "";
+    var stage = ep.stage2 ? '<span class="stage2">Stage 2</span>' : "";
+
+    el.innerHTML =
+      '<div class="op-head">'+
+        '<span class="op-method">'+ep.m.toUpperCase()+'</span>'+
+        '<span class="op-path"><span class="base">'+esc(ep.p.substring(0,lastSlash+1))+'</span>'+esc(ep.p.substring(lastSlash+1))+'</span>'+
+        '<span class="op-sum">'+esc(ep.sum)+'</span>'+
+        '<span class="op-right">'+stage+'<span class="op-auth '+a.cls+'">'+a.txt+'</span></span>'+
+      '</div>'+
+      '<div class="op-body">'+ params + bodyBlock + respBlock + noteBlock + '<div class="block-label">curl</div>'+ codeBlock(curlFor(ep)) +'</div>';
+
+    el.querySelector(".op-head").addEventListener("click", function(){ el.classList.toggle("open"); postHeight(); });
+    return el;
+  }
+
+  var content = document.getElementById("content");
+  GROUPS.forEach(function(g){
+    var tag = document.createElement("div"); tag.className = "tag"; tag.dataset.tag = g.tag.toLowerCase();
+    var head = document.createElement("div"); head.className = "tag-head";
+    head.innerHTML = '<h3>'+esc(g.tag)+'</h3><span class="tcount">'+g.eps.length+' ta</span><span class="tcaret">▼</span>';
+    var body = document.createElement("div"); body.className = "tag-body";
+    g.eps.forEach(function(ep){ body.appendChild(renderEndpoint(ep)); });
+    head.addEventListener("click", function(){ tag.classList.toggle("collapsed"); postHeight(); });
+    tag.appendChild(head); tag.appendChild(body);
+    content.appendChild(tag);
+  });
+
+  // Nusxa (copy)
+  function fallbackCopy(txt){ var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); }
+  document.addEventListener("click", function(e){
+    if(e.target.classList.contains("copy")){
+      var txt = e.target.parentElement.querySelector("code").innerText, btn = e.target;
+      var done = function(){ var old=btn.textContent; btn.textContent="✓"; setTimeout(function(){ btn.textContent=old; },1200); };
+      if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt); done(); }); }
+      else { fallbackCopy(txt); done(); }
+    }
+  });
+
+  // Filter by tag / manzil
+  var filter = document.getElementById("filter");
+  filter.addEventListener("input", function(){
+    var q = filter.value.trim().toLowerCase();
+    document.querySelectorAll(".tag").forEach(function(tag){
+      var tagMatch = !q || tag.dataset.tag.indexOf(q) !== -1;
+      var anyVisible = false;
+      tag.querySelectorAll(".op").forEach(function(op){
+        var show = !q || tagMatch || op.dataset.search.indexOf(q) !== -1;
+        op.classList.toggle("hidden", !show);
+        if (show) anyVisible = true;
+      });
+      tag.classList.toggle("hidden", !anyVisible);
+    });
+    postHeight();
+  });
+
+  // ── Balandlikni ota-oynaga (React) uzatish — iframe kontentga qarab o'ssin ──
+  function postHeight(){
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) + 4;
+    if (window.parent) window.parent.postMessage({ type: "apiDocsHeight", height: h }, "*");
+  }
+  window.addEventListener("load", postHeight);
+  if (window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
+
+  // ── Admin panel mavzusini qabul qilish (light/dark) ──
+  var root = document.documentElement;
+  window.addEventListener("message", function(e){
+    if (e.data && e.data.type === "setTheme"){
+      if (e.data.theme === "dark") root.setAttribute("data-theme","dark");
+      else root.setAttribute("data-theme","light");
+      postHeight();
+    }
+  });
+  postHeight();
+</script>
+</body>
+</html>

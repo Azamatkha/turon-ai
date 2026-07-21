@@ -13,6 +13,7 @@ import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
 import DashboardView from "../components/admin/DashboardView";
 import KnowledgeListView from "../components/admin/KnowledgeListView";
+import ApiDocsView from "../components/admin/ApiDocsView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
@@ -29,11 +30,13 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   dashboard: "dashboard",
   users: "users",
   knowledgeList: "knowledge",
+  apiDocs: "api-docs",
 };
 const PATH_TO_VIEW: Record<string, AdminView> = {
   dashboard: "dashboard",
   users: "users",
   knowledge: "knowledgeList",
+  "api-docs": "apiDocs",
 };
 
 const mapUser = (u: ApiUser): AdminUser => ({
@@ -137,6 +140,7 @@ export default function AdminPage() {
   const onDashboard = view === "dashboard";
   const onUsers = view === "users";
   const onKnowledgeList = view === "knowledgeList";
+  const onApiDocs = view === "apiDocs";
 
   const openAdd = () => {
     setFName(""); setFUser(""); setFDept(""); setFPass(""); setFRole("Xodim");
@@ -285,6 +289,7 @@ export default function AdminPage() {
           )}
           {onDashboard && <DashboardView mounted={mounted} t={t} />}
           {onKnowledgeList && <KnowledgeListView key={knowledgeReloadKey} mounted={mounted} t={t} onAddClick={openScrape} />}
+          {onApiDocs && <ApiDocsView />}
           {onUsers && (
             <>
               <div style={{ marginBottom: 14 }}>
