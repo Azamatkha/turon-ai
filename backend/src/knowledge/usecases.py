@@ -145,35 +145,83 @@ _NUM_ONLY_RE = re.compile(r"^\s*(\d{1,3})\s*[.)]?\s*$")
 _LIST_ITEM_RE = re.compile(r"^\s*(\d{1,3})\s*[.)]\s*(.+?)\s*$", re.MULTILINE)
 
 
+# Ro'yxat bandlarida deyarli har doim uchraydigan, band nomini FARQLAMAYDIGAN
+# so'zlar ("... Bank xizmatlari ofisi", "... krediti" kabi) — nomga mos
+# kelish-kelmasligini tekshirganda e'tiborga olinmaydi.
+_LIST_MATCH_STOPWORDS = {
+    "bank", "xizmatlari", "markazi", "ofisi", "respublikasi", "viloyati",
+    "shahar", "krediti", "kredit", "kartasi", "karta", "omonati", "omonat",
+    "mikrokrediti", "mikroqarz", "ipoteka", "boyicha",
+}
+
+
+def _prefix_match(a: str, b: str) -> bool:
+    """`a` va `b` boshidan qancha belgi bir xilligini tekshiradi — imlo farqi
+    ("Yunusobod" / "Yunusubod") bo'lsa ham moslashtirish uchun. Qat'iy teng
+    emas, lekin yetarlicha uzun umumiy prefiks talab qilinadi."""
+    n = 0
+    for ca, cb in zip(a, b):
+        if ca != cb:
+            break
+        n += 1
+    return n >= max(4, round(0.6 * min(len(a), len(b))))
+
+
 def _resolve_list_choice(
     question: str, history: list[ChatTurn] | None
 ) -> str | None:
-    """Savol faqat raqam bo'lsa — oldingi javoblardagi TANLOV RO'YXATIdan o'sha
-    bandning nomini qaytaradi. Aks holda None.
+    """Oldingi javobdagi TANLOV RO'YXATIdan foydalanuvchi tanlagan bandning
+    nomini qaytaradi (raqam yoki bandning o'zi nomi bilan yozilgan bo'lsa).
+    Aks holda None.
 
     Eng oxirgi assistant javobi ro'yxat bo'lmasligi mumkin (foydalanuvchi avval
     bitta bandni tanlab javob olgan, keyin yana raqam yozadi) — shuning uchun
     orqaga qarab tanlov ro'yxatini qidiramiz. Mahsulot javobidagi qisqa
     "1-2-3 qadam" ro'yxatlari bilan chalkashmaslik uchun kamida 4 bandli
-    ro'yxatni tanlov ro'yxati deb hisoblaymiz."""
-    m = _NUM_ONLY_RE.match(question)
-    if not m or not history:
+    ro'yxatni tanlov ro'yxati deb hisoblaymiz.
+
+    MUHIM: bu funksiya "None emas" qaytarsa, chaqiruvchi xodim yo'nalishini
+    SINAMAYDI — chunki bu ANIQ mahsulot ro'yxatidan tanlov ekani ma'lum
+    (aks holda "Humo" yoki "Yunusobod" kabi nomlar tasodifan xodim ismiga
+    o'xshab, noto'g'ri yo'nalib ketardi)."""
+    if not history:
         return None
-    want = m.group(1)
+    num_match = _NUM_ONLY_RE.match(question)
+    want_num = num_match.group(1) if num_match else None
+    q_words = [] if want_num else [w for w in _words(to_latin(question)) if len(w) >= 3]
+    if want_num is None and not q_words:
+        return None
+
     for turn in reversed(history):
         if turn.role != "assistant":
             continue
         items = _LIST_ITEM_RE.findall(turn.content)
         if len(items) < 4:
             continue  # tanlov ro'yxati emas (masalan javobdagi qadamlar)
-        for num, text in items:
-            if num == want:
-                cleaned = text.strip().strip("*").strip()
-                # Ro'yxat kirillcha ko'rsatilgan bo'lishi mumkin, baza esa
-                # LOTINCHA — nomni lotinga keltirmasak qidiruv hech narsa
-                # topmasdi ("15" -> "ma'lumotim yo'q" bo'lib qolardi).
-                return to_latin(cleaned) if cleaned else None
-        return None  # eng yaqin tanlov ro'yxati topildi, unda bunday raqam yo'q
+
+        if want_num is not None:
+            for num, text in items:
+                if num == want_num:
+                    cleaned = text.strip().strip("*").strip()
+                    # Ro'yxat kirillcha ko'rsatilgan bo'lishi mumkin, baza esa
+                    # LOTINCHA — nomni lotinga keltirmasak qidiruv hech narsa
+                    # topmasdi ("15" -> "ma'lumotim yo'q" bo'lib qolardi).
+                    return to_latin(cleaned) if cleaned else None
+            return None  # tanlov ro'yxati topildi, unda bunday raqam yo'q
+
+        # Raqam emas — bandning NOMI bilan yozgan bo'lishi mumkin.
+        for _, text in items:
+            cleaned = to_latin(text.strip().strip("*").strip())
+            toks = [
+                w for w in _words(cleaned)
+                if len(w) >= 4 and w not in _LIST_MATCH_STOPWORDS
+            ]
+            if not toks:
+                continue
+            hits = sum(1 for t in toks if any(_prefix_match(t, qw) for qw in q_words))
+            if hits >= max(1, len(toks) - 1):
+                return cleaned
+        return None
     return None
 
 
@@ -834,10 +882,14 @@ class AnswerQuestionUseCase:
 
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
-        question = _resolve_list_choice(question, history) or question
+        # Bu MAHSULOT ro'yxatidan tanlov ekani ANIQ — shuning uchun xodim
+        # yo'nalishini SINAMAYMIZ ham (aks holda "Humo" kabi mahsulot nomi
+        # "Humoyun" degan xodimga tasodifan mos kelib, noto'g'ri yo'nalardi).
+        resolved = _resolve_list_choice(question, history)
+        question = resolved or question
 
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
-        route = await self._employee_route(question)
+        route = None if resolved else await self._employee_route(question)
         if route is not None:
             kind, emps = route
             if kind == "ask":
@@ -929,10 +981,14 @@ class AnswerQuestionUseCase:
 
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
-        question = _resolve_list_choice(question, history) or question
+        # Bu MAHSULOT ro'yxatidan tanlov ekani ANIQ bo'lsa, xodim yo'nalishini
+        # sinamaymiz ham (aks holda "Humo" kabi mahsulot nomi "Humoyun" degan
+        # xodimga tasodifan mos kelib, noto'g'ri yo'nalardi).
+        resolved = _resolve_list_choice(question, history)
+        question = resolved or question
 
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
-        route = await self._employee_route(question)
+        route = None if resolved else await self._employee_route(question)
         if route is not None:
             kind, emps = route
             if kind == "ask":
