@@ -33,9 +33,15 @@ MIN_TEXT_CHARS_PER_PAGE = 60
 # pastroqda harflar chalkashadi, balandroqda esa faqat sekinlashadi.
 OCR_DPI = 300
 
-# Tesseract til paketlari: o'zbek (lotin + kirill) va rus. Hujjatlar shu
-# tillarda; ingliz qo'shimcha (raqam/lotin qisqartmalar uchun).
-OCR_LANGS = "uzb+uzb_cyrl+rus+eng"
+# Tesseract til paketlari SAHIFA ALIFBOSIGA qarab tanlanadi. Lotin va kirillni
+# bir chaqiruvda berish MUMKIN EMAS: Tesseract har harfni to'rt alifbodan
+# aralash tanlab, "фаoliяти", "АКТIVЛАР", "TENГЛАШТИРИЛГАН" kabi buzuq so'zlar
+# chiqaradi. Shuning uchun avval sahifa alifbosi aniqlanadi (image_to_osd),
+# so'ng faqat o'sha alifbo modellari beriladi.
+OCR_LANGS_CYRILLIC = "uzb_cyrl+rus"
+OCR_LANGS_LATIN = "uzb+eng"
+# Alifboni aniqlab bo'lmaganda (juda kam matnli sahifa) — zaxira variant.
+OCR_LANGS_FALLBACK = OCR_LANGS_LATIN
 
 
 # Imzo/muhr joylaridan qoladigan shovqin. OCR qo'lda yozilgan joyni o'qiy
@@ -69,6 +75,50 @@ def _strip_noise_lines(text: str) -> str:
     return "\n".join(kept)
 
 
+def _norm_key(line: str) -> str:
+    """Qatorni taqqoslash uchun kalitga aylantiradi. OCR har sahifada bir xil
+    kolontitulni bir oz boshqacha o'qiydi ("мониторин" / "мониторинг"), shuning
+    uchun harflarni kichik qilib, bo'sh joy va tinishni tashlaymiz va boshidagi
+    bir bo'lakni olamiz.
+
+    Kalit ATAYIN qisqa (20 belgi): OCR bir sahifada "тижорат", boshqasida
+    "тиждорат" deb o'qishi mumkin, uzun kalitda esa bu ikkisi boshqa-boshqa
+    qator bo'lib sanalib, kolontitul aniqlanmay qolardi."""
+    return "".join(_WORD_RE.findall(line.lower()))[:20]
+
+
+# Kolontitul deb hisoblash uchun qator kamida shuncha sahifada uchrashi kerak.
+_RUNNING_MIN_PAGES = 3
+# Va sahifalarning kamida shuncha ulushida.
+_RUNNING_MIN_RATIO = 0.4
+
+
+def _strip_running_headers(pages: list[str]) -> list[str]:
+    """Har sahifada takrorlanadigan kolontitul/futer qatorlarini olib tashlaydi.
+
+    Ichki hujjatlarda har sahifa tepasida hujjatning to'liq nomi turadi. OCR uni
+    har sahifada qayta o'qiydi va matn oqimiga qo'shib yuboradi — natijada bitta
+    va o'sha jumla har bo'lakning o'rtasida takrorlanib, bazani ifloslantiradi
+    va qidiruvni chalg'itadi."""
+    if len(pages) < _RUNNING_MIN_PAGES:
+        return pages
+
+    counts: dict[str, int] = {}
+    for page in pages:
+        # Bir sahifadagi takrorlar bir marta sanaladi
+        for key in {_norm_key(ln) for ln in page.split("\n") if len(ln.strip()) >= 12}:
+            counts[key] = counts.get(key, 0) + 1
+
+    threshold = max(_RUNNING_MIN_PAGES, int(len(pages) * _RUNNING_MIN_RATIO))
+    running = {k for k, c in counts.items() if c >= threshold}
+    if not running:
+        return pages
+    return [
+        "\n".join(ln for ln in page.split("\n") if _norm_key(ln) not in running)
+        for page in pages
+    ]
+
+
 _MULTI_SPACE_RE = re.compile(r"[ \t]{2,}")
 _MULTI_BLANK_RE = re.compile(r"\n{3,}")
 
@@ -76,6 +126,25 @@ _MULTI_BLANK_RE = re.compile(r"\n{3,}")
 def _normalize(text: str) -> str:
     lines = [_MULTI_SPACE_RE.sub(" ", ln.strip()) for ln in text.split("\n")]
     return _MULTI_BLANK_RE.sub("\n\n", "\n".join(lines)).strip()
+
+
+def _detect_langs(image: Any, pytesseract: Any) -> str:
+    """Sahifa qaysi alifboda yozilganini aniqlab, mos til to'plamini qaytaradi.
+
+    image_to_osd Tesseract'ning tayyor skript-aniqlagichi ("Script: Cyrillic").
+    Matn kam bo'lgan sahifada u xato beradi — bunda zaxira to'plamga qaytamiz."""
+    try:
+        osd = str(pytesseract.image_to_osd(image))
+    except Exception:
+        return OCR_LANGS_FALLBACK
+    for line in osd.split("\n"):
+        if line.lower().startswith("script:"):
+            script = line.split(":", 1)[1].strip().lower()
+            if "cyrillic" in script:
+                return OCR_LANGS_CYRILLIC
+            if "latin" in script:
+                return OCR_LANGS_LATIN
+    return OCR_LANGS_FALLBACK
 
 
 def _ocr_page(page: Any) -> str:
@@ -92,9 +161,12 @@ def _ocr_page(page: Any) -> str:
         ) from exc
 
     pixmap = page.get_pixmap(dpi=OCR_DPI)
-    image = Image.open(io.BytesIO(pixmap.tobytes("png")))
+    # Kulrangga o'tkazamiz — skanerdagi rangli shovqin (muhr siyohi, qog'oz
+    # tusi) harf tanishga xalaqit bermasin.
+    image = Image.open(io.BytesIO(pixmap.tobytes("png"))).convert("L")
+    langs = _detect_langs(image, pytesseract)
     try:
-        return str(pytesseract.image_to_string(image, lang=OCR_LANGS))
+        return str(pytesseract.image_to_string(image, lang=langs))
     except Exception as exc:
         raise InstanceProcessingException(
             f"OCR (Tesseract) ishlamadi: {type(exc).__name__}: {exc!r}. "
@@ -130,11 +202,12 @@ def extract_pdf_text(file_bytes: bytes) -> tuple[str, int, int]:
                 # Skanerlangan sahifa — OCR
                 text = _ocr_page(page)
                 ocr_pages += 1
-            cleaned = _strip_noise_lines(text)
-            if cleaned.strip():
-                parts.append(cleaned.strip())
+            parts.append(_strip_noise_lines(text).strip())
         page_count = document.page_count
     finally:
         document.close()
 
-    return _normalize("\n\n".join(parts)), page_count, ocr_pages
+    # Kolontitul faqat BARCHA sahifalar yig'ilgach aniqlanadi (qaysi qator
+    # takrorlanayotganini bitta sahifadan bilib bo'lmaydi).
+    pages = [p for p in _strip_running_headers(parts) if p.strip()]
+    return _normalize("\n\n".join(pages)), page_count, ocr_pages

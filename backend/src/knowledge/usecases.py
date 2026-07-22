@@ -490,10 +490,14 @@ class UploadPdfUseCase:
     # oxirini kesib qo'yishi mumkin — shuning uchun o'rtacha o'lcham.
     CLEAN_BLOCK_CHARS = 4000
     CLEAN_MAX_TOKENS = 3000
-    TITLE_MAX_TOKENS = 32
+    # Ichki hujjatning rasmiy nomi uzun bo'ladi ("... tizimida kredit va unga
+    # tenglashtirilgan aktivlar bo'yicha monitoring o'tkazish tartibi") — qisqa
+    # cheklov uni o'rtasidan kesib qo'yardi.
+    TITLE_MAX_TOKENS = 128
     TEMPERATURE = 0.1
-    # Sarlavhani aniqlash uchun matnning boshidan shuncha belgi yetarli.
-    TITLE_SAMPLE_CHARS = 1500
+    # Rasmiy nom ko'pincha muqova/1-sahifada, "TASDIQLANGAN" muhridan keyin
+    # keladi — namuna yetarlicha uzun bo'lishi kerak.
+    TITLE_SAMPLE_CHARS = 3000
     # Tozalangan bo'lak asl bo'lakning shuncha ulushidan qisqa bo'lsa — model
     # tozalash o'rniga qisqartirib (yoki javob bermay) qo'ygan deb hisoblab,
     # ASL matnni saqlaymiz: mazmun yo'qolgandan ko'ra shovqin qolgani yaxshi.
