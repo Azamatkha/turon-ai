@@ -19,10 +19,13 @@ from src.core.errors.exceptions import (
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
+from src.knowledge.pdf_extractor import extract_pdf_text
 from src.knowledge.prompts import (
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_SYSTEM,
     NO_INFO_REPLY,
+    PDF_CLEAN_SYSTEM,
+    PDF_TITLE_SYSTEM,
     STRICT_RAG_SYSTEM,
 )
 from src.knowledge.scraper import extract_content, fetch_html
@@ -32,6 +35,7 @@ from src.knowledge.schemas import (
     KnowledgeChunk,
     KnowledgeDetail,
     KnowledgeItem,
+    PdfUploadResult,
     SourceRef,
     UploadResult,
 )
@@ -467,6 +471,117 @@ class UploadKnowledgeUseCase:
                 f"Vektor bazasi (Qdrant) bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
             ) from exc
         return UploadResult(chunks=len(chunks), vector_dim=dim, total_points=total)
+
+
+class UploadPdfUseCase:
+    """PDF (ko'pincha skanerlangan ichki hujjat) -> matn -> LLM tozalash ->
+    Qdrant.
+
+    Uch bosqich:
+    1) pdf_extractor: matn qatlami bo'lsa o'qiydi, bo'lmasa sahifani OCR qiladi;
+    2) LLM har bo'lakdan imzo/muhr/OCR shovqinini olib tashlaydi (mazmunni
+       QISQARTIRMASDAN);
+    3) odatdagi UploadKnowledgeUseCase — chunk + embed + yozish.
+
+    Sarlavha berilmasa — LLM matnning boshidan hujjat mavzusini aniqlaydi."""
+
+    # LLM'ga bir marta beriladigan bo'lak kattaligi. Katta bo'lak = kam chaqiruv,
+    # lekin sekin hardware'da bitta chaqiruv juda uzoq davom etadi va model
+    # oxirini kesib qo'yishi mumkin — shuning uchun o'rtacha o'lcham.
+    CLEAN_BLOCK_CHARS = 4000
+    CLEAN_MAX_TOKENS = 3000
+    TITLE_MAX_TOKENS = 32
+    TEMPERATURE = 0.1
+    # Sarlavhani aniqlash uchun matnning boshidan shuncha belgi yetarli.
+    TITLE_SAMPLE_CHARS = 1500
+    # Tozalangan bo'lak asl bo'lakning shuncha ulushidan qisqa bo'lsa — model
+    # tozalash o'rniga qisqartirib (yoki javob bermay) qo'ygan deb hisoblab,
+    # ASL matnni saqlaymiz: mazmun yo'qolgandan ko'ra shovqin qolgani yaxshi.
+    MIN_KEEP_RATIO = 0.4
+
+    def __init__(
+        self,
+        embedder: OllamaEmbedder,
+        store: QdrantStore,
+        ai_client: BaseAIClient,
+    ) -> None:
+        self.embedder = embedder
+        self.store = store
+        self.ai_client = ai_client
+
+    async def _clean(self, text: str) -> str:
+        """Matnni bo'lak-bo'lak LLM'dan o'tkazib tozalaydi."""
+        blocks = chunk_text(
+            text, max_chars=self.CLEAN_BLOCK_CHARS, min_chars=self.CLEAN_BLOCK_CHARS // 4
+        )
+        cleaned: list[str] = []
+        for block in blocks:
+            try:
+                out = await self.ai_client.generate_text(
+                    block,
+                    system_prompt=PDF_CLEAN_SYSTEM,
+                    temperature=self.TEMPERATURE,
+                    max_tokens=self.CLEAN_MAX_TOKENS,
+                )
+            except Exception:
+                # Model javob bermasa hujjat butunlay yo'qolmasin — asl bo'lak
+                cleaned.append(block)
+                continue
+            out = out.strip()
+            if not out:
+                continue  # butunlay imzo/muhr sahifasi — tashlab yuboriladi
+            if len(out) < len(block) * self.MIN_KEEP_RATIO:
+                out = block
+            cleaned.append(out)
+        return "\n\n".join(cleaned).strip()
+
+    async def _guess_title(self, text: str) -> str:
+        try:
+            raw = await self.ai_client.generate_text(
+                text[: self.TITLE_SAMPLE_CHARS],
+                system_prompt=PDF_TITLE_SYSTEM,
+                temperature=0.3,
+                max_tokens=self.TITLE_MAX_TOKENS,
+            )
+        except Exception:
+            return ""
+        return raw.strip().strip('"').strip("'").strip()[:200]
+
+    async def execute(
+        self, file_bytes: bytes, filename: str, title: str = ""
+    ) -> PdfUploadResult:
+        raw_text, pages, ocr_pages = extract_pdf_text(file_bytes)
+        if not raw_text:
+            raise InstanceProcessingException(
+                "PDF'dan matn ajratib bo'lmadi — sahifalar bo'sh yoki skan "
+                "sifati juda past. Faylni yaxshiroq sifatda skanerlab ko'ring."
+            )
+
+        cleaned = await self._clean(raw_text)
+        if not cleaned:
+            raise InstanceProcessingException(
+                "Hujjatda mazmunli matn topilmadi (faqat imzo/muhr sahifalari?)."
+            )
+
+        final_title = title.strip() or await self._guess_title(cleaned)
+        if not final_title:
+            # Zaxira: fayl nomi (kengaytmasiz)
+            final_title = filename.rsplit(".", 1)[0].strip() or "Hujjat"
+
+        # Bir xil hujjat qayta yuklansa — eski bo'laklar qolib ketmasin
+        await self.store.delete_by_title(final_title)
+        result = await UploadKnowledgeUseCase(
+            embedder=self.embedder, store=self.store
+        ).execute(title=final_title, text=cleaned)
+        return PdfUploadResult(
+            chunks=result.chunks,
+            vector_dim=result.vector_dim,
+            total_points=result.total_points,
+            title=final_title,
+            pages=pages,
+            ocr_pages=ocr_pages,
+            chars=len(cleaned),
+        )
 
 
 class UploadEmployeesUseCase:

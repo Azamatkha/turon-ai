@@ -54,6 +54,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     shared-mime-info \
     fonts-liberation \
     fonts-noto \
+    tesseract-ocr \
+    tesseract-ocr-uzb \
+    tesseract-ocr-uzb-cyrl \
+    tesseract-ocr-rus \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && groupadd --system appuser \
     && useradd --system --gid appuser --create-home --home-dir /home/appuser appuser \

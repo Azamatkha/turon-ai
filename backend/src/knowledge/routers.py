@@ -8,7 +8,7 @@ SWAGGER'DA TEKSHIRISH:
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
@@ -21,6 +21,7 @@ from src.knowledge.schemas import (
     EmployeeIn,
     KnowledgeDetail,
     KnowledgeItem,
+    PdfUploadResult,
     QuestionRequest,
     ScrapeRequest,
     UpdateKnowledgeRequest,
@@ -36,6 +37,7 @@ from src.knowledge.usecases import (
     UpdateKnowledgeUseCase,
     UploadEmployeesUseCase,
     UploadKnowledgeUseCase,
+    UploadPdfUseCase,
 )
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
@@ -127,6 +129,33 @@ async def upload_knowledge(
     """Admin: matnni bo'laklarga bo'lib, embed qilib, sarlavha bilan Qdrant'ga yozadi."""
     use_case = UploadKnowledgeUseCase(embedder=embedder, store=store)
     return await use_case.execute(title=data.title, text=data.text)
+
+
+@router.post("/pdf", response_model=PdfUploadResult)
+async def upload_pdf(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+    file: Annotated[UploadFile, File()],
+    title: Annotated[str, Form()] = "",
+) -> PdfUploadResult:
+    """Admin: PDF hujjatni yuklaydi.
+
+    Matn qatlami bo'lsa to'g'ridan-to'g'ri o'qiladi, skanerlangan sahifalar
+    Tesseract OCR orqali o'tadi. So'ng LLM imzo/muhr/OCR shovqinini olib
+    tashlaydi va natija bazaga yoziladi. `title` bo'sh bo'lsa — hujjat mavzusi
+    avtomatik aniqlanadi.
+
+    DIQQAT: OCR va tozalash sekin — ko'p sahifali hujjat bir necha daqiqa
+    olishi mumkin."""
+    content = await file.read()
+    use_case = UploadPdfUseCase(embedder=embedder, store=store, ai_client=ai_client)
+    return await use_case.execute(
+        file_bytes=content, filename=file.filename or "", title=title
+    )
 
 
 @router.post("/employees", response_model=UploadResult)

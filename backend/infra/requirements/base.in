@@ -11,6 +11,9 @@ fastapi_mail
 gunicorn
 httpx
 openpyxl
+pillow
+pymupdf
+pytesseract
 passlib
 pydantic
 pydantic-settings

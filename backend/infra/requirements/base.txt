@@ -100,6 +100,12 @@ markupsafe==3.0.3
     #   mako
 openpyxl==3.1.5
     # via -r base.in
+pillow==12.3.0
+    # via -r base.in
+pymupdf==1.28.0
+    # via -r base.in
+pytesseract==0.3.13
+    # via -r base.in
 packaging==26.0
     # via
     #   gunicorn

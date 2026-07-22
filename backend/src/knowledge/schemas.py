@@ -15,6 +15,14 @@ class UploadResult(Base):
     total_points: int    # kolleksiyadagi jami point soni (tasdiq uchun)
 
 
+class PdfUploadResult(UploadResult):
+    """PDF yuklash natijasi — admin panelda nima bo'lganini ko'rsatish uchun."""
+    title: str           # bazaga yozilgan sarlavha (LLM aniqlagan bo'lishi mumkin)
+    pages: int           # PDF'dagi sahifalar soni
+    ocr_pages: int       # shundan nechtasi OCR qilindi (skanerlangan sahifalar)
+    chars: int           # tozalangandan keyingi matn uzunligi
+
+
 class EmployeeIn(Base):
     """Bitta xodim yozuvi (JSON orqali yuklash uchun — Excel'siz)."""
     department: str = Field(min_length=1)   # bo'lim (sheet nomi)

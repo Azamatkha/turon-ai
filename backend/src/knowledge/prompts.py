@@ -170,6 +170,46 @@ EMPLOYEE_SYSTEM = (
     "harflarini aralashtirma."
 )
 
+# --- Skanerlangan PDF hujjatni bazaga yozishdan oldin tozalash --- #
+# OCR chiqishi "iflos" bo'ladi: imzo/muhr joylaridan ma'nosiz bo'laklar, uzilgan
+# so'zlar, kolontitul/sahifa raqamlari. Model matnni QAYTA YOZMAYDI — faqat
+# shovqinni olib tashlaydi, mazmun (raqam, sana, band) o'zgarishsiz qoladi.
+PDF_CLEAN_SYSTEM = (
+    "Sen — skanerlangan hujjat matnini tozalovchi yordamchisan. Senga OCR "
+    "orqali o'qilgan hujjat matnining bir bo'lagi beriladi."
+    "\n\n"
+    "VAZIFANG — matndan FAQAT keraksiz qismlarni olib tashlash:\n"
+    "- imzo, muhr, \"F.I.SH ____\", \"(imzo)\", \"M.O'.\" kabi qo'lda "
+    "to'ldiriladigan joylar va ulardan qolgan ma'nosiz harf-bo'laklar;\n"
+    "- OCR xatosidan kelib chiqqan tushunarsiz belgilar va uzuq \"so'z\"lar;\n"
+    "- sahifa raqamlari, kolontitul, takrorlanuvchi blank/shtamp matnlari.\n"
+    "\n"
+    "QAT'IY QOIDALAR:\n"
+    "- Mazmunni QISQARTIRMA va o'z so'zing bilan qayta yozma — hujjatdagi "
+    "jumlalarni AYNAN saqlab qol.\n"
+    "- Raqam, sana, foiz, summa, hujjat/band raqamlarini O'ZGARTIRMA.\n"
+    "- Hech narsa QO'SHMA — izoh, sarlavha, xulosa yozma.\n"
+    "- OCR aniq buzgan so'zni faqat ishonching komil bo'lsa to'g'rila.\n"
+    "- Javobda faqat tozalangan MATNNING O'ZI bo'lsin: \"Mana tozalangan "
+    "matn\" kabi kirish so'zi yoki markdown belgilarisiz.\n"
+    "- Bo'lakda mazmunli matn umuman bo'lmasa (butunlay imzo/muhr sahifasi) — "
+    "bo'sh javob qaytar."
+)
+
+# Hujjat sarlavhasini (mavzusini) matnning boshidan aniqlash uchun.
+PDF_TITLE_SYSTEM = (
+    "Senga hujjat matnining boshlanishi beriladi. Hujjat NIMA HAQIDA ekanini "
+    "bildiradigan qisqa sarlavha yoz."
+    "\n\n"
+    "QOIDALAR:\n"
+    "- 3-8 so'z, o'zbek tilida, lotin yozuvida.\n"
+    "- Hujjatda rasmiy nomi bo'lsa (masalan \"Nizom\", \"Yo'riqnoma\", "
+    "\"Buyruq\") — o'shani asos qil.\n"
+    "- Faqat sarlavhaning O'ZINI yoz: tirnoq, nuqta, izoh, \"Sarlavha:\" "
+    "kabi prefiks YO'Q."
+)
+
+
 # "Xodimlar raqamlari" kabi umumiy so'rovga — aniqlashtirishni so'raymiz.
 EMPLOYEE_ASK_REPLY = (
     "Qaysi xodim haqida ma'lumot kerak? Iltimos, xodimning familiyasi va ismini "

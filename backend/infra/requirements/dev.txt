@@ -126,6 +126,12 @@ mypy-extensions==1.1.0
     #   mypy
 nodeenv==1.10.0
     # via pre-commit
+pillow==12.3.0
+    # via -r base.in
+pymupdf==1.28.0
+    # via -r base.in
+pytesseract==0.3.13
+    # via -r base.in
 packaging==26.0
     # via
     #   black
