@@ -913,13 +913,6 @@ class AnswerQuestionUseCase:
                     label_txt = ", ".join(used) if used else ""
                     note = f"{label_txt} bo'yicha topilganlar:\n\n" if label_txt else ""
 
-            # Bitta natijada tanlov ro'yxati bermaymiz — "1 ta variantdan qaysi
-            # birini tanlaysiz?" deb so'rash mantiqsiz. Oddiy RAG yo'liga
-            # qaytaramiz: model o'sha yagona mahsulot bo'yicha darrov to'liq
-            # javob beradi.
-            if len(shown) == 1:
-                return None
-
             numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
             closing = (
                 "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray? "
