@@ -7,6 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONUSERBASE=/install
 
+# --- LOCAL ONLY: behind the corporate proxy, which refuses excess parallel
+# connections. Comment out this RUN when building on the server. ---
+RUN printf 'Acquire::Queue-Mode "access";\nAcquire::Retries "10";\nAcquire::http::Pipeline-Depth "0";\n' \
+      > /etc/apt/apt.conf.d/99-proxy-tuning
+# --- end LOCAL ONLY ---
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
@@ -30,6 +36,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUSERBASE=/install \
     PATH="/install/bin:$PATH" \
     PYTHONPATH="/install/lib/python3.13/site-packages"
+
+# --- LOCAL ONLY: behind the corporate proxy, which refuses excess parallel
+# connections. Comment out this RUN when building on the server. ---
+RUN printf 'Acquire::Queue-Mode "access";\nAcquire::Retries "10";\nAcquire::http::Pipeline-Depth "0";\n' \
+      > /etc/apt/apt.conf.d/99-proxy-tuning
+# --- end LOCAL ONLY ---
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \

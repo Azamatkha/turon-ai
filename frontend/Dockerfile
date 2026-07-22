@@ -1,6 +1,11 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
+# --- FAQAT LOKAL: bank proxysi (Kerio) TLS'ni ushlab qoladi, shuning uchun npm
+# sertifikatga ishonmaydi. Serverda quyidagi RUN ni izohga oling. ---
+RUN npm config set strict-ssl false
+# --- lokal blok tugadi ---
+
 RUN npm ci
 COPY . .
 
@@ -10,6 +15,10 @@ RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+# --- FAQAT LOKAL: yuqoridagi kabi, bank proxysi uchun. Serverda izohga oling. ---
+RUN npm config set strict-ssl false
+# --- lokal blok tugadi ---
+
 RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
 ENV NODE_ENV=production

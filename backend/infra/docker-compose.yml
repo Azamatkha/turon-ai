@@ -50,7 +50,10 @@ services:
     command: gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:${APP_BACKEND_PORT} --worker-connections 1000 --keep-alive 10 src.main.web:app
     restart: on-failure
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://0.0.0.0:${APP_BACKEND_PORT}/health/"]
+      # LOCAL ONLY: 0.0.0.0 is not in the proxy bypass list, so wget would try to
+      # reach it through the corporate proxy. Swap these two lines on the server.
+      test: ["CMD", "wget", "--spider", "http://127.0.0.1:${APP_BACKEND_PORT}/health/"]
+      # test: ["CMD", "wget", "--spider", "http://0.0.0.0:${APP_BACKEND_PORT}/health/"]
       interval: 10s
       timeout: 5s
       retries: 5
