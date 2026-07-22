@@ -13,6 +13,7 @@ import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
 import DashboardView from "../components/admin/DashboardView";
 import KnowledgeListView from "../components/admin/KnowledgeListView";
+import PdfUploadView from "../components/admin/PdfUploadView";
 import ApiDocsView from "../components/admin/ApiDocsView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
@@ -30,12 +31,14 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   dashboard: "dashboard",
   users: "users",
   knowledgeList: "knowledge",
+  pdfUpload: "documents",
   apiDocs: "api-docs",
 };
 const PATH_TO_VIEW: Record<string, AdminView> = {
   dashboard: "dashboard",
   users: "users",
   knowledge: "knowledgeList",
+  documents: "pdfUpload",
   "api-docs": "apiDocs",
 };
 
@@ -140,6 +143,7 @@ export default function AdminPage() {
   const onDashboard = view === "dashboard";
   const onUsers = view === "users";
   const onKnowledgeList = view === "knowledgeList";
+  const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
 
   const openAdd = () => {
@@ -289,6 +293,9 @@ export default function AdminPage() {
           )}
           {onDashboard && <DashboardView mounted={mounted} t={t} />}
           {onKnowledgeList && <KnowledgeListView key={knowledgeReloadKey} mounted={mounted} t={t} onAddClick={openScrape} />}
+          {onPdfUpload && (
+            <PdfUploadView mounted={mounted} t={t} onUploaded={() => setKnowledgeReloadKey((k) => k + 1)} />
+          )}
           {onApiDocs && <ApiDocsView />}
           {onUsers && (
             <>

@@ -26,6 +26,7 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
     dashboard: admin.dashboardTitle,
     users: admin.usersTitle,
     knowledgeList: admin.knowledgeTitle,
+    pdfUpload: admin.pdfNav,
     apiDocs: "API hujjatlari",
   };
   return (
