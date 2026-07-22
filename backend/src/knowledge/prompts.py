@@ -22,7 +22,9 @@ RAG_SYSTEM = (
 # LLM'ni chaqirmasdan to'g'ridan-to'g'ri qaytariladi — bema'ni/aloqasiz savolga
 # uzoq "o'ylab" javob bermaslik uchun.
 NO_INFO_REPLY = (
-    "Bu savol bo'yicha ma'lumotim yo'q, iltimos 1234 raqamiga murojaat qiling."
+    "Bu savol bo'yicha ma'lumot topilmadi. Savolni biroz boshqacha yoki aniqroq "
+    "yozib qayta urinib ko'ring — masalan mahsulot, filial yoki bo'lim nomini "
+    "to'liqroq yozing. Baribir topilmasa, 1234 raqamiga qo'ng'iroq qiling."
 )
 
 # Keyingi bosqichda ishlatiladigan qat'iy (faqat kontekst) rejim prompti

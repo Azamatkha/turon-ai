@@ -284,6 +284,34 @@ def _resolve_list_choice(
     return None
 
 
+def _mentions_catalog_title(q_lower: str, titles: list[str]) -> bool:
+    """Savolda bazadagi biror MAHSULOT/FILIAL nomi tilga olinganmi.
+
+    Kerak, chunki joy nomi tasodifan xodim ismining boshiga mos kelib qolishi
+    mumkin ("Yunusobod" -> "... YUNUS o'g'li") va savol filial haqida bo'lsa ham
+    xodim ma'lumotnomasiga tushib ketardi. Nom bazadagi sarlavhaga mos kelsa —
+    bu mahsulot savoli, xodim qidiruvi umuman ishga tushmaydi.
+
+    _prefix_match ishlatiladi — bazadagi imlo saytdan qanday kelgan bo'lsa
+    shunday ("Yunusubod"), foydalanuvchi esa boshqacha yozishi mumkin."""
+    qwords = [
+        w
+        for w in _words(q_lower)
+        if len(w) >= 4 and w not in _LIST_MATCH_STOPWORDS and w not in _QUERY_STOP
+    ]
+    if not qwords:
+        return False
+    for title in titles:
+        toks = [
+            w
+            for w in _words(to_latin(title))
+            if len(w) >= 4 and w not in _LIST_MATCH_STOPWORDS
+        ]
+        if any(_prefix_match(t, qw) for t in toks for qw in qwords):
+            return True
+    return False
+
+
 def _wants_cyrillic(question: str, history: list[ChatTurn] | None) -> bool:
     """Javobni kirillga o'girish kerakmi — foydalanuvchi kirillcha yozganmi
     shundan aniqlanadi. AI hamisha lotincha javob beradi (STRICT_RAG_SYSTEM),
@@ -844,8 +872,15 @@ class AnswerQuestionUseCase:
 
     async def _broad_category_reply(
         self, question: str, want_cyrillic: bool
-    ) -> str | None:
-        """Savol aniq bir mahsulotni emas, balki butun turkumni so'rasa (masalan
+    ) -> tuple[str | None, str | None]:
+        """(tayyor_javob, aniqlangan_mahsulot_nomi) qaytaradi.
+
+        Ikkinchi qiymat — savol turkum ichida ayni BITTA mahsulotga toraysa
+        ("Yunusobod filiali" -> bitta ofis) qaytariladi: bunda ro'yxat berib
+        "qaysi biri?" deb so'rash ma'nosiz, chaqiruvchi savolni shu nom bilan
+        almashtirib to'g'ridan-to'g'ri batafsil javob beradi.
+
+        Savol aniq bir mahsulotni emas, balki butun turkumni so'rasa (masalan
         "omonatlar", "kredit turlari") — nomlarni katalogdan DETERMINISTIK
         tarzda, LLM'ni chaqirmasdan, raqamlangan ro'yxat qilib qaytaradi.
 
@@ -862,7 +897,7 @@ class AnswerQuestionUseCase:
         o'giriladi."""
         groups = await self._catalog_groups_detailed()
         if not groups:
-            return None
+            return None, None
 
         # Turkum kalit so'zlari va mahsulot nomlari LOTINCHA — savol kirillcha
         # yozilgan bo'lsa ("Кредит турлари") lotinga keltiramiz, aks holda
@@ -875,7 +910,7 @@ class AnswerQuestionUseCase:
             for title, _ in items:
                 toks = [t for t in _words(title) if len(t) >= 4]
                 if toks and all(t in q for t in toks[: min(2, len(toks))]):
-                    return None
+                    return None, None
 
         for label, keywords in _CATEGORY_KEYWORDS.items():
             items = groups.get(label)
@@ -902,6 +937,10 @@ class AnswerQuestionUseCase:
                 # Faqat haqiqiy toraytirish bo'lsa qo'llaymiz: hech narsa
                 # topilmasa yoki hammasi mos kelsa — to'liq ro'yxat qaytadi.
                 if matched and len(matched) < len(items):
+                    # Ayni bitta mahsulot qoldi — ro'yxat berib "qaysi biri?"
+                    # deb so'rash keraksiz, darrov shu bo'yicha javob beriladi.
+                    if len(matched) == 1:
+                        return None, matched[0][0]
                     shown = matched
                     # Sarlavhada FAQAT haqiqatan mos kelgan so'zlarni
                     # ko'rsatamiz — savoldagi qolgan so'zlarni ("hozir" kabi)
@@ -921,8 +960,8 @@ class AnswerQuestionUseCase:
             if want_cyrillic:
                 closing = to_cyrillic(closing)
                 note = to_cyrillic(note)
-            return f"{note}{numbered}\n\n{closing}"
-        return None
+            return f"{note}{numbered}\n\n{closing}", None
+        return None, None
 
     async def _employee_route(
         self, question: str
@@ -937,7 +976,22 @@ class AnswerQuestionUseCase:
         emps = [p for p in all_payloads if p.get("doc_type") == "employee"]
         if not emps:
             return None
-        matched = _match_employees(emps, question.lower())
+
+        q_lower = question.lower()
+        # Savolda bazadagi mahsulot/filial NOMI bo'lsa (va aniq xodim-niyat
+        # bildirilmagan bo'lsa) — bu mahsulot savoli. Xodim qidiruvini umuman
+        # sinamaymiz: aks holda "Yunusobod" kabi joy nomi xodim ismining
+        # boshiga tasodifan mos kelib, butunlay boshqa javob qaytarardi.
+        if not _has_employee_intent(q_lower):
+            titles = {
+                str(p.get("title", ""))
+                for p in all_payloads
+                if p.get("doc_type") != "employee"
+            }
+            if _mentions_catalog_title(q_lower, sorted(t for t in titles if t)):
+                return None
+
+        matched = _match_employees(emps, q_lower)
         if matched:
             return "answer", matched[:60]
         if _is_generic_employee_request(question.lower()):
@@ -1082,7 +1136,12 @@ class AnswerQuestionUseCase:
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
         # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
         # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
-        broad_reply = await self._broad_category_reply(question, want_cyrillic)
+        broad_reply, only_title = await self._broad_category_reply(
+            question, want_cyrillic
+        )
+        # Turkum ichida bitta mahsulot aniqlandi — savolni uning to'liq nomiga
+        # almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
+        question = only_title or question
         if broad_reply is not None:
             yield {"type": "delta", "text": broad_reply}
             yield {
@@ -1183,7 +1242,12 @@ class AnswerQuestionUseCase:
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
         # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
         # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
-        broad_reply = await self._broad_category_reply(question, want_cyrillic)
+        broad_reply, only_title = await self._broad_category_reply(
+            question, want_cyrillic
+        )
+        # Turkum ichida bitta mahsulot aniqlandi — savolni uning to'liq nomiga
+        # almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
+        question = only_title or question
         if broad_reply is not None:
             return AnswerResult(
                 answer=broad_reply,
