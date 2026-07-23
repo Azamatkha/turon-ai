@@ -163,6 +163,8 @@ export interface AdminStrings {
   pdfTitlePh: string;
   pdfUpload: string;
   pdfUploading: string;
+  pdfQueued: string;
+  pdfProcessing: string;
   pdfSlowNote: string;
   pdfOnlyPdf: string;
   pdfError: string;

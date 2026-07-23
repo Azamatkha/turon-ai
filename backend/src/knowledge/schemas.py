@@ -23,6 +23,24 @@ class PdfUploadResult(UploadResult):
     chars: int           # tozalangandan keyingi matn uzunligi
 
 
+class PdfJobAccepted(Base):
+    """PDF yuklash qabul qilindi — fon ishlashi boshlandi."""
+    job_id: str
+
+
+class PdfJobStatus(Base):
+    """Fon PDF ishlash holati (frontend shu orqali kuzatadi)."""
+    state: str          # queued | processing | done | error
+    message: str = ""
+    # state == "done" bo'lganda to'ladi:
+    title: str = ""
+    pages: int = 0
+    ocr_pages: int = 0
+    chunks: int = 0
+    # state == "error" bo'lganda to'ladi:
+    error: str = ""
+
+
 class PdfOcrCompareResult(Base):
     """Bitta sahifani uch usulda o'qib solishtirish (diagnostika)."""
     page: int                 # qaysi sahifa (0-dan)

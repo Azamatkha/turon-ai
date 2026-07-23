@@ -6,30 +6,40 @@ SWAGGER'DA TEKSHIRISH:
 3) Qdrant dashboard (http://localhost:6333/dashboard) da point paydo bo'ladi.
 """
 
+import base64
 from typing import Annotated, Any
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
+from redis.asyncio import Redis
 
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
+from src.core.errors.exceptions import (
+    InstanceNotFoundException,
+    InstanceProcessingException,
+)
+from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
-from src.main.config import config
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.pdf_jobs import get_status, save_pdf, set_status
 from src.knowledge.schemas import (
     AnswerResult,
     EmployeeIn,
     KnowledgeDetail,
     KnowledgeItem,
+    PdfJobAccepted,
+    PdfJobStatus,
     PdfOcrCompareResult,
-    PdfUploadResult,
     QuestionRequest,
     ScrapeRequest,
     UpdateKnowledgeRequest,
     UploadResult,
     UploadTextRequest,
 )
+from src.knowledge.tasks import process_pdf
 from src.knowledge.usecases import (
     AnswerQuestionUseCase,
     DeleteKnowledgeUseCase,
@@ -39,8 +49,8 @@ from src.knowledge.usecases import (
     UpdateKnowledgeUseCase,
     UploadEmployeesUseCase,
     UploadKnowledgeUseCase,
-    UploadPdfUseCase,
 )
+from src.main.config import config
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
 from src.user.models import User
@@ -184,31 +194,49 @@ async def pdf_ocr_test(
     )
 
 
-@router.post("/pdf", response_model=PdfUploadResult)
+@router.post("/pdf", response_model=PdfJobAccepted)
 async def upload_pdf(
     current_user: Annotated[
         User, Depends(require_permission(Permission.EDIT_SETTINGS))
     ],
-    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
-    store: Annotated[QdrantStore, Depends(get_vector_store)],
-    ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
     file: Annotated[UploadFile, File()],
     title: Annotated[str, Form()] = "",
-) -> PdfUploadResult:
-    """Admin: PDF hujjatni yuklaydi.
+) -> PdfJobAccepted:
+    """Admin: PDF hujjatni yuklaydi (fon rejimida).
 
-    Matn qatlami bo'lsa to'g'ridan-to'g'ri o'qiladi, skanerlangan sahifalar
-    Tesseract OCR orqali o'tadi. So'ng LLM imzo/muhr/OCR shovqinini olib
-    tashlaydi va natija bazaga yoziladi. `title` bo'sh bo'lsa — hujjat mavzusi
-    avtomatik aniqlanadi.
+    OCR + LLM tozalash daqiqalab ketadi, korporativ proxy esa so'rovni 60
+    soniyada uzadi — shuning uchun ish Celery ishchisiga topshiriladi. Bu
+    endpoint darrov `job_id` qaytaradi; holatni `GET /pdf-status/{job_id}`
+    orqali kuzatiladi.
 
-    DIQQAT: OCR va tozalash sekin — ko'p sahifali hujjat bir necha daqiqa
-    olishi mumkin."""
+    `title` bo'sh bo'lsa — hujjat mavzusi avtomatik aniqlanadi."""
     content = await file.read()
-    use_case = UploadPdfUseCase(embedder=embedder, store=store, ai_client=ai_client)
-    return await use_case.execute(
-        file_bytes=content, filename=file.filename or "", title=title
-    )
+    if not content:
+        raise InstanceProcessingException("Bo'sh fayl yuklandi.")
+
+    job_id = uuid4().hex
+    await save_pdf(redis, job_id, base64.b64encode(content).decode("ascii"))
+    await set_status(redis, job_id, state="queued", message="Navbatda…")
+    process_pdf.delay(job_id, file.filename or "", title)
+    return PdfJobAccepted(job_id=job_id)
+
+
+@router.get("/pdf-status/{job_id}", response_model=PdfJobStatus)
+async def pdf_status(
+    job_id: str,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    redis: Annotated[Redis, Depends(get_redis_client)],
+) -> PdfJobStatus:
+    """Fon PDF ishlash holatini qaytaradi (frontend har necha soniyada so'raydi)."""
+    status = await get_status(redis, job_id)
+    if status is None:
+        raise InstanceNotFoundException(
+            "Topshiriq topilmadi — muddati o'tgan yoki noto'g'ri."
+        )
+    return PdfJobStatus(**status)
 
 
 @router.post("/employees", response_model=UploadResult)
