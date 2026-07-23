@@ -23,6 +23,18 @@ class PdfUploadResult(UploadResult):
     chars: int           # tozalangandan keyingi matn uzunligi
 
 
+class PdfOcrCompareResult(Base):
+    """Bitta sahifani uch usulda o'qib solishtirish (diagnostika)."""
+    page: int                 # qaysi sahifa (0-dan)
+    page_count: int           # hujjatdagi jami sahifa
+    text_layer: str           # PDF matn qatlami (bo'lsa) — skan bo'lsa bo'sh
+    tesseract_text: str       # Tesseract OCR natijasi
+    tesseract_ms: int         # Tesseract'ga ketgan vaqt (ms)
+    vision_text: str          # vision model (qwen3-vl) natijasi
+    vision_ms: int            # vision'ga ketgan vaqt (ms)
+    vision_model: str         # ishlatilgan model nomi
+
+
 class EmployeeIn(Base):
     """Bitta xodim yozuvi (JSON orqali yuklash uchun — Excel'siz)."""
     department: str = Field(min_length=1)   # bo'lim (sheet nomi)

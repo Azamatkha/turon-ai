@@ -174,6 +174,52 @@ def _ocr_page(page: Any) -> str:
         ) from exc
 
 
+def render_page_png(file_bytes: bytes, page_index: int, dpi: int = OCR_DPI) -> bytes:
+    """Bitta sahifani PNG rasm (baytlar) qilib qaytaradi — vision modelga yoki
+    diagnostikaga berish uchun."""
+    try:
+        import fitz  # PyMuPDF
+    except ImportError as exc:  # pragma: no cover - muhitga bog'liq
+        raise InstanceProcessingException(
+            "PDF o'qish kutubxonasi (PyMuPDF) o'rnatilmagan."
+        ) from exc
+
+    document = fitz.open(stream=file_bytes, filetype="pdf")
+    try:
+        if page_index < 0 or page_index >= document.page_count:
+            raise InstanceProcessingException(
+                f"Sahifa {page_index} yo'q — hujjatda {document.page_count} sahifa bor."
+            )
+        pixmap = document[page_index].get_pixmap(dpi=dpi)
+        return bytes(pixmap.tobytes("png"))
+    finally:
+        document.close()
+
+
+def extract_single_page(file_bytes: bytes, page_index: int) -> tuple[str, str]:
+    """Bitta sahifani ikki usulda o'qiydi (diagnostika uchun):
+    (matn_qatlami, tesseract_ocr). Har biri bo'sh bo'lishi mumkin."""
+    try:
+        import fitz  # PyMuPDF
+    except ImportError as exc:  # pragma: no cover - muhitga bog'liq
+        raise InstanceProcessingException(
+            "PDF o'qish kutubxonasi (PyMuPDF) o'rnatilmagan."
+        ) from exc
+
+    document = fitz.open(stream=file_bytes, filetype="pdf")
+    try:
+        if page_index < 0 or page_index >= document.page_count:
+            raise InstanceProcessingException(
+                f"Sahifa {page_index} yo'q — hujjatda {document.page_count} sahifa bor."
+            )
+        page = document[page_index]
+        text_layer = str(page.get_text("text") or "").strip()
+        ocr_text = _strip_noise_lines(_ocr_page(page)).strip()
+        return text_layer, ocr_text
+    finally:
+        document.close()
+
+
 def extract_pdf_text(file_bytes: bytes) -> tuple[str, int, int]:
     """PDF baytlaridan matn ajratadi.
 

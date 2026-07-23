@@ -15,12 +15,14 @@ from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
 from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
+from src.main.config import config
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.schemas import (
     AnswerResult,
     EmployeeIn,
     KnowledgeDetail,
     KnowledgeItem,
+    PdfOcrCompareResult,
     PdfUploadResult,
     QuestionRequest,
     ScrapeRequest,
@@ -129,6 +131,57 @@ async def upload_knowledge(
     """Admin: matnni bo'laklarga bo'lib, embed qilib, sarlavha bilan Qdrant'ga yozadi."""
     use_case = UploadKnowledgeUseCase(embedder=embedder, store=store)
     return await use_case.execute(title=data.title, text=data.text)
+
+
+@router.post("/pdf-ocr-test", response_model=PdfOcrCompareResult)
+async def pdf_ocr_test(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    file: Annotated[UploadFile, File()],
+    page: Annotated[int, Form()] = 0,
+) -> PdfOcrCompareResult:
+    """Diagnostika: bitta PDF sahifasini uch usulda o'qib solishtiradi —
+    PDF matn qatlami, Tesseract OCR va vision model (qwen3-vl). Qaysi biri
+    yaxshiroq o'qishini ko'rish uchun (bazaga hech narsa yozmaydi).
+
+    DIQQAT: vision va OCR sekin — bitta sahifa uchun bir necha o'n soniya."""
+    import time
+
+    from src.knowledge.pdf_extractor import extract_single_page, render_page_png
+    from src.knowledge.vision_ocr import vision_ocr_timed
+
+    content = await file.read()
+
+    # PDF baytlaridan sahifalar sonini ham bilish uchun matn qatlami/OCR'ni
+    # bitta ochishda olamiz.
+    t0 = time.monotonic()
+    text_layer, tesseract_text = extract_single_page(content, page)
+    tesseract_ms = int((time.monotonic() - t0) * 1000)
+
+    png = render_page_png(content, page)
+    vision_text, vision_ms = await vision_ocr_timed(png)
+
+    # Sahifalar sonini alohida olmaslik uchun render_page_png ichida tekshirildi;
+    # bu yerda hujjatni yana ochib page_count olamiz (arzon).
+    import fitz  # PyMuPDF
+
+    doc = fitz.open(stream=content, filetype="pdf")
+    try:
+        page_count = doc.page_count
+    finally:
+        doc.close()
+
+    return PdfOcrCompareResult(
+        page=page,
+        page_count=page_count,
+        text_layer=text_layer,
+        tesseract_text=tesseract_text,
+        tesseract_ms=tesseract_ms,
+        vision_text=vision_text,
+        vision_ms=vision_ms,
+        vision_model=config.ai.OLLAMA_VISION_MODEL,
+    )
 
 
 @router.post("/pdf", response_model=PdfUploadResult)

@@ -143,6 +143,10 @@ class AIConfig(BaseModel):
     EMBEDDING_MODEL: str = "mxbai-embed-large:latest"
     EMBEDDING_DIM: int = 1024
 
+    # Rasm o'qiydigan (vision) model — skanerlangan/qo'lda yozilgan hujjatlarni
+    # OCR o'rniga sinash uchun. Aynan `ollama list`dagi nom bo'lishi kerak.
+    OLLAMA_VISION_MODEL: str = "qwen3-vl"
+
     TIMEOUT_SECONDS: int
     MAX_RETRIES: int
     DEFAULT_TEMPERATURE: float
