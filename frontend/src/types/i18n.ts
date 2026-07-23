@@ -190,6 +190,14 @@ export interface AdminStrings {
   knowledgeEmployeesResult: (n: number) => string;
   knowledgeEmployeesError: string;
   knowledgeAddModalTitle: string;
+  knowledgeTabUrl: string;
+  knowledgeTabText: string;
+  knowledgeTextSub: string;
+  knowledgeTextTitleLabel: string;
+  knowledgeTextTitlePh: string;
+  knowledgeTextBodyLabel: string;
+  knowledgeTextBodyPh: string;
+  knowledgeTextRequired: string;
   knowledgeAddModalSub: string;
   knowledgeSearchPh: string;
   knowledgeSortTitle: string;

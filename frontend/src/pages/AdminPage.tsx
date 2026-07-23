@@ -7,7 +7,7 @@ import type { AdminRole, AdminUser, AdminView } from "../types/admin";
 import {
   listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole,
 } from "../services/adminService";
-import { scrapeUrl } from "../services/knowledgeService";
+import { scrapeUrl, uploadText } from "../services/knowledgeService";
 import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
@@ -99,6 +99,9 @@ export default function AdminPage() {
   const [scrapeUrlValue, setScrapeUrlValue] = useState("");
   const [scrapeErr, setScrapeErr] = useState<string | null>(null);
   const [scrapeProgress, setScrapeProgress] = useState<ScrapeProgress | null>(null);
+  // Qo'lda matn qo'shish rejimi maydonlari (havola modalining ikkinchi tabi)
+  const [manTitle, setManTitle] = useState("");
+  const [manText, setManText] = useState("");
   const [knowledgeReloadKey, setKnowledgeReloadKey] = useState(0);
 
   // Foydalanuvchilarni serverdan yuklash (qidiruv/bo'lim o'zgarsa qayta)
@@ -204,7 +207,29 @@ export default function AdminPage() {
   const userTaken = !!fUser.trim() && users.some((u) => u.handle === handle);
 
   const openScrape = () => {
-    setScrapeUrlValue(""); setScrapeErr(null); setScraping(false); setScrapeProgress(null); setScrapeOpen(true);
+    setScrapeUrlValue(""); setManTitle(""); setManText("");
+    setScrapeErr(null); setScraping(false); setScrapeProgress(null); setScrapeOpen(true);
+  };
+
+  // Qo'lda kiritilgan sarlavha+matnni to'g'ridan-to'g'ri bazaga yozadi
+  const submitManualText = async () => {
+    const title = manTitle.trim();
+    const text = manText.trim();
+    if (!title || !text) {
+      setScrapeErr(t.knowledgeTextRequired);
+      return;
+    }
+    setScraping(true);
+    setScrapeErr(null);
+    try {
+      await uploadText(title, text);
+      setScrapeOpen(false);
+      setKnowledgeReloadKey((k) => k + 1);
+    } catch (e) {
+      setScrapeErr(e instanceof Error ? e.message : t.knowledgeScrapeError);
+    } finally {
+      setScraping(false);
+    }
   };
 
   const submitScrape = async () => {
@@ -331,8 +356,11 @@ export default function AdminPage() {
         {scrapeOpen && (
           <ScrapeModal
             url={scrapeUrlValue} setUrl={setScrapeUrlValue}
+            manTitle={manTitle} setManTitle={setManTitle}
+            manText={manText} setManText={setManText}
             loading={scraping} error={scrapeErr} progress={scrapeProgress}
-            onClose={() => setScrapeOpen(false)} onSubmit={submitScrape}
+            onClose={() => setScrapeOpen(false)}
+            onSubmitUrl={submitScrape} onSubmitText={submitManualText}
             t={t}
           />
         )}
