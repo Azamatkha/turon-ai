@@ -79,8 +79,6 @@ export const admin: AdminStrings = {
   pdfTitlePh: "Bo‘sh qoldirilsa — hujjat mavzusi avtomatik aniqlanadi",
   pdfUpload: "Yuklash",
   pdfUploading: "Yuklanmoqda…",
-  pdfQueued: "Navbatda…",
-  pdfProcessing: "Hujjat o‘qilmoqda — biroz kuting…",
   pdfSlowNote: "Skanerlangan hujjat uchun OCR va tozalash bir necha daqiqa olishi mumkin — sahifani yopmang.",
   pdfOnlyPdf: "Faqat PDF fayl yuklash mumkin.",
   pdfError: "PDF yuklashda xatolik.",

@@ -1,9 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  getPdfStatus,
-  uploadPdf,
-  type PdfJobStatus,
-} from "../../services/knowledgeService";
+import { useRef, useState } from "react";
+import { uploadPdf, type PdfUploadResult } from "../../services/knowledgeService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./PdfUploadView.module.css";
 
@@ -14,31 +10,17 @@ interface PdfUploadViewProps {
   onUploaded?: () => void;
 }
 
-const POLL_INTERVAL_MS = 3000;
-
-// Hujjat (PDF) yuklash sahifasi. Ish fon rejimida (Celery) bajariladi — OCR +
-// LLM tozalash daqiqalab ketadi va korporativ proxy so'rovni 60s da uzardi.
-// Yuklash job_id qaytaradi, sahifa holatni har necha soniyada so'rab turadi.
+// Hujjat (PDF) yuklash sahifasi. Backend: matn qatlamini o'qiydi, skanerlangan
+// sahifalarni OCR qiladi, so'ng AI imzo/muhr shovqinini tozalab bazaga yozadi.
+// Bitta fayl — bitta so'rov (keyinchalik API orqali ommaviy yuklanadi).
 export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUploadViewProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const [status, setStatus] = useState<PdfJobStatus | null>(null);
+  const [result, setResult] = useState<PdfUploadResult | null>(null);
   const [dragOver, setDragOver] = useState(false);
-
-  // Poll tsiklini komponent yopilganda to'xtatish uchun
-  const cancelledRef = useRef(false);
-  useEffect(() => {
-    cancelledRef.current = false;
-    return () => {
-      cancelledRef.current = true;
-    };
-  }, []);
-
-  // Yuklash yoki ishlash ketayotgan bo'lsa — tugmalar bloklanadi
-  const busy =
-    status?.state === "queued" || status?.state === "processing";
 
   const pick = (f: File | null) => {
     if (!f) return;
@@ -48,46 +30,25 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
     }
     setFile(f);
     setErr("");
-    setStatus(null);
-  };
-
-  // job tugaguncha (done/error) holatni takror so'raymiz
-  const pollUntilDone = async (jobId: string) => {
-    while (!cancelledRef.current) {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-      if (cancelledRef.current) return;
-      try {
-        const s = await getPdfStatus(jobId);
-        if (cancelledRef.current) return;
-        setStatus(s);
-        if (s.state === "done") {
-          onUploaded?.();
-          return;
-        }
-        if (s.state === "error") {
-          return;
-        }
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : admin.pdfError);
-        setStatus(null);
-        return;
-      }
-    }
+    setResult(null);
   };
 
   const submit = async () => {
-    if (!file || busy) return;
+    if (!file || loading) return;
+    setLoading(true);
     setErr("");
-    setStatus({ state: "queued", message: admin.pdfQueued, title: "", pages: 0, ocr_pages: 0, chunks: 0, error: "" });
+    setResult(null);
     try {
-      const { job_id } = await uploadPdf(file, title);
+      const res = await uploadPdf(file, title);
+      setResult(res);
       setFile(null);
       setTitle("");
       if (inputRef.current) inputRef.current.value = "";
-      await pollUntilDone(job_id);
+      onUploaded?.();
     } catch (e) {
       setErr(e instanceof Error ? e.message : admin.pdfError);
-      setStatus(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,17 +61,17 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
         <div className={styles.sub}>{admin.pdfSub}</div>
 
         <div
-          className={`${styles.drop} ${dragOver ? styles.dropOver : ""} ${busy ? styles.dropDisabled : ""}`}
-          onClick={() => !busy && inputRef.current?.click()}
+          className={`${styles.drop} ${dragOver ? styles.dropOver : ""} ${loading ? styles.dropDisabled : ""}`}
+          onClick={() => !loading && inputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
-            if (!busy) setDragOver(true);
+            if (!loading) setDragOver(true);
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(false);
-            if (!busy) pick(e.dataTransfer.files?.[0] ?? null);
+            if (!loading) pick(e.dataTransfer.files?.[0] ?? null);
           }}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -141,15 +102,15 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={admin.pdfTitlePh}
-            disabled={busy}
+            disabled={loading}
           />
         </div>
 
-        <button className={styles.submitBtn} onClick={submit} disabled={!file || busy}>
-          {busy ? (
+        <button className={styles.submitBtn} onClick={submit} disabled={!file || loading}>
+          {loading ? (
             <>
               <span className={styles.spinner} />
-              <span>{status?.state === "processing" ? admin.pdfProcessing : admin.pdfUploading}</span>
+              <span>{admin.pdfUploading}</span>
             </>
           ) : (
             <span>{admin.pdfUpload}</span>
@@ -160,19 +121,10 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
 
         {err && <div className={styles.errMsg}>{err}</div>}
 
-        {/* Fon ishlash davomida holat, tugagach natija */}
-        {status?.state === "processing" && (
-          <div className={styles.okMsg}>{status.message || admin.pdfProcessing}</div>
-        )}
-
-        {status?.state === "error" && (
-          <div className={styles.errMsg}>{status.error || admin.pdfError}</div>
-        )}
-
-        {status?.state === "done" && (
+        {result && (
           <div className={styles.okMsg}>
-            <div className={styles.okTitle}>{status.title}</div>
-            <div>{admin.pdfDone(status.pages, status.ocr_pages, status.chunks)}</div>
+            <div className={styles.okTitle}>{result.title}</div>
+            <div>{admin.pdfDone(result.pages, result.ocr_pages, result.chunks)}</div>
           </div>
         )}
       </div>

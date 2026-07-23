@@ -76,8 +76,6 @@ export const admin: AdminStrings = {
   pdfTitlePh: "Бўш қолдирилса — ҳужжат мавзуси автоматик аниқланади",
   pdfUpload: "Юклаш",
   pdfUploading: "Юкланмоқда…",
-  pdfQueued: "Навбатда…",
-  pdfProcessing: "Ҳужжат ўқилмоқда — бироз кутинг…",
   pdfSlowNote: "Сканерланган ҳужжат учун OCR ва тозалаш бир неча дақиқа олиши мумкин — саҳифани ёпманг.",
   pdfOnlyPdf: "Фақат PDF файл юклаш мумкин.",
   pdfError: "PDF юклашда хатолик.",

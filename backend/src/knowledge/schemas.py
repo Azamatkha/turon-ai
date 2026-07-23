@@ -23,36 +23,6 @@ class PdfUploadResult(UploadResult):
     chars: int           # tozalangandan keyingi matn uzunligi
 
 
-class PdfJobAccepted(Base):
-    """PDF yuklash qabul qilindi — fon ishlashi boshlandi."""
-    job_id: str
-
-
-class PdfJobStatus(Base):
-    """Fon PDF ishlash holati (frontend shu orqali kuzatadi)."""
-    state: str          # queued | processing | done | error
-    message: str = ""
-    # state == "done" bo'lganda to'ladi:
-    title: str = ""
-    pages: int = 0
-    ocr_pages: int = 0
-    chunks: int = 0
-    # state == "error" bo'lganda to'ladi:
-    error: str = ""
-
-
-class PdfOcrCompareResult(Base):
-    """Bitta sahifani uch usulda o'qib solishtirish (diagnostika)."""
-    page: int                 # qaysi sahifa (0-dan)
-    page_count: int           # hujjatdagi jami sahifa
-    text_layer: str           # PDF matn qatlami (bo'lsa) — skan bo'lsa bo'sh
-    tesseract_text: str       # Tesseract OCR natijasi
-    tesseract_ms: int         # Tesseract'ga ketgan vaqt (ms)
-    vision_text: str          # vision model (qwen3-vl) natijasi
-    vision_ms: int            # vision'ga ketgan vaqt (ms)
-    vision_model: str         # ishlatilgan model nomi
-
-
 class EmployeeIn(Base):
     """Bitta xodim yozuvi (JSON orqali yuklash uchun — Excel'siz)."""
     department: str = Field(min_length=1)   # bo'lim (sheet nomi)

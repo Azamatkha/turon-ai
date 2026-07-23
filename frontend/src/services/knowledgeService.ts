@@ -142,26 +142,18 @@ export async function uploadEmployeesJson(records: unknown[]): Promise<UploadRes
   return res.json();
 }
 
-// PDF fon rejimida ishlanadi (OCR + LLM tozalash daqiqalab ketadi, proxy esa
-// 60s da uzadi). Yuklash darrov job_id qaytaradi, holat poll qilinadi.
-export interface PdfJobAccepted {
-  job_id: string;
+// PDF hujjat yuklash natijasi (backend nima qilganini ko'rsatish uchun)
+export interface PdfUploadResult extends UploadResult {
+  title: string;      // bazaga yozilgan sarlavha (bo'sh qoldirilsa AI aniqlaydi)
+  pages: number;      // hujjatdagi sahifalar soni
+  ocr_pages: number;  // shundan nechtasi skan bo'lib, OCR qilindi
+  chars: number;      // tozalangandan keyingi matn uzunligi
 }
 
-export interface PdfJobStatus {
-  state: "queued" | "processing" | "done" | "error";
-  message: string;
-  // state === "done" bo'lganda to'ladi:
-  title: string;
-  pages: number;
-  ocr_pages: number;
-  chunks: number;
-  // state === "error" bo'lganda to'ladi:
-  error: string;
-}
-
-// PDF hujjatni yuklash — fon ishlashi boshlanadi, job_id qaytadi.
-export async function uploadPdf(file: File, title = ""): Promise<PdfJobAccepted> {
+// PDF hujjatni yuklash. Backend: matn qatlamini o'qiydi, skan sahifalarni OCR
+// qiladi, so'ng AI imzo/muhr shovqinini tozalab bazaga yozadi. Sekin bo'lishi
+// mumkin (ko'p sahifali skan uchun bir necha daqiqa).
+export async function uploadPdf(file: File, title = ""): Promise<PdfUploadResult> {
   const form = new FormData();
   form.append("file", file);
   form.append("title", title.trim());
@@ -170,13 +162,6 @@ export async function uploadPdf(file: File, title = ""): Promise<PdfJobAccepted>
     body: form,
   });
   if (!res.ok) throw new Error(await readError(res, "PDF yuklashda xatolik"));
-  return res.json();
-}
-
-// Fon PDF ishlash holatini so'raydi (frontend har necha soniyada chaqiradi).
-export async function getPdfStatus(jobId: string): Promise<PdfJobStatus> {
-  const res = await apiFetch(`/v1/admin/knowledge/pdf-status/${jobId}`);
-  if (!res.ok) throw new Error(await readError(res, "Holatni olishda xatolik"));
   return res.json();
 }
 
