@@ -139,6 +139,16 @@
   box-shadow: 0 2px 7px rgba(9, 20, 34, 0.35);
   cursor: pointer;
   margin-top: -1px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.range:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.22);
+  box-shadow: 0 3px 12px rgba(9, 20, 34, 0.4);
 }
 
 .range::-moz-range-thumb {
@@ -149,6 +159,16 @@
   border: 3px solid #fff;
   box-shadow: 0 2px 7px rgba(9, 20, 34, 0.35);
   cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.range:active::-moz-range-thumb {
+  transform: scale(1.2);
+}
+
+/* Maydonlar bloki — rejim almashganda yumshoq paydo bo'ladi */
+.fields {
+  animation: contentIn 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
 /* Natija kartasi */
@@ -156,6 +176,22 @@
   margin-top: 22px;
   border-radius: 16px;
   padding: 16px 18px;
+  animation: contentIn 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.resultMainValue {
+  transition: color 0.2s ease;
+}
+
+@keyframes contentIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .resultMain {

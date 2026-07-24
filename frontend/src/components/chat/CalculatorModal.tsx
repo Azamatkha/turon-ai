@@ -13,20 +13,7 @@ interface CalculatorModalProps {
   onClose: () => void;
 }
 
-type Mode = "credit" | "deposit";
-
-// Raqamni bo'sh joy bilan guruhlaydi: 1234567 -> "1 234 567"
-const groupNum = (n: number): string =>
-  Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-
-// Faqat raqamlarni qoldiradi (input tahrirlashda)
-const parseNum = (s: string): number => {
-  const digits = s.replace(/[^\d]/g, "");
-  return digits ? Number(digits) : 0;
-};
-
-const clamp = (v: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, v));
+type Mode = "credit" | "mortgage" | "deposit";
 
 interface FieldConfig {
   min: number;
@@ -34,67 +21,85 @@ interface FieldConfig {
   step: number;
 }
 
+// Kredit/ipoteka: 6 oydan, 6 oy qadam bilan, 240 oygacha (20 yil).
+const MONTHS_LOAN: FieldConfig = { min: 6, max: 240, step: 6 };
+// Omonat: 1 oydan 60 oygacha.
+const MONTHS_DEP: FieldConfig = { min: 1, max: 60, step: 1 };
+// Foiz: 2 xonali kasr (21.99 kabi) — kiritishda erkin, slayder 0.1 qadam.
+const RATE: FieldConfig = { min: 0, max: 50, step: 0.1 };
 const AMOUNT: FieldConfig = { min: 100_000, max: 500_000_000, step: 100_000 };
-const RATE: FieldConfig = { min: 0, max: 50, step: 0.5 };
-const MONTHS: FieldConfig = { min: 1, max: 120, step: 1 };
+const PRICE: FieldConfig = { min: 1_000_000, max: 2_000_000_000, step: 1_000_000 };
 
-export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorModalProps) {
-  const [mode, setMode] = useState<Mode>("credit");
-  const [amount, setAmount] = useState(50_000_000);
-  const [rate, setRate] = useState(24);
-  const [months, setMonths] = useState(24);
+// Raqamni bo'sh joy bilan guruhlaydi: 1234567 -> "1 234 567"
+const groupNum = (n: number): string =>
+  Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-  const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
+const clamp = (v: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, v));
 
-  // Hisob-kitob (kirish o'zgarsa qayta hisoblanadi)
-  const result = useMemo(() => {
-    if (mode === "credit") {
-      // Annuitet oylik to'lov: M = P*r*(1+r)^n / ((1+r)^n - 1)
-      const r = rate / 100 / 12;
-      const n = months;
-      const monthly = r === 0 ? amount / n : (amount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-      const totalPaid = monthly * n;
-      return { monthly, totalPaid, overpay: totalPaid - amount };
+// Annuitet oylik to'lov
+const annuity = (principal: number, ratePct: number, months: number): number => {
+  const r = ratePct / 100 / 12;
+  const n = months || 1;
+  return r === 0 ? principal / n : (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+};
+
+interface NumFieldProps {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  cfg: FieldConfig;
+  suffix?: string;
+  decimals?: boolean;
+  tk: ThemeTokens;
+  cardBg: string;
+  accent: string;
+}
+
+// Qiymat inputi + slayder. Tahrirlashda LOKAL matn holati bilan ishlaydi —
+// shuning uchun "100000" ni o'chirib qaytadan yozsa ham darrov minimumga
+// clamp bo'lib qolmaydi (min faqat blur'da qo'llanadi). Slayder esa doim
+// haqiqiy (clamp qilingan) qiymatni ko'rsatadi.
+function NumField({ label, value, onChange, cfg, suffix, decimals, tk, cardBg, accent }: NumFieldProps) {
+  const [text, setText] = useState<string | null>(null);
+  const display = text !== null ? text : decimals ? String(value) : groupNum(value);
+
+  const pct = ((clamp(value, cfg.min, cfg.max) - cfg.min) / (cfg.max - cfg.min)) * 100;
+  const fill = `linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, ${tk.cardBorder} ${pct}%, ${tk.cardBorder} 100%)`;
+
+  const commitText = (raw: string) => {
+    setText(raw);
+    if (decimals) {
+      // Faqat raqam va bitta nuqta, nuqtadan keyin 2 xona
+      const cleaned = raw.replace(/[^\d.]/g, "");
+      const m = cleaned.match(/^(\d*)(?:\.(\d{0,2}))?/);
+      const num = m ? Number(m[0]) : 0;
+      if (raw !== "" && !Number.isNaN(num)) onChange(clamp(num, 0, cfg.max));
+    } else {
+      const digits = raw.replace(/[^\d]/g, "");
+      if (digits !== "") onChange(clamp(Number(digits), 0, cfg.max));
     }
-    // Omonat: oddiy foiz — foyda = P * stavka% * (oy/12)
-    const profit = amount * (rate / 100) * (months / 12);
-    return { profit, total: amount + profit };
-  }, [mode, amount, rate, months]);
-
-  // Slayder to'ldirilgan qismini aksent rangda ko'rsatish uchun gradient
-  const fill = (val: number, cfg: FieldConfig): string => {
-    const pct = ((val - cfg.min) / (cfg.max - cfg.min)) * 100;
-    return `linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, ${tk.cardBorder} ${pct}%, ${tk.cardBorder} 100%)`;
   };
 
-  const cardBg = isDark ? "rgba(255,255,255,.05)" : "#f4f6f9";
+  const blur = () => {
+    // Tahrir tugadi — endi minimumga ham clamp qilamiz va matnni sinxronlaymiz
+    onChange(clamp(value, cfg.min, cfg.max));
+    setText(null);
+  };
 
-  const field = (
-    label: string,
-    value: number,
-    setValue: (v: number) => void,
-    cfg: FieldConfig,
-    opts: { suffix?: string; decimals?: boolean } = {}
-  ) => (
+  return (
     <div className={styles.field}>
       <span className={styles.label} style={{ color: tk.muted }}>{label}</span>
-      <div
-        className={styles.inputBox}
-        style={{ background: cardBg, border: `1px solid ${tk.cardBorder}` }}
-      >
+      <div className={styles.inputBox} style={{ background: cardBg, border: `1px solid ${tk.cardBorder}` }}>
         <input
           className={styles.valueInput}
           style={{ color: tk.strong }}
-          value={opts.decimals ? String(value) : groupNum(value)}
-          onChange={(e) => {
-            const raw = opts.decimals
-              ? Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-              : parseNum(e.target.value);
-            setValue(clamp(raw, cfg.min, cfg.max));
-          }}
-          inputMode={opts.decimals ? "decimal" : "numeric"}
+          value={display}
+          onChange={(e) => commitText(e.target.value)}
+          onBlur={blur}
+          inputMode={decimals ? "decimal" : "numeric"}
         />
-        {opts.suffix && <span className={styles.unit} style={{ color: tk.muted }}>{opts.suffix}</span>}
+        {suffix && <span className={styles.unit} style={{ color: tk.muted }}>{suffix}</span>}
       </div>
       <input
         type="range"
@@ -102,18 +107,76 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         min={cfg.min}
         max={cfg.max}
         step={cfg.step}
-        value={value}
-        onChange={(e) => setValue(Number(e.target.value))}
-        style={{ background: fill(value, cfg), ["--calc-accent" as string]: accent }}
+        value={clamp(value, cfg.min, cfg.max)}
+        onChange={(e) => {
+          setText(null);
+          onChange(Number(e.target.value));
+        }}
+        style={{ background: fill, ["--calc-accent" as string]: accent }}
       />
     </div>
   );
+}
 
-  const amountLabel = mode === "credit" ? s.calcCreditAmount : s.calcDepositAmount;
+export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorModalProps) {
+  const [mode, setMode] = useState<Mode>("credit");
+  const [amount, setAmount] = useState(50_000_000);
+  const [price, setPrice] = useState(300_000_000);
+  const [down, setDown] = useState(60_000_000);
+  const [rate, setRate] = useState(21.99);
+  const [months, setMonths] = useState(24);
 
-  // Portal orqali <body> ga chiqaramiz — aks holda header'ning backdrop-filter/
-  // transform'i tufayli position:fixed viewport'ga emas, header'ga nisbatan
-  // ishlab, oyna tepaga yopishib qolardi.
+  const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
+  const cardBg = isDark ? "rgba(255,255,255,.05)" : "#f4f6f9";
+  const monthsCfg = mode === "deposit" ? MONTHS_DEP : MONTHS_LOAN;
+  const cur = s.calcCurrency;
+
+  // Rejim almashganda muddatni yangi qadamga/oraliqqa moslaymiz
+  const switchMode = (m: Mode) => {
+    if (m === mode) return;
+    const cfg = m === "deposit" ? MONTHS_DEP : MONTHS_LOAN;
+    setMonths((v) => clamp(Math.round(v / cfg.step) * cfg.step || cfg.min, cfg.min, cfg.max));
+    setMode(m);
+  };
+
+  const result = useMemo(() => {
+    if (mode === "deposit") {
+      const profit = amount * (rate / 100) * (months / 12);
+      return { total: amount + profit, profit };
+    }
+    const principal = mode === "mortgage" ? Math.max(0, price - down) : amount;
+    const monthly = annuity(principal, rate, months);
+    const totalPaid = monthly * months;
+    return { principal, monthly, totalPaid, overpay: totalPaid - principal };
+  }, [mode, amount, price, down, rate, months]);
+
+  const numField = (
+    label: string,
+    value: number,
+    setValue: (v: number) => void,
+    cfg: FieldConfig,
+    suffix?: string,
+    decimals?: boolean
+  ) => (
+    <NumField
+      label={label}
+      value={value}
+      onChange={setValue}
+      cfg={cfg}
+      suffix={suffix}
+      decimals={decimals}
+      tk={tk}
+      cardBg={cardBg}
+      accent={accent}
+    />
+  );
+
+  const tabs: { id: Mode; label: string }[] = [
+    { id: "credit", label: s.calcTabCredit },
+    { id: "mortgage", label: s.calcTabMortgage },
+    { id: "deposit", label: s.calcTabDeposit },
+  ];
+
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
@@ -139,63 +202,80 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         </div>
 
         <div className={styles.tabs} style={{ background: cardBg }}>
-          {(["credit", "deposit"] as Mode[]).map((m) => {
-            const active = mode === m;
+          {tabs.map((t) => {
+            const active = mode === t.id;
             return (
               <button
-                key={m}
+                key={t.id}
                 className={styles.tab}
-                onClick={() => setMode(m)}
+                onClick={() => switchMode(t.id)}
                 style={{
                   background: active ? tk.card : "transparent",
                   color: active ? accent : tk.muted,
                   boxShadow: active ? "0 2px 8px rgba(9,20,34,.14)" : "none",
                 }}
               >
-                {m === "credit" ? s.calcTabCredit : s.calcTabDeposit}
+                {t.label}
               </button>
             );
           })}
         </div>
 
-        {field(amountLabel, amount, setAmount, AMOUNT, { suffix: s.calcCurrency })}
-        {field(s.calcRate, rate, setRate, RATE, { suffix: "%", decimals: true })}
-        {field(s.calcMonths, months, setMonths, MONTHS, { suffix: s.calcUnitMonths })}
+        <div className={styles.fields} key={mode}>
+          {mode === "credit" && numField(s.calcCreditAmount, amount, setAmount, AMOUNT, cur)}
+          {mode === "deposit" && numField(s.calcDepositAmount, amount, setAmount, AMOUNT, cur)}
+          {mode === "mortgage" && (
+            <>
+              {numField(s.calcPrice, price, setPrice, PRICE, cur)}
+              {numField(s.calcDownPayment, down, setDown, { min: 0, max: price, step: 100_000 }, cur)}
+            </>
+          )}
+          {numField(s.calcRate, rate, setRate, RATE, "%", true)}
+          {numField(s.calcMonths, months, setMonths, monthsCfg, s.calcUnitMonths)}
+        </div>
 
-        <div className={styles.results} style={{ background: cardBg }}>
-          {mode === "credit" ? (
+        <div className={styles.results} style={{ background: cardBg }} key={`res-${mode}`}>
+          {mode === "deposit" ? (
             <>
               <div className={styles.resultMain}>
-                <span className={styles.resultMainLabel} style={{ color: tk.muted }}>{s.calcMonthly}</span>
+                <span className={styles.resultMainLabel} style={{ color: tk.muted }}>{s.calcTotal}</span>
                 <span className={styles.resultMainValue} style={{ color: accent }}>
-                  {groupNum(result.monthly ?? 0)} {s.calcCurrency}
+                  {groupNum(result.total ?? 0)} {cur}
                 </span>
               </div>
               <div className={styles.resultRow} style={{ color: tk.muted }}>
-                <span>{s.calcTotalPaid}</span>
-                <span className={styles.resultRowValue} style={{ color: tk.strong }}>
-                  {groupNum(result.totalPaid ?? 0)} {s.calcCurrency}
-                </span>
-              </div>
-              <div className={styles.resultRow} style={{ color: tk.muted }}>
-                <span>{s.calcOverpay}</span>
-                <span className={styles.resultRowValue} style={{ color: ACCENT }}>
-                  {groupNum(result.overpay ?? 0)} {s.calcCurrency}
+                <span>{s.calcProfit}</span>
+                <span className={styles.resultRowValue} style={{ color: "#2f9e6f" }}>
+                  + {groupNum(result.profit ?? 0)} {cur}
                 </span>
               </div>
             </>
           ) : (
             <>
               <div className={styles.resultMain}>
-                <span className={styles.resultMainLabel} style={{ color: tk.muted }}>{s.calcTotal}</span>
+                <span className={styles.resultMainLabel} style={{ color: tk.muted }}>{s.calcMonthly}</span>
                 <span className={styles.resultMainValue} style={{ color: accent }}>
-                  {groupNum(result.total ?? 0)} {s.calcCurrency}
+                  {groupNum(result.monthly ?? 0)} {cur}
+                </span>
+              </div>
+              {mode === "mortgage" && (
+                <div className={styles.resultRow} style={{ color: tk.muted }}>
+                  <span>{s.calcLoanAmount}</span>
+                  <span className={styles.resultRowValue} style={{ color: tk.strong }}>
+                    {groupNum(result.principal ?? 0)} {cur}
+                  </span>
+                </div>
+              )}
+              <div className={styles.resultRow} style={{ color: tk.muted }}>
+                <span>{s.calcTotalPaid}</span>
+                <span className={styles.resultRowValue} style={{ color: tk.strong }}>
+                  {groupNum(result.totalPaid ?? 0)} {cur}
                 </span>
               </div>
               <div className={styles.resultRow} style={{ color: tk.muted }}>
-                <span>{s.calcProfit}</span>
-                <span className={styles.resultRowValue} style={{ color: "#2f9e6f" }}>
-                  + {groupNum(result.profit ?? 0)} {s.calcCurrency}
+                <span>{s.calcOverpay}</span>
+                <span className={styles.resultRowValue} style={{ color: ACCENT }}>
+                  {groupNum(result.overpay ?? 0)} {cur}
                 </span>
               </div>
             </>
