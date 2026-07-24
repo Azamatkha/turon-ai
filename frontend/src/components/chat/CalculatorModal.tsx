@@ -21,14 +21,18 @@ interface FieldConfig {
   step: number;
 }
 
-// Kredit/ipoteka: 6 oydan, 6 oy qadam bilan, 240 oygacha (20 yil).
-const MONTHS_LOAN: FieldConfig = { min: 6, max: 240, step: 6 };
+type PayMethod = "flat" | "annuity" | "diff";
+
+// Oddiy kredit: 6 oydan 60 oygacha (6 oy qadam). Ipoteka/avtokredit: 240 oygacha.
+const MONTHS_CREDIT: FieldConfig = { min: 6, max: 60, step: 6 };
+const MONTHS_MORTGAGE: FieldConfig = { min: 6, max: 240, step: 6 };
 // Omonat: 1 oydan 60 oygacha.
 const MONTHS_DEP: FieldConfig = { min: 1, max: 60, step: 1 };
 // Foiz: 2 xonali kasr (21.99 kabi) — kiritishda erkin, slayder 0.1 qadam.
 const RATE: FieldConfig = { min: 0, max: 50, step: 0.1 };
-const AMOUNT: FieldConfig = { min: 100_000, max: 500_000_000, step: 100_000 };
-const PRICE: FieldConfig = { min: 1_000_000, max: 2_000_000_000, step: 1_000_000 };
+// Oddiy kredit/omonat summasi: 100 mln gacha. Ipoteka narxi: 500 mln gacha.
+const AMOUNT: FieldConfig = { min: 100_000, max: 100_000_000, step: 100_000 };
+const PRICE: FieldConfig = { min: 1_000_000, max: 500_000_000, step: 1_000_000 };
 
 // Raqamni bo'sh joy bilan guruhlaydi: 1234567 -> "1 234 567"
 const groupNum = (n: number): string =>
@@ -37,12 +41,34 @@ const groupNum = (n: number): string =>
 const clamp = (v: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, v));
 
-// Annuitet oylik to'lov
-const annuity = (principal: number, ratePct: number, months: number): number => {
+// Kredit natijasi to'lov turiga qarab:
+//  - flat (ustama): foiz butun summaga, oylar teng;
+//  - annuity: har oy teng to'lov, foiz qolgan qarzga;
+//  - diff (differensial): asosiy qarz teng, foiz kamayadi -> to'lov kamayib boradi.
+function loanResult(principal: number, ratePct: number, months: number, method: PayMethod) {
   const r = ratePct / 100 / 12;
   const n = months || 1;
-  return r === 0 ? principal / n : (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-};
+  let first: number;
+  let last: number;
+  let totalPaid: number;
+  if (method === "annuity") {
+    const m = r === 0 ? principal / n : (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    first = m;
+    last = m;
+    totalPaid = m * n;
+  } else if (method === "diff") {
+    const principalPart = principal / n;
+    first = principalPart + principal * r; // 1-oy: qarz to'liq
+    last = principalPart + principalPart * r; // oxirgi oy: qarz eng kam
+    totalPaid = principal + r * principal * (n + 1) / 2;
+  } else {
+    const interest = principal * (ratePct / 100) * (n / 12);
+    totalPaid = principal + interest;
+    first = totalPaid / n;
+    last = first;
+  }
+  return { principal, first, last, totalPaid, overpay: totalPaid - principal, varies: method === "diff" };
+}
 
 interface NumFieldProps {
   label: string;
@@ -68,16 +94,24 @@ function NumField({ label, value, onChange, cfg, suffix, decimals, tk, cardBg, a
   const fill = `linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, ${tk.cardBorder} ${pct}%, ${tk.cardBorder} 100%)`;
 
   const commitText = (raw: string) => {
-    setText(raw);
     if (decimals) {
       // Faqat raqam va bitta nuqta, nuqtadan keyin 2 xona
       const cleaned = raw.replace(/[^\d.]/g, "");
       const m = cleaned.match(/^(\d*)(?:\.(\d{0,2}))?/);
-      const num = m ? Number(m[0]) : 0;
-      if (raw !== "" && !Number.isNaN(num)) onChange(clamp(num, 0, cfg.max));
+      const shown = m ? m[0] : "";
+      setText(shown);
+      const num = Number(shown);
+      if (shown !== "" && !Number.isNaN(num)) onChange(clamp(num, 0, cfg.max));
     } else {
+      // Yozayotganda ham bo'shliq bilan ajratamiz: "100000000" -> "100 000 000"
       const digits = raw.replace(/[^\d]/g, "");
-      if (digits !== "") onChange(clamp(Number(digits), 0, cfg.max));
+      if (digits === "") {
+        setText("");
+        return;
+      }
+      const n = clamp(Number(digits), 0, cfg.max);
+      onChange(n);
+      setText(groupNum(n));
     }
   };
 
@@ -120,6 +154,7 @@ function NumField({ label, value, onChange, cfg, suffix, decimals, tk, cardBg, a
 
 export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorModalProps) {
   const [mode, setMode] = useState<Mode>("credit");
+  const [method, setMethod] = useState<PayMethod>("flat");
   const [amount, setAmount] = useState(50_000_000);
   const [price, setPrice] = useState(300_000_000);
   const [down, setDown] = useState(60_000_000);
@@ -128,27 +163,36 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
 
   const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
   const cardBg = isDark ? "rgba(255,255,255,.05)" : "#f4f6f9";
-  const monthsCfg = mode === "deposit" ? MONTHS_DEP : MONTHS_LOAN;
+  const monthsCfg =
+    mode === "deposit" ? MONTHS_DEP : mode === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
+  const isLoan = mode === "credit" || mode === "mortgage";
   const cur = s.calcCurrency;
 
   // Rejim almashganda muddatni yangi qadamga/oraliqqa moslaymiz
   const switchMode = (m: Mode) => {
     if (m === mode) return;
-    const cfg = m === "deposit" ? MONTHS_DEP : MONTHS_LOAN;
+    const cfg = m === "deposit" ? MONTHS_DEP : m === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
     setMonths((v) => clamp(Math.round(v / cfg.step) * cfg.step || cfg.min, cfg.min, cfg.max));
     setMode(m);
   };
 
-  const result = useMemo(() => {
+  const result = useMemo<{
+    total?: number;
+    profit?: number;
+    principal?: number;
+    first?: number;
+    last?: number;
+    totalPaid?: number;
+    overpay?: number;
+    varies?: boolean;
+  }>(() => {
     if (mode === "deposit") {
       const profit = amount * (rate / 100) * (months / 12);
       return { total: amount + profit, profit };
     }
     const principal = mode === "mortgage" ? Math.max(0, price - down) : amount;
-    const monthly = annuity(principal, rate, months);
-    const totalPaid = monthly * months;
-    return { principal, monthly, totalPaid, overpay: totalPaid - principal };
-  }, [mode, amount, price, down, rate, months]);
+    return loanResult(principal, rate, months, method);
+  }, [mode, amount, price, down, rate, months, method]);
 
   const numField = (
     label: string,
@@ -221,6 +265,34 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
           })}
         </div>
 
+        {isLoan && (
+          <div className={styles.methodRow}>
+            <span className={styles.methodLabel} style={{ color: tk.muted }}>{s.calcMethod}</span>
+            <div className={styles.methodTabs} style={{ background: cardBg }}>
+              {([
+                { id: "flat", label: s.calcMethodFlat },
+                { id: "annuity", label: s.calcMethodAnnuity },
+                { id: "diff", label: s.calcMethodDiff },
+              ] as { id: PayMethod; label: string }[]).map((mt) => {
+                const active = method === mt.id;
+                return (
+                  <button
+                    key={mt.id}
+                    className={styles.methodTab}
+                    onClick={() => setMethod(mt.id)}
+                    style={{
+                      background: active ? accent : "transparent",
+                      color: active ? "#fff" : tk.muted,
+                    }}
+                  >
+                    {mt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className={styles.fields} key={mode}>
           {mode === "credit" && numField(s.calcCreditAmount, amount, setAmount, AMOUNT, cur)}
           {mode === "deposit" && numField(s.calcDepositAmount, amount, setAmount, AMOUNT, cur)}
@@ -253,11 +325,21 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
           ) : (
             <>
               <div className={styles.resultMain}>
-                <span className={styles.resultMainLabel} style={{ color: tk.muted }}>{s.calcMonthly}</span>
+                <span className={styles.resultMainLabel} style={{ color: tk.muted }}>
+                  {result.varies ? s.calcFirstMonth : s.calcMonthly}
+                </span>
                 <span className={styles.resultMainValue} style={{ color: accent }}>
-                  {groupNum(result.monthly ?? 0)} {cur}
+                  {groupNum(result.first ?? 0)} {cur}
                 </span>
               </div>
+              {result.varies && (
+                <div className={styles.resultRow} style={{ color: tk.muted }}>
+                  <span>{s.calcLastMonth}</span>
+                  <span className={styles.resultRowValue} style={{ color: tk.strong }}>
+                    {groupNum(result.last ?? 0)} {cur}
+                  </span>
+                </div>
+              )}
               {mode === "mortgage" && (
                 <div className={styles.resultRow} style={{ color: tk.muted }}>
                   <span>{s.calcLoanAmount}</span>

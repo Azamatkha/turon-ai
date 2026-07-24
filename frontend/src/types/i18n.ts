@@ -62,6 +62,12 @@ export interface ChatStaticStrings {
   calcPrice: string;
   calcDownPayment: string;
   calcLoanAmount: string;
+  calcMethod: string;
+  calcMethodFlat: string;
+  calcMethodAnnuity: string;
+  calcMethodDiff: string;
+  calcFirstMonth: string;
+  calcLastMonth: string;
   calcRate: string;
   calcMonths: string;
   calcMonthly: string;

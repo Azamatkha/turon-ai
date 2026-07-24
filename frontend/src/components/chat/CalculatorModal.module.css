@@ -17,7 +17,10 @@
 .modal {
   width: 100%;
   max-width: 440px;
-  max-height: 92vh;
+  /* Barqaror o'lcham: rejim (omonat/kredit/ipoteka) almashsa ham quti kattalashib
+     kichrayib ketmasin. Eng baland rejim (ipoteka) sig'masa, ichida scroll. */
+  height: 600px;
+  max-height: 90vh;
   overflow-y: auto;
   border-radius: 22px;
   padding: 22px;
@@ -56,6 +59,7 @@
 /* Segmentli tanlagich: Kredit / Omonat */
 .tabs {
   display: flex;
+  align-items: stretch;
   gap: 5px;
   padding: 4px;
   margin-bottom: 20px;
@@ -63,15 +67,55 @@
 }
 
 .tab {
-  flex: 1;
-  height: 40px;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px 6px;
   border: none;
   border-radius: 10px;
   background: transparent;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 600;
+  line-height: 1.15;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* To'lov turi tanlagichi (Ustama / Annuitet / Differensial) */
+.methodRow {
+  margin-bottom: 18px;
+}
+
+.methodLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.methodTabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 11px;
+}
+
+.methodTab {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 34px;
+  padding: 0 4px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 /* Maydon: label + qutili input + slayder */
