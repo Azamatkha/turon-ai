@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { FaCalculator } from "react-icons/fa6";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
@@ -33,9 +34,9 @@ interface FieldConfig {
   step: number;
 }
 
-const AMOUNT: FieldConfig = { min: 1_000_000, max: 500_000_000, step: 1_000_000 };
-const RATE: FieldConfig = { min: 0, max: 40, step: 0.5 };
-const MONTHS: FieldConfig = { min: 1, max: 84, step: 1 };
+const AMOUNT: FieldConfig = { min: 100_000, max: 500_000_000, step: 100_000 };
+const RATE: FieldConfig = { min: 0, max: 50, step: 0.5 };
+const MONTHS: FieldConfig = { min: 1, max: 120, step: 1 };
 
 export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorModalProps) {
   const [mode, setMode] = useState<Mode>("credit");
@@ -73,26 +74,27 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
     value: number,
     setValue: (v: number) => void,
     cfg: FieldConfig,
-    opts: { small?: boolean; suffix?: string; decimals?: boolean } = {}
+    opts: { suffix?: string; decimals?: boolean } = {}
   ) => (
     <div className={styles.field}>
-      <div className={styles.fieldTop}>
-        <span className={styles.label} style={{ color: tk.muted }}>{label}</span>
-        <span className={styles.valueBox}>
-          <input
-            className={`${styles.valueInput} ${opts.small ? styles.valueInputSm : ""}`}
-            style={{ color: tk.strong }}
-            value={opts.decimals ? String(value) : groupNum(value)}
-            onChange={(e) => {
-              const raw = opts.decimals
-                ? Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                : parseNum(e.target.value);
-              setValue(clamp(raw, cfg.min, cfg.max));
-            }}
-            inputMode={opts.decimals ? "decimal" : "numeric"}
-          />
-          {opts.suffix && <span className={styles.suffix} style={{ color: tk.muted }}>{opts.suffix}</span>}
-        </span>
+      <span className={styles.label} style={{ color: tk.muted }}>{label}</span>
+      <div
+        className={styles.inputBox}
+        style={{ background: cardBg, border: `1px solid ${tk.cardBorder}` }}
+      >
+        <input
+          className={styles.valueInput}
+          style={{ color: tk.strong }}
+          value={opts.decimals ? String(value) : groupNum(value)}
+          onChange={(e) => {
+            const raw = opts.decimals
+              ? Number(e.target.value.replace(/[^\d.]/g, "")) || 0
+              : parseNum(e.target.value);
+            setValue(clamp(raw, cfg.min, cfg.max));
+          }}
+          inputMode={opts.decimals ? "decimal" : "numeric"}
+        />
+        {opts.suffix && <span className={styles.unit} style={{ color: tk.muted }}>{opts.suffix}</span>}
       </div>
       <input
         type="range"
@@ -109,7 +111,10 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
 
   const amountLabel = mode === "credit" ? s.calcCreditAmount : s.calcDepositAmount;
 
-  return (
+  // Portal orqali <body> ga chiqaramiz — aks holda header'ning backdrop-filter/
+  // transform'i tufayli position:fixed viewport'ga emas, header'ga nisbatan
+  // ishlab, oyna tepaga yopishib qolardi.
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
         className={styles.modal}
@@ -154,8 +159,8 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         </div>
 
         {field(amountLabel, amount, setAmount, AMOUNT, { suffix: s.calcCurrency })}
-        {field(s.calcRate, rate, setRate, RATE, { small: true, suffix: "%", decimals: true })}
-        {field(s.calcMonths, months, setMonths, MONTHS, { small: true, suffix: s.calcUnitMonths })}
+        {field(s.calcRate, rate, setRate, RATE, { suffix: "%", decimals: true })}
+        {field(s.calcMonths, months, setMonths, MONTHS, { suffix: s.calcUnitMonths })}
 
         <div className={styles.results} style={{ background: cardBg }}>
           {mode === "credit" ? (
@@ -199,6 +204,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
 
         <div className={styles.note} style={{ color: tk.muted }}>{s.calcNote}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

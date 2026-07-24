@@ -74,51 +74,47 @@
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Maydon: label + qiymat inputi + slayder */
+/* Maydon: label + qutili input + slayder */
 .field {
   margin-bottom: 18px;
 }
 
-.fieldTop {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 9px;
-}
-
 .label {
+  display: block;
   font-size: 13px;
   font-weight: 500;
+  margin-bottom: 8px;
 }
 
-.valueBox {
+/* Qutili qiymat inputi (namuna dizayni: ramkali quti, ichida qiymat + birlik) */
+.inputBox {
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
 }
 
 .valueInput {
-  width: 130px;
+  flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
-  text-align: right;
-  font-size: 16px;
+  text-align: left;
+  font-size: 17px;
   font-weight: 700;
   outline: none;
   padding: 0;
   font-variant-numeric: tabular-nums;
 }
 
-/* Kichik maydon (foiz, muddat) inputi torroq */
-.valueInputSm {
-  width: 64px;
-}
-
-.suffix {
-  font-size: 13px;
+.unit {
+  flex: 0 0 auto;
+  font-size: 13.5px;
   font-weight: 600;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 /* Slayder */
