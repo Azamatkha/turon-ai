@@ -4,6 +4,7 @@ import { FaCalculator } from "react-icons/fa6";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
+import PaymentScheduleModal from "./PaymentScheduleModal";
 import styles from "./CalculatorModal.module.css";
 
 interface CalculatorModalProps {
@@ -21,7 +22,7 @@ interface FieldConfig {
   step: number;
 }
 
-type PayMethod = "flat" | "annuity" | "diff";
+export type PayMethod = "flat" | "annuity" | "diff";
 
 // Oddiy kredit: 6 oydan 60 oygacha (6 oy qadam). Ipoteka/avtokredit: 240 oygacha.
 const MONTHS_CREDIT: FieldConfig = { min: 6, max: 60, step: 6 };
@@ -155,6 +156,7 @@ function NumField({ label, value, onChange, cfg, suffix, decimals, tk, cardBg, a
 export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorModalProps) {
   const [mode, setMode] = useState<Mode>("credit");
   const [method, setMethod] = useState<PayMethod>("flat");
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [amount, setAmount] = useState(50_000_000);
   const [price, setPrice] = useState(300_000_000);
   const [down, setDown] = useState(60_000_000);
@@ -228,6 +230,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}
       >
+        <div className={styles.scroll}>
         <div className={styles.head}>
           <div className={styles.headTitle} style={{ color: tk.strong }}>
             <FaCalculator size={17} color={accent} />
@@ -364,8 +367,33 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
           )}
         </div>
 
+        {isLoan && (
+          <button
+            className={styles.scheduleBtn}
+            style={{ color: accent, borderColor: accent }}
+            onClick={() => setScheduleOpen(true)}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="9" y1="4" x2="9" y2="22" /></svg>
+            {s.calcSchedule}
+          </button>
+        )}
+
         <div className={styles.note} style={{ color: tk.muted }}>{s.calcNote}</div>
+        </div>
       </div>
+
+      {scheduleOpen && isLoan && (
+        <PaymentScheduleModal
+          principal={result.principal ?? 0}
+          rate={rate}
+          months={months}
+          method={method}
+          tk={tk}
+          isDark={isDark}
+          s={s}
+          onClose={() => setScheduleOpen(false)}
+        />
+      )}
     </div>,
     document.body
   );

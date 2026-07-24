@@ -68,6 +68,15 @@ export interface ChatStaticStrings {
   calcMethodDiff: string;
   calcFirstMonth: string;
   calcLastMonth: string;
+  calcSchedule: string;
+  schNo: string;
+  schDate: string;
+  schBalance: string;
+  schPrincipal: string;
+  schInterest: string;
+  schTotal: string;
+  schDays: string;
+  schTotalRow: string;
   calcRate: string;
   calcMonths: string;
   calcMonthly: string;

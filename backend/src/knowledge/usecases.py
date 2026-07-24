@@ -460,18 +460,22 @@ class UploadKnowledgeUseCase:
         payloads: list[dict[str, Any]] = []
         try:
             for index, chunk in enumerate(chunks):
-                # Sarlavhani har bo'lakka qo'shib embed qilamiz — kontekst kuchayadi
-                # Sarlavhani nafaqat embedding uchun, balki saqlanadigan matnning
-                # o'ziga ham yozamiz — shunda bo'lak yolg'iz o'qilganda ham
-                # (masalan boshqa kartalarnikiga aralashib qolmasdan) qaysi
-                # mahsulotga tegishli ekani aniq bo'ladi.
-                chunk_with_title = f"{title}\n\n{chunk}"
-                vector = await self.embedder.embed(chunk_with_title)
+                # Sarlavhani faqat EMBEDDING uchun bo'lakka qo'shamiz (kontekst
+                # kuchayadi, bo'lak boshqa mahsulotnikiga aralashmaydi), lekin
+                # SAQLANADIGAN chunk_text'ga QO'SHMAYMIZ — aks holda:
+                #  1) admin detali/tahrir oynasida sarlavha har bo'lakda takrorlanib
+                #     ko'rinardi;
+                #  2) tahrirlab qayta saqlaganda sarlavha matn ichiga kirib, keyingi
+                #     saqlashda yana qo'shilib, to'planib borardi.
+                # Javob promptida mahsulot nomi baribir "[title]" sarlavhasi bilan
+                # beriladi (_assemble), shuning uchun kontekst yo'qolmaydi.
+                embed_source = f"{title}\n\n{chunk}"
+                vector = await self.embedder.embed(embed_source)
                 vectors.append(vector)
                 payloads.append(
                     {
                         "title": title,
-                        "chunk_text": chunk_with_title,
+                        "chunk_text": chunk,
                         "chunk_index": index,
                         "lang": "uz",
                         "source_url": source_url,  # manba havolasi (parsing uchun)

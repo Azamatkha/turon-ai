@@ -16,6 +16,17 @@ interface Props {
   t: AdminStrings;
 }
 
+// Eski ma'lumotlarda sarlavha har bo'lak boshiga (ba'zan bir necha marta)
+// qo'shilib qolgan. Ko'rsatishda va tahrirda bo'lak boshidagi takroriy
+// sarlavha satrlarini olib tashlaymiz — bir marta saqlagach baza ham tozalanadi.
+function stripTitlePrefix(text: string, title: string): string {
+  const t = title.trim();
+  if (!t) return text;
+  const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`^\\s*(?:${escaped}\\s*\\n+)+`);
+  return text.replace(re, "").replace(/^\s+/, "");
+}
+
 // Bitta ma'lumotning to'liq sahifasi: ko'rish + tahrirlash + o'chirish.
 export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin }: Props) {
   const [detail, setDetail] = useState<KnowledgeDetail | null>(null);
@@ -44,7 +55,7 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
   const startEdit = () => {
     if (!detail) return;
     setETitle(detail.title);
-    setEText(detail.chunks.map((c) => c.text).join("\n\n"));
+    setEText(detail.chunks.map((c) => stripTitlePrefix(c.text, detail.title)).join("\n\n"));
     setErr(null);
     setEditing(true);
   };
@@ -118,7 +129,7 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
             {detail.chunks.map((c) => (
               <div key={c.chunk_index} className={styles.chunk}>
                 <div className={styles.chunkLabel}>{admin.knowledgeChunkLabel(c.chunk_index)}</div>
-                <div className={styles.chunkText}>{c.text}</div>
+                <div className={styles.chunkText}>{stripTitlePrefix(c.text, detail.title)}</div>
               </div>
             ))}
           </div>
