@@ -1,0 +1,224 @@
+/* Kredit / Omonat kalkulyatori oynasi. Ranglar ChatHeader'dan (tk) inline
+   uzatiladi; bu yerda faqat tuzilma va slayder ko'rinishi. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(9, 20, 34, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.18s ease both;
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 26px 70px rgba(9, 20, 34, 0.45);
+  animation: popIn 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.headTitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+/* Segmentli tanlagich: Kredit / Omonat */
+.tabs {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border-radius: 13px;
+}
+
+.tab {
+  flex: 1;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Maydon: label + qiymat inputi + slayder */
+.field {
+  margin-bottom: 18px;
+}
+
+.fieldTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.valueBox {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.valueInput {
+  width: 130px;
+  border: none;
+  background: transparent;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 700;
+  outline: none;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kichik maydon (foiz, muddat) inputi torroq */
+.valueInputSm {
+  width: 64px;
+}
+
+.suffix {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+/* Slayder */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--calc-accent, #1b4b7a);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 7px rgba(9, 20, 34, 0.35);
+  cursor: pointer;
+  margin-top: -1px;
+}
+
+.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--calc-accent, #1b4b7a);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 7px rgba(9, 20, 34, 0.35);
+  cursor: pointer;
+}
+
+/* Natija kartasi */
+.results {
+  margin-top: 22px;
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.resultMain {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.resultMainLabel {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.resultMainValue {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+  padding: 5px 0;
+}
+
+.resultRowValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin-top: 14px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0.7;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -392,6 +392,28 @@ def _has_employee_intent(q_lower: str) -> bool:
     )
 
 
+_MANBA_PAREN_RE = re.compile(r"\s*\(\s*manba\s*:?[^)]*\)", re.IGNORECASE)
+_DUP_URL_RE = re.compile(r"(https?://\S+?)\1+")
+
+
+def _dedupe_source_links(text: str) -> str:
+    """Model ba'zan kontekstdagi manba havolasini javobga ikki marta ko'chiradi
+    ("Batafsil: url(Manba: url)"). Prompt buni taqiqlaydi, lekin kafolat uchun
+    bu yerda ham tozalaymiz: "(Manba: ...)" qavsli qismini va ketma-ket
+    takrorlangan bir xil URL'ni olib tashlaymiz."""
+    text = _MANBA_PAREN_RE.sub("", text)
+    text = _DUP_URL_RE.sub(r"\1", text)
+    return text
+
+
+def _is_meaningless_query(text: str) -> bool:
+    """Savolda birorta ham harf yo'q (masalan "000000000000", "-----") —
+    bunday so'rov mahsulot/xodim yo'nalishidan o'tib kelgan bo'lsa, bu bema'ni
+    kiritma; embedding qidiruviga bermasdan darrov "ma'lumot yo'q" qaytaramiz
+    (uzoq LLM chaqiruvining oldini oladi)."""
+    return not any(ch.isalpha() for ch in text)
+
+
 def _strip_stray_followup(text: str) -> str:
     """Aniq (bitta mahsulot) javobda "Batafsil:" havolasi bo'ladi. Model ba'zan
     bunday aniq javobga ham keraksiz "Shu turlardan qaysi biri..." savolini
@@ -1124,14 +1146,14 @@ class AnswerQuestionUseCase:
         emps: list[dict[str, Any]],
     ) -> str:
         context = "\n\n".join(str(e.get("chunk_text", "")) for e in emps)
-        base = f"XODIMLAR MA'LUMOTI:\n{context}\n\nSAVOL: {question}"
+        base = f"EMPLOYEE DATA:\n{context}\n\nQUESTION: {question}"
         if history:
             recent = history[-self.HISTORY_LIMIT :]
             convo = "\n".join(
-                f"{'Foydalanuvchi' if t.role == 'user' else 'Yordamchi'}: {t.content}"
+                f"{'User' if t.role == 'user' else 'Assistant'}: {t.content}"
                 for t in recent
             )
-            return f"Oldingi suhbat:\n{convo}\n\n{base}"
+            return f"Previous conversation:\n{convo}\n\n{base}"
         return base
 
     async def _assemble(
@@ -1147,37 +1169,39 @@ class AnswerQuestionUseCase:
         savolida esa system prompt baribir bitta mahsulot bo'yicha javob berdiradi."""
         # Batafsil kontekst (tanlangan mavzuga oid eng yaqin bo'laklar) —
         # aniq mahsulot bo'yicha to'liq (raqam/shart) javob berish uchun.
+        # MUHIM: manba havolasi "SOURCE_URL:" yorlig'i bilan beriladi — avval
+        # "(Manba: url)" edi va model uni javobga AYNAN ko'chirib, "Batafsil:
+        # url(Manba: url)" kabi ikki marta havola chiqarardi (dubl link bug).
         blocks = []
         for payload, _ in results:
             title = payload.get("title", "")
             source_url = payload.get("source_url", "")
-            header = f"[{title}] (Manba: {source_url})" if source_url else f"[{title}]"
+            header = f"[{title}]\nSOURCE_URL: {source_url}" if source_url else f"[{title}]"
             blocks.append(f"{header}\n{payload.get('chunk_text', '')}")
         context = "\n\n---\n\n".join(blocks)
 
         # To'liq katalog — turkumdagi HAMMA mahsulotni sanash uchun (keng savol).
         catalog = await self._build_catalog()
         catalog_block = (
-            f"MAHSULOTLAR TO'LIQ KATALOGI (bazadagi barcha mavjud mahsulotlar, "
-            f"turkumlar bo'yicha — keng/umumiy savolga shu ro'yxatdan foydalan):\n"
-            f"{catalog}\n\n"
+            f"CATALOG (all products in the database, grouped by category — use this "
+            f"list for broad/category questions):\n{catalog}\n\n"
             if catalog
             else ""
         )
         base = (
             f"{catalog_block}"
-            f"BATAFSIL MA'LUMOT (tanlangan mavzuga oid kontekst):\n{context}\n\n"
-            f"SAVOL: {question}"
+            f"CONTEXT (nearest blocks for the selected topic):\n{context}\n\n"
+            f"QUESTION: {question}"
         )
 
         # Oldingi suhbatni (oxirgi HISTORY_LIMIT ta) promptga qo'shamiz
         if history:
             recent = history[-self.HISTORY_LIMIT :]
             convo = "\n".join(
-                f"{'Foydalanuvchi' if t.role == 'user' else 'Yordamchi'}: {t.content}"
+                f"{'User' if t.role == 'user' else 'Assistant'}: {t.content}"
                 for t in recent
             )
-            prompt = f"Oldingi suhbat:\n{convo}\n\n{base}"
+            prompt = f"Previous conversation:\n{convo}\n\n{base}"
         else:
             prompt = base
 
@@ -1263,6 +1287,20 @@ class AnswerQuestionUseCase:
         question = only_title or question
         if broad_reply is not None:
             yield {"type": "delta", "text": broad_reply}
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
+        # Harfsiz (ma'nosiz) so'rov — xodim/mahsulot yo'nalishidan o'tib kelgan
+        # bo'lsa, embedding qidiruviga bermaymiz (uzoq LLM chaqiruvisiz).
+        if _is_meaningless_query(question):
+            text = to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY
+            yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
                 "completion_tokens": 0,
@@ -1376,6 +1414,17 @@ class AnswerQuestionUseCase:
                 max_tokens=self.MAX_TOKENS,
             )
 
+        # Harfsiz (ma'nosiz) so'rov — embedding qidiruviga bermaymiz, darrov
+        # "ma'lumot yo'q" (uzoq LLM chaqiruvining oldini oladi).
+        if _is_meaningless_query(question):
+            return AnswerResult(
+                answer=to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY,
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
+            )
+
         # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank
         # xizmatlari markazi/ofisi"), promptdagi SAVOL esa asl holicha qoladi.
         query_vector = await self.embedder.embed(_expand_query(question))
@@ -1403,7 +1452,7 @@ class AnswerQuestionUseCase:
             max_tokens=self.MAX_TOKENS,
         )
 
-        answer = _strip_stray_followup(gen.text.strip())
+        answer = _dedupe_source_links(_strip_stray_followup(gen.text.strip()))
         if want_cyrillic:
             answer = _translit_preserving_titles(answer, [s.title for s in sources])
         return AnswerResult(

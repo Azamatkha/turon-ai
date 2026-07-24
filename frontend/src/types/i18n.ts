@@ -51,6 +51,23 @@ export interface ChatStaticStrings {
   nightMode: string;
   dayMode: string;
   adminPanel: string;
+  // Kalkulyator (kredit / omonat)
+  calculator: string;
+  calcHeading: string;
+  calcTabCredit: string;
+  calcTabDeposit: string;
+  calcCreditAmount: string;
+  calcDepositAmount: string;
+  calcRate: string;
+  calcMonths: string;
+  calcMonthly: string;
+  calcTotalPaid: string;
+  calcOverpay: string;
+  calcProfit: string;
+  calcTotal: string;
+  calcNote: string;
+  calcUnitMonths: string;
+  calcCurrency: string;
   send: string;
   stop: string;
   copy: string;

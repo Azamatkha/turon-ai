@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { MdOutlineAdminPanelSettings } from "react-icons/md";
+import { FaCalculator } from "react-icons/fa6";
 import LangSwitcher from "../LangSwitcher";
 import ThemeToggle from "./ThemeToggle";
+import CalculatorModal from "./CalculatorModal";
 import HButton from "../common/HButton";
 import type { Lang } from "../../types/lang";
 import type { ThemeTokens } from "../../types/chat";
@@ -27,6 +29,7 @@ export default function ChatHeader({
 }: ChatHeaderProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(title);
+  const [calcOpen, setCalcOpen] = useState(false);
 
   const startEdit = () => {
     if (!editableTitle || !onRenameTitle) return;
@@ -95,9 +98,23 @@ export default function ChatHeader({
             <MdOutlineAdminPanelSettings size={20} />
           </HButton>
         )}
+        <HButton
+          onClick={() => setCalcOpen(true)}
+          data-tip={s.calculator}
+          aria-label={s.calculator}
+          className={styles.adminBtn}
+          baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#dde2dc"), color: isDark ? "#e8eef2" : "#173f73" }}
+          hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#eef3f6", transform: "translateY(-1px)" }}
+        >
+          <FaCalculator size={17} />
+        </HButton>
         <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={isDark ? s.dayMode : s.nightMode} />
       </div>
+
+      {calcOpen && (
+        <CalculatorModal tk={tk} isDark={isDark} s={s} onClose={() => setCalcOpen(false)} />
+      )}
     </header>
   );
 }
