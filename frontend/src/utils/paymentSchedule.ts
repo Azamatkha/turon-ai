@@ -115,14 +115,32 @@ export const fmtDate = (d: Date): string => {
 const xmlEsc = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-const numCell = (v: number): string =>
-  `<Cell ss:StyleID="num"><Data ss:Type="Number">${v.toFixed(2)}</Data></Cell>`;
+// Yacheyka yasovchilar. `merge` — o'ngga nechta yacheyka bilan birlashtirish
+// (uzun yorliq tor ustunda kesilib qolmasligi uchun kerak).
+const cell = (
+  type: "Number" | "String",
+  value: string,
+  style?: string,
+  merge?: number
+): string => {
+  const attrs =
+    (style ? ` ss:StyleID="${style}"` : "") +
+    (merge ? ` ss:MergeAcross="${merge}"` : "");
+  return `<Cell${attrs}><Data ss:Type="${type}">${value}</Data></Cell>`;
+};
 
-const txtCell = (v: string, style = ""): string =>
-  `<Cell${style ? ` ss:StyleID="${style}"` : ""}><Data ss:Type="String">${xmlEsc(v)}</Data></Cell>`;
+const numCell = (v: number, style = "num"): string =>
+  cell("Number", v.toFixed(2), style);
 
-const intCell = (v: number): string =>
-  `<Cell><Data ss:Type="Number">${v}</Data></Cell>`;
+const txtCell = (v: string, style?: string, merge?: number): string =>
+  cell("String", xmlEsc(v), style, merge);
+
+const intCell = (v: number, style = "int"): string =>
+  cell("Number", String(v), style);
+
+// Bo'sh (lekin chegarali) yacheykalar — jadval to'ri uzilib qolmasin
+const emptyCells = (n: number, style: string): string =>
+  Array.from({ length: n }, () => `<Cell ss:StyleID="${style}"/>`).join("");
 
 export interface ExcelLabels {
   title: string;
@@ -140,64 +158,111 @@ export interface ExcelLabels {
 }
 
 export function scheduleToExcelXml(res: ScheduleResult, L: ExcelLabels): string {
+  // Sarlavha — 7 ustun bo'ylab birlashtirilgan, katta qalin shrift
+  const titleRow =
+    `<Row ss:Height="30">${txtCell(L.title, "title", 6)}</Row>` +
+    '<Row ss:Height="8"/>';
+
   const header =
-    "<Row ss:StyleID='hdr'>" +
+    '<Row ss:Height="34">' +
     [L.no, L.date, L.balance, L.principal, L.interest, L.total, L.days]
       .map((h) => txtCell(h, "hdr"))
       .join("") +
     "</Row>";
 
+  // Toq/juft qatorlar biroz farqli fonda — uzun jadvalni ko'z bilan kuzatish oson
   const body = res.rows
-    .map(
-      (r) =>
-        "<Row>" +
-        intCell(r.k) +
-        txtCell(fmtDate(r.date)) +
-        numCell(r.balance) +
-        numCell(r.principal) +
-        numCell(r.interest) +
-        numCell(r.total) +
-        intCell(r.days) +
+    .map((r) => {
+      const z = r.k % 2 === 0 ? "z" : "";
+      return (
+        '<Row ss:Height="19">' +
+        intCell(r.k, `int${z}`) +
+        txtCell(fmtDate(r.date), `date${z}`) +
+        numCell(r.balance, `num${z}`) +
+        numCell(r.principal, `num${z}`) +
+        numCell(r.interest, `num${z}`) +
+        numCell(r.total, `numB${z}`) +
+        intCell(r.days, `int${z}`) +
         "</Row>"
-    )
+      );
+    })
     .join("");
 
+  // "Jami" — yorliq 3 ustunga birlashtirilgan (kesilib qolmasin)
   const totals =
-    "<Row ss:StyleID='tot'>" +
-    txtCell(L.totalRow, "tot") +
-    txtCell("", "tot") +
-    txtCell("", "tot") +
-    numCell(res.totalPrincipal) +
-    numCell(res.totalInterest) +
-    numCell(res.totalPaid) +
-    txtCell("", "tot") +
+    '<Row ss:Height="24">' +
+    txtCell(L.totalRow, "totLbl", 2) +
+    numCell(res.totalPrincipal, "totNum") +
+    numCell(res.totalInterest, "totNum") +
+    numCell(res.totalPaid, "totNum") +
+    emptyCells(1, "totNum") +
     "</Row>";
 
+  // Sug'urta / to'liq qiymat — yorliq 4 ustunga birlashtiriladi, qiymat
+  // "Jami to'lov" ustuni ostida turadi (avval tor A ustunida kesilib qolardi)
   const extra =
-    "<Row/>" +
-    `<Row>${txtCell(L.insurance, "bold")}${txtCell("")}${txtCell("")}${txtCell("")}${txtCell("")}${numCell(res.insurance)}</Row>` +
-    `<Row>${txtCell(L.fullCost, "bold")}${txtCell("")}${txtCell("")}${txtCell("")}${txtCell("")}${numCell(res.fullCost)}</Row>`;
+    '<Row ss:Height="8"/>' +
+    '<Row ss:Height="22">' +
+    txtCell(L.insurance, "sumLbl", 4) +
+    numCell(res.insurance, "sumNum") +
+    "</Row>" +
+    '<Row ss:Height="22">' +
+    txtCell(L.fullCost, "sumLblB", 4) +
+    numCell(res.fullCost, "sumNumB") +
+    "</Row>";
+
+  // Chegara va shriftlarni takrorlab yozmaslik uchun qisqartmalar
+  const B = (pos: string, w = "1", color = "#B7C4D4") =>
+    `<Border ss:Position="${pos}" ss:LineStyle="Continuous" ss:Weight="${w}" ss:Color="${color}"/>`;
+  const box = `<Borders>${B("Top")}${B("Bottom")}${B("Left")}${B("Right")}</Borders>`;
+  const FONT = 'ss:FontName="Calibri" ss:Size="11"';
+  const ZEBRA = '<Interior ss:Color="#F5F8FB" ss:Pattern="Solid"/>';
+  const NUMFMT = '<NumberFormat ss:Format="#,##0.00"/>';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:x="urn:schemas-microsoft-com:office:excel">
  <Styles>
-  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="11"/></Style>
-  <Style ss:ID="hdr"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/><Interior ss:Color="#DCE6F1" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:WrapText="1" ss:Vertical="Center"/></Style>
-  <Style ss:ID="num"><NumberFormat ss:Format="#,##0.00"/></Style>
-  <Style ss:ID="tot"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/><NumberFormat ss:Format="#,##0.00"/></Style>
-  <Style ss:ID="bold"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/></Style>
+  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ${FONT}/></Style>
+
+  <Style ss:ID="title"><Font ss:FontName="Calibri" ss:Size="15" ss:Bold="1" ss:Color="#1B4B7A"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+
+  <Style ss:ID="hdr"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1B4B7A" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${box}</Style>
+
+  <Style ss:ID="int"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${box}</Style>
+  <Style ss:ID="intz"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${box}${ZEBRA}</Style>
+  <Style ss:ID="date"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${box}</Style>
+  <Style ss:ID="datez"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${box}${ZEBRA}</Style>
+  <Style ss:ID="num">${NUMFMT}${box}</Style>
+  <Style ss:ID="numz">${NUMFMT}${box}${ZEBRA}</Style>
+  <Style ss:ID="numB"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/>${NUMFMT}${box}</Style>
+  <Style ss:ID="numBz"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/>${NUMFMT}${box}${ZEBRA}</Style>
+
+  <Style ss:ID="totLbl"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1B4B7A"/><Interior ss:Color="#DCE6F1" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/><Borders>${B("Top", "2", "#1B4B7A")}${B("Bottom")}${B("Left")}${B("Right")}</Borders></Style>
+  <Style ss:ID="totNum"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1B4B7A"/><Interior ss:Color="#DCE6F1" ss:Pattern="Solid"/>${NUMFMT}<Borders>${B("Top", "2", "#1B4B7A")}${B("Bottom")}${B("Left")}${B("Right")}</Borders></Style>
+
+  <Style ss:ID="sumLbl"><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="sumNum">${NUMFMT}</Style>
+  <Style ss:ID="sumLblB"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1B4B7A"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="sumNumB"><Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1B4B7A"/>${NUMFMT}</Style>
  </Styles>
  <Worksheet ss:Name="Jadval">
-  <Table>
-   <Column ss:Width="34"/><Column ss:Width="72"/><Column ss:Width="104"/>
-   <Column ss:Width="118"/><Column ss:Width="118"/><Column ss:Width="118"/>
-   <Column ss:Width="62"/>
-   <Row><Cell ss:StyleID="bold"><Data ss:Type="String">${xmlEsc(L.title)}</Data></Cell></Row>
-   <Row/>
-   ${header}${body}${totals}${extra}
+  <Table ss:DefaultRowHeight="18">
+   <Column ss:Width="38"/><Column ss:Width="82"/><Column ss:Width="112"/>
+   <Column ss:Width="126"/><Column ss:Width="126"/><Column ss:Width="126"/>
+   <Column ss:Width="66"/>
+   ${titleRow}${header}${body}${totals}${extra}
   </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup><Layout x:Orientation="Landscape"/><PageMargins x:Bottom="0.5" x:Left="0.4" x:Right="0.4" x:Top="0.5"/></PageSetup>
+   <FitToPage/>
+   <Print><FitWidth>1</FitWidth><FitHeight>0</FitHeight><ValidPrinterInfo/></Print>
+   <FreezePanes/><FrozenNoSplit/>
+   <SplitHorizontal>3</SplitHorizontal><TopRowBottomPane>3</TopRowBottomPane>
+   <ActivePane>2</ActivePane>
+  </WorksheetOptions>
  </Worksheet>
 </Workbook>`;
 }

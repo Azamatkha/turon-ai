@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 2vh 2vw;
   background: rgba(9, 20, 34, 0.55);
   backdrop-filter: blur(4px);
   animation: schFade 0.18s ease both;
@@ -16,10 +16,12 @@
 .modal {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  /* Jadval keng — 7 ustun bemalol sig'sin */
-  max-width: 940px;
-  max-height: 90vh;
+  /* Jadval keng — ekranning katta qismini egallaydi (7 ustun + yig'indilar
+     bemalol o'qilsin), lekin juda katta monitorda ham cheklangan qoladi. */
+  width: 96vw;
+  max-width: 1240px;
+  height: 92vh;
+  max-height: 92vh;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 26px 70px rgba(9, 20, 34, 0.5);
@@ -95,13 +97,13 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-variant-numeric: tabular-nums;
 }
 
 .table th,
 .table td {
-  padding: 8px 10px;
+  padding: 10px 14px;
   text-align: right;
   white-space: nowrap;
 }
@@ -128,11 +130,11 @@
 }
 
 .summary {
-  margin-top: 14px;
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .summaryRow {
