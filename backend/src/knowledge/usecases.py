@@ -95,6 +95,25 @@ def _words(s: str) -> list[str]:
     return re.findall(r"[0-9a-zа-яёўқғҳ]+", s.lower())
 
 
+def _name_norm(token: str) -> str:
+    """Ism-familiyani solishtirish uchun normallashtiradi. O'zbek ismlari
+    transliteratsiyasida X va H ko'pincha almashtiriladi ("Xamdamboyev" /
+    "Hamdamboyev"), apostrof turlicha yoziladi — shularni bir xillashtiramiz."""
+    t = token.lower()
+    t = re.sub(r"['ʻʼ`’]", "", t)
+    t = t.replace("x", "h")
+    return t
+
+
+def _common_prefix_len(a: str, b: str) -> int:
+    n = 0
+    for ca, cb in zip(a, b):
+        if ca != cb:
+            break
+        n += 1
+    return n
+
+
 def _match_employees(
     emps: list[dict[str, Any]], q_lower: str
 ) -> list[dict[str, Any]]:
@@ -157,7 +176,12 @@ def _match_employees(
     ]
     if not qtokens:
         return []
+    # Har savol so'zi uchun eng yaxshi mos kelgan ism bo'lagining UMUMIY PREFIKS
+    # uzunligini yig'ib ball beramiz (aniq/uzun moslik = katta ball). Shu sabab
+    # to'liq familiya ("Xamdamboyev" -> 11) boshqa odamning otasining ismidagi
+    # tasodifiy qisqa moslikdan ("...Xamdam o'g'li" -> 6) ustun turadi.
     scored: list[tuple[int, dict[str, Any]]] = []
+    qnorms = [_name_norm(qt) for qt in qtokens]
     for e in emps:
         toks = [
             t
@@ -165,14 +189,17 @@ def _match_employees(
             if len(t) >= 3 and t not in _NAME_STOP
         ]
         score = 0
-        for nt in toks:
-            # Mos kelgan prefiks yetarlicha uzun bo'lishi shart — qisqa
-            # tasodifiy ustma-ustliklar ism deb qabul qilinmasin.
-            if any(
-                (nt.startswith(qt) or qt.startswith(nt)) and min(len(nt), len(qt)) >= 4
-                for qt in qtokens
-            ):
-                score += 1
+        for qn in qnorms:
+            best_cp = 0
+            for nt in toks:
+                nn = _name_norm(nt)
+                cp = _common_prefix_len(qn, nn)
+                # Umumiy prefiks yetarlicha uzun (kamida 4 belgi) VA qisqa
+                # so'zning aksar qismini qamrab olsin — tasodifiy qisqa
+                # ustma-ustlik ism deb qabul qilinmasin.
+                if cp >= 4 and cp >= min(len(qn), len(nn)) * 0.7:
+                    best_cp = max(best_cp, cp)
+            score += best_cp
         if score:
             scored.append((score, e))
     if scored:
