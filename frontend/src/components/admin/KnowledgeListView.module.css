@@ -2,6 +2,9 @@
 
 .wrap {
   max-width: 1400px;
+  /* Sahifani markazda ushlab turadi — masshtab kichraytirilganda
+     kontent chapga yopishib, o'ng tomon bo'sh qolmasin. */
+  margin: 0 auto;
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.35s ease, transform 0.35s ease;

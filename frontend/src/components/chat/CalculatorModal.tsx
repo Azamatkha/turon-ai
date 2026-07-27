@@ -36,7 +36,11 @@ const MONTHS_MORTGAGE: FieldConfig = { min: 6, max: 240, step: 6 };
 // Omonat: 1 oydan 60 oygacha.
 const MONTHS_DEP: FieldConfig = { min: 1, max: 60, step: 1 };
 // Foiz: 2 xonali kasr (21.99 kabi) — kiritishda erkin, slayder 0.1 qadam.
-const RATE: FieldConfig = { min: 0, max: 50, step: 0.1 };
+// Foiz: 2 xonali kasr (21.99). Oddiy kreditda eng past stavka 20% — bankda
+// undan arzon iste'mol krediti yo'q. Ipoteka/avtokreditda (imtiyozli dasturlar)
+// va omonatda bunday chegara qo'yilmaydi.
+const RATE_CREDIT: FieldConfig = { min: 20, max: 50, step: 0.1 };
+const RATE_OTHER: FieldConfig = { min: 0, max: 50, step: 0.1 };
 // Oddiy kredit/omonat summasi: 100 mln gacha. Ipoteka narxi: 500 mln gacha.
 const AMOUNT: FieldConfig = { min: 100_000, max: 100_000_000, step: 100_000 };
 const PRICE: FieldConfig = { min: 1_000_000, max: 500_000_000, step: 1_000_000 };
@@ -173,6 +177,8 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
   const cardBg = isDark ? "rgba(255,255,255,.05)" : "#f4f6f9";
   const monthsCfg =
     mode === "deposit" ? MONTHS_DEP : mode === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
+  // Oddiy kreditda eng past stavka 20%
+  const rateCfg = mode === "credit" ? RATE_CREDIT : RATE_OTHER;
   const isLoan = mode === "credit" || mode === "mortgage";
   const cur = s.calcCurrency;
 
@@ -181,6 +187,9 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
     if (m === mode) return;
     const cfg = m === "deposit" ? MONTHS_DEP : m === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
     setMonths((v) => clamp(Math.round(v / cfg.step) * cfg.step || cfg.min, cfg.min, cfg.max));
+    // Oddiy kreditga o'tilsa — stavka 20% dan past bo'lib qolmasin
+    const rc = m === "credit" ? RATE_CREDIT : RATE_OTHER;
+    setRate((v) => clamp(v, rc.min, rc.max));
     setMode(m);
   };
 
@@ -334,7 +343,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
               {numField(s.calcDownPayment, down, setDown, { min: 0, max: price, step: 100_000 }, cur)}
             </>
           )}
-          {numField(s.calcRate, rate, setRate, RATE, "%", true)}
+          {numField(s.calcRate, rate, setRate, rateCfg, "%", true)}
           {numField(s.calcMonths, months, setMonths, monthsCfg, s.calcUnitMonths)}
         </div>
 

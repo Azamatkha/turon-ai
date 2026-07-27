@@ -2,6 +2,8 @@
 
 .wrap {
   max-width: 760px;
+  /* Yuklash qutisi sahifa markazida tursin */
+  margin: 0 auto;
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.35s ease, transform 0.35s ease;

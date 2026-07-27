@@ -16,7 +16,7 @@
 
 .modal {
   width: 100%;
-  max-width: 440px;
+  max-width: 520px;
   /* Barqaror, lekin bo'g'ilmagan o'lcham: juda kichrayib ketmasin (min-height),
      lekin baland rejimda ham 90vh gacha o'sib, faqat shundan oshsa ichida
      scroll bo'lsin. Scroll ICHKI .scroll'da — shuning uchun scrollbar dumaloq
@@ -228,7 +228,7 @@
 .results {
   margin-top: 22px;
   border-radius: 16px;
-  padding: 16px 18px;
+  padding: 18px 20px;
   animation: contentIn 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -252,12 +252,12 @@
 }
 
 .resultMainLabel {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .resultMainValue {
-  font-size: 21px;
+  font-size: 26px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -269,13 +269,15 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  font-size: 13.5px;
-  padding: 5px 0;
+  font-size: 15px;
+  padding: 6px 0;
 }
 
 .resultRowValue {
   font-weight: 700;
+  font-size: 15.5px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .scheduleRow {
