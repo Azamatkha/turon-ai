@@ -149,7 +149,7 @@ export default function ChatPage() {
           rejimda esa fon quyuq bo'lgani uchun ochiq havorang (#7fb3d2) —
           aks holda piksellar qorong'i fonda umuman ko'rinmasdi.
           Bosilganda to'lqin (ripple) tarqaladi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.45 }}>
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.85 : 0.7 }}>
         <PixelBlast
           variant="square"
           pixelSize={4}
