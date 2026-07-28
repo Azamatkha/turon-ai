@@ -147,13 +147,13 @@ export default function ChatPage() {
       {/* Jonli rangli fon (Iridescence, WebGL). Rang sidebar navysiga
           (#173f73 / #152a45) moslangan — qizil kanal past, shuning uchun
           pushti/binafsha tovlanish chiqmaydi, faqat ko'k-navy oqim qoladi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.6 : 0.38 }}>
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.7 : 0.6 }}>
         <Iridescence
           // Naqsh faqat shu IKKI rang orasida oqadi — binafsha/pushti chiqmaydi.
           // Light: sidebar navy (#173f73) -> ochiq havorang.
           // Dark:  chuqur navy (#152a45) -> o'rtacha ko'k.
-          color={isDark ? [0.05, 0.12, 0.24] : [0.09, 0.25, 0.45]}
-          colorB={isDark ? [0.16, 0.36, 0.58] : [0.72, 0.84, 0.95]}
+          color={isDark ? [0.05, 0.13, 0.26] : [0.35, 0.56, 0.80]}
+          colorB={isDark ? [0.20, 0.44, 0.68] : [0.88, 0.94, 0.99]}
           amplitude={0.1}
           speed={0.22}
           mouseReact

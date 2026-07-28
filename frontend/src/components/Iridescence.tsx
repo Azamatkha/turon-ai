@@ -52,9 +52,17 @@ void main() {
   // naqshni avval BITTA skalyar qiymatga aylantiramiz, so'ng uni faqat
   // ikki brend rangi (uColor -> uColorB) orasida aralashtiramiz. Natijada
   // rang doirasi qat'iy nazoratda: begona hue umuman paydo bo'lmaydi.
-  float t = clamp(dot(col, vec3(0.3333)), 0.0, 1.0);
-  t = smoothstep(0.15, 0.85, t);
-  gl_FragColor = vec4(mix(uColor, uColorB, t), 1.0);
+  // Naqshning o'rtacha qiymati tor diapazonda tebranadi — shuning uchun uni
+  // markaz atrofida CHO'ZAMIZ, aks holda rang deyarli o'zgarmas bo'lib qoladi.
+  float t = dot(col, vec3(0.3333));
+  t = clamp((t - 0.38) * 3.2 + 0.5, 0.0, 1.0);
+  // Uch bosqichli ramp: quyuq -> o'rta -> yorug'. Bir xil hue oilasida qoladi,
+  // lekin oqim aniq ko'rinadi.
+  vec3 mid = mix(uColor, uColorB, 0.5) * 1.06;
+  vec3 outc = t < 0.5
+    ? mix(uColor, mid, t * 2.0)
+    : mix(mid, uColorB, (t - 0.5) * 2.0);
+  gl_FragColor = vec4(outc, 1.0);
 }
 `;
 
