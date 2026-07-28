@@ -8,6 +8,7 @@ import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Iridescence from "../components/Iridescence";
+import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import ChatHeader from "../components/chat/ChatHeader";
@@ -143,15 +144,31 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Jonli rangli fon (Iridescence, WebGL). Turon navy ohangida: light
-          rejimda ham aniq ko'rinadi (avvalgi gradient + nuqta qatlami juda
-          xira edi). Matn o'qilishini buzmasligi uchun opacity cheklangan. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.42 }}>
+      {/* Jonli rangli fon (Iridescence, WebGL). Rang sidebar navysiga
+          (#173f73 / #152a45) moslangan — qizil kanal past, shuning uchun
+          pushti/binafsha tovlanish chiqmaydi, faqat ko'k-navy oqim qoladi. */}
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.6 : 0.38 }}>
         <Iridescence
-          color={isDark ? [0.16, 0.34, 0.55] : [0.55, 0.72, 0.92]}
-          amplitude={0.12}
-          speed={0.55}
+          color={isDark ? [0.10, 0.24, 0.46] : [0.26, 0.46, 0.76]}
+          amplitude={0.1}
+          speed={0.22}
           mouseReact
+        />
+      </div>
+
+      {/* Nuqta (DotField) qatlami — rangli fon ustida, kursor bulge effekti bilan.
+          Ranglar navy fonda ko'rinishi uchun kuchaytirilgan. */}
+      <div className={styles.dotLayer} aria-hidden="true">
+        <DotField
+          dotRadius={3.5}
+          dotSpacing={26}
+          bulgeOnly
+          bulgeStrength={18}
+          cursorRadius={220}
+          glowRadius={160}
+          gradientFrom={isDark ? "#33587f" : "#9fb6cc"}
+          gradientTo={isDark ? "#43709c" : "#8ba7c2"}
+          glowColor={isDark ? "rgba(160,205,235,0.16)" : "rgba(23,63,115,0.12)"}
         />
       </div>
 
