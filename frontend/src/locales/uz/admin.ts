@@ -35,7 +35,7 @@ export const admin: AdminStrings = {
   taken: "Band",
   create: "Yaratish",
   roleLabel: { Xodim: "Xodim", Admin: "Admin" } as Record<AdminRole, string>,
-  statusLabel: { Active: "Faol", Suspended: "To‘xtatilgan" } as Record<AdminStatus, string>,
+  statusLabel: { Online: "Onlayn", Offline: "Oflayn" } as Record<AdminStatus, string>,
   // Tahrirlash modali
   editUser: "Tahrirlash",
   editUserModalTitle: "Foydalanuvchini tahrirlash",

@@ -41,6 +41,9 @@ class UserAdminListItem(Base):
     department: str | None = None
     role: UserRole
     is_active: bool
+    # Oxirgi 5 daqiqada faol bo'lganmi (onlayn/oflayn ko'rsatish uchun).
+    # last_seen_at login/so'rov paytida yangilanadi.
+    is_online: bool = False
 
 
 class AdminCreateUserModel(CreateUserModel):

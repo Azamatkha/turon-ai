@@ -35,7 +35,7 @@ export const admin: AdminStrings = {
   taken: "Банд",
   create: "Яратиш",
   roleLabel: { Xodim: "Ходим", Admin: "Админ" },
-  statusLabel: { Active: "Фаол", Suspended: "Тўхтатилган" },
+  statusLabel: { Online: "Онлайн", Offline: "Офлайн" },
   editUser: "Таҳрирлаш",
   editUserModalTitle: "Фойдаланувчини таҳрирлаш",
   editUserModalSub: "Исм, логин ёки паролни ўзгартиринг.",

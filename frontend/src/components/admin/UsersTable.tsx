@@ -21,8 +21,8 @@ const roleColor: Record<AdminRole, { c: string; bg: string }> = {
   Xodim: { c: "var(--adm-accent-2)", bg: "var(--adm-accent-2-bg)" },
 };
 const statusColor: Record<AdminStatus, { c: string; bg: string }> = {
-  Active: { c: "var(--adm-success)", bg: "var(--adm-success-bg)" },
-  Suspended: { c: "var(--adm-danger)", bg: "var(--adm-danger-bg)" },
+  Online: { c: "var(--adm-success)", bg: "var(--adm-success-bg)" },
+  Offline: { c: "var(--adm-text-muted-2)", bg: "var(--adm-hover)" },
 };
 
 interface Props {

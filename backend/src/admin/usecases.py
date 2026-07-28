@@ -28,9 +28,10 @@ class DashboardStatsUseCase:
             total_sessions = await uow.chat_sessions.count(uow.session)
             # "Jami so'rovlar" — faqat foydalanuvchi xabarlari (bot javoblari emas)
             total_messages = await uow.chat_messages.count(uow.session, role="user")
-            total_departments = len(
-                [r for r in await uow.users.count_by_department(uow.session) if r[0]]
-            )
+            dept_rows = await uow.users.count_by_department(uow.session)
+            total_departments = len([r for r in dept_rows if r[0]])
+            # Filtr ro'yxati — foydalanuvchilar bo'yicha (so'rov yubormaganlar ham)
+            all_departments = sorted({str(r[0]) for r in dept_rows if r[0]})
 
             # Bo'lim ulushi — so'rovlar (user xabarlari) bo'yicha
             req_by_dept = await uow.chat_messages.count_requests_by_department(
@@ -79,6 +80,7 @@ class DashboardStatsUseCase:
                 total_likes=total_likes,
                 total_dislikes=total_dislikes,
                 departments=departments,
+                all_departments=all_departments,
                 weekly=weekly,
                 recent_activity=recent_activity,
             )

@@ -1,5 +1,6 @@
 export type AdminRole = "Xodim" | "Admin";
-export type AdminStatus = "Active" | "Suspended";
+// Holat ustuni endi onlayn/oflayn ko'rsatadi (avval hamma "Faol" edi)
+export type AdminStatus = "Online" | "Offline";
 export type AdminView = "dashboard" | "users" | "knowledgeList" | "pdfUpload" | "apiDocs";
 
 export interface AdminUser {

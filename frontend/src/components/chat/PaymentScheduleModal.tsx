@@ -5,6 +5,7 @@ import type { ChatStaticStrings } from "../../types/i18n";
 import {
   buildSchedule,
   downloadSchedule,
+  scheduleFileName,
   fmt2,
   fmtDate,
   type PayMethod,
@@ -52,7 +53,7 @@ export default function PaymentScheduleModal({
         fullCost: s.schFullCost,
         currency: s.calcCurrency,
       },
-      "tolov-jadvali.xls"
+      scheduleFileName()
     );
 
   return createPortal(

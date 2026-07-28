@@ -48,7 +48,7 @@ const mapUser = (u: ApiUser): AdminUser => ({
   handle: "@" + u.username,
   dept: u.department || "—",
   role: toAdminRole(u.role),
-  status: u.is_active ? "Active" : "Suspended",
+  status: u.is_online ? "Online" : "Offline",
 });
 
 export default function AdminPage() {
@@ -126,7 +126,8 @@ export default function AdminPage() {
   const refreshDepts = async () => {
     try {
       const s = await getStats();
-      setAllDepts(s.departments.map((d) => d.name).filter((n) => n !== "Boshqa"));
+      // Filtr — BARCHA foydalanuvchi bo'limlari (chatdan foydalanmaganlar ham)
+      setAllDepts(s.all_departments ?? []);
     } catch {
       /* ignore */
     }

@@ -11,6 +11,8 @@ export interface ApiUser {
   department: string | null;
   role: BackendRole;
   is_active: boolean;
+  // Oxirgi 5 daqiqada faol bo'lganmi
+  is_online: boolean;
 }
 
 async function readError(res: Response, fallback: string): Promise<string> {
@@ -106,6 +108,8 @@ export interface DashboardStats {
   total_likes: number;
   total_dislikes: number;
   departments: DeptStat[];
+  // Filtr uchun barcha foydalanuvchi bo'limlari (chatdan foydalanmaganlar ham)
+  all_departments: string[];
   weekly: WeeklyPoint[];
   recent_activity: RecentActivityItem[];
 }

@@ -32,7 +32,19 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
-    getStats().then(setStats).catch(() => setStats(null));
+    let alive = true;
+    const load = () => {
+      getStats()
+        .then((s) => alive && setStats(s))
+        .catch(() => alive && setStats(null));
+    };
+    load();
+    // "Hozir onlayn" jonli ko'rsatkich — sahifani yangilamasdan ham o'zgarsin
+    const id = setInterval(load, 15_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
   }, []);
 
   const fmt = (n: number) => n.toLocaleString();

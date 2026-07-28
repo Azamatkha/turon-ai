@@ -14,7 +14,7 @@ export const seedChats: Chat[] = [
 export const TAKEN_USERNAMES = ["admin", "root", "m.usmonov", "d.tashkentov", "s.rahimova"];
 
 export const seedAdminUsers: AdminUser[] = [
-  { id: "1", name: "Aziz Karimov", handle: "@a.karimov", dept: "Chakana", role: "Xodim", status: "Active" },
-  { id: "2", name: "Malika Yusupova", handle: "@m.yusupova", dept: "IT", role: "Admin", status: "Active" },
-  { id: "3", name: "Dilshod Tashkentov", handle: "@d.tashkentov", dept: "Korporativ", role: "Xodim", status: "Active" },
+  { id: "1", name: "Aziz Karimov", handle: "@a.karimov", dept: "Chakana", role: "Xodim", status: "Offline" },
+  { id: "2", name: "Malika Yusupova", handle: "@m.yusupova", dept: "IT", role: "Admin", status: "Offline" },
+  { id: "3", name: "Dilshod Tashkentov", handle: "@d.tashkentov", dept: "Korporativ", role: "Xodim", status: "Offline" },
 ];

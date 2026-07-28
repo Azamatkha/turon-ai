@@ -6,6 +6,7 @@ import type { ChatStaticStrings } from "../../types/i18n";
 import {
   buildSchedule,
   downloadSchedule,
+  scheduleFileName,
   type PayMethod,
 } from "../../utils/paymentSchedule";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
@@ -251,7 +252,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         fullCost: s.schFullCost,
         currency: s.calcCurrency,
       },
-      "tolov-jadvali.xls"
+      scheduleFileName()
     );
   };
 

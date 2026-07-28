@@ -34,7 +34,7 @@ export const admin: AdminStrings = {
   taken: "Занято",
   create: "Создать",
   roleLabel: { Xodim: "Сотрудник", Admin: "Админ" },
-  statusLabel: { Active: "Активен", Suspended: "Заблокирован" },
+  statusLabel: { Online: "Онлайн", Offline: "Офлайн" },
   editUser: "Редактировать",
   editUserModalTitle: "Редактировать пользователя",
   editUserModalSub: "Измените имя, логин или пароль.",

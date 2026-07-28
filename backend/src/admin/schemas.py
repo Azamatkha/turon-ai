@@ -29,5 +29,9 @@ class DashboardStatsView(Base):
     total_likes: int
     total_dislikes: int
     departments: list[DeptStat]
+    # Filtr uchun: BARCHA foydalanuvchilarning bo'limlari. `departments` faqat
+    # so'rov yuborganlarni sanaydi — filtrda esa hali chatdan foydalanmagan
+    # foydalanuvchining bo'limi ham ko'rinishi kerak.
+    all_departments: list[str] = []
     weekly: list[WeeklyPoint]
     recent_activity: list[RecentActivityItem]

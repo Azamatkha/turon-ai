@@ -307,6 +307,19 @@ export function buildScheduleXlsx(res: ScheduleResult, L: ExcelLabels): Blob {
   return packXlsx("Jadval", STYLES_XML, buildSheetXml(res, L));
 }
 
+/** Yuklanadigan fayl nomi — sana-vaqt bilan, shunda fayllar bir-birining
+ * ustiga tushmaydi: "tolov_jadvali_9_34_28_7_2026.xlsx" (soat_daqiqa_kun_oy_yil). */
+export function scheduleFileName(d: Date = new Date()): string {
+  const p = [
+    d.getHours(),
+    d.getMinutes(),
+    d.getDate(),
+    d.getMonth() + 1,
+    d.getFullYear(),
+  ].join("_");
+  return `tolov_jadvali_${p}.xlsx`;
+}
+
 export function downloadSchedule(res: ScheduleResult, labels: ExcelLabels, filename: string): void {
   const blob = buildScheduleXlsx(res, labels);
   const url = URL.createObjectURL(blob);
