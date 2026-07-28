@@ -7,8 +7,7 @@ import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import Grainient from "../components/Grainient";
-import DotField from "../components/DotField";
+import Iridescence from "../components/Iridescence";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import ChatHeader from "../components/chat/ChatHeader";
@@ -144,47 +143,15 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Gradient (Grainient) qatlami — eng ostda, brend (Turon navy) ranglariga moslangan.
-          Ranglar mavzuga (light/dark) qarab beriladi; opacity matn o'qilishini buzmaydi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.8 : 0.9 }}>
-        <Grainient
-          color1={isDark ? "#0b2a4a" : "#709dc4"}
-          color2={isDark ? "#0e2030" : "#f6f9fc"}
-          color3={isDark ? "#1c6aa8" : "#ffffff"}
-          timeSpeed={0.3}
-          colorBalance={-0.02}
-          warpStrength={1.6}
-          warpFrequency={8}
-          warpSpeed={0.8}
-          warpAmplitude={60}
-          blendAngle={20}
-          blendSoftness={0.4}
-          rotationAmount={300}
-          noiseScale={2}
-          grainAmount={0}
-          grainScale={2}
-          grainAnimated={false}
-          contrast={isDark ? 1.2 : 1.05}
-          gamma={1}
-          saturation={isDark ? 1.1 : 1.0}
-          centerX={0}
-          centerY={0}
-          zoom={1.0}
-        />
-      </div>
-
-      {/* Nuqta (DotField) qatlami — gradient ustida, kursor bulge effekti bilan */}
-      <div className={styles.dotLayer} aria-hidden="true">
-        <DotField
-          dotRadius={3.5}
-          dotSpacing={26}
-          bulgeOnly
-          bulgeStrength={18}
-          cursorRadius={220}
-          glowRadius={160}
-          gradientFrom={isDark ? "#213c5e" : "#dbe3e8"}
-          gradientTo={isDark ? "#294c74" : "#cfdae0"}
-          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(42,111,151,0.07)"}
+      {/* Jonli rangli fon (Iridescence, WebGL). Turon navy ohangida: light
+          rejimda ham aniq ko'rinadi (avvalgi gradient + nuqta qatlami juda
+          xira edi). Matn o'qilishini buzmasligi uchun opacity cheklangan. */}
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.42 }}>
+        <Iridescence
+          color={isDark ? [0.16, 0.34, 0.55] : [0.55, 0.72, 0.92]}
+          amplitude={0.12}
+          speed={0.55}
+          mouseReact
         />
       </div>
 
