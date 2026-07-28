@@ -7,7 +7,7 @@ import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import Iridescence from "../components/Iridescence";
+import PixelBlast from "../components/PixelBlast";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -144,21 +144,27 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Jonli rangli fon (Iridescence, WebGL). Rang sidebar navysiga
-          (#173f73 / #152a45) moslangan — qizil kanal past, shuning uchun
-          pushti/binafsha tovlanish chiqmaydi, faqat ko'k-navy oqim qoladi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.85 : 0.75 }}>
-        <Iridescence
-          // Naqsh faqat shu IKKI rang orasida oqadi — binafsha/pushti chiqmaydi.
-          // Light: sidebar navy (#173f73) -> ochiq havorang.
-          // Dark:  chuqur navy (#152a45) -> o'rtacha ko'k.
-          color={isDark ? [0.05, 0.13, 0.26] : [0.35, 0.56, 0.80]}
-          colorB={isDark ? [0.20, 0.44, 0.68] : [0.88, 0.94, 0.99]}
-          amplitude={0.14}
-          // Oqim aniq ko'rinishi uchun tezlikni oshirdik (0.22 juda sekin edi —
-          // fon statik rangdek ko'rinardi). Endi rangli oqim sezilib turadi.
-          speed={0.55}
-          mouseReact
+      {/* Jonli piksel fon (PixelBlast, WebGL + Bayer dithering). Rang brend
+          navysiga moslangan: light rejimda sidebar navysi (#173f73), dark
+          rejimda esa fon quyuq bo'lgani uchun ochiq havorang (#7fb3d2) —
+          aks holda piksellar qorong'i fonda umuman ko'rinmasdi.
+          Bosilganda to'lqin (ripple) tarqaladi. */}
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.45 }}>
+        <PixelBlast
+          variant="square"
+          pixelSize={4}
+          color={isDark ? "#7fb3d2" : "#173f73"}
+          patternScale={2}
+          patternDensity={1}
+          pixelSizeJitter={0}
+          enableRipples
+          rippleSpeed={0.4}
+          rippleThickness={0.12}
+          rippleIntensityScale={1.5}
+          liquid={false}
+          speed={0.5}
+          edgeFade={0.25}
+          transparent
         />
       </div>
 

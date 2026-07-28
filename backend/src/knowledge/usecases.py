@@ -193,14 +193,35 @@ def _match_employees(
     # noto'g'ri tushib ketardi. Ism qidiruvidan OLDIN turadi, chunki bo'lim nomi
     # tasodifan biror ismning boshiga o'xshab qolishi mumkin.
     if _has_employee_intent(q_lower):
-        for dept in {str(e.get("department", "")) for e in emps}:
+        # MUHIM: bo'limlar bo'ylab TARTIBLANGAN holda yuramiz va ENG YAXSHI
+        # moslikni tanlaymiz. Ilgari tartibsiz set bo'ylab yurib BIRINCHI mos
+        # kelgan bo'lim qaytarilardi — shu sabab "IT departamenti xodimlari"
+        # so'roviga tasodifan "Moliyaviy hisobotlar departamenti" javob berardi.
+        best_dept = ""
+        best_dept_score = 0
+        for dept in sorted({str(e.get("department", "")) for e in emps}):
             distinctive = [
                 t for t in _words(dept) if len(t) >= 2 and t not in _DEPT_STOP
             ]
-            if distinctive and any(
-                t in qwords or (len(t) >= 4 and t in q_lower) for t in distinctive
-            ):
-                return [e for e in emps if str(e.get("department", "")) == dept]
+            if not distinctive:
+                continue
+            hits = [
+                t
+                for t in distinctive
+                if t in qwords or (len(t) >= 4 and t in q_lower)
+            ]
+            if not hits:
+                continue
+            # Ball: mos so'zlarning umumiy uzunligi (aniqroq moslik = katta ball),
+            # ustiga bo'lim nomining necha foizi qamralgani.
+            score = sum(len(t) for t in hits) * 10 + (
+                100 * len(hits) // len(distinctive)
+            )
+            if score > best_dept_score:
+                best_dept_score = score
+                best_dept = dept
+        if best_dept:
+            return [e for e in emps if str(e.get("department", "")) == best_dept]
 
     # 4) F.I.SH — QISMAN moslash: savoldagi so'z ism/familiyaning boshiga mos
     # kelsa yetarli ("Shaxzod" -> "Shaxzodbek", "Jasur" -> "Jasurbek"). Eng ko'p
@@ -1414,12 +1435,23 @@ class AnswerQuestionUseCase:
             }
             return
 
-        prompt, sources = await self._assemble(question, history, results)
+        # Vektor qidiruv XODIM bo'laklarini qaytargan bo'lsa (masalan bo'lim nomi
+        # bo'yicha "IT DEPARTAMENT"), MAHSULOT promptidan foydalanmaymiz — aks
+        # holda javob oxiriga "Yana qaysi kredit bo'yicha ma'lumot kerak?" kabi
+        # mahsulot savoli qo'shilib ketardi.
+        emp_hits = [p for p, _ in results if p.get("doc_type") == "employee"]
+        if emp_hits and len(emp_hits) * 2 >= len(results):
+            prompt = self._employee_prompt(question, history, emp_hits)
+            system = EMPLOYEE_SYSTEM
+            sources = []
+        else:
+            prompt, sources = await self._assemble(question, history, results)
+            system = STRICT_RAG_SYSTEM
         src_dump = [{"title": s.title, "score": s.score} for s in sources]
         tr = StreamingTransliterator() if want_cyrillic else None
         async for ev in self.ai_client.stream_generate(
             prompt,
-            system_prompt=STRICT_RAG_SYSTEM,
+            system_prompt=system,
             temperature=self.TEMPERATURE,
             max_tokens=self.MAX_TOKENS,
         ):
@@ -1529,11 +1561,20 @@ class AnswerQuestionUseCase:
                 max_tokens=self.MAX_TOKENS,
             )
 
-        prompt, sources = await self._assemble(question, history, results)
+        # Xodim bo'laklari qaytgan bo'lsa — xodim prompti (stream tarafi bilan
+        # bir xil mantiq): mahsulot formati/"Yana qaysi kredit" qo'shilmasin.
+        emp_hits = [p for p, _ in results if p.get("doc_type") == "employee"]
+        if emp_hits and len(emp_hits) * 2 >= len(results):
+            prompt = self._employee_prompt(question, history, emp_hits)
+            system = EMPLOYEE_SYSTEM
+            sources = []
+        else:
+            prompt, sources = await self._assemble(question, history, results)
+            system = STRICT_RAG_SYSTEM
 
         gen = await self.ai_client.generate_text_with_usage(
             prompt,
-            system_prompt=STRICT_RAG_SYSTEM,
+            system_prompt=system,
             temperature=self.TEMPERATURE,
             max_tokens=self.MAX_TOKENS,
         )
