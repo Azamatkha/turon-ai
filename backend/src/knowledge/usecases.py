@@ -105,6 +105,39 @@ def _name_norm(token: str) -> str:
     return t
 
 
+def _is_ogli_marker(word: str) -> bool:
+    """So'z "o'g'li"/"qizi"/"ugli" (otasining ismi belgisi)mi — apostrof va
+    registrdan qat'i nazar."""
+    w = re.sub(r"[^a-zа-яёў]", "", word.lower())
+    return w in ("ogli", "ugli", "qizi", "ўғли", "қизи")
+
+
+def _own_name_tokens(fish: str) -> list[str]:
+    """F.I.SH'dan FAQAT shaxsning o'z ismi/familiyasini qaytaradi — otasining
+    ismini (otchestvo) tashlab yuboradi. Aks holda "Ixtiyor ip raqami" so'rovi
+    "Isroilov Isroil IXTIYOR o'g'li" kabi otasining ismi mos kelgan begona
+    xodimni ham qaytarardi. Otchestvo belgilari:
+      * "o'g'li"/"qizi" dan OLDINGI so'z (otasining ismi);
+      * "-ovich/-evich/-ovna/-evna" bilan tugagan so'z (ruscha otchestvo)."""
+    raw = fish.split()
+    drop: set[int] = set()
+    for i, w in enumerate(raw):
+        if _is_ogli_marker(w):
+            drop.add(i)
+            if i - 1 >= 0:
+                drop.add(i - 1)  # o'g'li/qizi dan oldingi so'z = otasining ismi
+    kept: list[str] = []
+    for i, w in enumerate(raw):
+        if i in drop:
+            continue
+        if w.lower().endswith(("ovich", "evich", "ovna", "evna")):
+            continue
+        kept.append(w)
+    return [
+        t for t in _words(" ".join(kept)) if len(t) >= 3 and t not in _NAME_STOP
+    ]
+
+
 def _common_prefix_len(a: str, b: str) -> int:
     n = 0
     for ca, cb in zip(a, b):
@@ -114,22 +147,20 @@ def _common_prefix_len(a: str, b: str) -> int:
     return n
 
 
-def _match_employees(
+def _match_by_number(
     emps: list[dict[str, Any]], q_lower: str
 ) -> list[dict[str, Any]]:
-    """Savolga mos xodimlarni ANIQ moslash bilan topadi: IP raqami, telefon,
-    bo'lim nomi yoki F.I.SH bo'yicha. Topilmasa bo'sh ro'yxat."""
-    qwords = set(_words(q_lower))
+    """Savoldagi raqam biror xodimning IP yoki telefoniga ANIQ mos kelsa,
+    o'sha xodim(lar)ni qaytaradi. Bu eng kuchli signal — yalang'och "2206"
+    ham to'g'ridan-to'g'ri xodimga yo'naladi (mahsulot RAG'iga ketmaydi)."""
     nums = re.findall(r"\d{3,}", q_lower)
-
-    # 1) IP (qisqa raqam) — aniq tenglik
+    if not nums:
+        return []
     ip_targets = {n for n in nums if len(n) <= 5}
     if ip_targets:
         hit = [e for e in emps if str(e.get("ip", "")).strip() in ip_targets]
         if hit:
             return hit
-
-    # 2) Telefon (uzun raqam) — raqamlarini solishtirib qism moslash
     phone_targets = [re.sub(r"\D", "", n) for n in nums if len(n) >= 7]
     if phone_targets:
         hit = [
@@ -142,6 +173,20 @@ def _match_employees(
         ]
         if hit:
             return hit
+    return []
+
+
+def _match_employees(
+    emps: list[dict[str, Any]], q_lower: str
+) -> list[dict[str, Any]]:
+    """Savolga mos xodimlarni ANIQ moslash bilan topadi: IP raqami, telefon,
+    bo'lim nomi yoki F.I.SH bo'yicha. Topilmasa bo'sh ro'yxat."""
+    qwords = set(_words(q_lower))
+
+    # 1-2) IP / telefon — aniq raqam moslash (yagona manba: _match_by_number)
+    by_number = _match_by_number(emps, q_lower)
+    if by_number:
+        return by_number
 
     # 3) Bo'lim nomi — FAQAT savolda aniq xodim-niyat (xodim/ip) bo'lsa. Aks holda
     # filial/manzil so'rovlari ("...bank xizmatlari markazi") xodim bo'limiga
@@ -183,11 +228,8 @@ def _match_employees(
     scored: list[tuple[int, dict[str, Any]]] = []
     qnorms = [_name_norm(qt) for qt in qtokens]
     for e in emps:
-        toks = [
-            t
-            for t in _words(str(e.get("fish", "")))
-            if len(t) >= 3 and t not in _NAME_STOP
-        ]
+        # Otasining ismi (otchestvo) chiqarib tashlanadi — faqat o'z ismi/familiyasi.
+        toks = _own_name_tokens(str(e.get("fish", "")))
         score = 0
         for qn in qnorms:
             best_cp = 0
@@ -199,6 +241,12 @@ def _match_employees(
                 # ustma-ustlik ism deb qabul qilinmasin.
                 if cp >= 4 and cp >= min(len(qn), len(nn)) * 0.7:
                     best_cp = max(best_cp, cp)
+                # Prefiks bo'lmasa ham: savol so'zi (>=4 harf) ism bo'lagining
+                # ICHIDA to'liq uchrasa hisobga olamiz ("boyev" -> "Xamdamboyev",
+                # o'rtadagi/otasining ismidagi mosliklar). Prefiks ustun qolishi
+                # uchun ballni biroz past (len-1) beramiz.
+                elif len(qn) >= 4 and qn in nn:
+                    best_cp = max(best_cp, len(qn) - 1)
             score += best_cp
         if score:
             scored.append((score, e))
@@ -1142,22 +1190,29 @@ class AnswerQuestionUseCase:
         ("answer", [xodimlar]) — mos xodim(lar) topildi;
         ("ask", []) — umumiy so'rov, aniqlashtirish kerak;
         None — bu xodim savoli emas (mahsulot RAG'ga o'tadi)."""
-        # scroll_all + Python filtr — Qdrant'ning payload-filtr indeksi (doc_type)
-        # sozlanmagan bo'lsa ham ishonchli ishlaydi (katalog ham shu yo'l bilan).
-        all_payloads = await self.store.scroll_all(limit=5000)
-        emps = [p for p in all_payloads if p.get("doc_type") == "employee"]
+        # Xodimlarni doc_type filtri bilan TO'LIQ sahifalab olamiz — 5000'lik
+        # scroll_all cheklovi kolleksiya kattalashganda xodimlarni "yo'qotib"
+        # qo'yardi (shuning uchun bir xil savol goh topib, goh topmasdi).
+        emps = await self.store.scroll_by_field("doc_type", "employee")
         if not emps:
             return None
 
         q_lower = question.lower()
+        # Eng kuchli signal: savoldagi raqam biror xodimning IP/telefoniga aniq
+        # mos kelsa — bu direktoriya so'rovi. Katalog-title bostiruvidan OLDIN
+        # tekshiramiz, aks holda yalang'och "2206" mahsulot RAG'iga ketib qolardi.
+        by_number = _match_by_number(emps, q_lower)
+        if by_number:
+            return "answer", by_number[:60]
         # Savolda bazadagi mahsulot/filial NOMI bo'lsa (va aniq xodim-niyat
         # bildirilmagan bo'lsa) — bu mahsulot savoli. Xodim qidiruvini umuman
         # sinamaymiz: aks holda "Yunusobod" kabi joy nomi xodim ismining
         # boshiga tasodifan mos kelib, butunlay boshqa javob qaytarardi.
         if not _has_employee_intent(q_lower):
+            catalog = await self.store.scroll_all(limit=5000)
             titles = {
                 str(p.get("title", ""))
-                for p in all_payloads
+                for p in catalog
                 if p.get("doc_type") != "employee"
             }
             if _mentions_catalog_title(q_lower, sorted(t for t in titles if t)):

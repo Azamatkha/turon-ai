@@ -13,7 +13,14 @@ from typing import Any
 
 
 def _txt(value: Any) -> str:
-    return "" if value is None else str(value).strip()
+    if value is None:
+        return ""
+    # openpyxl raqamli katakni float qaytaradi (masalan IP "2206" -> 2206.0).
+    # Butun sonlarni int'ga keltiramiz, aks holda IP aniq tenglik bo'yicha
+    # topilmay qoladi ("2206.0" != "2206").
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return str(value).strip()
 
 
 def _norm(value: Any) -> str:

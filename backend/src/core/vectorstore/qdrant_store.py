@@ -79,6 +79,30 @@ class QdrantStore:
         )
         return [dict(record.payload or {}) for record in records]
 
+    async def scroll_by_field(
+        self, key: str, value: str, page: int = 1000
+    ) -> list[dict[str, Any]]:
+        """Return payloads of ALL points whose payload[key] == value, paginating
+        through every page (no silent truncation). `page` is the batch size."""
+        if not await self.exists():
+            return []
+        flt = Filter(must=[FieldCondition(key=key, match=MatchValue(value=value))])
+        out: list[dict[str, Any]] = []
+        offset: Any = None
+        while True:
+            records, offset = await self.client.scroll(
+                collection_name=self.collection,
+                scroll_filter=flt,
+                limit=page,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            out.extend(dict(r.payload or {}) for r in records)
+            if offset is None:
+                break
+        return out
+
     async def scroll_all_records(
         self, limit: int = 5000
     ) -> list[tuple[Any, dict[str, Any]]]:
