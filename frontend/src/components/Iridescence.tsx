@@ -23,6 +23,7 @@ precision highp float;
 
 uniform float uTime;
 uniform vec3 uColor;
+uniform vec3 uColorB;
 uniform vec3 uResolution;
 uniform vec2 uMouse;
 uniform float uAmplitude;
@@ -44,20 +45,32 @@ void main() {
   }
   d += uTime * 0.5 * uSpeed;
   vec3 col = vec3(cos(uv * vec2(d, a)) * 0.6 + 0.4, cos(a + d) * 0.5 + 0.5);
-  col = cos(col * cos(vec3(d, a, 2.5)) * 0.5 + 0.5) * uColor;
-  gl_FragColor = vec4(col, 1.0);
+  col = cos(col * cos(vec3(d, a, 2.5)) * 0.5 + 0.5);
+
+  // MUHIM: asl shader kamalak (RGB) ranglar chiqaradi — uColor bilan
+  // ko'paytirish binafsha/pushti tovlanishni yo'qotmaydi. Shuning uchun
+  // naqshni avval BITTA skalyar qiymatga aylantiramiz, so'ng uni faqat
+  // ikki brend rangi (uColor -> uColorB) orasida aralashtiramiz. Natijada
+  // rang doirasi qat'iy nazoratda: begona hue umuman paydo bo'lmaydi.
+  float t = clamp(dot(col, vec3(0.3333)), 0.0, 1.0);
+  t = smoothstep(0.15, 0.85, t);
+  gl_FragColor = vec4(mix(uColor, uColorB, t), 1.0);
 }
 `;
 
 interface IridescenceProps {
+  /** Naqshning quyuq (past) tomoni — odatda to'q navy */
   color?: [number, number, number];
+  /** Naqshning yorug' (baland) tomoni — odatda ochiq havorang */
+  colorB?: [number, number, number];
   speed?: number;
   amplitude?: number;
   mouseReact?: boolean;
 }
 
 export default function Iridescence({
-  color = [1, 1, 1],
+  color = [0.1, 0.24, 0.46],
+  colorB = [0.55, 0.72, 0.9],
   speed = 1.0,
   amplitude = 0.1,
   mouseReact = true,
@@ -96,6 +109,7 @@ export default function Iridescence({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new Color(...color) },
+        uColorB: { value: new Color(...colorB) },
         uResolution: {
           value: new Color(
             gl.canvas.width,
@@ -143,7 +157,7 @@ export default function Iridescence({
       ctn.removeChild(gl.canvas);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [color, speed, amplitude, mouseReact]);
+  }, [color, colorB, speed, amplitude, mouseReact]);
 
   return <div ref={ctnDom} className="iridescence-container" {...rest} />;
 }
