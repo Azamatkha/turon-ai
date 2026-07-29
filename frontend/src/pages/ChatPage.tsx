@@ -9,6 +9,7 @@ import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Grainient from "../components/Grainient";
 import LightRays from "../components/LightRays";
+import NeuralBackground from "../components/NeuralBackground";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -198,9 +199,28 @@ export default function ChatPage() {
         )}
       </div>
 
+      {/* Oqim zarrachalari (NeuralBackground) — FAQAT light rejimda, gradient
+          ustida. Iz shaffof so'ngani uchun Grainient ostidan ko'rinib turadi. */}
+      {!isDark && (
+        <div className={styles.flowLayer} aria-hidden="true" style={{ opacity: 0.5 }}>
+          <NeuralBackground
+            color="#3f6f9f"
+            trailOpacity={0.1}
+            particleCount={600}
+            speed={0.8}
+          />
+        </div>
+      )}
+
       {/* Nuqta (DotField) qatlami — fon ustida, kursor bulge effekti bilan.
-          Ranglar eski gradient fonga moslangan holicha qoldirilgan. */}
-      <div className={styles.dotLayer} aria-hidden="true">
+          Light rejimda ranglar QUYUQROQ: eski #dbe3e8/#cfdae0 oq-ochiq gradient
+          fonda deyarli ko'rinmasdi. dotLayer'ning CSS opacity'si 0.5 — light
+          uchun uni ham ko'taramiz. */}
+      <div
+        className={styles.dotLayer}
+        aria-hidden="true"
+        style={{ opacity: isDark ? 0.5 : 0.85 }}
+      >
         <DotField
           dotRadius={3.5}
           dotSpacing={26}
@@ -208,9 +228,9 @@ export default function ChatPage() {
           bulgeStrength={18}
           cursorRadius={220}
           glowRadius={160}
-          gradientFrom={isDark ? "#213c5e" : "#dbe3e8"}
-          gradientTo={isDark ? "#294c74" : "#cfdae0"}
-          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(42,111,151,0.07)"}
+          gradientFrom={isDark ? "#213c5e" : "#8ea9c4"}
+          gradientTo={isDark ? "#294c74" : "#7d9ab8"}
+          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(23,63,115,0.10)"}
         />
       </div>
 

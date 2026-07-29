@@ -31,6 +31,14 @@
   pointer-events: none;
 }
 
+/* Oqim (flow field) zarrachalari — gradient ustida, nuqtalar ostida */
+.flowLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* Nuqta qatlami — gradient ustida, kontent ostida, bosishni to'smaydi */
 .dotLayer {
   position: absolute;
