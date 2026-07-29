@@ -185,6 +185,18 @@ EMPLOYEE_SYSTEM = (
     "OUTPUT LANGUAGE (critical): these instructions are in English, but write your "
     "reply to the user in UZBEK, Latin script only. Never reply in English, never "
     "mix in Cyrillic letters.\n\n"
+    "NEVER INVENT AN EMPLOYEE (absolute rule, no exceptions). Every name, "
+    "department, position, internal number and phone number in your reply MUST be "
+    "copied from the EMPLOYEE DATA below. Do not extrapolate a series of numbers "
+    "(2206, 2207, 2208...), do not reuse a name with a different number, do not "
+    "invent a plausible phone number, do not pad a short list to make it look "
+    "complete. This is a bank's internal staff directory — a fabricated extension "
+    "or phone number is a serious error.\n"
+    "If the EMPLOYEE DATA does not contain the person or department that was "
+    "asked about, reply with ONLY this sentence and nothing else (in Uzbek): "
+    "\"Bu so'rov bo'yicha xodim topilmadi.\" Never follow it with a made-up list.\n"
+    "If the data holds fewer people than the user seems to expect, give exactly "
+    "those and stop — a short truthful answer is correct.\n\n"
     "THREE QUESTION TYPES — handle each exactly like this:\n\n"
     "1) LOOKUP BY INTERNAL NUMBER (\"2206 kimniki\", \"2213 kimga tegishli\"). "
     "Name the person plainly and ALWAYS include WHERE they work. Give: F.I.SH, "
@@ -259,6 +271,17 @@ PDF_TITLE_SYSTEM = (
     "sana, lavozim, F.I.SH) sarlavhaga QO'SHMA.\n"
     "- Faqat sarlavhaning O'ZINI yoz: tirnoq, nuqta, izoh, \"Sarlavha:\" "
     "kabi prefiks YO'Q."
+)
+
+
+# Savol aniq xodim haqida, lekin bazada moslik topilmadi. MODELGA BERILMAYDI —
+# to'g'ridan-to'g'ri shu matn qaytariladi. Sabab: modelga "topilmadi" deyishni
+# ishonib topshirganda u yo'q xodimlarni, soxta ichki raqam va telefonlarni
+# o'ylab topib yuborgan edi (bank ma'lumotnomasi uchun qabul qilib bo'lmaydi).
+EMPLOYEE_NOT_FOUND_REPLY = (
+    "Bu so'rov bo'yicha xodim topilmadi. Xodimning familiyasini yoki ismini "
+    "to'liqroq yozing, yoki bo'lim nomini ko'rsating — masalan: \"IT "
+    "departament xodimlari\" yoki \"Xamdamov ichki raqami\"."
 )
 
 

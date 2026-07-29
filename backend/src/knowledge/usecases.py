@@ -22,6 +22,7 @@ from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import extract_pdf_text
 from src.knowledge.prompts import (
     EMPLOYEE_ASK_REPLY,
+    EMPLOYEE_NOT_FOUND_REPLY,
     EMPLOYEE_SYSTEM,
     NO_INFO_REPLY,
     PDF_CLEAN_SYSTEM,
@@ -1145,6 +1146,9 @@ class AnswerQuestionUseCase:
     # cheklovni pasaytirsak eng yomon holatdagi kutish qisqaradi. Javoblar odatda
     # 500 tokendan qisqa, shuning uchun 1024 yetarli.
     MAX_TOKENS = 2048
+    # Xodimlar ro'yxati uchun alohida, kattaroq limit: katta bo'limda 30+ xodim
+    # bo'ladi va 2048 token yetmay, javob o'rtasida kesilib qolardi.
+    EMPLOYEE_MAX_TOKENS = 6000
     HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
@@ -1438,6 +1442,13 @@ class AnswerQuestionUseCase:
             return "answer", matched[:60]
         if _is_generic_employee_request(question.lower()):
             return "ask", []
+        # Savol ANIQ xodim haqida, lekin moslik topilmadi. Mahsulot RAG'iga
+        # o'tkazmaymiz: u yerda vektor qidiruv BOSHQA bo'lim xodimlarini
+        # qaytarardi va model shular asosida mavjud bo'lmagan xodimlarni,
+        # ketma-ket soxta IP va telefon raqamlarini to'qib chiqargan edi.
+        # Bu holda model umuman chaqirilmaydi — tayyor matn qaytariladi.
+        if _has_employee_intent(q_lower):
+            return "none", []
         return None
 
     def _employee_prompt(
@@ -1548,8 +1559,14 @@ class AnswerQuestionUseCase:
         route = None if resolved else await self._employee_route(question)
         if route is not None:
             kind, emps = route
-            if kind == "ask":
-                text = to_cyrillic(EMPLOYEE_ASK_REPLY) if want_cyrillic else EMPLOYEE_ASK_REPLY
+            if kind in ("ask", "none"):
+                # Model UMUMAN chaqirilmaydi — tayyor matn. "none" holatida
+                # modelga "topilmadi" deyishni ishonib topshirib bo'lmaydi:
+                # u yo'q xodimlarni to'qib chiqargan edi.
+                canned = (
+                    EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
+                )
+                text = to_cyrillic(canned) if want_cyrillic else canned
                 yield {"type": "delta", "text": text}
                 yield {
                     "type": "done",
@@ -1565,7 +1582,7 @@ class AnswerQuestionUseCase:
                 emp_prompt,
                 system_prompt=EMPLOYEE_SYSTEM,
                 temperature=self.TEMPERATURE,
-                max_tokens=self.MAX_TOKENS,
+                max_tokens=self.EMPLOYEE_MAX_TOKENS,
             ):
                 if tr is not None and ev.get("type") == "delta":
                     ev = {**ev, "text": tr.feed(ev["text"])}
@@ -1683,10 +1700,14 @@ class AnswerQuestionUseCase:
         route = None if resolved else await self._employee_route(question)
         if route is not None:
             kind, emps = route
-            if kind == "ask":
-                answer = to_cyrillic(EMPLOYEE_ASK_REPLY) if want_cyrillic else EMPLOYEE_ASK_REPLY
+            if kind in ("ask", "none"):
+                # Stream yo'li bilan bir xil: model chaqirilmaydi (to'qib
+                # chiqarishning oldini olish uchun), tayyor matn qaytadi.
+                canned = (
+                    EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
+                )
                 return AnswerResult(
-                    answer=answer,
+                    answer=to_cyrillic(canned) if want_cyrillic else canned,
                     sources=[],
                     finish_reason="stop",
                     completion_tokens=0,
@@ -1697,7 +1718,7 @@ class AnswerQuestionUseCase:
                 emp_prompt,
                 system_prompt=EMPLOYEE_SYSTEM,
                 temperature=self.TEMPERATURE,
-                max_tokens=self.MAX_TOKENS,
+                max_tokens=self.EMPLOYEE_MAX_TOKENS,
             )
             answer = gen.text.strip()
             return AnswerResult(
