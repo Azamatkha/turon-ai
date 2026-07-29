@@ -480,12 +480,23 @@ def _has_employee_intent(q_lower: str) -> bool:
     """Savol aniq XODIMLAR haqidami — bo'lim bo'yicha yo'naltirishni faqat shunda
     yoqamiz. Aks holda "Toshkent shahar BANK xizmatlari markazi" kabi filial nomi
     xodim bo'limiga (masalan "Bank karta...") noto'g'ri tushib ketardi."""
-    if "ip" in set(_words(q_lower)):
+    words = set(_words(q_lower))
+    if "ip" in words:
         return True
-    return any(
+    if any(
         w in q_lower
         for w in ("xodim", "hodim", "ходим", "ichki raqam", "ички рақам")
+    ):
+        return True
+    # "2206 kimniki", "2213 kimga tegishli" — savolda "ip" so'zi yo'q, lekin
+    # 3-5 xonali raqam + "kim/tegishli/egasi" bu aniq ichki raqam so'rovi.
+    # Busiz bunday savol mahsulot RAG'iga ketib, "ma'lumot topilmadi" derdi.
+    whose = (
+        any(w.startswith("kim") for w in words)
+        or "tegishli" in words
+        or "egasi" in words
     )
+    return bool(whose and re.search(r"\b\d{3,5}\b", q_lower))
 
 
 _MANBA_PAREN_RE = re.compile(r"\s*\(\s*manba\s*:?[^)]*\)", re.IGNORECASE)
@@ -990,6 +1001,87 @@ def _matches_filters(text: str, filters: list[str]) -> bool:
     return False
 
 
+def _distinctive_filters(
+    filters: list[str], items: list[tuple[str, str]]
+) -> list[str]:
+    """Savoldagi filtr so'zlaridan FAQAT haqiqatan AJRATUVCHILARINI qoldiradi.
+
+    Muammo: "Toshkentda qaysi filiallar JOYLASHGAN" so'rovida "joylashgan"
+    so'zi deyarli HAR BIR filial matnida uchraydi. `_matches_filters` esa
+    bitta filtr mos kelsa yetarli deb hisoblaydi — natijada butun ro'yxat
+    "mos" bo'lib qolardi va Dang'ara kabi butunlay boshqa hududdagi filial
+    Toshkent so'roviga tushib ketardi.
+
+    Yechim: elementlarning YARMIDAN KO'PIDA uchraydigan so'z hech narsani
+    ajratmaydi — uni filtr sifatida hisobga olmaymiz. Umuman uchramaydigan
+    so'z ham ("tavsiya") filtr emas."""
+    if not items:
+        return []
+    keep: list[str] = []
+    for f in filters:
+        hits = sum(1 for t, x in items if _matches_filters(f"{t} {x}", [f]))
+        if 0 < hits * 2 <= len(items):
+            keep.append(f)
+    return keep
+
+
+# "shahar / viloyat / tuman" — bular hududni AJRATMAYDI, balki uning DARAJASINI
+# bildiradi. Filtr so'zi sifatida ishlatilsa "Nukus SHAHRI" ham "Toshkent
+# SHAHRIDAGI filiallar" so'roviga tushib ketadi (so'z boshi bo'yicha moslashda
+# "shahrida" va "shahri" mos keladi). Daraja _filter_by_admin_level da alohida
+# hisobga olinadi. Lotin transliteratsiyasi turlicha bo'lgani uchun (shahar /
+# shaxar) ikkala variant ham ro'yxatda.
+_ADMIN_LEVEL_WORDS = {
+    "shahar", "shahri", "shaharda", "shahridagi", "shahardagi",
+    "shaxar", "shaxri", "shaxarda", "shaxrida", "shahrida",
+    "viloyat", "viloyati", "viloyatda", "viloyatdagi", "viloyatidagi",
+    "tuman", "tumani", "tumanda", "tumandagi", "tumanidagi",
+}
+
+_CITY_MARKERS = ("shahar", "shahri", "shahrid", "shaxar", "shaxri", "shaxrid")
+_REGION_MARKERS = ("viloyat",)
+
+
+def _filter_by_admin_level(
+    q_lower: str, matched: list[tuple[str, str]]
+) -> list[tuple[str, str]]:
+    """"Toshkent SHAHRI" va "Toshkent VILOYATI" ni ajratadi.
+
+    Hudud nomi ikkalasida ham bir xil ("Toshkent"), shuning uchun oddiy so'z
+    moslash ikkalasini birga qaytaradi. Savolda "shahar" yoki "viloyat"
+    aniq aytilgan bo'lsa — mos kelmaydiganini chiqarib tashlaymiz."""
+    wants_city = any(w in q_lower for w in _CITY_MARKERS)
+    wants_region = any(w in q_lower for w in _REGION_MARKERS)
+    # Ikkisi ham aytilgan yoki ikkisi ham aytilmagan — ajratishga asos yo'q.
+    if wants_city == wants_region:
+        return matched
+    out: list[tuple[str, str]] = []
+    for title, text in matched:
+        has_region = "viloyat" in to_latin(f"{title} {text}").lower()
+        if wants_city and has_region:
+            continue
+        if wants_region and not has_region:
+            continue
+        out.append((title, text))
+    # Hammasi chiqib ketsa — evristika xato ishlagan, asl ro'yxatni qaytaramiz.
+    return out or matched
+
+
+# Savol shunchaki ro'yxat emas, MASLAHAT/TAVSIYA so'rayotganini bildiruvchi
+# belgilar. Bunday savolga tayyor ro'yxat tashlash noto'g'ri — modelga berib,
+# mahsulotlarni solishtirib tavsiya qildiramiz.
+_ADVICE_MARKERS = (
+    "tavsiya", "maslahat", "eng yaxshi", "yaxshiroq", "arzon", "qulay",
+    "foizi past", "past foiz", "eng past", "eng kam", "solishtir", "farqi",
+    "qaysi biri yaxshi", "olmoqchi", "olsam", "sotib ol", "kerakmi",
+    "mos keladi", "nima farq", "tanla",
+)
+
+
+def _asks_for_advice(q_lower: str) -> bool:
+    return any(m in q_lower for m in _ADVICE_MARKERS)
+
+
 # Turkum nomi (— _category_label qaytaradigan label bilan AYNAN mos kelishi
 # shart) -> savolda uchrashi mumkin bo'lgan kalit so'zlar. _broad_category_reply
 # shu asosida savol qaysi turkum haqida ekanini aniqlaydi.
@@ -1153,6 +1245,11 @@ class AnswerQuestionUseCase:
                 if toks and all(t in q for t in toks[: min(2, len(toks))]):
                     return None, None
 
+        # Savol MASLAHAT so'rayapti ("mashina uchun qaysi kreditni tavsiya
+        # qilasan") — tayyor ro'yxat javob emas. Modelga beramiz.
+        if _asks_for_advice(q):
+            return None, None
+
         for label, keywords in _CATEGORY_KEYWORDS.items():
             items = groups.get(label)
             if not items or not any(kw in q for kw in keywords):
@@ -1162,12 +1259,23 @@ class AnswerQuestionUseCase:
             # "Samarqand BXM") — savoldan turkum/savol so'zlarini olib
             # tashlagach qolgan so'zlar bo'yicha filtrlaymiz. Manzil mahsulot
             # NOMIDA emas, MATNIDA bo'lgani uchun matn bo'yicha qidiriladi.
-            filters = [
+            raw_filters = [
                 w for w in _words(q)
                 if len(w) >= 4
                 and w not in _BROAD_QUESTION_STOPWORDS
+                and w not in _ADMIN_LEVEL_WORDS
                 and not any(w.startswith(kw) or kw.startswith(w) for kw in keywords)
             ]
+            # Ro'yxatni haqiqatan ajratmaydigan so'zlarni ("joylashgan") tashlaymiz.
+            filters = _distinctive_filters(raw_filters, items)
+
+            # Savolda qo'shimcha so'zlar bor edi, lekin ularning BIRORTASI ham
+            # ro'yxatni ajratmadi — demak bu oddiy turkum so'rovi EMAS
+            # ("Qaysi xalqaro kartalar bor"). To'liq ro'yxat tashlash o'rniga
+            # savolni modelga beramiz, u kontekst asosida mazmunan javob bersin.
+            if raw_filters and not filters:
+                return None, None
+
             shown = items
             note = ""
             if filters:
@@ -1175,8 +1283,9 @@ class AnswerQuestionUseCase:
                     (title, text) for title, text in items
                     if _matches_filters(f"{title} {text}", filters)
                 ]
-                # Faqat haqiqiy toraytirish bo'lsa qo'llaymiz: hech narsa
-                # topilmasa yoki hammasi mos kelsa — to'liq ro'yxat qaytadi.
+                # "Toshkent shahri" va "Toshkent viloyati" ni ajratamiz.
+                matched = _filter_by_admin_level(q, matched)
+                # Faqat haqiqiy toraytirish bo'lsa qo'llaymiz.
                 if matched and len(matched) < len(items):
                     # Ayni bitta mahsulot qoldi — ro'yxat berib "qaysi biri?"
                     # deb so'rash keraksiz, darrov shu bo'yicha javob beriladi.
@@ -1192,6 +1301,9 @@ class AnswerQuestionUseCase:
                     ]
                     label_txt = ", ".join(used) if used else ""
                     note = f"{label_txt} bo'yicha topilganlar:\n\n" if label_txt else ""
+                else:
+                    # Toraytirish bo'lmadi — to'liq ro'yxat o'rniga model javob bersin.
+                    return None, None
 
             numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
             closing = (
