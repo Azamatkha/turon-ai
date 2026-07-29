@@ -9,7 +9,7 @@ import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Grainient from "../components/Grainient";
 import LightRays from "../components/LightRays";
-import NeuralBackground from "../components/NeuralBackground";
+import GlowOrbs from "../components/GlowOrbs";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -199,15 +199,16 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Oqim zarrachalari (NeuralBackground) — FAQAT light rejimda, gradient
-          ustida. Iz shaffof so'ngani uchun Grainient ostidan ko'rinib turadi. */}
+      {/* Yumshoq yorug'lik dog'lari — FAQAT light rejimda, gradient ustida.
+          Sekin suzadi, matn ostida qoladi va o'qilishga xalaqit bermaydi. */}
       {!isDark && (
-        <div className={styles.flowLayer} aria-hidden="true" style={{ opacity: 0.5 }}>
-          <NeuralBackground
-            color="#3f6f9f"
-            trailOpacity={0.1}
-            particleCount={600}
-            speed={0.8}
+        <div className={styles.flowLayer} aria-hidden="true" style={{ opacity: 0.55 }}>
+          <GlowOrbs
+            colors={[
+              "rgba(127, 179, 210, 0.55)",
+              "rgba(23, 63, 115, 0.28)",
+              "rgba(112, 157, 196, 0.45)",
+            ]}
           />
         </div>
       )}
