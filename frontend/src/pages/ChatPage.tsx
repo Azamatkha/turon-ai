@@ -7,7 +7,7 @@ import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import SoftAurora from "../components/SoftAurora";
+import Plasma from "../components/Plasma";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -144,28 +144,26 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Yumshoq "aurora" fon (SoftAurora, WebGL). Ranglar brendga moslangan —
-          binafsha/pushti o'rniga faqat ko'k-navy oilasi:
-            light: ochiq havorang (#bfe0f0) + o'rta ko'k (#5b8fc7)
-            dark:  havorang (#7fb3d2) + navy (#1e4b64)
-          MUHIM: matn rangi (light'da navy #173f73) bilan bir xil rang
-          ISHLATILMAYDI — aks holda yozuvlar fonga singib ketadi. */}
+      {/* Jonli "plasma" fon (Plasma, WebGL). Rang brendga moslangan — binafsha
+          o'rniga ko'k-navy oilasi:
+            light: o'rta ko'k (#5b8fc7)
+            dark:  havorang (#7fb3d2)
+          MUHIM: matn rangi (light'da navy #173f73) fonda ISHLATILMAYDI —
+          aks holda yozuvlar fonga singib ketadi. */}
       <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.45 }}>
-        <SoftAurora
-          speed={0.6}
-          scale={1.5}
-          brightness={1}
-          color1={isDark ? "#7fb3d2" : "#bfe0f0"}
-          color2={isDark ? "#1e4b64" : "#5b8fc7"}
-          noiseFrequency={2.5}
-          noiseAmplitude={1}
-          bandHeight={0.5}
-          bandSpread={1}
-          octaveDecay={0.1}
-          layerOffset={0}
-          colorSpeed={1}
-          enableMouseInteraction
-          mouseInfluence={0.25}
+        <Plasma
+          color={isDark ? "#7fb3d2" : "#5b8fc7"}
+          speed={1}
+          direction="forward"
+          scale={1}
+          opacity={1}
+          // bgLayer'da pointer-events: none — sichqoncha baribir yetib bormaydi,
+          // shuning uchun o'chirib qo'yamiz (ortiqcha hisob-kitob bo'lmasin).
+          mouseInteractive={false}
+          renderScale={0.55}
+          maxDpr={1.5}
+          targetFps={60}
+          iterations={60}
         />
       </div>
 
