@@ -239,6 +239,52 @@ def _employees_from_payloads(payloads: list[dict[str, Any]]) -> list[dict[str, A
     return out
 
 
+def _format_employee_line(e: dict[str, Any], with_dept: bool = True) -> str:
+    """Bitta xodim — bir qator: F.I.SH, bo'lim, bo'linma, lavozim, IP, telefon."""
+    parts: list[str] = [str(e.get("fish", "")).strip()]
+    if with_dept:
+        parts.append(str(e.get("department", "")).strip())
+    parts.append(str(e.get("division", "")).strip())
+    parts.append(str(e.get("position", "")).strip())
+    ip = str(e.get("ip", "")).strip()
+    parts.append(f"ichki raqam (IP): {ip}" if ip else "ichki raqam (IP): yo'q")
+    phone = str(e.get("phone", "")).strip()
+    if phone:
+        parts.append(f"telefon: {phone}")
+    return ", ".join(p for p in parts if p)
+
+
+def _format_employee_answer(emps: list[dict[str, Any]]) -> str:
+    """Xodim javobini KOD tuzadi, model emas.
+
+    Sabab: modelga qoldirilganda u 16 xodimdan 8 tasini yozib to'xtab qolgan,
+    undan oldin esa umuman mavjud bo'lmagan xodimlarni va soxta telefon
+    raqamlarini to'qib chiqargan edi. Bank ma'lumotnomasida ro'yxat to'liq va
+    aynan bazadagidek bo'lishi shart, shuning uchun uni kod kafolatlaydi."""
+    if len(emps) == 1:
+        return _format_employee_line(emps[0]) + "."
+
+    depts = {str(e.get("department", "")).strip() for e in emps}
+    # Hammasi bitta bo'limdan — bu BO'LIM ro'yxati: har qatorda bo'lim nomini
+    # takrorlash keraksiz va "qaysi biri kerak?" deb so'ralmaydi.
+    if len(depts) == 1:
+        dept = depts.pop()
+        lines = [
+            f"{i}. {_format_employee_line(e, with_dept=False)}"
+            for i, e in enumerate(emps, 1)
+        ]
+        head = f"{dept} xodimlari ({len(emps)} ta):" if dept else f"Topilgan xodimlar ({len(emps)} ta):"
+        return head + "\n\n" + "\n".join(lines)
+
+    # Turli bo'limlardan — bu bir xil ismdagi xodimlar, tanlash kerak.
+    lines = [f"{i}. {_format_employee_line(e)}" for i, e in enumerate(emps, 1)]
+    return (
+        f"Shu so'rov bo'yicha {len(emps)} ta xodim topildi:\n\n"
+        + "\n".join(lines)
+        + "\n\nQaysi biri kerak? Bo'lim nomini yoki tartib raqamini yozing."
+    )
+
+
 def _match_by_number(
     emps: list[dict[str, Any]], q_lower: str
 ) -> list[dict[str, Any]]:
@@ -284,7 +330,16 @@ def _match_employees(
     # filial/manzil so'rovlari ("...bank xizmatlari markazi") xodim bo'limiga
     # noto'g'ri tushib ketardi. Ism qidiruvidan OLDIN turadi, chunki bo'lim nomi
     # tasodifan biror ismning boshiga o'xshab qolishi mumkin.
-    if _has_employee_intent(q_lower):
+    # Bo'lim bo'yicha qidiruv ikki holatda ishlaydi:
+    #   1) savolda aniq xodim-niyat bor ("xodimlari", "ip raqamlari");
+    #   2) savol shunchaki BO'LIM NOMIning o'zi ("IT Departament") — bunda
+    #      bo'lim nomining BARCHA ajratuvchi so'zlari savolda bo'lishi shart.
+    # Ikkinchisi kerak, chunki foydalanuvchi ko'pincha faqat bo'lim nomini
+    # yozadi. Mahsulot savoli tasodifan tushib qolmasligi uchun mahsulot
+    # belgisi ("kredit", "karta"...) bo'lgan savol bu yo'lga kiritilmaydi.
+    dept_intent = _has_employee_intent(q_lower)
+    name_only = not dept_intent and not _has_non_employee_signal(q_lower)
+    if dept_intent or name_only:
         # MUHIM: bo'limlar bo'ylab TARTIBLANGAN holda yuramiz va ENG YAXSHI
         # moslikni tanlaymiz. Ilgari tartibsiz set bo'ylab yurib BIRINCHI mos
         # kelgan bo'lim qaytarilardi — shu sabab "IT departamenti xodimlari"
@@ -310,6 +365,12 @@ def _match_employees(
                 if t in qwords or (len(t) >= 4 and t in q_lower)
             ]
             if not hits:
+                continue
+            # Xodim-niyat aytilmagan bo'lsa (savol shunchaki bo'lim nomi) —
+            # bo'lim nomining HAMMA ajratuvchi so'zi savolda bo'lishi shart.
+            # Qisman moslikka ruxsat bersak, oddiy savol tasodifan biror
+            # bo'limga tushib ketardi.
+            if not dept_intent and len(hits) < len(distinctive):
                 continue
             # Ball: mos so'zlarning umumiy uzunligi (aniqroq moslik = katta ball),
             # ustiga bo'lim nomining necha foizi qamralgani.
@@ -1514,7 +1575,9 @@ class AnswerQuestionUseCase:
 
         matched = _match_employees(emps, q_lower)
         if matched:
-            return "answer", matched[:60]
+            # Javobni endi kod tuzadi (model emas), shuning uchun token cheklovi
+            # yo'q — katta bo'lim ham to'liq chiqadi.
+            return "answer", matched[:200]
         if _is_generic_employee_request(question.lower()):
             return "ask", []
         # Savol ANIQ xodim haqida, lekin moslik topilmadi. Mahsulot RAG'iga
@@ -1651,22 +1714,21 @@ class AnswerQuestionUseCase:
                     "sources": [],
                 }
                 return
-            emp_prompt = self._employee_prompt(question, history, emps)
-            tr = StreamingTransliterator() if want_cyrillic else None
-            async for ev in self.ai_client.stream_generate(
-                emp_prompt,
-                system_prompt=EMPLOYEE_SYSTEM,
-                temperature=self.TEMPERATURE,
-                max_tokens=self.EMPLOYEE_MAX_TOKENS,
-            ):
-                if tr is not None and ev.get("type") == "delta":
-                    ev = {**ev, "text": tr.feed(ev["text"])}
-                if ev.get("type") == "done":
-                    if tr is not None and (rest := tr.flush()):
-                        yield {"type": "delta", "text": rest}
-                    ev["max_tokens"] = self.MAX_TOKENS
-                    ev["sources"] = []
-                yield ev
+            # Javobni KOD tuzadi — model chaqirilmaydi. Model ro'yxatni
+            # yarmida to'xtatib qo'ygan (16 tadan 8 tasi) va oldinroq soxta
+            # xodimlarni to'qigan edi.
+            emp_text = _format_employee_answer(emps)
+            yield {
+                "type": "delta",
+                "text": to_cyrillic(emp_text) if want_cyrillic else emp_text,
+            }
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
             return
 
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
@@ -1729,17 +1791,19 @@ class AnswerQuestionUseCase:
         if emp_hits and len(emp_hits) * 2 >= len(results):
             prompt = self._employee_prompt(question, history, emp_hits)
             system = EMPLOYEE_SYSTEM
+            max_toks = self.EMPLOYEE_MAX_TOKENS
             sources = []
         else:
             prompt, sources = await self._assemble(question, history, results)
             system = STRICT_RAG_SYSTEM
+            max_toks = self.MAX_TOKENS
         src_dump = [{"title": s.title, "score": s.score} for s in sources]
         tr = StreamingTransliterator() if want_cyrillic else None
         async for ev in self.ai_client.stream_generate(
             prompt,
             system_prompt=system,
             temperature=self.TEMPERATURE,
-            max_tokens=self.MAX_TOKENS,
+            max_tokens=max_toks,
         ):
             if tr is not None and ev.get("type") == "delta":
                 ev = {**ev, "text": tr.feed(ev["text"])}
@@ -1788,20 +1852,14 @@ class AnswerQuestionUseCase:
                     completion_tokens=0,
                     max_tokens=self.MAX_TOKENS,
                 )
-            emp_prompt = self._employee_prompt(question, history, emps)
-            gen = await self.ai_client.generate_text_with_usage(
-                emp_prompt,
-                system_prompt=EMPLOYEE_SYSTEM,
-                temperature=self.TEMPERATURE,
-                max_tokens=self.EMPLOYEE_MAX_TOKENS,
-            )
-            answer = gen.text.strip()
+            # Stream yo'li bilan bir xil: javobni kod tuzadi, model chaqirilmaydi.
+            emp_text = _format_employee_answer(emps)
             return AnswerResult(
-                answer=to_cyrillic(answer) if want_cyrillic else answer,
+                answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
                 sources=[],
-                finish_reason=gen.finish_reason,
-                completion_tokens=gen.completion_tokens,
-                max_tokens=gen.max_tokens,
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
             )
 
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
@@ -1857,16 +1915,18 @@ class AnswerQuestionUseCase:
         if emp_hits and len(emp_hits) * 2 >= len(results):
             prompt = self._employee_prompt(question, history, emp_hits)
             system = EMPLOYEE_SYSTEM
+            max_toks = self.EMPLOYEE_MAX_TOKENS
             sources = []
         else:
             prompt, sources = await self._assemble(question, history, results)
             system = STRICT_RAG_SYSTEM
+            max_toks = self.MAX_TOKENS
 
         gen = await self.ai_client.generate_text_with_usage(
             prompt,
             system_prompt=system,
             temperature=self.TEMPERATURE,
-            max_tokens=self.MAX_TOKENS,
+            max_tokens=max_toks,
         )
 
         answer = _dedupe_source_links(_strip_stray_followup(gen.text.strip()))
