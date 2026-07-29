@@ -149,11 +149,14 @@ export default function ChatPage() {
           rejimda esa fon quyuq bo'lgani uchun ochiq havorang (#7fb3d2) —
           aks holda piksellar qorong'i fonda umuman ko'rinmasdi.
           Bosilganda to'lqin (ripple) tarqaladi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.85 : 0.7 }}>
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.5 : 0.4 }}>
         <PixelBlast
           variant="square"
           pixelSize={4}
-          color={isDark ? "#7fb3d2" : "#173f73"}
+          // MUHIM: fon rangi matn rangi bilan BIR XIL bo'lmasin. Matn light
+          // rejimda navy (#173f73) — shuning uchun fon uchun ochiqroq havorang
+          // olamiz, aks holda sarlavha fonga singib ketadi.
+          color={isDark ? "#4a7ba8" : "#8fb4d4"}
           patternScale={2}
           patternDensity={1}
           pixelSizeJitter={0}
