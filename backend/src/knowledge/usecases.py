@@ -51,6 +51,8 @@ _DEPT_STOP = {
     "boshqarish", "boshqarmasi", "xodimlar", "xodimlarni", "xodim", "va", "ip",
     "raqam", "raqami", "raqamlari", "telefon", "markazi", "xizmatlari", "xizmat",
     "nazorat", "hisobini", "yuritish", "bosh", "menejer", "direktori",
+    # "bank" hamma bo'lim nomida uchraydi — hech narsani ajratmaydi.
+    "bank", "banki", "turonbank",
 }
 
 
@@ -138,6 +140,21 @@ def _own_name_tokens(fish: str) -> list[str]:
     ]
 
 
+# Egalik/kelishik qo'shimchalari — "Azamatning ip raqami" so'rovida so'z
+# "azamatning" bo'lib qoladi va "Azamat" bilan moslik ballini pasaytiradi
+# (ba'zi ismlar umuman tushib qolardi). Uzunroq qo'shimcha avval tekshiriladi.
+_UZ_SUFFIXES = ("ningki", "ining", "ning", "dagi", "ndan", "niki", "dan", "ni", "ga", "da")
+
+
+def _strip_uz_suffix(token: str) -> str:
+    """"Azamatning" -> "Azamat". O'zak kamida 4 harf qolsa qirqamiz — aks
+    holda qisqa familiyalar ("Husni") buzilib ketardi."""
+    for suf in _UZ_SUFFIXES:
+        if token.endswith(suf) and len(token) - len(suf) >= 4:
+            return token[: -len(suf)]
+    return token
+
+
 def _common_prefix_len(a: str, b: str) -> int:
     n = 0
     for ca, cb in zip(a, b):
@@ -200,8 +217,15 @@ def _match_employees(
         best_dept = ""
         best_dept_score = 0
         for dept in sorted({str(e.get("department", "")) for e in emps}):
+            # _QUERY_STOP ham chiqarib tashlanadi. Sabab: bazada "ICHKI AUDIT
+            # DEPARTAMENTI" bo'limi bor, "ICHKI raqam" esa ichki raqamni
+            # so'rashning odatiy iborasi. "ichki" ni ajratuvchi so'z deb olsak,
+            # "Xamdamboyev ichki raqami" kabi HAR QANDAY savol o'sha bo'limga
+            # tushib ketardi va butunlay boshqa xodimlar qaytarilardi.
             distinctive = [
-                t for t in _words(dept) if len(t) >= 2 and t not in _DEPT_STOP
+                t
+                for t in _words(dept)
+                if len(t) >= 2 and t not in _DEPT_STOP and t not in _QUERY_STOP
             ]
             if not distinctive:
                 continue
@@ -238,7 +262,13 @@ def _match_employees(
     # Kamida 4 harf: 3 harfli bo'laklar ("men", "shu") juda ko'p familiyaning
     # boshiga tasodifan mos keladi.
     qtokens = [
-        t for t in _words(q_lower) if len(t) >= 4 and t not in _QUERY_STOP
+        s
+        for s in (
+            _strip_uz_suffix(t)
+            for t in _words(q_lower)
+            if len(t) >= 4 and t not in _QUERY_STOP
+        )
+        if len(s) >= 4 and s not in _QUERY_STOP
     ]
     if not qtokens:
         return []
@@ -1085,12 +1115,16 @@ def _asks_for_advice(q_lower: str) -> bool:
 # Turkum nomi (— _category_label qaytaradigan label bilan AYNAN mos kelishi
 # shart) -> savolda uchrashi mumkin bo'lgan kalit so'zlar. _broad_category_reply
 # shu asosida savol qaysi turkum haqida ekanini aniqlaydi.
+# Filiallar turkumi alohida ajratilgan: faqat unda deterministik (hudud
+# bo'yicha) toraytirish qo'llanadi — pastdagi _broad_category_reply'ga qarang.
+_BRANCH_LABEL = "Filiallar (bank xizmatlari markazlari va ofislari)"
+
 _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "Bank kartalari": ("karta",),
     "Kreditlar": ("kredit", "ipoteka", "qarz", "mikroqarz", "mikrokredit"),
     "Omonatlar": ("omonat", "depozit"),
     "Pul o'tkazmalari": ("o'tkazma", "otkazma", "o'tkazish", "otkazish"),
-    "Filiallar (bank xizmatlari markazlari va ofislari)": (
+    _BRANCH_LABEL: (
         "filial",
         "bxm",
         "bank xizmatlari markazi",
@@ -1141,8 +1175,13 @@ class AnswerQuestionUseCase:
         # deb nomlangan — turkumni SARLAVHA bo'yicha aniqlaymiz.
         t = title.lower()
         if "bank xizmatlari markazi" in t or "bank xizmatlari ofisi" in t:
-            return "Filiallar (bank xizmatlari markazlari va ofislari)"
+            return _BRANCH_LABEL
         url = source_url.lower()
+        # Nomi boshqacha bo'lgan bo'linmalar ham bor ("Biznesni rivojlantirish
+        # markazi") — ular sarlavha bo'yicha aniqlanmay, filiallar ro'yxatiga
+        # umuman tushmasdi. URL'dagi /branches/ bo'limi ishonchli belgi.
+        if "/branches/" in url:
+            return _BRANCH_LABEL
         if "plastic-card" in url or "/cards" in url or "karta" in url:
             return "Bank kartalari"
         if "credit" in url or "loan" in url or "kredit" in url:
@@ -1266,6 +1305,16 @@ class AnswerQuestionUseCase:
                 and w not in _ADMIN_LEVEL_WORDS
                 and not any(w.startswith(kw) or kw.startswith(w) for kw in keywords)
             ]
+            # Deterministik toraytirish FAQAT filiallar uchun ishonchli: u
+            # HUDUD nomi bo'yicha ketadi ("Samarqanddagi filiallar"). Mahsulot
+            # turkumlarida shart mahsulot XUSUSIYATI bo'ladi ("milliy valyutada
+            # qo'yiladigan omonatlar", "xalqaro kartalar") — buni so'z moslash
+            # bilan hal qilib bo'lmaydi va noto'g'ri javob berardi (masalan
+            # dollardagi "Turon Oltin" milliy valyuta ro'yxatiga tushib qolgan).
+            # Bunday savollarni modelga beramiz — u matnni o'qib tushunadi.
+            if raw_filters and label != _BRANCH_LABEL:
+                return None, None
+
             # Ro'yxatni haqiqatan ajratmaydigan so'zlarni ("joylashgan") tashlaymiz.
             filters = _distinctive_filters(raw_filters, items)
 
@@ -1316,6 +1365,21 @@ class AnswerQuestionUseCase:
             return f"{note}{numbered}\n\n{closing}", None
         return None, None
 
+    async def _lookup_by_ip_field(self, q_lower: str) -> list[dict[str, Any]]:
+        """Savoldagi 3-5 xonali raqamni Qdrant'da `ip` payload maydoni bo'yicha
+        ANIQ qidiradi. scroll natijasiga bog'liq emas."""
+        out: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for n in re.findall(r"\b\d{3,5}\b", q_lower):
+            for p in await self.store.search_by_field("ip", n, limit=60):
+                if p.get("doc_type") != "employee":
+                    continue
+                key = f"{p.get('fish', '')}|{p.get('ip', '')}"
+                if key not in seen:
+                    seen.add(key)
+                    out.append(p)
+        return out
+
     async def _employee_route(
         self, question: str
     ) -> tuple[str, list[dict[str, Any]]] | None:
@@ -1328,13 +1392,31 @@ class AnswerQuestionUseCase:
         # qo'yardi (shuning uchun bir xil savol goh topib, goh topmasdi).
         emps = await self.store.scroll_by_field("doc_type", "employee")
         if not emps:
-            return None
+            # Payload filtri natija bermadi — filtrsiz to'liq sahifalab olib,
+            # Python'da o'zimiz ajratamiz. Bu yo'l hech qanday Qdrant indeksiga
+            # bog'liq emas, shuning uchun xodim qidiruvi baribir ishlaydi.
+            emps = [
+                p
+                for p in await self.store.scroll_all_pages()
+                if p.get("doc_type") == "employee"
+            ]
+        if not emps:
+            # Ro'yxat baribir bo'sh — hech bo'lmasa raqam bo'yicha ANIQ
+            # payload qidiruvini sinab ko'ramiz.
+            direct = await self._lookup_by_ip_field(question.lower())
+            return ("answer", direct[:60]) if direct else None
 
         q_lower = question.lower()
         # Eng kuchli signal: savoldagi raqam biror xodimning IP/telefoniga aniq
         # mos kelsa — bu direktoriya so'rovi. Katalog-title bostiruvidan OLDIN
         # tekshiramiz, aks holda yalang'och "2206" mahsulot RAG'iga ketib qolardi.
         by_number = _match_by_number(emps, q_lower)
+        if not by_number:
+            # Zaxira: Qdrant'dan TO'G'RIDAN-TO'G'RI `ip` maydoni bo'yicha.
+            # scroll bilan hamma xodimni yuklab Python'da solishtirish
+            # kolleksiya kattalashganda ishonchsiz; bu esa aniq payload
+            # filtri — bitta so'rov, hech narsa tushib qolmaydi.
+            by_number = await self._lookup_by_ip_field(q_lower)
         if by_number:
             return "answer", by_number[:60]
         # Savolda bazadagi mahsulot/filial NOMI bo'lsa (va aniq xodim-niyat

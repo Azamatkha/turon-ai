@@ -103,6 +103,30 @@ class QdrantStore:
                 break
         return out
 
+    async def scroll_all_pages(self, page: int = 1000) -> list[dict[str, Any]]:
+        """Kolleksiyadagi BARCHA payload'lar — sahifalab, filtrsiz.
+
+        `scroll_by_field` payload filtriga tayanadi; agar Qdrant'da o'sha
+        maydon bo'yicha filtr ishlamasa (indeks yo'q/boshqa sabab) u bo'sh
+        qaytaradi va xodim qidiruvi butunlay ishdan chiqadi. Bu esa hech
+        qanday filtrga bog'liq emas — chaqiruvchi Python'da o'zi filtrlaydi."""
+        if not await self.exists():
+            return []
+        out: list[dict[str, Any]] = []
+        offset: Any = None
+        while True:
+            records, offset = await self.client.scroll(
+                collection_name=self.collection,
+                limit=page,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            out.extend(dict(r.payload or {}) for r in records)
+            if offset is None:
+                break
+        return out
+
     async def scroll_all_records(
         self, limit: int = 5000
     ) -> list[tuple[Any, dict[str, Any]]]:
