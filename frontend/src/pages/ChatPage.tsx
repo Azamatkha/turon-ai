@@ -7,7 +7,8 @@ import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import Plasma from "../components/Plasma";
+import Grainient from "../components/Grainient";
+import LightRays from "../components/LightRays";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -144,31 +145,61 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Jonli "plasma" fon (Plasma, WebGL). Rang brendga moslangan — binafsha
-          o'rniga ko'k-navy oilasi:
-            light: o'rta ko'k (#5b8fc7)
-            dark:  havorang (#7fb3d2)
-          MUHIM: matn rangi (light'da navy #173f73) fonda ISHLATILMAYDI —
-          aks holda yozuvlar fonga singib ketadi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.45 }}>
-        <Plasma
-          color={isDark ? "#7fb3d2" : "#5b8fc7"}
-          speed={1}
-          direction="forward"
-          scale={1}
-          opacity={1}
-          // bgLayer'da pointer-events: none — sichqoncha baribir yetib bormaydi,
-          // shuning uchun o'chirib qo'yamiz (ortiqcha hisob-kitob bo'lmasin).
-          mouseInteractive={false}
-          renderScale={0.55}
-          maxDpr={1.5}
-          targetFps={60}
-          iterations={60}
-        />
+      {/* Fon qatlami — rejimga qarab IKKI XIL:
+            dark:  LightRays (yuqoridan tushuvchi yorug'lik nurlari),
+            light: eski Grainient gradienti (brend navy ranglari).
+          Ikkalasi ham matn ostida turadi va o'qilishni buzmaydi. */}
+      <div
+        className={styles.bgLayer}
+        aria-hidden="true"
+        style={{ opacity: isDark ? 0.75 : 0.9 }}
+      >
+        {isDark ? (
+          <LightRays
+            raysOrigin="top-center"
+            // Nur rangi brend havorangi — oq nur navy fonda juda quruq ko'rinardi.
+            raysColor="#7fb3d2"
+            raysSpeed={1}
+            lightSpread={0.5}
+            rayLength={3}
+            followMouse
+            mouseInfluence={0.1}
+            noiseAmount={0}
+            distortion={0}
+            pulsating={false}
+            fadeDistance={1}
+            saturation={1}
+          />
+        ) : (
+          <Grainient
+            color1="#709dc4"
+            color2="#f6f9fc"
+            color3="#ffffff"
+            timeSpeed={0.3}
+            colorBalance={-0.02}
+            warpStrength={1.6}
+            warpFrequency={8}
+            warpSpeed={0.8}
+            warpAmplitude={60}
+            blendAngle={20}
+            blendSoftness={0.4}
+            rotationAmount={300}
+            noiseScale={2}
+            grainAmount={0}
+            grainScale={2}
+            grainAnimated={false}
+            contrast={1.05}
+            gamma={1}
+            saturation={1.0}
+            centerX={0}
+            centerY={0}
+            zoom={1.0}
+          />
+        )}
       </div>
 
-      {/* Nuqta (DotField) qatlami — rangli fon ustida, kursor bulge effekti bilan.
-          Ranglar navy fonda ko'rinishi uchun kuchaytirilgan. */}
+      {/* Nuqta (DotField) qatlami — fon ustida, kursor bulge effekti bilan.
+          Ranglar eski gradient fonga moslangan holicha qoldirilgan. */}
       <div className={styles.dotLayer} aria-hidden="true">
         <DotField
           dotRadius={3.5}
@@ -177,9 +208,9 @@ export default function ChatPage() {
           bulgeStrength={18}
           cursorRadius={220}
           glowRadius={160}
-          gradientFrom={isDark ? "#33587f" : "#9fb6cc"}
-          gradientTo={isDark ? "#43709c" : "#8ba7c2"}
-          glowColor={isDark ? "rgba(160,205,235,0.16)" : "rgba(23,63,115,0.12)"}
+          gradientFrom={isDark ? "#213c5e" : "#dbe3e8"}
+          gradientTo={isDark ? "#294c74" : "#cfdae0"}
+          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(42,111,151,0.07)"}
         />
       </div>
 
