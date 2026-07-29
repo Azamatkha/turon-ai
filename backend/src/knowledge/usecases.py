@@ -1390,16 +1390,16 @@ class AnswerQuestionUseCase:
         # Xodimlarni doc_type filtri bilan TO'LIQ sahifalab olamiz — 5000'lik
         # scroll_all cheklovi kolleksiya kattalashganda xodimlarni "yo'qotib"
         # qo'yardi (shuning uchun bir xil savol goh topib, goh topmasdi).
-        emps = await self.store.scroll_by_field("doc_type", "employee")
-        if not emps:
-            # Payload filtri natija bermadi — filtrsiz to'liq sahifalab olib,
-            # Python'da o'zimiz ajratamiz. Bu yo'l hech qanday Qdrant indeksiga
-            # bog'liq emas, shuning uchun xodim qidiruvi baribir ishlaydi.
-            emps = [
-                p
-                for p in await self.store.scroll_all_pages()
-                if p.get("doc_type") == "employee"
-            ]
+        # ASOSIY YO'L: filtrsiz to'liq sahifalab olib, Python'da ajratamiz.
+        # Ilgari bu yerda Qdrant payload filtri (scroll_by_field) ishlatilardi —
+        # lekin xodim qidiruvi ishlamay qolgani shunga ishora qilmoqda, chunki
+        # ayni shu yozuvlarni vektor qidiruv muammosiz topadi. Python filtri
+        # hech qanday Qdrant indeksiga bog'liq emas va ilgari ishlagan usul.
+        emps = [
+            p
+            for p in await self.store.scroll_all_pages()
+            if p.get("doc_type") == "employee"
+        ]
         if not emps:
             # Ro'yxat baribir bo'sh — hech bo'lmasa raqam bo'yicha ANIQ
             # payload qidiruvini sinab ko'ramiz.

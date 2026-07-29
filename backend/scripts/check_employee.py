@@ -43,12 +43,31 @@ async def main() -> None:
     total = await store.count()
     print(f"Kolleksiyadagi umumiy nuqtalar: {total}")
 
-    emps = await store.scroll_by_field("doc_type", "employee")
-    print(f"doc_type=employee bo'yicha topilgan xodimlar: {len(emps)}")
+    # IKKI USULNI SOLISHTIRAMIZ — muammo qaysi biridaligini ko'rsatadi.
+    by_filter = await store.scroll_by_field("doc_type", "employee")
+    all_points = await store.scroll_all_pages()
+    emps = [p for p in all_points if p.get("doc_type") == "employee"]
+
+    print(f"Sahifalab o'qilgan nuqtalar (filtrsiz): {len(all_points)}")
+    print(f"  A) Qdrant payload filtri (doc_type=employee): {len(by_filter)}")
+    print(f"  B) Python filtri (doc_type=employee):         {len(emps)}")
+    if len(by_filter) != len(emps):
+        print(
+            "  ^ IKKISI FARQ QILYAPTI: Qdrant payload filtri ishonchsiz.\n"
+            "    Ilova endi B usulini (Python filtri) ishlatadi."
+        )
+
+    doc_types: dict[str, int] = {}
+    for p in all_points:
+        dt = str(p.get("doc_type", "(yo'q)"))
+        doc_types[dt] = doc_types.get(dt, 0) + 1
+    print(f"\ndoc_type qiymatlari: {doc_types}")
+
     if not emps:
         print(
-            "\nDIQQAT: xodimlar umuman topilmadi. Excel yuklanmagan yoki\n"
-            "doc_type maydoni boshqacha yozilgan bo'lishi mumkin."
+            "\nDIQQAT: xodimlar umuman topilmadi. Yuqoridagi doc_type\n"
+            "qiymatlariga qarang — Excel boshqa yo'l bilan yuklangan bo'lishi\n"
+            "mumkin (u holda doc_type 'employee' emas)."
         )
         return
 
