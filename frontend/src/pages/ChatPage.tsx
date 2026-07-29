@@ -7,7 +7,7 @@ import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import PixelBlast from "../components/PixelBlast";
+import SoftAurora from "../components/SoftAurora";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -144,30 +144,28 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Jonli piksel fon (PixelBlast, WebGL + Bayer dithering). Rang brend
-          navysiga moslangan: light rejimda sidebar navysi (#173f73), dark
-          rejimda esa fon quyuq bo'lgani uchun ochiq havorang (#7fb3d2) —
-          aks holda piksellar qorong'i fonda umuman ko'rinmasdi.
-          Bosilganda to'lqin (ripple) tarqaladi. */}
-      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.5 : 0.4 }}>
-        <PixelBlast
-          variant="square"
-          pixelSize={4}
-          // MUHIM: fon rangi matn rangi bilan BIR XIL bo'lmasin. Matn light
-          // rejimda navy (#173f73) — shuning uchun fon uchun ochiqroq havorang
-          // olamiz, aks holda sarlavha fonga singib ketadi.
-          color={isDark ? "#4a7ba8" : "#8fb4d4"}
-          patternScale={2}
-          patternDensity={1}
-          pixelSizeJitter={0}
-          enableRipples
-          rippleSpeed={0.4}
-          rippleThickness={0.12}
-          rippleIntensityScale={1.5}
-          liquid={false}
-          speed={0.5}
-          edgeFade={0.25}
-          transparent
+      {/* Yumshoq "aurora" fon (SoftAurora, WebGL). Ranglar brendga moslangan —
+          binafsha/pushti o'rniga faqat ko'k-navy oilasi:
+            light: ochiq havorang (#bfe0f0) + o'rta ko'k (#5b8fc7)
+            dark:  havorang (#7fb3d2) + navy (#1e4b64)
+          MUHIM: matn rangi (light'da navy #173f73) bilan bir xil rang
+          ISHLATILMAYDI — aks holda yozuvlar fonga singib ketadi. */}
+      <div className={styles.bgLayer} aria-hidden="true" style={{ opacity: isDark ? 0.55 : 0.45 }}>
+        <SoftAurora
+          speed={0.6}
+          scale={1.5}
+          brightness={1}
+          color1={isDark ? "#7fb3d2" : "#bfe0f0"}
+          color2={isDark ? "#1e4b64" : "#5b8fc7"}
+          noiseFrequency={2.5}
+          noiseAmplitude={1}
+          bandHeight={0.5}
+          bandSpread={1}
+          octaveDecay={0.1}
+          layerOffset={0}
+          colorSpeed={1}
+          enableMouseInteraction
+          mouseInfluence={0.25}
         />
       </div>
 
