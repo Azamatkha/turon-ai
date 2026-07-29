@@ -165,6 +165,80 @@ def _common_prefix_len(a: str, b: str) -> int:
     return n
 
 
+# --- Xodimni MATNDAN ajratib olish -------------------------------------- #
+# Xodimlar bazaga strukturaviy maydonlar (doc_type/ip/fish) bilan yozilmagan
+# bo'lishi mumkin — o'shanda faqat chunk_text qoladi:
+#   "Bo'lim: IT DEPARTAMENT. Lavozim: Bosh mutaxassis. F.I.SH: ... .
+#    Ichki raqam (IP): 2206. Telefon: ..."
+# Bu holda IP/ism/bo'lim bo'yicha qidiruv butunlay ishlamay qolardi. Matn
+# formati qat'iy bo'lgani uchun uni qayta ajratib olish ishonchli.
+
+_EMP_FIELD_RE = re.compile(
+    r"(bo.?linma|bo.?lim|lavozim|f\s*\.?\s*i\s*\.?\s*sh"
+    r"|ichki\s*raqam(?:\s*\(\s*ip\s*\))?|telefon)\s*:\s*",
+    re.IGNORECASE,
+)
+# Har bir yozuv "Bo'lim:" bilan boshlanadi.
+_EMP_SPLIT_RE = re.compile(r"(?=bo.?lim\s*:)", re.IGNORECASE)
+
+
+def _emp_field_key(label: str) -> str | None:
+    key = re.sub(r"[^a-z]", "", label.lower())
+    if key.startswith("bolinma"):
+        return "division"
+    if key.startswith("bolim"):
+        return "department"
+    if key.startswith("lavozim"):
+        return "position"
+    if key.startswith("fish"):
+        return "fish"
+    if key.startswith("ichkiraqam"):
+        return "ip"
+    if key.startswith("telefon"):
+        return "phone"
+    return None
+
+
+def _parse_employee_text(text: str) -> list[dict[str, Any]]:
+    """Matndan xodim yozuvlarini ajratadi. Format buzilgan bo'lsa — bo'sh."""
+    if ":" not in text:
+        return []
+    out: list[dict[str, Any]] = []
+    for seg in _EMP_SPLIT_RE.split(text):
+        marks = list(_EMP_FIELD_RE.finditer(seg))
+        if not marks:
+            continue
+        rec: dict[str, Any] = {
+            "department": "", "division": "", "position": "",
+            "fish": "", "ip": "", "phone": "",
+        }
+        for i, m in enumerate(marks):
+            key = _emp_field_key(m.group(1))
+            if key is None:
+                continue
+            end = marks[i + 1].start() if i + 1 < len(marks) else len(seg)
+            rec[key] = seg[m.end() : end].strip().strip(".").strip()
+        # F.I.SH bo'lmasa bu xodim yozuvi emas (masalan oddiy hujjat matni).
+        if rec["fish"]:
+            rec["chunk_text"] = seg.strip()
+            rec["doc_type"] = "employee"
+            out.append(rec)
+    return out
+
+
+def _employees_from_payloads(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Barcha payload matnlaridan xodimlarni yig'adi (takrorlanmasdan)."""
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for p in payloads:
+        for rec in _parse_employee_text(str(p.get("chunk_text", ""))):
+            key = f"{rec['fish']}|{rec['ip']}"
+            if key not in seen:
+                seen.add(key)
+                out.append(rec)
+    return out
+
+
 def _match_by_number(
     emps: list[dict[str, Any]], q_lower: str
 ) -> list[dict[str, Any]]:
@@ -1399,11 +1473,12 @@ class AnswerQuestionUseCase:
         # lekin xodim qidiruvi ishlamay qolgani shunga ishora qilmoqda, chunki
         # ayni shu yozuvlarni vektor qidiruv muammosiz topadi. Python filtri
         # hech qanday Qdrant indeksiga bog'liq emas va ilgari ishlagan usul.
-        emps = [
-            p
-            for p in await self.store.scroll_all_pages()
-            if p.get("doc_type") == "employee"
-        ]
+        all_points = await self.store.scroll_all_pages()
+        emps = [p for p in all_points if p.get("doc_type") == "employee"]
+        if not emps:
+            # Strukturaviy maydonlar yo'q — xodimlarni MATNDAN ajratib olamiz.
+            # Ma'lumot qanday yuklangan bo'lishidan qat'i nazar ishlaydi.
+            emps = _employees_from_payloads(all_points)
         if not emps:
             # Ro'yxat baribir bo'sh — hech bo'lmasa raqam bo'yicha ANIQ
             # payload qidiruvini sinab ko'ramiz.
