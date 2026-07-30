@@ -27,6 +27,7 @@ from src.knowledge.prompts import (
     NO_INFO_REPLY,
     PDF_CLEAN_SYSTEM,
     PDF_TITLE_SYSTEM,
+    QUERY_REWRITE_SYSTEM,
     STRICT_RAG_SYSTEM,
 )
 from src.knowledge.scraper import extract_content, fetch_html
@@ -1589,6 +1590,57 @@ class AnswerQuestionUseCase:
             return "none", []
         return None
 
+    REWRITE_MAX_TOKENS = 120
+
+    async def _results_by_title(
+        self, title: str
+    ) -> list[tuple[dict[str, Any], float]]:
+        """Sarlavha ANIQ ma'lum bo'lganda (ro'yxatdan raqam tanlangan yoki
+        turkum ichida bitta mahsulot qoldi) — vektor qidiruvga tayanmaymiz.
+
+        Sabab: "16" deb tanlaganda savol "Sirdaryo bank xizmatlari markazi"ga
+        almashtirilardi, lekin embedding qidiruvi BOSHQA filialning bo'lagini
+        qaytarib, Sirdaryo sarlavhasi ostida Termiz manzili chiqib ketardi.
+        Aniq sarlavha bor joyda taxminiy qidiruvning hojati yo'q."""
+        payloads = await self.store.search_by_field("title", title, limit=40)
+        payloads.sort(key=lambda p: int(p.get("chunk_index", 0)))
+        return [(p, 1.0) for p in payloads]
+
+    async def _search_query(
+        self, question: str, history: list[ChatTurn] | None
+    ) -> str:
+        """Qidiruv uchun MUSTAQIL savol qaytaradi (foydalanuvchi savoli emas).
+
+        Suhbat bo'lmasa — savolning o'zi. Suhbat bo'lsa, modeldan savolni
+        oldingi javobga bog'lab to'liq holga keltirishni so'raymiz: "foizlari
+        qanday ularni" kabi savolda qidirish uchun hech narsa yo'q va vektor
+        qidiruv butunlay boshqa mavzuni topib kelardi.
+
+        Xatolikka chidamli: qayta yozish ishlamasa asl savol bilan davom
+        etamiz (javobsiz qolishdan ko'ra yaxshi)."""
+        if not history:
+            return question
+        recent = history[-self.HISTORY_LIMIT :]
+        convo = "\n".join(
+            f"{'User' if t.role == 'user' else 'Assistant'}: {t.content}"
+            for t in recent
+        )
+        prompt = f"Conversation:\n{convo}\n\nLatest user message: {question}"
+        try:
+            rewritten = await self.ai_client.generate_text(
+                prompt,
+                system_prompt=QUERY_REWRITE_SYSTEM,
+                temperature=0.0,
+                max_tokens=self.REWRITE_MAX_TOKENS,
+            )
+        except Exception:
+            return question
+        cleaned = " ".join(rewritten.split()).strip().strip('"').strip()
+        # Model izoh yozib yuborsa yoki bo'sh qaytarsa — asl savolga qaytamiz.
+        if not cleaned or len(cleaned) > 400:
+            return question
+        return cleaned
+
     def _employee_prompt(
         self,
         question: str,
@@ -1767,8 +1819,19 @@ class AnswerQuestionUseCase:
 
         # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank
         # xizmatlari markazi/ofisi"), promptdagi SAVOL esa asl holicha qoladi.
-        query_vector = await self.embedder.embed(_expand_query(question))
-        results = await self.store.search(query_vector, top_k=self.TOP_K)
+        # Savolni suhbat asosida MUSTAQIL savolga aylantiramiz — faqat qidiruv
+        # uchun. Promptdagi SAVOL foydalanuvchi yozganidek qoladi.
+        # Sarlavha aniq ma'lum (ro'yxatdan raqam tanlangan yoki turkum ichida
+        # bitta mahsulot qoldi) — o'sha sarlavhaning bo'laklarini to'g'ridan-
+        # to'g'ri olamiz, taxminiy qidiruv boshqa mahsulotni qaytarmasin.
+        exact_title = resolved or only_title
+        results: list[tuple[dict[str, Any], float]] = []
+        if exact_title:
+            results = await self._results_by_title(exact_title)
+        if not results:
+            search_q = await self._search_query(question, history)
+            query_vector = await self.embedder.embed(_expand_query(search_q))
+            results = await self.store.search(query_vector, top_k=self.TOP_K)
 
         top_score = results[0][1] if results else 0.0
         if not results or top_score < self.MIN_SCORE:
@@ -1893,8 +1956,19 @@ class AnswerQuestionUseCase:
 
         # Qidiruvda rasmiy sinonimlar bilan kengaytiramiz ("filial" -> "bank
         # xizmatlari markazi/ofisi"), promptdagi SAVOL esa asl holicha qoladi.
-        query_vector = await self.embedder.embed(_expand_query(question))
-        results = await self.store.search(query_vector, top_k=self.TOP_K)
+        # Savolni suhbat asosida MUSTAQIL savolga aylantiramiz — faqat qidiruv
+        # uchun. Promptdagi SAVOL foydalanuvchi yozganidek qoladi.
+        # Sarlavha aniq ma'lum (ro'yxatdan raqam tanlangan yoki turkum ichida
+        # bitta mahsulot qoldi) — o'sha sarlavhaning bo'laklarini to'g'ridan-
+        # to'g'ri olamiz, taxminiy qidiruv boshqa mahsulotni qaytarmasin.
+        exact_title = resolved or only_title
+        results: list[tuple[dict[str, Any], float]] = []
+        if exact_title:
+            results = await self._results_by_title(exact_title)
+        if not results:
+            search_q = await self._search_query(question, history)
+            query_vector = await self.embedder.embed(_expand_query(search_q))
+            results = await self.store.search(query_vector, top_k=self.TOP_K)
 
         # Mos kontekst yo'q (yoki eng yaqini ham juda uzoq) — LLM'ni chaqirmasdan
         # darrov "ma'lumotim yo'q" deb qaytaramiz. Bu bema'ni/aloqasiz savolga
