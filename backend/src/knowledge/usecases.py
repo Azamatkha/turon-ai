@@ -57,6 +57,38 @@ _DEPT_STOP = {
     "bank", "banki", "turonbank",
 }
 
+# Bo'lim nomida deyarli har doim uchraydigan, hech narsani AJRATMAYDIGAN
+# so'zlar — PREFIKS bo'yicha tekshiriladi. Sabab: bazada imlo turlicha
+# yozilgan ("departament", "departamenti", "departmenti" va hatto qisqargan
+# "departamen"). Ro'yxatga aynan tenglik bilan tayansak, bitta harf farq
+# qilgani uchun "departamen" ajratuvchi so'z deb qabul qilinib, "IT
+# departament ichki raqamlari" so'roviga "Moliyaviy hisobotlar departamen"
+# javob berardi (uzunroq so'z ballda "it" dan ustun kelardi).
+_DEPT_STOP_PREFIXES = (
+    "departam", "departm", "boshqarm", "bolim", "xizmat", "markaz",
+)
+
+
+def _is_dept_stopword(token: str) -> bool:
+    return token in _DEPT_STOP or any(
+        token.startswith(p) for p in _DEPT_STOP_PREFIXES
+    )
+
+
+def _dept_token_hit(token: str, qwords: set[str]) -> bool:
+    """Bo'lim so'zi savolda bormi — SO'Z sifatida, matn ichidagi bo'lak emas.
+
+    Ilgari `token in q_lower` ishlatilardi: "departamen" savoldagi
+    "departament" so'zining ICHIGA tushib, moslik deb hisoblanardi."""
+    if token in qwords:
+        return True
+    # Qo'shimchali shakl ("moliyaviy" ~ "moliyaviyning") — kamida 5 belgi.
+    return any(
+        min(len(token), len(w)) >= 5
+        and (w.startswith(token) or token.startswith(w))
+        for w in qwords
+    )
+
 
 # Savoldagi ism deb hisoblanmaydigan umumiy so'zlar (aks holda "raqami" kabi
 # so'z tasodifan biror ismning boshiga mos kelib qolardi)
@@ -218,7 +250,10 @@ def _parse_employee_text(text: str) -> list[dict[str, Any]]:
             if key is None:
                 continue
             end = marks[i + 1].start() if i + 1 < len(marks) else len(seg)
-            rec[key] = seg[m.end() : end].strip().strip(".").strip()
+            # Bo'shliqlarni normallashtiramiz: manbadagi qator uzilishlari
+            # javobda lavozim matnini ikkiga bo'lib tashlardi ("Hisobotlarni
+            # tartibga solish va\n\nMSFO boshqarmasi").
+            rec[key] = " ".join(seg[m.end() : end].split()).strip(".").strip()
         # F.I.SH bo'lmasa bu xodim yozuvi emas (masalan oddiy hujjat matni).
         if rec["fish"]:
             rec["chunk_text"] = seg.strip()
@@ -315,6 +350,57 @@ def _match_by_number(
     return []
 
 
+def _name_query_tokens(q_lower: str) -> list[str]:
+    """Savoldan ism deb hisoblanishi mumkin bo'lgan so'zlar (qo'shimchasiz)."""
+    return [
+        s
+        for s in (
+            _strip_uz_suffix(t)
+            for t in _words(q_lower)
+            if len(t) >= 4 and t not in _QUERY_STOP
+        )
+        if len(s) >= 4 and s not in _QUERY_STOP
+    ]
+
+
+def _score_by_name(
+    emps: list[dict[str, Any]], qtokens: list[str]
+) -> list[dict[str, Any]]:
+    """Ism/familiya bo'yicha eng yaxshi mos kelgan xodim(lar).
+
+    Alohida funksiya, chunki u IKKI joyda kerak: butun bazada qidirishda va
+    bo'lim topilgach o'sha bo'lim ICHIDA qidirishda ("IT departamenti
+    Shaxzodning ip raqami")."""
+    if not qtokens:
+        return []
+    scored: list[tuple[int, dict[str, Any]]] = []
+    qnorms = [_name_norm(qt) for qt in qtokens]
+    for e in emps:
+        # Otasining ismi (otchestvo) chiqarib tashlanadi — faqat o'z ismi/familiyasi.
+        toks = _own_name_tokens(str(e.get("fish", "")))
+        score = 0
+        for qn in qnorms:
+            best_cp = 0
+            for nt in toks:
+                nn = _name_norm(nt)
+                cp = _common_prefix_len(qn, nn)
+                # Umumiy prefiks yetarlicha uzun (kamida 4 belgi) VA qisqa
+                # so'zning aksar qismini qamrab olsin.
+                if cp >= 4 and cp >= min(len(qn), len(nn)) * 0.7:
+                    best_cp = max(best_cp, cp)
+                # Prefiks bo'lmasa ham: savol so'zi ism bo'lagining ICHIDA
+                # to'liq uchrasa hisobga olamiz ("boyev" -> "Xamdamboyev").
+                elif len(qn) >= 4 and qn in nn:
+                    best_cp = max(best_cp, len(qn) - 1)
+            score += best_cp
+        if score:
+            scored.append((score, e))
+    if not scored:
+        return []
+    best = max(s for s, _ in scored)
+    return [e for s, e in scored if s == best]
+
+
 def _match_employees(
     emps: list[dict[str, Any]], q_lower: str
 ) -> list[dict[str, Any]]:
@@ -356,15 +442,13 @@ def _match_employees(
             distinctive = [
                 t
                 for t in _words(dept)
-                if len(t) >= 2 and t not in _DEPT_STOP and t not in _QUERY_STOP
+                if len(t) >= 2
+                and not _is_dept_stopword(t)
+                and t not in _QUERY_STOP
             ]
             if not distinctive:
                 continue
-            hits = [
-                t
-                for t in distinctive
-                if t in qwords or (len(t) >= 4 and t in q_lower)
-            ]
+            hits = [t for t in distinctive if _dept_token_hit(t, qwords)]
             if not hits:
                 continue
             # Xodim-niyat aytilmagan bo'lsa (savol shunchaki bo'lim nomi) —
@@ -382,12 +466,19 @@ def _match_employees(
                 best_dept_score = score
                 best_dept = dept
         if best_dept:
-            return [e for e in emps if str(e.get("department", "")) == best_dept]
+            dept_emps = [
+                e for e in emps if str(e.get("department", "")) == best_dept
+            ]
+            # Savolda bo'lim BILAN BIRGA ism ham aytilgan bo'lsa ("IT
+            # departamenti Shaxzodning ip raqami") — butun bo'limni emas,
+            # o'sha bo'lim ichidan ismni qidiramiz.
+            named = _score_by_name(dept_emps, _name_query_tokens(q_lower))
+            return named or dept_emps
 
     # 4) F.I.SH — QISMAN moslash: savoldagi so'z ism/familiyaning boshiga mos
     # kelsa yetarli ("Shaxzod" -> "Shaxzodbek", "Jasur" -> "Jasurbek"). Eng ko'p
-    # so'zi mos kelgan xodim(lar) qaytariladi — bir nechta bo'lsa hammasi, model
-    # ularni ro'yxat qilib qaysi biri kerakligini so'raydi.
+    # so'zi mos kelgan xodim(lar) qaytariladi — bir nechta bo'lsa hammasi,
+    # javobda ro'yxat qilib "qaysi biri kerak?" deb so'raladi.
     #
     # MUHIM: savol aniq mahsulot/filial haqida bo'lsa (va xodim-niyat
     # bildirilmagan bo'lsa) bu bosqich UMUMAN ishlamaydi — aks holda oddiy
@@ -396,53 +487,7 @@ def _match_employees(
     if _has_non_employee_signal(q_lower) and not _has_employee_intent(q_lower):
         return []
 
-    # Kamida 4 harf: 3 harfli bo'laklar ("men", "shu") juda ko'p familiyaning
-    # boshiga tasodifan mos keladi.
-    qtokens = [
-        s
-        for s in (
-            _strip_uz_suffix(t)
-            for t in _words(q_lower)
-            if len(t) >= 4 and t not in _QUERY_STOP
-        )
-        if len(s) >= 4 and s not in _QUERY_STOP
-    ]
-    if not qtokens:
-        return []
-    # Har savol so'zi uchun eng yaxshi mos kelgan ism bo'lagining UMUMIY PREFIKS
-    # uzunligini yig'ib ball beramiz (aniq/uzun moslik = katta ball). Shu sabab
-    # to'liq familiya ("Xamdamboyev" -> 11) boshqa odamning otasining ismidagi
-    # tasodifiy qisqa moslikdan ("...Xamdam o'g'li" -> 6) ustun turadi.
-    scored: list[tuple[int, dict[str, Any]]] = []
-    qnorms = [_name_norm(qt) for qt in qtokens]
-    for e in emps:
-        # Otasining ismi (otchestvo) chiqarib tashlanadi — faqat o'z ismi/familiyasi.
-        toks = _own_name_tokens(str(e.get("fish", "")))
-        score = 0
-        for qn in qnorms:
-            best_cp = 0
-            for nt in toks:
-                nn = _name_norm(nt)
-                cp = _common_prefix_len(qn, nn)
-                # Umumiy prefiks yetarlicha uzun (kamida 4 belgi) VA qisqa
-                # so'zning aksar qismini qamrab olsin — tasodifiy qisqa
-                # ustma-ustlik ism deb qabul qilinmasin.
-                if cp >= 4 and cp >= min(len(qn), len(nn)) * 0.7:
-                    best_cp = max(best_cp, cp)
-                # Prefiks bo'lmasa ham: savol so'zi (>=4 harf) ism bo'lagining
-                # ICHIDA to'liq uchrasa hisobga olamiz ("boyev" -> "Xamdamboyev",
-                # o'rtadagi/otasining ismidagi mosliklar). Prefiks ustun qolishi
-                # uchun ballni biroz past (len-1) beramiz.
-                elif len(qn) >= 4 and qn in nn:
-                    best_cp = max(best_cp, len(qn) - 1)
-            score += best_cp
-        if score:
-            scored.append((score, e))
-    if scored:
-        best = max(s for s, _ in scored)
-        return [e for s, e in scored if s == best]
-
-    return []
+    return _score_by_name(emps, _name_query_tokens(q_lower))
 
 
 # Foydalanuvchi ro'yxatdan faqat RAQAM yozib tanlashi mumkin ("53"). Bunda
