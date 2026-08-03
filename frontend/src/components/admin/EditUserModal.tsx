@@ -1,7 +1,7 @@
 import { useState } from "react";
 import HButton from "../common/HButton";
 import FilterSelect from "./FilterSelect";
-import { DEPARTMENTS, deptLabel } from "../../services/departments";
+import { DEPARTMENTS, DEFAULT_DEPARTMENT, deptLabel } from "../../services/departments";
 import type { AdminUser } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import type { Lang } from "../../types/lang";
@@ -19,7 +19,10 @@ interface Props {
 export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang }: Props) {
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.handle.replace(/^@/, ""));
-  const [dept, setDept] = useState(user.dept === "—" ? "" : user.dept);
+  // Bo'lim bo'sh qolmasin — eski yozuvlarda "—" bo'lsa ham "Boshqa" tanlanadi.
+  const [dept, setDept] = useState(
+    user.dept === "—" || !user.dept ? DEFAULT_DEPARTMENT : user.dept,
+  );
   const [pass, setPass] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -39,7 +42,7 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang 
       await onSubmit({
         full_name: name.trim(),
         username: username.trim(),
-        department: dept.trim(),
+        department: dept.trim() || DEFAULT_DEPARTMENT,
         password: pass || undefined,
       });
       onClose();

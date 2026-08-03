@@ -4,7 +4,7 @@ from pydantic import EmailStr,field_validator
 
 from src.core.schemas import Base
 from src.user.enums import UserRole
-from src.user.auth.schemas import CreateUserModel
+from src.user.auth.schemas import CreateUserModel, normalize_department
 from src.core.validations import USERNAME_VALIDATOR
 
 
@@ -65,3 +65,13 @@ class AdminUpdateUserModel(Base):
         if not USERNAME_VALIDATOR.match(value):
             raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")
         return value
+
+    @field_validator("department")
+    @classmethod
+    def validate_department(cls, value: str | None) -> str | None:
+        # None = "bu maydonni o'zgartirma" (usecase uni o'tkazib yuboradi),
+        # shuning uchun None o'z holicha qoladi. Lekin BO'SH satr yuborilsa —
+        # bu "bo'limni o'chir" degani bo'lib qolardi; o'rniga "Boshqa".
+        if value is None:
+            return None
+        return normalize_department(value)
