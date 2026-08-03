@@ -1,5 +1,4 @@
 import { KeyboardEvent, useState } from "react";
-import { Link } from "react-router-dom";
 import { GrLogin } from "react-icons/gr";
 import { RiLockPasswordLine } from "react-icons/ri";
 import LangSwitcher from "../LangSwitcher";
@@ -31,6 +30,11 @@ export default function LoginForm({
   focus, setFocus, loading, error, submit, onKey,
 }: LoginFormProps) {
   const [helpOpen, setHelpOpen] = useState(false);
+  // Hover va bosish ALOHIDA holatda: bitta holat bo'lsa, sichqoncha kelib
+  // ochib qo'ygandan keyin bosish uni yopib yuborardi.
+  const [hintHover, setHintHover] = useState(false);
+  const [hintPinned, setHintPinned] = useState(false);
+  const hintOpen = hintHover || hintPinned;
   return (
     <div className={styles.panel}>
       {/* til tanlash dropdown */}
@@ -140,12 +144,29 @@ export default function LoginForm({
           )}
         </button>
 
-        {/* ro'yxatdan o'tish havolasi */}
-        <div className={styles.monitoredRow} style={{ justifyContent: "center", gap: 6 }}>
-          {lang === "ru" ? "Нет аккаунта?" : lang === "uz_cyrl" ? "Ҳисобингиз йўқми?" : "Hisobingiz yo‘qmi?"}
-          <Link to="/register" style={{ color: "#2a6f97", fontWeight: 600 }}>
-            {lang === "ru" ? "Регистрация" : lang === "uz_cyrl" ? "Рўйхатдан ўтиш" : "Ro‘yxatdan o‘tish"}
-          </Link>
+        {/* Ro'yxatdan o'tish saytda YOPILGAN — havola o'rniga izoh chiqadi.
+            Sichqoncha olib borilganda ham, bosilganda ham ochiladi (telefonda
+            hover yo'q, shuning uchun bosish ham kerak). */}
+        <div className={styles.monitoredRow} style={{ justifyContent: "center" }}>
+          <div
+            className={styles.noAccountWrap}
+            onMouseEnter={() => setHintHover(true)}
+            onMouseLeave={() => setHintHover(false)}
+          >
+            <button
+              type="button"
+              className={styles.noAccountBtn}
+              onClick={() => setHintPinned((v) => !v)}
+              aria-expanded={hintOpen}
+            >
+              {t.noAccount}
+            </button>
+            {hintOpen && (
+              <div className={styles.registerHint} role="status">
+                {t.registerMobileOnly}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

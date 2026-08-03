@@ -23,4 +23,9 @@ export const login: LoginStrings = {
   selectLanguage: "Tilni tanlash",
   showPassword: "Parolni ko‘rsatish",
   hidePassword: "Parolni yashirish",
+  noAccount: "Hisobingiz yo‘qmi?",
+  registerMobileOnly:
+    "Ro‘yxatdan o‘tish faqat mobil ilova orqali amalga oshiriladi. " +
+    "Telefoningizga Turon AI ilovasini o‘rnating va u yerda ro‘yxatdan o‘ting — " +
+    "so‘ngra shu hisob bilan saytga ham kira olasiz.",
 };

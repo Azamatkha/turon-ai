@@ -287,6 +287,51 @@
   text-decoration: none;
 }
 
+/* "Hisobingiz yo'qmi?" — saytda ro'yxatdan o'tish yopilgani haqidagi izoh */
+/* Panel ichida to'liq kenglikda — absolyut qalqib chiquvchi quti panel
+   chegarasidan kesilib qolardi (overflow). Shuning uchun oddiy oqim blogi. */
+.noAccountWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.noAccountBtn {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2a6f97;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(42, 111, 151, 0.5);
+  transition: color 0.15s ease;
+}
+
+.noAccountBtn:hover {
+  color: #173f73;
+  border-bottom-color: #173f73;
+}
+
+/* Tugma OSTIDA, panel kengligida. Absolyut emas — shuning uchun kesilmaydi
+   va matn erkin o'raladi. */
+.registerHint {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(23, 63, 115, 0.06);
+  border: 1px solid rgba(23, 63, 115, 0.18);
+  color: #173f73;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.55;
+  text-align: left;
+  white-space: normal;
+  animation: helpPop 0.18s ease both;
+}
+
 @keyframes helpPop {
   from {
     opacity: 0;

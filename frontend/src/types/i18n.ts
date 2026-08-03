@@ -24,6 +24,10 @@ export interface LoginStrings {
   selectLanguage: string;
   showPassword: string;
   hidePassword: string;
+  // Saytdan ro'yxatdan o'tish yopilgan — ro'yxatdan o'tish faqat mobil ilovada
+  // (yuzni tasdiqlash kamera va SDK talab qiladi).
+  noAccount: string;
+  registerMobileOnly: string;
 }
 
 export interface ChatStrings {
