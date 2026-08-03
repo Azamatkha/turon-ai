@@ -28,6 +28,7 @@ export interface LoginStrings {
   // (yuzni tasdiqlash kamera va SDK talab qiladi).
   noAccount: string;
   registerMobileOnly: string;
+  gotIt: string;
 }
 
 export interface ChatStrings {

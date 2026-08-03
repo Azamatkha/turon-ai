@@ -1,4 +1,4 @@
-import { KeyboardEvent, useState } from "react";
+import { KeyboardEvent, useEffect, useState } from "react";
 import { GrLogin } from "react-icons/gr";
 import { RiLockPasswordLine } from "react-icons/ri";
 import LangSwitcher from "../LangSwitcher";
@@ -30,11 +30,17 @@ export default function LoginForm({
   focus, setFocus, loading, error, submit, onKey,
 }: LoginFormProps) {
   const [helpOpen, setHelpOpen] = useState(false);
-  // Hover va bosish ALOHIDA holatda: bitta holat bo'lsa, sichqoncha kelib
-  // ochib qo'ygandan keyin bosish uni yopib yuborardi.
-  const [hintHover, setHintHover] = useState(false);
-  const [hintPinned, setHintPinned] = useState(false);
-  const hintOpen = hintHover || hintPinned;
+  const [hintOpen, setHintOpen] = useState(false);
+
+  // Modal Esc bilan ham yopilsin (klaviatura bilan ishlaydiganlar uchun).
+  useEffect(() => {
+    if (!hintOpen) return;
+    const onEsc = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setHintOpen(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [hintOpen]);
   return (
     <div className={styles.panel}>
       {/* til tanlash dropdown */}
@@ -145,30 +151,42 @@ export default function LoginForm({
         </button>
 
         {/* Ro'yxatdan o'tish saytda YOPILGAN — havola o'rniga izoh chiqadi.
-            Sichqoncha olib borilganda ham, bosilganda ham ochiladi (telefonda
-            hover yo'q, shuning uchun bosish ham kerak). */}
+            HOVER YO'Q, faqat bosish: sichqoncha "Kirish" tugmasiga borayotib
+            ustidan o'tsa quti ochilib, formani surib yuborardi. */}
         <div className={styles.monitoredRow} style={{ justifyContent: "center" }}>
-          <div
-            className={styles.noAccountWrap}
-            onMouseEnter={() => setHintHover(true)}
-            onMouseLeave={() => setHintHover(false)}
+          <button
+            type="button"
+            className={styles.noAccountBtn}
+            onClick={() => setHintOpen(true)}
           >
-            <button
-              type="button"
-              className={styles.noAccountBtn}
-              onClick={() => setHintPinned((v) => !v)}
-              aria-expanded={hintOpen}
-            >
-              {t.noAccount}
-            </button>
-            {hintOpen && (
-              <div className={styles.registerHint} role="status">
-                {t.registerMobileOnly}
-              </div>
-            )}
-          </div>
+            {t.noAccount}
+          </button>
         </div>
       </div>
+
+      {/* Modal — ekran markazida, oqimdan tashqarida. Shuning uchun ochilganda
+          forma joyidan siljimaydi va panel chegarasi uni kesmaydi. */}
+      {hintOpen && (
+        <div
+          className={styles.hintOverlay}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setHintOpen(false)}
+        >
+          <div className={styles.hintModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.hintTitle}>{t.noAccount}</div>
+            <p className={styles.hintText}>{t.registerMobileOnly}</p>
+            <button
+              type="button"
+              className={styles.hintClose}
+              onClick={() => setHintOpen(false)}
+              autoFocus
+            >
+              {t.gotIt}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

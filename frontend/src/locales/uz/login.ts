@@ -28,4 +28,5 @@ export const login: LoginStrings = {
     "Ro‘yxatdan o‘tish faqat mobil ilova orqali amalga oshiriladi. " +
     "Telefoningizga Turon AI ilovasini o‘rnating va u yerda ro‘yxatdan o‘ting — " +
     "so‘ngra shu hisob bilan saytga ham kira olasiz.",
+  gotIt: "Tushunarli",
 };

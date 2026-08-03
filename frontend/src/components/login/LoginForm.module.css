@@ -288,16 +288,6 @@
 }
 
 /* "Hisobingiz yo'qmi?" — saytda ro'yxatdan o'tish yopilgani haqidagi izoh */
-/* Panel ichida to'liq kenglikda — absolyut qalqib chiquvchi quti panel
-   chegarasidan kesilib qolardi (overflow). Shuning uchun oddiy oqim blogi. */
-.noAccountWrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
 .noAccountBtn {
   font-size: 13.5px;
   font-weight: 600;
@@ -315,21 +305,83 @@
   border-bottom-color: #173f73;
 }
 
-/* Tugma OSTIDA, panel kengligida. Absolyut emas — shuning uchun kesilmaydi
-   va matn erkin o'raladi. */
-.registerHint {
+/* Modal — ekran markazida, hujjat oqimidan TASHQARIDA. Shuning uchun
+   ochilganda login formasi joyidan siljimaydi (ilgari quti forma ichida
+   ochilib, tepadagi maydonlarni surib yuborardi). */
+.hintOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(11, 26, 44, 0.45);
+  backdrop-filter: blur(2px);
+  animation: hintFade 0.16s ease both;
+}
+
+.hintModal {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(23, 63, 115, 0.06);
-  border: 1px solid rgba(23, 63, 115, 0.18);
+  max-width: 400px;
+  padding: 24px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(13, 33, 45, 0.35);
+  animation: hintRise 0.2s ease both;
+}
+
+.hintTitle {
+  font-size: 16px;
+  font-weight: 700;
   color: #173f73;
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.55;
-  text-align: left;
-  white-space: normal;
-  animation: helpPop 0.18s ease both;
+  margin-bottom: 10px;
+}
+
+.hintText {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #3c5a72;
+}
+
+.hintClose {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  background: #173f73;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.hintClose:hover {
+  background: #1b4b7a;
+}
+
+@keyframes hintFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hintRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes helpPop {
