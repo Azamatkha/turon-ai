@@ -1213,6 +1213,16 @@ def _matches_filters(text: str, filters: list[str]) -> bool:
     return False
 
 
+# Apostrof bir necha xil belgi bilan yoziladi: telefon klaviaturasi tipografik
+# ‘ ’ ni qo'yadi, kodda esa ASCII ' turadi. Ular solishtirishda mos kelmay,
+# "o'tkazma" kabi kalit so'z topilmay qolardi.
+_APOSTROPHE_MAP = dict.fromkeys(map(ord, "‘’ʻʼ`´"), "'")
+
+
+def _norm_apostrophes(s: str) -> str:
+    return s.translate(_APOSTROPHE_MAP)
+
+
 def _distinctive_filters(
     filters: list[str], items: list[tuple[str, str]]
 ) -> list[str]:
@@ -1459,7 +1469,7 @@ class AnswerQuestionUseCase:
         # Turkum kalit so'zlari va mahsulot nomlari LOTINCHA — savol kirillcha
         # yozilgan bo'lsa ("Кредит турлари") lotinga keltiramiz, aks holda
         # hech biri mos kelmay, ro'yxat o'rniga LLM javob berib qolardi.
-        q = to_latin(question).lower()
+        q = _norm_apostrophes(to_latin(question).lower())
 
         # Savolda aniq mahsulot nomi tilga olingan bo'lsa — bu keng savol emas,
         # LLM aniq javob bersin deb oddiy RAG yo'liga qoldiramiz.
@@ -1483,12 +1493,18 @@ class AnswerQuestionUseCase:
             # "Samarqand BXM") — savoldan turkum/savol so'zlarini olib
             # tashlagach qolgan so'zlar bo'yicha filtrlaymiz. Manzil mahsulot
             # NOMIDA emas, MATNIDA bo'lgani uchun matn bo'yicha qidiriladi.
+            # MUHIM: apostrofni OLIB TASHLAB bo'laklaymiz. `_words` apostrofni
+            # so'z chegarasi deb biladi va "o'tkazmalari" -> "o" + "tkazmalari"
+            # bo'lib ketardi; "tkazmalari" esa turkum kalit so'ziga o'xshamay,
+            # soxta filtr bo'lib qolardi va "Pul o'tkazmalari" so'roviga
+            # ro'yxat o'rniga umumiy javob berilardi.
+            kw_bare = [k.replace("'", "") for k in keywords]
             raw_filters = [
-                w for w in _words(q)
+                w for w in _words(q.replace("'", ""))
                 if len(w) >= 4
                 and w not in _BROAD_QUESTION_STOPWORDS
                 and w not in _ADMIN_LEVEL_WORDS
-                and not any(w.startswith(kw) or kw.startswith(w) for kw in keywords)
+                and not any(w.startswith(kw) or kw.startswith(w) for kw in kw_bare)
             ]
             # Deterministik toraytirish FAQAT filiallar uchun ishonchli: u
             # HUDUD nomi bo'yicha ketadi ("Samarqanddagi filiallar"). Mahsulot
