@@ -29,9 +29,15 @@
   gap: 8px;
   height: 42px;
   padding: 0 14px;
-  background: var(--adm-hover);
-  border: 1px solid var(--adm-border-input);
+  background: var(--adm-search-bg);
+  border: 1px solid var(--adm-search-border);
   border-radius: 11px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.searchBox:focus-within {
+  border-color: var(--adm-accent);
+  box-shadow: 0 0 0 3px var(--adm-accent-bg);
 }
 
 .searchInput {
@@ -41,6 +47,10 @@
   font-size: 14px;
   color: var(--adm-text-strong);
   width: 170px;
+}
+
+.searchInput::placeholder {
+  color: var(--adm-search-ph);
 }
 
 .addBtn {

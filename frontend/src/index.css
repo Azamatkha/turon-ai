@@ -38,6 +38,11 @@
   --adm-accent-bg: rgba(42, 111, 151, 0.12);
   --adm-accent-2-bg: rgba(58, 124, 165, 0.12);
   --adm-sidebar: #173f73;
+  /* Qidiruv maydoni — alohida rang. Ilgari --adm-hover ishlatilardi va u
+     dark rejimda kulrang-ko'kish (#1c4257) bo'lib, "seriy" ko'rinardi. */
+  --adm-search-bg: #f1f5f9;
+  --adm-search-border: rgba(23, 63, 115, 0.14);
+  --adm-search-ph: #7d93a8;
 }
 
 html.dark {
@@ -71,6 +76,10 @@ html.dark {
   --adm-accent-bg: rgba(91, 155, 196, 0.16);
   --adm-accent-2-bg: rgba(111, 168, 201, 0.16);
   --adm-sidebar: #102f41;
+  /* Chuqurroq navy — kulrangdan yiroq, ramkasi biroz ko'kish */
+  --adm-search-bg: #0f2739;
+  --adm-search-border: rgba(127, 179, 210, 0.22);
+  --adm-search-ph: #8aa8bd;
 }
 
 /* Light/Dark mavzu almashganda silliq o'tish (inline stillarga ham ta'sir qiladi) */
