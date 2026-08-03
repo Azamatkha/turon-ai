@@ -1223,6 +1223,17 @@ def _norm_apostrophes(s: str) -> str:
     return s.translate(_APOSTROPHE_MAP)
 
 
+# Mahsulot nomlarida qo'shtirnoq bor va u har xil: "Tez pul", “Green Avto”,
+# «Sayohat». Foydalanuvchi ham ro'yxatdan nusxa ko'chirib yuboradi. Nom
+# solishtirishda ular butunlay olib tashlanadi.
+_QUOTE_MAP = dict.fromkeys(map(ord, "«»“”„‟\"'‘’ʻʼ`´"), " ")
+
+
+def _norm_for_match(s: str) -> str:
+    """Nom solishtirish uchun: qo'shtirnoq/apostrofsiz, bir bo'shliqli."""
+    return " ".join(s.translate(_QUOTE_MAP).lower().split())
+
+
 def _distinctive_filters(
     filters: list[str], items: list[tuple[str, str]]
 ) -> list[str]:
@@ -1471,13 +1482,29 @@ class AnswerQuestionUseCase:
         # hech biri mos kelmay, ro'yxat o'rniga LLM javob berib qolardi.
         q = _norm_apostrophes(to_latin(question).lower())
 
-        # Savolda aniq mahsulot nomi tilga olingan bo'lsa — bu keng savol emas,
-        # LLM aniq javob bersin deb oddiy RAG yo'liga qoldiramiz.
+        # Savolda aniq mahsulot NOMI tilga olinganmi. Uchta muhim nuqta:
+        #  1) Qo'shtirnoqlar olib tashlanadi — nomlarda ular har xil ("Tez pul",
+        #     “Green Avto”), foydalanuvchi esa ro'yxatdan nusxa ko'chiradi.
+        #  2) Nomning BARCHA so'zi savolda bo'lishi shart. Ilgari faqat
+        #     dastlabki 2 ta so'z tekshirilardi: `"Tez pul" mikroqarz` da bu
+        #     faqat "mikroqarz" bo'lib, "mikroqarz" so'zi bor BIRINCHI nom
+        #     (butunlay boshqa mahsulot) tanlanardi.
+        #  3) Topilgan nom QAYTARILADI (ilgari tashlab yuborilardi) — shunda
+        #     chaqiruvchi taxminiy vektor qidiruv o'rniga aynan shu sarlavha
+        #     bo'laklarini oladi.
+        qwords_n = set(_words(_norm_for_match(q)))
+        best_title, best_title_score = "", 0
         for items in groups.values():
             for title, _ in items:
-                toks = [t for t in _words(title) if len(t) >= 4]
-                if toks and all(t in q for t in toks[: min(2, len(toks))]):
-                    return None, None
+                toks = [t for t in _words(_norm_for_match(title)) if len(t) >= 3]
+                if not toks or not all(t in qwords_n for t in toks):
+                    continue
+                # Uzunroq/to'liqroq nom ustun ("Tez pul mikroqarz" > "Mikroqarz")
+                score = sum(len(t) for t in toks)
+                if score > best_title_score:
+                    best_title_score, best_title = score, title
+        if best_title:
+            return None, best_title
 
         # Savol MASLAHAT so'rayapti ("mashina uchun qaysi kreditni tavsiya
         # qilasan") — tayyor ro'yxat javob emas. Modelga beramiz.

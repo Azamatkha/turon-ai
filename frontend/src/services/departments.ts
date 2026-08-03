@@ -15,8 +15,12 @@ export interface Department {
   uz_cyrl: string;
 }
 
+// Bo'lim tanlanmagan holat bo'lmasligi kerak — tanlanmasa shu qiymat
+// qo'yiladi. Ro'yxatning BIRINCHI bandi bilan bir xil bo'lishi shart.
+export const DEFAULT_DEPARTMENT = "Boshqa";
+
 export const DEPARTMENTS: Department[] = [
-  { uz: "Boshqa", ru: "Другое", uz_cyrl: "Бошқа" },
+  { uz: DEFAULT_DEPARTMENT, ru: "Другое", uz_cyrl: "Бошқа" },
   { uz: "Axborot texnologiyalar departamenti", ru: "Департамент информационных технологий", uz_cyrl: "Ахборот технологиялар департаменти" },
   { uz: "Ijro nazorati departamenti", ru: "Департамент контроля исполнения", uz_cyrl: "Ижро назорати департаменти" },
   { uz: "Buxgalteriya departamenti", ru: "Департамент бухгалтерии", uz_cyrl: "Бухгалтерия департаменти" },

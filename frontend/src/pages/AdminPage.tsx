@@ -8,6 +8,7 @@ import {
   listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole,
 } from "../services/adminService";
 import { scrapeUrl, uploadText } from "../services/knowledgeService";
+import { DEFAULT_DEPARTMENT } from "../services/departments";
 import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
@@ -151,7 +152,10 @@ export default function AdminPage() {
   const onApiDocs = view === "apiDocs";
 
   const openAdd = () => {
-    setFName(""); setFUser(""); setFDept(""); setFPass(""); setFRole("Xodim");
+    // Bo'lim MAJBURIY — bo'sh qoldirib bo'lmaydi. Modal ochilishida darrov
+    // "Boshqa" tanlangan bo'ladi, admin uni almashtiradi. Aks holda bo'limsiz
+    // xodimlar qo'shilib, statistika va bo'lim bo'yicha qidiruv buzilardi.
+    setFName(""); setFUser(""); setFDept(DEFAULT_DEPARTMENT); setFPass(""); setFRole("Xodim");
     setAdding(false); setAddErr(""); setAddOpen(true);
   };
 
@@ -163,7 +167,8 @@ export default function AdminPage() {
       await createUser({
         username: fUser.trim(),
         full_name: fName.trim(),
-        department: fDept.trim() || undefined,
+        // Kafolat: qandaydir yo'l bilan bo'sh qolsa ham "Boshqa" yuboriladi.
+        department: fDept.trim() || DEFAULT_DEPARTMENT,
         password: fPass,
         role: toBackendRole(fRole),
       });
