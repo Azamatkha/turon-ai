@@ -150,12 +150,14 @@ export default function ChatPage() {
       <div
         className={styles.bgLayer}
         aria-hidden="true"
-        style={{ opacity: isDark ? 0.55 : 0.45 }}
+        style={{ opacity: isDark ? 0.85 : 0.75 }}
       >
         <GradientWaves
-          horizonColor={isDark ? "#0d1e33" : "#f3f5f8"}
-          waveColor={isDark ? "#1B4B7A" : "#9dc0da"}
-          crestColor={isDark ? "#7fb3d2" : "#ffffff"}
+          // Rang fondan yetarlicha farq qilishi kerak — avvalgi ochiq havorang
+          // oq fonda ham, navy fonda ham deyarli ko'rinmasdi.
+          horizonColor={isDark ? "#0d1e33" : "#dce7f2"}
+          waveColor={isDark ? "#2a5f96" : "#3f7cb5"}
+          crestColor={isDark ? "#7fb3d2" : "#cfe1f0"}
           speed={0.3}
           amplitude={2.5}
           waveScale={0.6}
@@ -165,7 +167,9 @@ export default function ChatPage() {
           tilt={1.11}
           zoom={1}
           height={5.5}
-          fogDepth={15}
+          // Kattaroq fogDepth — to'lqinlarning ko'proq qismi shaffof emas,
+          // to'liq rangda chiziladi (alpha = fogDepth / masofa).
+          fogDepth={24}
           // "low" — 40 qadamli raymarch. Bu to'liq ekranli, har kadrda
           // hisoblanadigan shader; ofis kompyuterlarida "medium" og'irlik qiladi.
           detail="low"
