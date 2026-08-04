@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import FilterSelect from "./FilterSelect";
 import ReportDetailModal from "./ReportDetailModal";
 import {
+  getReport,
   listReports,
   type ApiReportAdmin,
   type ReportStatus,
@@ -35,6 +37,16 @@ export default function ReportsView({ mounted, t: admin, onCountsChange }: Repor
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<ApiReportAdmin | null>(null);
+  // Bildirishnomadan kelingan bo'lsa manzilda ?report=<id> turadi
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkId = searchParams.get("report");
+
+  const clearDeepLink = useCallback(() => {
+    if (!deepLinkId) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("report");
+    setSearchParams(next, { replace: true });
+  }, [deepLinkId, searchParams, setSearchParams]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +67,26 @@ export default function ReportsView({ mounted, t: admin, onCountsChange }: Repor
   useEffect(() => {
     void load();
   }, [load]);
+
+  // ?report=<id> bo'lsa o'sha murojaat alohida so'raladi va darhol ochiladi.
+  // Ro'yxatdan qidirilmaydi — u filtr/sahifadan tashqarida bo'lishi mumkin.
+  useEffect(() => {
+    if (!deepLinkId) return;
+    let alive = true;
+    getReport(deepLinkId)
+      .then((r) => {
+        if (alive) setSelected(r);
+      })
+      .catch(() => {
+        if (alive) {
+          setErr(admin.reportsLoadError);
+          clearDeepLink();
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [deepLinkId, admin.reportsLoadError, clearDeepLink]);
 
   const statusOptions = [
     { value: "", label: admin.reportFilterAll },
@@ -122,10 +154,14 @@ export default function ReportsView({ mounted, t: admin, onCountsChange }: Repor
         <ReportDetailModal
           report={selected}
           t={admin}
-          onClose={() => setSelected(null)}
+          onClose={() => {
+            setSelected(null);
+            clearDeepLink();
+          }}
           onSaved={(updated) => {
             setItems((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
             setSelected(null);
+            clearDeepLink();
             void load();
           }}
         />

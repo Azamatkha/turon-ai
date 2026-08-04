@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MdOutlineReportProblem } from "react-icons/md";
+import { MdReportGmailerrorred } from "react-icons/md";
 import { createReport, type ReportKind } from "../../services/reportService";
 import { ACCENT } from "./theme";
 import type { ThemeTokens } from "../../types/chat";
@@ -100,7 +100,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
         <div className={styles.scroll}>
           <div className={styles.head}>
             <div className={styles.headTitle} style={{ color: tk.strong }}>
-              <MdOutlineReportProblem size={19} color={ACCENT} />
+              <MdReportGmailerrorred size={21} color={ACCENT} />
               {s.reportHeading}
             </div>
             <button

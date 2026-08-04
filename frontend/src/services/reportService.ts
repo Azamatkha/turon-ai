@@ -71,6 +71,12 @@ export async function listReports(
   return res.json();
 }
 
+export async function getReport(id: string): Promise<ApiReportAdmin> {
+  const res = await apiFetch(`/v1/admin/reports/${id}`);
+  if (!res.ok) throw new Error(await readError(res, "Murojaat topilmadi"));
+  return res.json();
+}
+
 export async function updateReport(
   id: string,
   status: ReportStatus,

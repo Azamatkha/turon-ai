@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MdOutlineAdminPanelSettings, MdOutlineReportProblem } from "react-icons/md";
+import { MdOutlineAdminPanelSettings, MdReportGmailerrorred } from "react-icons/md";
 import { FaCalculator } from "react-icons/fa6";
 import LangSwitcher from "../LangSwitcher";
 import ThemeToggle from "./ThemeToggle";
@@ -119,7 +119,7 @@ export default function ChatHeader({
           baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#dde2dc"), color: isDark ? "#e8eef2" : "#173f73" }}
           hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#eef3f6", transform: "translateY(-1px)" }}
         >
-          <MdOutlineReportProblem size={19} />
+          <MdReportGmailerrorred size={21} />
         </HButton>
         <NotificationsBell tk={tk} isDark={isDark} s={s} />
         <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IoNotificationsOutline } from "react-icons/io5";
+import { useNavigate } from "react-router-dom";
+import { MdMarkChatRead, MdNotificationsActive } from "react-icons/md";
 import HButton from "../common/HButton";
 import {
   desktopPermission,
@@ -36,6 +37,15 @@ function bodyFor(n: ApiNotification): string {
   return n.params?.title ?? "";
 }
 
+/** Bildirishnoma bosilganda ochiladigan sahifa (bo'lmasa — null).
+ *  Hozircha faqat murojaatlar: admin panelning o'sha murojaati ochiladi. */
+function linkFor(n: ApiNotification): string | null {
+  if (n.type === "report_new" && n.entity_id) {
+    return `/admin/reports?report=${n.entity_id}`;
+  }
+  return null;
+}
+
 function relTime(iso: string, s: ChatStaticStrings): string {
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return "";
@@ -54,6 +64,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const format = useCallback(
     (n: ApiNotification) => ({ title: titleFor(n, s), body: bodyFor(n) }),
@@ -107,6 +118,14 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
     setPerm(result);
   };
 
+  // Havolali bildirishnoma bosilganda: o'qilgan deb belgilanadi va o'sha
+  // obyektga (masalan murojaatga) o'tiladi.
+  const openLink = (n: ApiNotification, href: string) => {
+    if (!n.is_read) void markRead(n.id);
+    setOpen(false);
+    navigate(href);
+  };
+
   return (
     <div className={styles.wrap} ref={wrapRef}>
       <HButton
@@ -125,7 +144,10 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
           transform: "translateY(-1px)",
         }}
       >
-        <IoNotificationsOutline size={19} />
+        {/* O'qilmagan bo'lsa qo'ng'iroq chayqaladi va belgi puls beradi */}
+        <span className={unread > 0 ? styles.bellRing : undefined}>
+          <MdNotificationsActive size={20} />
+        </span>
         {unread > 0 && (
           <span className={styles.badge}>{unread > 99 ? "99+" : unread}</span>
         )}
@@ -151,11 +173,13 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
               {unread > 0 && (
                 <button
                   type="button"
-                  className={styles.linkBtn}
+                  className={`${styles.markAllBtn} tip-end`}
+                  data-tip={s.notifMarkAll}
+                  aria-label={s.notifMarkAll}
                   style={{ color: tk.muted }}
                   onClick={() => void markAllRead()}
                 >
-                  {s.notifMarkAll}
+                  <MdMarkChatRead size={17} />
                 </button>
               )}
             </div>
@@ -182,7 +206,9 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                   {s.notifEmpty}
                 </div>
               )}
-              {items.map((n) => (
+              {items.map((n) => {
+                const href = linkFor(n);
+                return (
                 <div
                   key={n.id}
                   className={styles.row}
@@ -192,6 +218,27 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                     className={n.is_read ? styles.dotRead : styles.dotUnread}
                     aria-hidden="true"
                   />
+                  {href ? (
+                    // Murojaat bildirishnomasi — bosilsa admin paneldagi
+                    // o'sha murojaat ochiladi
+                    <button
+                      type="button"
+                      className={`${styles.rowBody} ${styles.rowLink}`}
+                      onClick={() => openLink(n, href)}
+                    >
+                      <div className={styles.rowTitle} style={{ color: tk.strong }}>
+                        {titleFor(n, s)}
+                      </div>
+                      {bodyFor(n) && (
+                        <div className={styles.rowText} style={{ color: tk.muted }}>
+                          {bodyFor(n)}
+                        </div>
+                      )}
+                      <div className={styles.rowTime} style={{ color: tk.disc }}>
+                        {relTime(n.created_at, s)}
+                      </div>
+                    </button>
+                  ) : (
                   <div className={styles.rowBody}>
                     <div className={styles.rowTitle} style={{ color: tk.strong }}>
                       {titleFor(n, s)}
@@ -205,6 +252,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                       {relTime(n.created_at, s)}
                     </div>
                   </div>
+                  )}
                   {!n.is_read && (
                     <button
                       type="button"
@@ -218,7 +266,8 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                     </button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>,
           document.body
