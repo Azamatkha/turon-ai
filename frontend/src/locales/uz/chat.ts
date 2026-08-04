@@ -39,7 +39,8 @@ export const chatStatic: ChatStaticStrings = {
     "Chiqmadimi? Windows sozlamalarida ham tekshiring: Sozlamalar → Tizim → Bildirishnomalar → Google Chrome yoqilgan bo‘lsin (“Diqqatni jamlash” rejimi o‘chirilgan bo‘lsin).",
   notifDesktopHow: "Qanday yoqiladi?",
   notifDesktopSteps:
-    "Brauzer o‘zi qayta so‘ramaydi — qo‘lda yoqish kerak:\n1. Manzil qatoridagi 🔒 (yoki ⓘ) belgisini bosing\n2. “Bildirishnomalar / Notifications” bandini toping\n3. “Ruxsat berish / Allow” ni tanlang\n4. Sahifani yangilang",
+    "Bir marta rad etilgandan keyin brauzer qayta so‘ramaydi — qo‘lda yoqish kerak.\n\n1-usul: manzil qatorining chap tomonidagi belgini bosing (brauzer versiyasiga qarab qulf, ⓘ yoki sozlagichlar belgisi bo‘lishi mumkin) → “Sayt sozlamalari” → “Bildirishnomalar” → “Ruxsat berish”.\n\n2-usul: brauzer menyusi (⋮) → Sozlamalar → Maxfiylik va xavfsizlik → Sayt sozlamalari → Bildirishnomalar. “Ruxsat berilmagan” ro‘yxatidan quyidagi saytni toping va “Ruxsat berish” ga o‘tkazing.\n\nSo‘ng sahifani yangilang.",
+  notifDesktopSiteLabel: "Sayt:",
   notifKnowledgeUpdated: "Ma’lumotlar yangilandi",
   notifRatesUpdated: "Valyuta kursi o‘zgardi",
   notifReportNew: "Yangi murojaat",

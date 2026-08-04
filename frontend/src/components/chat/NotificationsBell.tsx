@@ -238,9 +238,15 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                   <span className={styles.blockedHow}>{s.notifDesktopHow}</span>
                 </span>
                 {showHow && (
-                  <span className={styles.blockedSteps} style={{ color: tk.disc }}>
-                    {s.notifDesktopSteps}
-                  </span>
+                  <>
+                    <span className={styles.blockedSteps} style={{ color: tk.disc }}>
+                      {s.notifDesktopSteps}
+                    </span>
+                    {/* Brauzer sozlamalarida saytni topish oson bo'lsin */}
+                    <span className={styles.blockedSite} style={{ color: tk.strong }}>
+                      {s.notifDesktopSiteLabel} {window.location.host}
+                    </span>
+                  </>
                 )}
               </button>
             )}

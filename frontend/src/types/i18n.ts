@@ -66,6 +66,7 @@ export interface ChatStaticStrings {
   notifDesktopBlocked: string;
   notifDesktopHow: string;
   notifDesktopSteps: string;
+  notifDesktopSiteLabel: string;
   notifDesktopTest: string;
   notifDesktopTestBody: string;
   notifDesktopOsHint: string;
