@@ -31,6 +31,10 @@ export const chatStatic: ChatStaticStrings = {
   notifMarkRead: "Ўқилган деб белгилаш",
   notifEnableDesktop: "Браузер билдиришномаларига рухсат бериш",
   notifDesktopBlocked: "Браузер билдиришномалари блокланган",
+  notifDesktopTest: "Билдиришномани синаб кўриш",
+  notifDesktopTestBody: "Агар шу хабарни кўрсангиз — ҳаммаси ишлаяпти.",
+  notifDesktopOsHint:
+    "Чиқмадими? Windows созламаларида ҳам текширинг: Созламалар → Тизим → Билдиришномалар → Google Chrome ёқилган бўлсин (“Диққатни жамлаш” режими ўчирилган бўлсин).",
   notifDesktopHow: "Қандай ёқилади?",
   notifDesktopSteps:
     "Браузер ўзи қайта сўрамайди — қўлда ёқиш керак:\n1. Манзил қаторидаги 🔒 (ёки ⓘ) белгисини босинг\n2. “Билдиришномалар / Notifications” бандини топинг\n3. “Рухсат бериш / Allow” ни танланг\n4. Саҳифани янгиланг",

@@ -71,8 +71,11 @@ export function useNotifications(format: (n: ApiNotification) => DesktopText) {
   // ---- OS (ekran burchagi) bildirishnomasi ----
   const pushDesktop = useCallback(async () => {
     if (!desktopSupported() || Notification.permission !== "granted") return;
-    // Tab ochiq turganda popup kerak emas — badge'ning o'zi yetarli
-    if (document.visibilityState === "visible") return;
+    // Faqat foydalanuvchi shu sahifada TURGANDA popup kerak emas.
+    // `visibilityState` yetarli emas: boshqa dasturga o'tilganda ham tab
+    // ko'pincha "visible" bo'lib qolaveradi — shuning uchun fokus ham
+    // tekshiriladi, aks holda YouTube'dagi kabi popup hech qachon chiqmasdi.
+    if (document.visibilityState === "visible" && document.hasFocus()) return;
 
     let fresh: ApiNotification[] = [];
     try {
@@ -190,5 +193,26 @@ export function useNotifications(format: (n: ApiNotification) => DesktopText) {
     return result;
   }, []);
 
-  return { unread, items, loading, refresh, markRead, markAllRead, requestDesktop };
+  /** Sinov popup'i — ruxsat berilgan bo'lsa ham OS (Windows) darajasida
+   *  bloklangan bo'lishi mumkin. Shu tugma orqali darhol tekshirib ko'riladi. */
+  const testDesktop = useCallback((title: string, body: string): boolean => {
+    if (!desktopSupported() || Notification.permission !== "granted") return false;
+    try {
+      new Notification(title, { body, tag: "turon-test" });
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  return {
+    unread,
+    items,
+    loading,
+    refresh,
+    markRead,
+    markAllRead,
+    requestDesktop,
+    testDesktop,
+  };
 }

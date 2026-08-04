@@ -60,6 +60,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   const [open, setOpen] = useState(false);
   const [perm, setPerm] = useState(desktopPermission());
   const [showHow, setShowHow] = useState(false);
+  const [tested, setTested] = useState(false);
   // Panel portal orqali <body> ga chiqadi — header'ning z-index qatlamiga
   // qamalib qolmasin. Shuning uchun joyi tugma koordinatasidan hisoblanadi.
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -71,8 +72,16 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
     (n: ApiNotification) => ({ title: titleFor(n, s), body: bodyFor(n) }),
     [s]
   );
-  const { unread, items, loading, refresh, markRead, markAllRead, requestDesktop } =
-    useNotifications(format);
+  const {
+    unread,
+    items,
+    loading,
+    refresh,
+    markRead,
+    markAllRead,
+    requestDesktop,
+    testDesktop,
+  } = useNotifications(format);
 
   const place = useCallback(() => {
     const rect = wrapRef.current?.getBoundingClientRect();
@@ -196,6 +205,26 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
               >
                 {s.notifEnableDesktop}
               </button>
+            )}
+            {perm === "granted" && (
+              <>
+                <button
+                  type="button"
+                  className={styles.optIn}
+                  style={{ color: tk.muted, borderColor: tk.cardBorder }}
+                  onClick={() => {
+                    testDesktop(s.notifications, s.notifDesktopTestBody);
+                    setTested(true);
+                  }}
+                >
+                  {s.notifDesktopTest}
+                </button>
+                {tested && (
+                  <div className={styles.optInMuted} style={{ color: tk.disc }}>
+                    {s.notifDesktopOsHint}
+                  </div>
+                )}
+              </>
             )}
             {perm === "denied" && (
               <button

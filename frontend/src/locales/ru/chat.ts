@@ -30,6 +30,10 @@ export const chatStatic: ChatStaticStrings = {
   notifMarkRead: "Отметить прочитанным",
   notifEnableDesktop: "Разрешить уведомления браузера",
   notifDesktopBlocked: "Уведомления браузера заблокированы",
+  notifDesktopTest: "Проверить уведомление",
+  notifDesktopTestBody: "Если вы видите это сообщение — всё работает.",
+  notifDesktopOsHint:
+    "Не появилось? Проверьте и настройки Windows: Параметры → Система → Уведомления → Google Chrome включён (режим «Фокусировка внимания» выключен).",
   notifDesktopHow: "Как включить?",
   notifDesktopSteps:
     "Браузер больше не спросит — нужно включить вручную:\n1. Нажмите 🔒 (или ⓘ) в адресной строке\n2. Найдите пункт «Уведомления / Notifications»\n3. Выберите «Разрешить / Allow»\n4. Обновите страницу",
