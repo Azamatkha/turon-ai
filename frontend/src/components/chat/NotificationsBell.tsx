@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { IoNotificationsOutline } from "react-icons/io5";
 import HButton from "../common/HButton";
 import {
@@ -48,6 +49,11 @@ function relTime(iso: string, s: ChatStaticStrings): string {
 export default function NotificationsBell({ tk, isDark, s }: NotificationsBellProps) {
   const [open, setOpen] = useState(false);
   const [perm, setPerm] = useState(desktopPermission());
+  // Panel portal orqali <body> ga chiqadi — header'ning z-index qatlamiga
+  // qamalib qolmasin. Shuning uchun joyi tugma koordinatasidan hisoblanadi.
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const format = useCallback(
     (n: ApiNotification) => ({ title: titleFor(n, s), body: bodyFor(n) }),
@@ -56,11 +62,21 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   const { unread, items, loading, refresh, markRead, markAllRead, requestDesktop } =
     useNotifications(format);
 
+  const place = useCallback(() => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({ top: rect.bottom + 10, right: window.innerWidth - rect.right });
+  }, []);
+
   const toggle = () => {
-    const next = !open;
-    setOpen(next);
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    place();
+    setOpen(true);
     // Ro'yxat faqat panel ochilganda yuklanadi — polling faqat sonni so'raydi
-    if (next) void refresh();
+    void refresh();
   };
 
   useEffect(() => {
@@ -68,9 +84,23 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    // Tashqariga bosilganda yopiladi. Qoplama <div> ishlatilmaydi: u tugmani
+    // ham to'sib qo'yardi va bosish ikki marta hisoblanardi.
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (panelRef.current?.contains(target)) return;
+      if (wrapRef.current?.contains(target)) return; // tugmani toggle o'zi hal qiladi
+      setOpen(false);
+    };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+    document.addEventListener("mousedown", onDown);
+    window.addEventListener("resize", place);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, place]);
 
   const enableDesktop = async () => {
     const result = await requestDesktop();
@@ -78,7 +108,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   };
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} ref={wrapRef}>
       <HButton
         onClick={toggle}
         data-tip={s.notifications}
@@ -101,13 +131,18 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         )}
       </HButton>
 
-      {open && (
-        <>
-          {/* Tashqariga bosilganda yopiladi */}
-          <div className={styles.backdrop} onClick={() => setOpen(false)} />
+      {open &&
+        pos &&
+        createPortal(
           <div
+            ref={panelRef}
             className={styles.panel}
-            style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}
+            style={{
+              top: pos.top,
+              right: pos.right,
+              background: tk.card,
+              border: "1px solid " + tk.cardBorder,
+            }}
           >
             <div className={styles.head} style={{ borderColor: tk.cardBorder }}>
               <span className={styles.headTitle} style={{ color: tk.strong }}>
@@ -185,9 +220,9 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                 </div>
               ))}
             </div>
-          </div>
-        </>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

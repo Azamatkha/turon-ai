@@ -26,18 +26,11 @@
   pointer-events: none;
 }
 
-/* Panel tashqarisiga bosilganda yopish uchun ko'rinmas qatlam */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 55;
-}
-
+/* Panel <body> ga portal orqali chiqadi — joyi JS'da hisoblanadi (top/right).
+   Shu tufayli header'ning z-index qatlamiga qamalib qolmaydi. */
 .panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 56;
+  position: fixed;
+  z-index: 200;
   width: 340px;
   max-width: calc(100vw - 32px);
   display: flex;

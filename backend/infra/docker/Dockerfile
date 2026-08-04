@@ -61,8 +61,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && groupadd --system appuser \
     && useradd --system --gid appuser --create-home --home-dir /home/appuser appuser \
-    && mkdir -p /data \
-    && chown appuser:appuser /app /data
+    && mkdir -p /data /app/media \
+    && chown appuser:appuser /app /data /app/media
 
 COPY --from=builder --chown=appuser:appuser /install /install
 COPY --chown=appuser:appuser . .

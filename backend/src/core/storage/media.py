@@ -16,6 +16,7 @@ from PIL import Image, UnidentifiedImageError
 
 from loggers import get_logger
 from src.core.errors.exceptions import (
+    InfrastructureException,
     InstanceProcessingException,
     NotAcceptableException,
     PayloadTooLargeException,
@@ -36,6 +37,7 @@ FORMAT_EXTENSIONS = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
 TOO_LARGE = "Fayl hajmi juda katta"
 BAD_TYPE = "Faqat PNG, JPG yoki WEBP rasm yuklash mumkin"
 BAD_IMAGE = "Faylni rasm sifatida o'qib bo'lmadi"
+WRITE_FAILED = "Faylni saqlab bo'lmadi"
 
 
 def media_root() -> Path:
@@ -99,7 +101,14 @@ async def save_image(
     relative_path = relative_dir / f"{uuid4()}.{extension}"
     target = media_root() / relative_path
 
-    await anyio.to_thread.run_sync(_write_file, target, data)
+    try:
+        await anyio.to_thread.run_sync(_write_file, target, data)
+    except OSError as error:
+        # Odatda MEDIA_ROOT ga yozish huquqi yo'q (Docker volume egasi noto'g'ri).
+        # Xom 500 o'rniga tushunarli xabar qaytaramiz.
+        logger.exception("Rasmni saqlab bo'lmadi: %s", target)
+        raise InfrastructureException(WRITE_FAILED) from error
+
     logger.info("Rasm saqlandi: %s (%s bayt)", relative_path, len(data))
     return relative_path.as_posix(), len(data)
 
