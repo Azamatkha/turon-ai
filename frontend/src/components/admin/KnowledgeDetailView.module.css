@@ -1,7 +1,9 @@
 /* Ma'lumot tafsiloti — to'liq sahifa (modal emas) */
 
+/* Kontent (.chunks / .card) 900px, shuning uchun sarlavha qatori ham shu
+   kenglikda — aks holda tugmalar kontentdan ancha chapda qolib ketardi. */
 .wrap {
-  max-width: 1400px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -18,11 +20,14 @@
   gap: 8px;
 }
 
+/* max-width bor, lekin markazlashtirish yo'q edi — shu sababli keng ekranda
+   kontent 1400px'li .wrap ning chap chekkasiga yopishib qolardi. */
 .chunks {
   display: flex;
   flex-direction: column;
   gap: 14px;
   max-width: 900px;
+  margin: 0 auto;
 }
 
 .chunk {
@@ -34,6 +39,7 @@
 
 .card {
   max-width: 900px;
+  margin: 0 auto;
   background: var(--adm-card);
   border: 1px solid var(--adm-border-2);
   border-radius: 16px;

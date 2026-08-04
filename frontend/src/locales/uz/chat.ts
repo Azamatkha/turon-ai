@@ -33,10 +33,6 @@ export const chatStatic: ChatStaticStrings = {
   notifMarkRead: "O‘qilgan deb belgilash",
   notifEnableDesktop: "Brauzer bildirishnomalariga ruxsat berish",
   notifDesktopBlocked: "Brauzer bildirishnomalari bloklangan",
-  notifDesktopTest: "Bildirishnomani sinab ko‘rish",
-  notifDesktopTestBody: "Agar shu xabarni ko‘rsangiz — hammasi ishlayapti.",
-  notifDesktopOsHint:
-    "Chiqmadimi? Windows sozlamalarida ham tekshiring: Sozlamalar → Tizim → Bildirishnomalar → Google Chrome yoqilgan bo‘lsin (“Diqqatni jamlash” rejimi o‘chirilgan bo‘lsin).",
   notifDesktopHow: "Qanday yoqiladi?",
   notifDesktopSteps:
     "Bir marta rad etilgandan keyin brauzer qayta so‘ramaydi — qo‘lda yoqish kerak.\n\n1-usul: manzil qatorining chap tomonidagi belgini bosing (brauzer versiyasiga qarab qulf, ⓘ yoki sozlagichlar belgisi bo‘lishi mumkin) → “Sayt sozlamalari” → “Bildirishnomalar” → “Ruxsat berish”.\n\n2-usul: brauzer menyusi (⋮) → Sozlamalar → Maxfiylik va xavfsizlik → Sayt sozlamalari → Bildirishnomalar. “Ruxsat berilmagan” ro‘yxatidan quyidagi saytni toping va “Ruxsat berish” ga o‘tkazing.\n\nSo‘ng sahifani yangilang.",

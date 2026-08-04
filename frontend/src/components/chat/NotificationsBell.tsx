@@ -60,7 +60,6 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   const [open, setOpen] = useState(false);
   const [perm, setPerm] = useState(desktopPermission());
   const [showHow, setShowHow] = useState(false);
-  const [tested, setTested] = useState(false);
   // Panel portal orqali <body> ga chiqadi — header'ning z-index qatlamiga
   // qamalib qolmasin. Shuning uchun joyi tugma koordinatasidan hisoblanadi.
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -80,7 +79,6 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
     markRead,
     markAllRead,
     requestDesktop,
-    testDesktop,
   } = useNotifications(format);
 
   const place = useCallback(() => {
@@ -206,26 +204,6 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                 {s.notifEnableDesktop}
               </button>
             )}
-            {perm === "granted" && (
-              <>
-                <button
-                  type="button"
-                  className={styles.optIn}
-                  style={{ color: tk.muted, borderColor: tk.cardBorder }}
-                  onClick={() => {
-                    testDesktop(s.notifications, s.notifDesktopTestBody);
-                    setTested(true);
-                  }}
-                >
-                  {s.notifDesktopTest}
-                </button>
-                {tested && (
-                  <div className={styles.optInMuted} style={{ color: tk.disc }}>
-                    {s.notifDesktopOsHint}
-                  </div>
-                )}
-              </>
-            )}
             {perm === "denied" && (
               <button
                 type="button"
@@ -259,64 +237,37 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
               )}
               {items.map((n) => {
                 const href = linkFor(n);
+                // Butun qator bosiladi: havolasi bo'lsa o'sha sahifa ochiladi,
+                // bo'lmasa shunchaki o'qilgan deb belgilanadi. Shu sababli
+                // alohida ✓ tugmasi kerak emas — qator ham tozaroq ko'rinadi.
                 return (
-                <div
-                  key={n.id}
-                  className={styles.row}
-                  style={{ borderColor: tk.cardBorder }}
-                >
-                  <span
-                    className={n.is_read ? styles.dotRead : styles.dotUnread}
-                    aria-hidden="true"
-                  />
-                  {href ? (
-                    // Murojaat bildirishnomasi — bosilsa admin paneldagi
-                    // o'sha murojaat ochiladi
-                    <button
-                      type="button"
-                      className={`${styles.rowBody} ${styles.rowLink}`}
-                      onClick={() => openLink(n, href)}
-                    >
-                      <div className={styles.rowTitle} style={{ color: tk.strong }}>
-                        {titleFor(n, s)}
-                      </div>
+                  <button
+                    key={n.id}
+                    type="button"
+                    className={styles.row}
+                    style={{ borderColor: tk.cardBorder }}
+                    onClick={() => (href ? openLink(n, href) : void markRead(n.id))}
+                  >
+                    <span
+                      className={n.is_read ? styles.dotRead : styles.dotUnread}
+                      aria-hidden="true"
+                    />
+                    <span className={styles.rowBody}>
+                      <span className={styles.rowTop}>
+                        <span className={styles.rowTitle} style={{ color: tk.strong }}>
+                          {titleFor(n, s)}
+                        </span>
+                        <span className={styles.rowTime} style={{ color: tk.disc }}>
+                          {relTime(n.created_at, s)}
+                        </span>
+                      </span>
                       {bodyFor(n) && (
-                        <div className={styles.rowText} style={{ color: tk.muted }}>
+                        <span className={styles.rowText} style={{ color: tk.muted }}>
                           {bodyFor(n)}
-                        </div>
+                        </span>
                       )}
-                      <div className={styles.rowTime} style={{ color: tk.disc }}>
-                        {relTime(n.created_at, s)}
-                      </div>
-                    </button>
-                  ) : (
-                  <div className={styles.rowBody}>
-                    <div className={styles.rowTitle} style={{ color: tk.strong }}>
-                      {titleFor(n, s)}
-                    </div>
-                    {bodyFor(n) && (
-                      <div className={styles.rowText} style={{ color: tk.muted }}>
-                        {bodyFor(n)}
-                      </div>
-                    )}
-                    <div className={styles.rowTime} style={{ color: tk.disc }}>
-                      {relTime(n.created_at, s)}
-                    </div>
-                  </div>
-                  )}
-                  {!n.is_read && (
-                    <button
-                      type="button"
-                      className={styles.readBtn}
-                      data-tip={s.notifMarkRead}
-                      aria-label={s.notifMarkRead}
-                      style={{ color: tk.muted }}
-                      onClick={() => void markRead(n.id)}
-                    >
-                      ✓
-                    </button>
-                  )}
-                </div>
+                    </span>
+                  </button>
                 );
               })}
             </div>

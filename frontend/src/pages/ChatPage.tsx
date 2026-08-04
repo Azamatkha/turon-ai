@@ -7,9 +7,7 @@ import { chatDict, chatStaticDict } from "../locales";
 import { TAKEN_USERNAMES } from "../services/seedData";
 import { fetchMe, logout, changePassword } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import Grainient from "../components/Grainient";
-import LightRays from "../components/LightRays";
-import GlowOrbs from "../components/GlowOrbs";
+import GradientWaves from "../components/GradientWaves";
 import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -146,81 +144,47 @@ export default function ChatPage() {
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Fon qatlami — rejimga qarab IKKI XIL:
-            dark:  LightRays (yuqoridan tushuvchi yorug'lik nurlari),
-            light: eski Grainient gradienti (brend navy ranglari).
-          Ikkalasi ham matn ostida turadi va o'qilishni buzmaydi. */}
+      {/* Fon qatlami — GradientWaves (raymarching to'lqinlar). Ranglar brend
+          navydan olingan: light rejimda ochroq havorang, dark rejimda PRIMARY.
+          Matn ostida turadi, shuning uchun opacity past ushlab turiladi. */}
       <div
         className={styles.bgLayer}
         aria-hidden="true"
-        style={{ opacity: isDark ? 0.75 : 0.9 }}
+        style={{ opacity: isDark ? 0.55 : 0.45 }}
       >
-        {isDark ? (
-          <LightRays
-            raysOrigin="top-center"
-            // Nur rangi brend havorangi — oq nur navy fonda juda quruq ko'rinardi.
-            raysColor="#7fb3d2"
-            raysSpeed={1}
-            lightSpread={0.5}
-            rayLength={3}
-            followMouse
-            mouseInfluence={0.1}
-            noiseAmount={0}
-            distortion={0}
-            pulsating={false}
-            fadeDistance={1}
-            saturation={1}
-          />
-        ) : (
-          <Grainient
-            color1="#709dc4"
-            color2="#f6f9fc"
-            color3="#ffffff"
-            timeSpeed={0.3}
-            colorBalance={-0.02}
-            warpStrength={1.6}
-            warpFrequency={8}
-            warpSpeed={0.8}
-            warpAmplitude={60}
-            blendAngle={20}
-            blendSoftness={0.4}
-            rotationAmount={300}
-            noiseScale={2}
-            grainAmount={0}
-            grainScale={2}
-            grainAnimated={false}
-            contrast={1.05}
-            gamma={1}
-            saturation={1.0}
-            centerX={0}
-            centerY={0}
-            zoom={1.0}
-          />
-        )}
+        <GradientWaves
+          horizonColor={isDark ? "#0d1e33" : "#f3f5f8"}
+          waveColor={isDark ? "#1B4B7A" : "#9dc0da"}
+          crestColor={isDark ? "#7fb3d2" : "#ffffff"}
+          speed={0.3}
+          amplitude={2.5}
+          waveScale={0.6}
+          waveRatio={0.9}
+          swell={35}
+          turbulence={20}
+          tilt={1.11}
+          zoom={1}
+          height={5.5}
+          fogDepth={15}
+          // "low" — 40 qadamli raymarch. Bu to'liq ekranli, har kadrda
+          // hisoblanadigan shader; ofis kompyuterlarida "medium" og'irlik qiladi.
+          detail="low"
+          brightness={1}
+          opacity={1}
+          mouseInteraction
+          parallaxStrength={0.4}
+          grain
+          grainIntensity={0.03}
+        />
       </div>
 
-      {/* Yumshoq yorug'lik dog'lari — FAQAT light rejimda, gradient ustida.
-          Sekin suzadi, matn ostida qoladi va o'qilishga xalaqit bermaydi. */}
-      {!isDark && (
-        <div className={styles.flowLayer} aria-hidden="true" style={{ opacity: 0.55 }}>
-          <GlowOrbs
-            colors={[
-              "rgba(127, 179, 210, 0.55)",
-              "rgba(23, 63, 115, 0.28)",
-              "rgba(112, 157, 196, 0.45)",
-            ]}
-          />
-        </div>
-      )}
-
       {/* Nuqta (DotField) qatlami — fon ustida, kursor bulge effekti bilan.
-          Light rejimda ranglar QUYUQROQ: eski #dbe3e8/#cfdae0 oq-ochiq gradient
-          fonda deyarli ko'rinmasdi. dotLayer'ning CSS opacity'si 0.5 — light
-          uchun uni ham ko'taramiz. */}
+          Nuqtalar juda to'q bo'lib ketmasin: rang ham ochroq, qatlamning
+          opacity'si ham past. */}
       <div
         className={styles.dotLayer}
         aria-hidden="true"
-        style={{ opacity: isDark ? 0.5 : 0.85 }}
+        style={{ opacity: isDark ? 0.3 : 0.4 }}
       >
         <DotField
           dotRadius={3.5}
@@ -229,9 +193,9 @@ export default function ChatPage() {
           bulgeStrength={18}
           cursorRadius={220}
           glowRadius={160}
-          gradientFrom={isDark ? "#213c5e" : "#8ea9c4"}
-          gradientTo={isDark ? "#294c74" : "#7d9ab8"}
-          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(23,63,115,0.10)"}
+          gradientFrom={isDark ? "#2b4a6d" : "#b3c6d8"}
+          gradientTo={isDark ? "#35597f" : "#a4bacf"}
+          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(23,63,115,0.08)"}
         />
       </div>
 

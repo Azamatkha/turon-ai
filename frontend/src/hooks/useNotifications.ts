@@ -222,26 +222,5 @@ export function useNotifications(format: (n: ApiNotification) => DesktopText) {
     return result;
   }, []);
 
-  /** Sinov popup'i — ruxsat berilgan bo'lsa ham OS (Windows) darajasida
-   *  bloklangan bo'lishi mumkin. Shu tugma orqali darhol tekshirib ko'riladi. */
-  const testDesktop = useCallback((title: string, body: string): boolean => {
-    if (!desktopSupported() || Notification.permission !== "granted") return false;
-    try {
-      new Notification(title, { body, tag: "turon-test" });
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  return {
-    unread,
-    items,
-    loading,
-    refresh,
-    markRead,
-    markAllRead,
-    requestDesktop,
-    testDesktop,
-  };
+  return { unread, items, loading, refresh, markRead, markAllRead, requestDesktop };
 }
