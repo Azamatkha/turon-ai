@@ -39,6 +39,11 @@ from src.knowledge.usecases import (
     UploadKnowledgeUseCase,
     UploadPdfUseCase,
 )
+from src.notifications.enums import NotificationType
+from src.notifications.usecases import (
+    BroadcastNotificationUseCase,
+    get_broadcast_notification_use_case,
+)
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
 from src.user.models import User
@@ -79,12 +84,19 @@ async def update_knowledge(
     ],
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
+    broadcast: Annotated[
+        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
+    ],
 ) -> UploadResult:
     """Admin: ma'lumotni tahrirlash (eski bo'laklarni o'chirib, qayta yozadi)."""
     use_case = UpdateKnowledgeUseCase(embedder=embedder, store=store)
-    return await use_case.execute(
+    result = await use_case.execute(
         old_title=data.old_title, title=data.title, text=data.text
     )
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED, params={"title": data.title}
+    )
+    return result
 
 
 @router.get("/detail", response_model=KnowledgeDetail)
@@ -125,10 +137,17 @@ async def upload_knowledge(
     ],
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
+    broadcast: Annotated[
+        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
+    ],
 ) -> UploadResult:
     """Admin: matnni bo'laklarga bo'lib, embed qilib, sarlavha bilan Qdrant'ga yozadi."""
     use_case = UploadKnowledgeUseCase(embedder=embedder, store=store)
-    return await use_case.execute(title=data.title, text=data.text)
+    result = await use_case.execute(title=data.title, text=data.text)
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED, params={"title": data.title}
+    )
+    return result
 
 
 @router.post("/pdf", response_model=PdfUploadResult)
@@ -139,6 +158,9 @@ async def upload_pdf(
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
     ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+    broadcast: Annotated[
+        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
+    ],
     file: Annotated[UploadFile, File()],
     title: Annotated[str, Form()] = "",
 ) -> PdfUploadResult:
@@ -153,9 +175,13 @@ async def upload_pdf(
     olishi mumkin."""
     content = await file.read()
     use_case = UploadPdfUseCase(embedder=embedder, store=store, ai_client=ai_client)
-    return await use_case.execute(
+    result = await use_case.execute(
         file_bytes=content, filename=file.filename or "", title=title
     )
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED, params={"title": result.title}
+    )
+    return result
 
 
 @router.post("/employees", response_model=UploadResult)
@@ -165,13 +191,20 @@ async def upload_employees(
     ],
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
+    broadcast: Annotated[
+        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
+    ],
     file: Annotated[UploadFile, File()],
 ) -> UploadResult:
     """Admin: xodimlar Excel (.xlsx) faylini o'qib, har xodimni alohida
     (doc_type=employee) Qdrant'ga yozadi. Har sheet — bir bo'lim."""
     content = await file.read()
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
-    return await use_case.execute(file_bytes=content)
+    result = await use_case.execute(file_bytes=content)
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED, params={"title": "Xodimlar ro'yxati"}
+    )
+    return result
 
 
 @router.get("/employee-stats")
@@ -210,12 +243,19 @@ async def upload_employees_json(
     ],
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
+    broadcast: Annotated[
+        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
+    ],
 ) -> UploadResult:
     """Admin: xodimlarni tayyor JSON ro'yxati orqali yozadi (Excel'siz —
     openpyxl kerak emas). Body: [{department, division, position, fish, ip, phone}, ...]."""
     records = [r.model_dump() for r in data]
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
-    return await use_case.execute_records(records=records)
+    result = await use_case.execute_records(records=records)
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED, params={"title": "Xodimlar ro'yxati"}
+    )
+    return result
 
 
 @router.post("/scrape", response_model=UploadResult)
@@ -226,7 +266,14 @@ async def scrape_url(
     ],
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
+    broadcast: Annotated[
+        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
+    ],
 ) -> UploadResult:
     """Admin test: bitta URL'ni ochib, toza matnini ajratib, Qdrant'ga yozadi."""
     use_case = ScrapeUrlUseCase(embedder=embedder, store=store)
-    return await use_case.execute(url=data.url)
+    result = await use_case.execute(url=data.url)
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED, params={"title": data.url}
+    )
+    return result

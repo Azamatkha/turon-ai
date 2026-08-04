@@ -25,6 +25,7 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
   const titles: Record<AdminView, string> = {
     dashboard: admin.dashboardTitle,
     users: admin.usersTitle,
+    reports: admin.reportsTitle,
     knowledgeList: admin.knowledgeTitle,
     pdfUpload: admin.pdfNav,
     apiDocs: "API hujjatlari",

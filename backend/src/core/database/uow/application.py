@@ -6,6 +6,8 @@ from src.core.database.repositories import BaseRepository
 from src.core.database.uow.abstract import R, RepositoryProtocol
 from src.core.database.uow.sqlalchemy import RepositoryInstance, SQLAlchemyUnitOfWork
 from src.chat.repositories import ChatMessageRepository, ChatSessionRepository
+from src.notifications.repositories import NotificationRepository
+from src.reports.repositories import UserReportRepository
 from src.user.repositories import LoginEventRepository, UserRepository
 
 
@@ -71,6 +73,16 @@ class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
     def login_events(self) -> LoginEventRepository:
         """Get the LoginEventRepository."""
         return self._get_repository(LoginEventRepository)
+
+    @property
+    def notifications(self) -> NotificationRepository:
+        """Get the NotificationRepository."""
+        return self._get_repository(NotificationRepository)
+
+    @property
+    def reports(self) -> UserReportRepository:
+        """Get the UserReportRepository."""
+        return self._get_repository(UserReportRepository)
 
     # Add more repository properties as needed
 

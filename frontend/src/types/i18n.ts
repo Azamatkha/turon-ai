@@ -56,6 +56,41 @@ export interface ChatStaticStrings {
   nightMode: string;
   dayMode: string;
   adminPanel: string;
+  // Bildirishnomalar. Xabar matni bazada saqlanmaydi — backend faqat
+  // turini va parametrlarini yuboradi, matn shu yerdan olinadi.
+  notifications: string;
+  notifEmpty: string;
+  notifMarkAll: string;
+  notifMarkRead: string;
+  notifEnableDesktop: string;
+  notifDesktopBlocked: string;
+  notifKnowledgeUpdated: string;
+  notifRatesUpdated: string;
+  notifReportNew: string;
+  notifTimeNow: string;
+  notifMinAgo: (m: number) => string;
+  notifHourAgo: (h: number) => string;
+  notifDayAgo: (d: number) => string;
+  // Murojaat (muammo haqida xabar / taklif) formasi
+  report: string;
+  reportHeading: string;
+  reportTabProblem: string;
+  reportTabSuggestion: string;
+  reportTitle: string;
+  reportTitlePh: string;
+  reportText: string;
+  reportTextPh: string;
+  reportScreenshot: string;
+  reportScreenshotHint: string;
+  reportScreenshotPick: string;
+  reportScreenshotRemove: string;
+  reportSubmit: string;
+  reportSending: string;
+  reportSent: string;
+  reportError: string;
+  reportTooLarge: string;
+  reportBadType: string;
+  reportRequired: string;
   // Kalkulyator (kredit / omonat)
   calculator: string;
   calcHeading: string;
@@ -198,6 +233,30 @@ export interface AdminStrings {
   uploadBadFile: string;
   uploadSuccess: (n: number) => string;
   uploadError: string;
+  // Foydalanuvchi murojaatlari (muammo / taklif)
+  reportsNav: string;
+  reportsTitle: string;
+  reportsEmpty: string;
+  reportsLoadError: string;
+  reportKindProblem: string;
+  reportKindSuggestion: string;
+  reportStatusNew: string;
+  reportStatusInProgress: string;
+  reportStatusResolved: string;
+  reportFilterAll: string;
+  reportColDate: string;
+  reportColUser: string;
+  reportColKind: string;
+  reportColTitle: string;
+  reportColStatus: string;
+  reportDetail: string;
+  reportScreenshotLabel: string;
+  reportNoScreenshot: string;
+  reportScreenshotError: string;
+  reportComment: string;
+  reportCommentPh: string;
+  reportSave: string;
+  reportSaveError: string;
   knowledgeNav: string;
   pdfNav: string;
   pdfTitle: string;

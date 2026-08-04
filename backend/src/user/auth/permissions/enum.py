@@ -20,6 +20,10 @@ class Permission(StrEnum):
     VIEW_SETTINGS = "view_settings"
     EDIT_SETTINGS = "edit_settings"
 
+    # User report (problem / suggestion) permissions
+    VIEW_REPORTS = "view_reports"
+    MANAGE_REPORTS = "manage_reports"
+
     # System permissions
     VIEW_LOGS = "view_logs"
     MANAGE_BACKUPS = "manage_backups"

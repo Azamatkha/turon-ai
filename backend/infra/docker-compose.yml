@@ -57,6 +57,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      # Foydalanuvchi yuklagan fayllar (murojaat skrinshotlari) konteyner
+      # o'chirilganda yo'qolmasligi uchun alohida volume'da turadi.
+      - app-media:/app/media
     depends_on:
       postgres:
         condition: service_healthy
@@ -207,6 +211,8 @@ volumes:
     name: turon-ai-app-redis-data
   celery-beat-state:
     name: turon-ai-app-celery-beat-state
+  app-media:
+    name: turon-ai-app-media
 
 networks:
   app-network:

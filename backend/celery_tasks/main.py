@@ -32,6 +32,7 @@ celery_app.conf.update(
         "src.user.tasks",
         "src.core.email_service.tasks",
         "src.knowledge.tasks",
+        "src.notifications.tasks",
     ],
     timezone="UTC",
     enable_utc=True,
@@ -47,5 +48,10 @@ celery_app.conf.beat_schedule = {
     "scrape_exchange_rates_daily_11_tashkent": {
         "task": "scrape_exchange_rates",
         "schedule": crontab(minute=0, hour=6),
+    },
+    # Eskirgan bildirishnomalarni har kuni kechasi tozalaymiz.
+    "cleanup_old_notifications_daily": {
+        "task": "cleanup_old_notifications",
+        "schedule": crontab(minute=30, hour=3),
     },
 }

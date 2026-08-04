@@ -203,6 +203,15 @@ class AppConfig(BaseModel):
     PING_INTERVAL: int
     CONNECTION_TTL: int
 
+    # Foydalanuvchi yuklagan fayllar (murojaat skrinshotlari) shu papkaga
+    # yoziladi. Prodda Docker volume'ga ulanadi, aks holda konteyner
+    # o'chirilganda fayllar yo'qoladi. Fayllar statik mount orqali emas,
+    # faqat huquq tekshiriladigan endpoint orqali beriladi.
+    MEDIA_ROOT: str = "media"
+    # Bitta skrinshot uchun cheklov (bayt). nginx client_max_body_size = 10m,
+    # ya'ni bu limit undan past turishi kerak.
+    REPORT_MAX_BYTES: int = 5 * 1024 * 1024
+
     model_config = ConfigDict(extra="ignore")
 
     @field_validator(

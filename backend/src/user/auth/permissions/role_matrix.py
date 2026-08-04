@@ -18,6 +18,9 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         # Settings permissions
         Permission.VIEW_SETTINGS,
         Permission.EDIT_SETTINGS,
+        # User report permissions
+        Permission.VIEW_REPORTS,
+        Permission.MANAGE_REPORTS,
         # System permissions
         Permission.VIEW_LOGS,
         Permission.MANAGE_BACKUPS,
@@ -31,6 +34,8 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         Permission.EDIT_PROFILE,
         # Settings
         Permission.VIEW_SETTINGS,
+        # Murojaatlarni ko'ra oladi, lekin holatini o'zgartira olmaydi
+        Permission.VIEW_REPORTS,
     },
     # Viewer - read-only access to authorized resources
     UserRole.USER: {

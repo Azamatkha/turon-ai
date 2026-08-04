@@ -1,0 +1,153 @@
+/* Foydalanuvchi murojaatlari ro'yxati — admin panel kartochkasi uslubida */
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 13px;
+}
+
+.card {
+  border: 1px solid var(--adm-border);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 140px 1.2fr 110px 2fr 130px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.headRow {
+  background: var(--adm-card-alt);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dataRow {
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--adm-text-body);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dataRow:hover {
+  background: var(--adm-hover);
+}
+
+.colDate {
+  color: var(--adm-text-muted-2);
+  font-size: 12.5px;
+}
+
+.colUser {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--adm-text-strong);
+  font-weight: 600;
+}
+
+.dept {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--adm-text-muted-2);
+}
+
+.colKind {
+  font-size: 12.5px;
+  color: var(--adm-text-muted);
+}
+
+.colTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clip {
+  flex: 0 0 auto;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.colStatus {
+  justify-self: start;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.st_new {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.st_in_progress {
+  background: var(--adm-accent-bg);
+  color: var(--adm-accent);
+}
+
+.st_resolved {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+}
+
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}

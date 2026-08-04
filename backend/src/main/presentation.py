@@ -39,6 +39,8 @@ from src.core.errors.handlers import (
 from src.admin import routers as admin_routers
 from src.chat import routers as chat_routers
 from src.knowledge import routers as knowledge_routers
+from src.notifications import routers as notification_routers
+from src.reports import routers as report_routers
 from src.system import routers as system_routers
 from src.user import routers as user_routers
 
@@ -126,6 +128,13 @@ def include_routers(app: FastAPI) -> None:
     v1_router.include_router(admin_routers.router, prefix="/admin", tags=["Admin"])
     v1_router.include_router(
         knowledge_routers.router, prefix="/admin/knowledge", tags=["Knowledge"]
+    )
+    v1_router.include_router(
+        notification_routers.router, prefix="/notifications", tags=["Notifications"]
+    )
+    v1_router.include_router(report_routers.router, prefix="/reports", tags=["Reports"])
+    v1_router.include_router(
+        report_routers.admin_router, prefix="/admin/reports", tags=["Reports"]
     )
 
     app.include_router(v1_router, prefix="/v1")

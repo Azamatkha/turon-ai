@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 
@@ -17,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    # Foydalanuvchi yuklagan fayllar papkasi (murojaat skrinshotlari)
+    Path(config.app.MEDIA_ROOT).mkdir(parents=True, exist_ok=True)
+
     await on_redis_startup(app, config.redis.dsn)
 
     await on_redis_cache_startup()

@@ -20,11 +20,13 @@ interface SidebarProps {
   view: AdminView;
   setView: (v: AdminView) => void;
   usersCount: number;
+  // Ko'rib chiqilmagan murojaatlar soni (0 bo'lsa belgi ko'rinmaydi)
+  newReportsCount: number;
   collapsed: boolean;
   t: AdminStrings;
 }
 
-export default function Sidebar({ view, setView, usersCount, collapsed, t: admin }: SidebarProps) {
+export default function Sidebar({ view, setView, usersCount, newReportsCount, collapsed, t: admin }: SidebarProps) {
   const navigate = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,6 +66,12 @@ export default function Sidebar({ view, setView, usersCount, collapsed, t: admin
       label: admin.usersNav,
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
       badge: String(usersCount),
+    },
+    {
+      id: "reports",
+      label: admin.reportsNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="15" x2="12" y2="15" /></svg>,
+      badge: newReportsCount > 0 ? String(newReportsCount) : undefined,
     },
     {
       id: "knowledgeList",

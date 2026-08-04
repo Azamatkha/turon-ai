@@ -8,6 +8,7 @@ import {
   listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole,
 } from "../services/adminService";
 import { scrapeUrl, uploadText } from "../services/knowledgeService";
+import { listReports } from "../services/reportService";
 import { DEFAULT_DEPARTMENT } from "../services/departments";
 import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
@@ -16,6 +17,7 @@ import DashboardView from "../components/admin/DashboardView";
 import KnowledgeListView from "../components/admin/KnowledgeListView";
 import PdfUploadView from "../components/admin/PdfUploadView";
 import ApiDocsView from "../components/admin/ApiDocsView";
+import ReportsView from "../components/admin/ReportsView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
@@ -31,6 +33,7 @@ const toBackendRole = (r: AdminRole): BackendRole => (r === "Admin" ? "admin" : 
 const VIEW_TO_PATH: Record<AdminView, string> = {
   dashboard: "dashboard",
   users: "users",
+  reports: "reports",
   knowledgeList: "knowledge",
   pdfUpload: "documents",
   apiDocs: "api-docs",
@@ -38,6 +41,7 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
 const PATH_TO_VIEW: Record<string, AdminView> = {
   dashboard: "dashboard",
   users: "users",
+  reports: "reports",
   knowledge: "knowledgeList",
   documents: "pdfUpload",
   "api-docs": "apiDocs",
@@ -83,6 +87,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [allDepts, setAllDepts] = useState<string[]>([]); // filter uchun barqaror ro'yxat
   const [navCollapsed, setNavCollapsed] = useState(false);
+  // Sidebar'dagi "yangi murojaatlar" belgisi
+  const [newReportsCount, setNewReportsCount] = useState(0);
   // Ro'yxat yuklash/rol o'zgartirish/o'chirish kabi amallar uchun umumiy xato banneri
   const [pageError, setPageError] = useState("");
 
@@ -139,6 +145,15 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Yangi murojaatlar soni — sahifa ochilishida bir marta (belgini ko'rsatish uchun)
+  useEffect(() => {
+    listReports({ size: 1 })
+      .then((d) => setNewReportsCount(d.new_count))
+      .catch(() => {
+        /* huquqi yo'q yoki tarmoq xatosi — belgi ko'rinmaydi */
+      });
+  }, []);
+
   useEffect(() => {
     setMounted(false);
     const r = requestAnimationFrame(() => setMounted(true));
@@ -147,6 +162,7 @@ export default function AdminPage() {
 
   const onDashboard = view === "dashboard";
   const onUsers = view === "users";
+  const onReports = view === "reports";
   const onKnowledgeList = view === "knowledgeList";
   const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
@@ -298,6 +314,7 @@ export default function AdminPage() {
         view={view}
         setView={setView}
         usersCount={users.length}
+        newReportsCount={newReportsCount}
         collapsed={navCollapsed}
         t={t}
       />
@@ -326,6 +343,9 @@ export default function AdminPage() {
           {onKnowledgeList && <KnowledgeListView key={knowledgeReloadKey} mounted={mounted} t={t} onAddClick={openScrape} />}
           {onPdfUpload && (
             <PdfUploadView mounted={mounted} t={t} onUploaded={() => setKnowledgeReloadKey((k) => k + 1)} />
+          )}
+          {onReports && (
+            <ReportsView mounted={mounted} t={t} onCountsChange={setNewReportsCount} />
           )}
           {onApiDocs && <ApiDocsView />}
           {onUsers && (
