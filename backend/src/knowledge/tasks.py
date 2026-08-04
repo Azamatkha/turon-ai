@@ -20,6 +20,7 @@ from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, parse_rates
 from src.knowledge.scraper import fetch_html
 from src.knowledge.usecases import UploadKnowledgeUseCase
 from src.notifications.enums import NotificationType
+from src.notifications.events import publish_new
 
 logger = get_logger(__name__)
 
@@ -83,10 +84,14 @@ async def _broadcast_rates_updated() -> None:
                 session
             )
             async with uow:
-                sent = await uow.notifications.fan_out(
+                recipients = await uow.notifications.fan_out(
                     uow.session, notification_type=NotificationType.RATES_UPDATED
                 )
                 await uow.commit()
-        logger.info("Valyuta kursi bildirishnomasi yuborildi: %s foydalanuvchi", sent)
+        await publish_new(recipients)
+        logger.info(
+            "Valyuta kursi bildirishnomasi yuborildi: %s foydalanuvchi",
+            len(recipients),
+        )
     except Exception:
         logger.exception("Valyuta kursi bildirishnomasini yuborib bo'lmadi")

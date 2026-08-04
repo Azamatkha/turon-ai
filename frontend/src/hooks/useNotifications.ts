@@ -4,13 +4,17 @@ import {
   listNotifications,
   markAllRead as apiMarkAllRead,
   markRead as apiMarkRead,
+  streamNotifications,
   type ApiNotification,
 } from "../services/notificationService";
 
-// Yetkazish usuli — polling. Har 30 soniyada faqat o'qilmaganlar soni
-// so'raladi (partial indeks bo'yicha bitta COUNT). To'liq ro'yxat esa
-// foydalanuvchi panelni ochgandagina yuklanadi.
-const POLL_MS = 30_000;
+// Asosiy yetkazish — SSE oqimi (kechikish deyarli nolga teng). Polling faqat
+// zaxira: oqim uzilsa yoki proxy uni o'tkazmasa badge baribir yangilanadi.
+// Brauzer fondagi tabda taymerni sekinlashtiradi, shuning uchun polling'ga
+// tayanib bo'lmaydi — interval ataylab uzun qilingan.
+const POLL_MS = 60_000;
+// Oqim uzilganda qayta ulanishgacha kutish
+const RECONNECT_MS = 5_000;
 
 // Brauzer (OS) bildirishnomasi ikki marta chiqmasligi uchun ko'rsatilganlar
 // id'si saqlanadi. Ro'yxat cheksiz o'smasin — oxirgi SEEN_MAX tasi qoladi.
@@ -100,39 +104,64 @@ export function useNotifications(format: (n: ApiNotification) => DesktopText) {
     seenRef.current = saveSeen([...seen]);
   }, []);
 
-  // ---- Polling ----
+  // O'qilmaganlar sonini yangilaydi va kerak bo'lsa OS popup'ini chiqaradi
+  const syncCount = useCallback(async () => {
+    let count: number;
+    try {
+      count = await getUnreadCount();
+    } catch {
+      // Tarmoq uzilishi badge'ni yo'qotmasin — jim o'tkazamiz
+      return;
+    }
+    setUnread(count);
+    // Soni oshgan bo'lsa — yangi bildirishnoma kelgan
+    if (count > 0 && count !== lastCountRef.current) void pushDesktop();
+    lastCountRef.current = count;
+  }, [pushDesktop]);
+
+  // ---- Real vaqtdagi oqim (asosiy yetkazish yo'li) ----
   useEffect(() => {
     let alive = true;
+    let controller: AbortController | null = null;
+    let retryTimer: number | null = null;
 
-    const load = async () => {
-      let count: number;
+    const connect = async () => {
+      if (!alive) return;
+      controller = new AbortController();
       try {
-        count = await getUnreadCount();
+        await streamNotifications(() => void syncCount(), controller.signal);
       } catch {
-        // Tarmoq uzilishi badge'ni yo'qotmasin — jim o'tkazamiz
-        return;
+        // Ulanish uzildi yoki ochilmadi — pastda qayta urinamiz
       }
       if (!alive) return;
-      setUnread(count);
-      // Soni oshgan bo'lsa — yangi bildirishnoma kelgan
-      if (count > 0 && count !== lastCountRef.current) void pushDesktop();
-      lastCountRef.current = count;
+      // Uzilgan bo'lsa qayta ulanamiz; shu orada polling zaxira bo'lib turadi
+      retryTimer = window.setTimeout(connect, RECONNECT_MS);
     };
 
-    void load();
-    const id = setInterval(load, POLL_MS);
+    void connect();
+    return () => {
+      alive = false;
+      controller?.abort();
+      if (retryTimer !== null) clearTimeout(retryTimer);
+    };
+  }, [syncCount]);
+
+  // ---- Polling (zaxira) ----
+  // Oqim uzilib qolsa yoki proxy uni bloklasa ham badge yangilanib tursin.
+  useEffect(() => {
+    void syncCount();
+    const id = setInterval(() => void syncCount(), POLL_MS);
     // Boshqa tabdan qaytganda darhol yangilanadi
     const onVisible = () => {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState === "visible") void syncCount();
     };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      alive = false;
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [pushDesktop]);
+  }, [syncCount]);
 
   // ---- Ro'yxat ----
   const refresh = useCallback(async () => {

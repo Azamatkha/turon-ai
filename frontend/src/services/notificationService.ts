@@ -48,6 +48,34 @@ export async function listNotifications(
   return res.json();
 }
 
+/** Real vaqtdagi oqim (SSE): server yangi bildirishnoma haqida signal beradi.
+ *
+ *  `EventSource` ishlatilmaydi — u Authorization sarlavhasini yubora olmaydi.
+ *  Shuning uchun chat javoblaridagi kabi fetch + ReadableStream o'qiladi.
+ *  Oqimda xabarning o'zi emas, faqat signal keladi — mazmunini chaqiruvchi
+ *  odatdagi API orqali oladi. */
+export async function streamNotifications(
+  onSignal: () => void,
+  signal: AbortSignal
+): Promise<void> {
+  const res = await apiFetch("/v1/notifications/stream", { signal });
+  if (!res.ok || !res.body) throw new Error("Bildirishnoma oqimi ochilmadi");
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return;
+    buffer += decoder.decode(value, { stream: true });
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() ?? "";
+    for (const chunk of chunks) {
+      // ": ping" — ulanishni tirik ushlab turuvchi izoh, e'tiborsiz qoldiriladi
+      if (chunk.startsWith("data:")) onSignal();
+    }
+  }
+}
+
 export async function markRead(id: string): Promise<void> {
   const res = await apiFetch(`/v1/notifications/${id}/read`, { method: "POST" });
   if (!res.ok) throw new Error(await readError(res, "Belgilashda xatolik"));

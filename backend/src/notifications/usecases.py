@@ -8,6 +8,7 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.schemas import SuccessResponse
 from src.core.utils.datetime_utils import get_utc_now
+from src.notifications.events import publish_new
 from src.notifications.schemas import (
     NotificationListView,
     NotificationView,
@@ -114,7 +115,7 @@ class BroadcastNotificationUseCase:
     ) -> int:
         try:
             async with self.uow as uow:
-                sent = await uow.notifications.fan_out(
+                recipients = await uow.notifications.fan_out(
                     uow.session,
                     notification_type=notification_type,
                     params=params,
@@ -122,7 +123,9 @@ class BroadcastNotificationUseCase:
                     role=role,
                 )
                 await uow.commit()
-                return sent
+            # Signal commit'dan KEYIN — klient so'raganda qator ko'rinadigan bo'lsin
+            await publish_new(recipients)
+            return len(recipients)
         except Exception:
             logger.exception(
                 "Bildirishnomani tarqatib bo'lmadi: type=%s", notification_type

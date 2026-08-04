@@ -10,6 +10,7 @@ from src.core.storage.media import save_image
 from src.core.utils.datetime_utils import get_utc_now
 from src.main.config import config
 from src.notifications.enums import NotificationType
+from src.notifications.events import publish_new
 from src.reports.enums import ReportStatus
 from src.reports.models import UserReport
 from src.reports.schemas import (
@@ -96,7 +97,7 @@ class CreateReportUseCase:
             )
             # id kerak — bildirishnoma unga havola qiladi
             await uow.session.flush()
-            await uow.notifications.fan_out(
+            admins = await uow.notifications.fan_out(
                 uow.session,
                 notification_type=NotificationType.REPORT_NEW,
                 params={"title": title},
@@ -104,7 +105,11 @@ class CreateReportUseCase:
                 role=UserRole.ADMIN,
             )
             await uow.commit()
-            return _to_view(report)
+            view = _to_view(report)
+
+        # Signal commit'dan keyin — adminlarning ochiq oqimlari darhol xabar oladi
+        await publish_new(admins)
+        return view
 
 
 class ListReportsUseCase:

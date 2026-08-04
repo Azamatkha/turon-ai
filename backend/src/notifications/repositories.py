@@ -76,7 +76,7 @@ class NotificationRepository(BaseRepository[Notification]):
         params: dict[str, str] | None = None,
         entity_id: UUID | None = None,
         role: UserRole | None = None,
-    ) -> int:
+    ) -> list[UUID]:
         """Bitta xabarni bir nechta foydalanuvchiga tarqatadi.
 
         `role` berilsa faqat o'sha roldagilar, aks holda barcha aktiv
@@ -85,7 +85,8 @@ class NotificationRepository(BaseRepository[Notification]):
         COUNT bo'lib qoladi (poll so'rovi eng issiq so'rov).
 
         Commit qilmaydi — chaqiruvchi UoW commit qiladi.
-        Qaytaradi: nechta foydalanuvchiga yozilgani.
+        Qaytaradi: qabul qiluvchilar id'lari (commit'dan keyin ularga
+        real-time signal yuborish uchun kerak).
         """
         query = select(User.id).where(
             User.is_deleted.is_(False), User.is_active.is_(True)
@@ -95,7 +96,7 @@ class NotificationRepository(BaseRepository[Notification]):
         result = await session.execute(query)
         user_ids = list(result.scalars().all())
         if not user_ids:
-            return 0
+            return []
 
         # id/created_at/updated_at ni ataylab o'zimiz to'ldiramiz: executemany
         # rejimida ustun default'lariga tayanmaslik ancha ishonchli.
@@ -113,4 +114,4 @@ class NotificationRepository(BaseRepository[Notification]):
             for user_id in user_ids
         ]
         await session.execute(insert(self.model), rows)
-        return len(user_ids)
+        return user_ids
