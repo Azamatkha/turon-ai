@@ -64,6 +64,8 @@ export interface ChatStaticStrings {
   notifMarkRead: string;
   notifEnableDesktop: string;
   notifDesktopBlocked: string;
+  notifDesktopHow: string;
+  notifDesktopSteps: string;
   notifKnowledgeUpdated: string;
   notifRatesUpdated: string;
   notifReportNew: string;

@@ -31,6 +31,9 @@ export const chatStatic: ChatStaticStrings = {
   notifMarkRead: "Ўқилган деб белгилаш",
   notifEnableDesktop: "Браузер билдиришномаларига рухсат бериш",
   notifDesktopBlocked: "Браузер билдиришномалари блокланган",
+  notifDesktopHow: "Қандай ёқилади?",
+  notifDesktopSteps:
+    "Браузер ўзи қайта сўрамайди — қўлда ёқиш керак:\n1. Манзил қаторидаги 🔒 (ёки ⓘ) белгисини босинг\n2. “Билдиришномалар / Notifications” бандини топинг\n3. “Рухсат бериш / Allow” ни танланг\n4. Саҳифани янгиланг",
   notifKnowledgeUpdated: "Маълумотлар янгиланди",
   notifRatesUpdated: "Валюта курси ўзгарди",
   notifReportNew: "Янги мурожаат",

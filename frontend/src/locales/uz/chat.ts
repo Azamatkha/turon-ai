@@ -33,6 +33,9 @@ export const chatStatic: ChatStaticStrings = {
   notifMarkRead: "O‘qilgan deb belgilash",
   notifEnableDesktop: "Brauzer bildirishnomalariga ruxsat berish",
   notifDesktopBlocked: "Brauzer bildirishnomalari bloklangan",
+  notifDesktopHow: "Qanday yoqiladi?",
+  notifDesktopSteps:
+    "Brauzer o‘zi qayta so‘ramaydi — qo‘lda yoqish kerak:\n1. Manzil qatoridagi 🔒 (yoki ⓘ) belgisini bosing\n2. “Bildirishnomalar / Notifications” bandini toping\n3. “Ruxsat berish / Allow” ni tanlang\n4. Sahifani yangilang",
   notifKnowledgeUpdated: "Ma’lumotlar yangilandi",
   notifRatesUpdated: "Valyuta kursi o‘zgardi",
   notifReportNew: "Yangi murojaat",

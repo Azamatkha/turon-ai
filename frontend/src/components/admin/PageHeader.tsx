@@ -1,6 +1,9 @@
 import HButton from "../common/HButton";
 import ThemeToggle from "../chat/ThemeToggle";
+import NotificationsBell from "../chat/NotificationsBell";
+import { getThemeTokens } from "../chat/theme";
 import LangSwitcher from "../LangSwitcher";
+import { chatStaticDict } from "../../locales";
 import type { AdminView } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import type { Lang } from "../../types/lang";
@@ -36,6 +39,9 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
         <div className={styles.title}>{titles[view]}</div>
       </div>
       <div className={styles.actions}>
+        {/* Bildirishnomalar chatdagi bilan bir xil komponent — admin murojaat
+            xabarini shu yerdan ham ko'ra oladi */}
+        <NotificationsBell tk={getThemeTokens(isDark)} isDark={isDark} s={chatStaticDict[lang]} />
         <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={admin.selectLanguage} />
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} label={isDark ? admin.dayMode : admin.nightMode} />
         {onUsers && (

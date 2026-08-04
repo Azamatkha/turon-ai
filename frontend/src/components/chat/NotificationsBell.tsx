@@ -59,6 +59,7 @@ function relTime(iso: string, s: ChatStaticStrings): string {
 export default function NotificationsBell({ tk, isDark, s }: NotificationsBellProps) {
   const [open, setOpen] = useState(false);
   const [perm, setPerm] = useState(desktopPermission());
+  const [showHow, setShowHow] = useState(false);
   // Panel portal orqali <body> ga chiqadi — header'ning z-index qatlamiga
   // qamalib qolmasin. Shuning uchun joyi tugma koordinatasidan hisoblanadi.
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -85,6 +86,8 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
       return;
     }
     place();
+    // Foydalanuvchi brauzer sozlamalarida ruxsatni o'zgartirgan bo'lishi mumkin
+    setPerm(desktopPermission());
     setOpen(true);
     // Ro'yxat faqat panel ochilganda yuklanadi — polling faqat sonni so'raydi
     void refresh();
@@ -195,9 +198,22 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
               </button>
             )}
             {perm === "denied" && (
-              <div className={styles.optInMuted} style={{ color: tk.muted }}>
-                {s.notifDesktopBlocked}
-              </div>
+              <button
+                type="button"
+                className={styles.blocked}
+                style={{ color: tk.muted, borderColor: tk.cardBorder }}
+                onClick={() => setShowHow((v) => !v)}
+              >
+                <span className={styles.blockedRow}>
+                  <span>{s.notifDesktopBlocked}</span>
+                  <span className={styles.blockedHow}>{s.notifDesktopHow}</span>
+                </span>
+                {showHow && (
+                  <span className={styles.blockedSteps} style={{ color: tk.disc }}>
+                    {s.notifDesktopSteps}
+                  </span>
+                )}
+              </button>
             )}
 
             <div className={styles.list}>

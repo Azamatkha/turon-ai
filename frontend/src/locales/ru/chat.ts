@@ -30,6 +30,9 @@ export const chatStatic: ChatStaticStrings = {
   notifMarkRead: "Отметить прочитанным",
   notifEnableDesktop: "Разрешить уведомления браузера",
   notifDesktopBlocked: "Уведомления браузера заблокированы",
+  notifDesktopHow: "Как включить?",
+  notifDesktopSteps:
+    "Браузер больше не спросит — нужно включить вручную:\n1. Нажмите 🔒 (или ⓘ) в адресной строке\n2. Найдите пункт «Уведомления / Notifications»\n3. Выберите «Разрешить / Allow»\n4. Обновите страницу",
   notifKnowledgeUpdated: "Данные обновлены",
   notifRatesUpdated: "Курс валют изменился",
   notifReportNew: "Новое обращение",
