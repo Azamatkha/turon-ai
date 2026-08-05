@@ -338,6 +338,17 @@ EMPLOYEE_NOT_FOUND_REPLY = (
 )
 
 
+# Salomlashish / bot haqidagi savol (router: smalltalk, about_bot). Odatda
+# javobni routerning o'zi tayyorlab beradi ("reply" maydoni); u bo'sh qolsa —
+# shu matn ishlatiladi. MODELGA QAYTA BERILMAYDI: bunday savol uchun ikkinchi
+# LLM chaqiruvi keraksiz kechikish qo'shardi.
+SMALLTALK_FALLBACK_REPLY = (
+    "Assalomu alaykum! Men Turonbankning ichki AI yordamchisiman — bank "
+    "mahsulotlari, ichki hujjatlar va xodimlar ma'lumotnomasi bo'yicha savol "
+    "bersangiz javob beraman."
+)
+
+
 # "Xodimlar raqamlari" kabi umumiy so'rovga — aniqlashtirishni so'raymiz.
 EMPLOYEE_ASK_REPLY = (
     "Qaysi xodim haqida ma'lumot kerak? Iltimos, xodimning familiyasi va ismini "

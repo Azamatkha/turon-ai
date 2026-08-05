@@ -48,16 +48,23 @@ class OllamaClient(BaseAIClient):
         messages: list[dict[str, Any]],
         temperature: float | None,
         max_tokens: int,
+        think: bool = False,
+        fmt: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         # Ollama'ning o'ziga xos (native) /api/chat endpointi — OpenAI-uyg'un
-        # /v1/chat/completions'dan farqli, "think": false'ni ishonchli va
-        # kafolatli qo'llab-quvvatlaydi (reasoning modellarni o'ylashsiz javobga
-        # majburlaydi, aks holda butun token limiti "o'ylashga" ketib qolardi).
+        # /v1/chat/completions'dan farqli, "think" bayrog'ini ishonchli
+        # qo'llab-quvvatlaydi.
+        #
+        # Standart holat — think=False: aks holda butun token limiti "o'ylashga"
+        # ketib, javob kesilib qolardi. Lekin savolni TUSHUNISH bosqichida
+        # (router) o'ylash yoqiladi — o'sha yerda chiqish qisqa va aynan
+        # mulohaza kerak. think=True bo'lganda chaqiruvchi max_tokens'ni
+        # oshirishi shart: limit mulohaza + javobga birga taqsimlanadi.
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             "stream": False,
-            "think": False,
+            "think": think,
             "options": {
                 "temperature": (
                     temperature
@@ -70,6 +77,11 @@ class OllamaClient(BaseAIClient):
                 "num_ctx": self.num_ctx,
             },
         }
+        # JSON sxema berilsa — Ollama chiqishni STRUKTURA bo'yicha majburlaydi.
+        # Ilgari sxema qabul qilinardi-yu, so'rovga umuman qo'shilmasdi: model
+        # xohlagan ko'rinishda javob berardi va parser uni topa olmay qolardi.
+        if fmt is not None:
+            payload["format"] = fmt
         try:
             resp = await self.http.post(
                 f"{self.base_url}/api/chat",
@@ -99,12 +111,14 @@ class OllamaClient(BaseAIClient):
         temperature: float | None = None,
         max_tokens: int,
         system_prompt: str | None = None,
+        think: bool = False,
     ) -> str:
         result = await self.generate_text_with_usage(
             prompt,
             temperature=temperature,
             max_tokens=max_tokens,
             system_prompt=system_prompt,
+            think=think,
         )
         return result.text
 
@@ -115,9 +129,10 @@ class OllamaClient(BaseAIClient):
         temperature: float | None = None,
         max_tokens: int,
         system_prompt: str | None = None,
+        think: bool = False,
     ) -> TextGenResult:
         messages = self._build_messages(prompt, system_prompt)
-        data = await self._chat(messages, temperature, max_tokens)
+        data = await self._chat(messages, temperature, max_tokens, think=think)
 
         return TextGenResult(
             text=self._first_text(data),
@@ -192,6 +207,7 @@ class OllamaClient(BaseAIClient):
         temperature: float | None = None,
         max_tokens: int,
         system_prompt: str | None = None,
+        think: bool = False,
     ) -> CallResult:
         if isinstance(prompt, list):
             messages: list[dict[str, Any]] = list(prompt)
@@ -200,7 +216,9 @@ class OllamaClient(BaseAIClient):
         else:
             messages = self._build_messages(prompt, system_prompt)
 
-        data = await self._chat(messages, temperature, max_tokens)
+        data = await self._chat(
+            messages, temperature, max_tokens, think=think, fmt=schema
+        )
         text = self._first_text(data)
         try:
             parsed: Any = json.loads(extract_json(text))

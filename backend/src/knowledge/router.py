@@ -1,0 +1,207 @@
+"""Savolni TUSHUNISH bosqichi — javob berishdan oldingi "o'ylash".
+
+Ilgari savol regex va prefiks o'xshashligi bilan yo'naltirilardi. U ko'r-ko'rona
+ishlardi: masalan "sen qaysi madel orqali **javob** beryapsan" savolidagi
+"javob" so'zi "**Javohir**" ismiga to'rt harf bilan o'xshab qolib, foydalanuvchi
+5 ta xodim ro'yxatini olardi — model esa umuman chaqirilmasdi.
+
+Endi savolni model o'qiydi va nima so'ralayotganini o'zi aniqlaydi. Model
+faqat QARORNI beradi (niyat + ajratilgan ma'lumot); xodim ro'yxati kabi aniq
+ma'lumotni baribir kod yig'adi, shunda IP va telefon raqamlari hech qachon
+to'qib chiqarilmaydi.
+"""
+
+from enum import StrEnum
+import json
+from typing import Any
+
+from loggers import get_logger
+from src.core.ai.interfaces import BaseAIClient
+from src.knowledge.schemas import ChatTurn
+
+logger = get_logger(__name__)
+
+
+class Intent(StrEnum):
+    """Savol nima haqida ekani."""
+
+    # Xodim/bo'lim kontaktlari: ism, ichki raqam (IP), telefon, bo'lim tarkibi
+    EMPLOYEE = "employee"
+    # Bank mahsulotlari va qoidalari: kredit, karta, omonat, o'tkazma...
+    PRODUCT = "product"
+    # Valyuta kurslari
+    RATES = "rates"
+    # Filial / BXM / manzil / ish vaqti
+    BRANCH = "branch"
+    # Salomlashish, minnatdorchilik, bo'sh gap
+    SMALLTALK = "smalltalk"
+    # Botning o'zi haqida: kimsan, qaysi model, nima qila olasan
+    ABOUT_BOT = "about_bot"
+    # Bankka aloqasi yo'q yoki tushunarsiz
+    OTHER = "other"
+
+
+class Route:
+    """Router qarori."""
+
+    def __init__(
+        self,
+        intent: Intent,
+        search_query: str,
+        person_name: str = "",
+        ip_number: str = "",
+        department: str = "",
+        reply: str = "",
+    ) -> None:
+        self.intent = intent
+        # Vektor qidiruv uchun tozalangan/to'ldirilgan so'rov
+        self.search_query = search_query
+        # Ajratilgan ma'lumotlar (faqat EMPLOYEE uchun mazmunli)
+        self.person_name = person_name
+        self.ip_number = ip_number
+        self.department = department
+        # SMALLTALK / ABOUT_BOT uchun tayyor javob
+        self.reply = reply
+
+    def __repr__(self) -> str:
+        return (
+            f"Route(intent={self.intent}, query={self.search_query!r}, "
+            f"name={self.person_name!r}, ip={self.ip_number!r}, "
+            f"dept={self.department!r})"
+        )
+
+
+ROUTER_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "intent": {
+            "type": "string",
+            "enum": [i.value for i in Intent],
+        },
+        "person_name": {"type": "string"},
+        "ip_number": {"type": "string"},
+        "department": {"type": "string"},
+        "search_query": {"type": "string"},
+        "reply": {"type": "string"},
+    },
+    "required": ["intent", "search_query"],
+}
+
+
+ROUTER_SYSTEM = """Sen — Turonbank ichki AI yordamchisining YO'NALTIRUVCHI qismisan.
+Sening vazifang javob yozish EMAS. Foydalanuvchi ASLIDA nima so'rayotganini
+tushunib, qaror qaytarish.
+
+Avval savolni diqqat bilan o'qi va o'zingdan so'ra: bu odam nima bilmoqchi?
+So'zlarga emas, MA'NOGA qara.
+
+Niyat (intent) turlari:
+- "employee"  — muayyan XODIM yoki BO'LIM kontakti so'ralyapti: ism bo'yicha,
+                ichki raqam (IP) bo'yicha, telefon yoki bo'lim tarkibi.
+                MISOL: "Azamat Xamdamovning raqami", "1036 kimniki",
+                "HR bo'limi xodimlari".
+- "product"   — bank mahsuloti yoki qoidasi: kredit, karta, omonat, o'tkazma,
+                komissiya, shartlar, hujjatlar.
+- "rates"     — valyuta kurslari.
+- "branch"    — filial / bank xizmatlari markazi (BXM) / manzil / ish vaqti.
+- "smalltalk" — salomlashish, rahmat, xayrlashuv, bo'sh gap.
+- "about_bot" — SENING o'zing haqingda: kimsan, qanday ishlaysan, qaysi model,
+                nima qila olasan, kim yaratgan.
+- "other"     — bankka aloqasi yo'q yoki umuman tushunarsiz.
+
+DIQQAT — eng ko'p uchraydigan xato:
+Savolda odam ismiga O'XSHAB ketadigan oddiy so'z bo'lishi mumkin
+("javob", "salom", "model", "hisob"). Bu xodim so'rovi EMAS.
+"employee" ni faqat foydalanuvchi HAQIQATAN kimningdir kontaktini
+so'rayotganiga ishonch hosil qilganingda tanla.
+
+Maydonlar:
+- "intent"       — yuqoridagilardan bittasi.
+- "person_name"  — savolda aniq ODAM ISMI bo'lsa, o'shani yoz. Aks holda "".
+- "ip_number"    — savolda ichki raqam (3-5 xonali) bo'lsa. Aks holda "".
+- "department"   — bo'lim/departament nomi aytilgan bo'lsa. Aks holda "".
+- "search_query" — bazadan qidirish uchun tozalangan so'rov: ortiqcha so'zlarsiz,
+                   kerak bo'lsa rasmiy atama bilan to'ldirilgan.
+                   smalltalk/about_bot uchun bo'sh satr qoldir.
+- "reply"        — FAQAT "smalltalk" va "about_bot" uchun: qisqa, xushmuomala
+                   javob (1-2 gap), foydalanuvchi tilida. Boshqa hollarda "".
+
+Sen Turonbank uchun ishlaysan. "about_bot" da: sen Turonbankning ichki AI
+yordamchisisan, bank hujjatlari va xodimlar ma'lumotlari asosida javob berasan.
+Qaysi model ekaningni aytma — buning o'rniga nima qila olishingni ayt.
+
+Faqat JSON qaytar."""
+
+
+class QuestionRouter:
+    """Savolni modelga o'qitib, qaror oladi.
+
+    O'ylash (think) SHU YERDA yoqilgan: chiqish qisqa, shuning uchun kechikish
+    kam, foyda esa katta — asosiy xato aynan savolni tushunmaslikdan kelib
+    chiqardi. Yakuniy javob esa o'ylashsiz oqim bilan boradi.
+    """
+
+    MAX_TOKENS = 800
+    TEMPERATURE = 0.0
+    # Kontekstga qo'shiladigan oxirgi almashuvlar soni
+    HISTORY_TURNS = 4
+
+    def __init__(self, ai_client: BaseAIClient) -> None:
+        self.ai_client = ai_client
+
+    def _build_prompt(self, question: str, history: list[ChatTurn] | None) -> str:
+        parts: list[str] = []
+        if history:
+            recent = history[-self.HISTORY_TURNS :]
+            lines = [f"{t.role}: {t.content}" for t in recent if t.content.strip()]
+            if lines:
+                parts.append("Oldingi suhbat:\n" + "\n".join(lines))
+        parts.append(f"Foydalanuvchi savoli:\n{question}")
+        return "\n\n".join(parts)
+
+    async def classify(
+        self, question: str, history: list[ChatTurn] | None = None
+    ) -> Route:
+        """Savol niyatini aniqlaydi.
+
+        Model javob bermasa yoki xato qaytarsa — PRODUCT ga tushamiz: bu eng
+        zararsiz zaxira, chunki u oddiy RAG qidiruvi (xodim ro'yxatini
+        tasodifan chiqarib yubormaydi).
+        """
+        fallback = Route(intent=Intent.PRODUCT, search_query=question)
+        try:
+            result = await self.ai_client.generate_json(
+                self._build_prompt(question, history),
+                schema=ROUTER_SCHEMA,
+                temperature=self.TEMPERATURE,
+                max_tokens=self.MAX_TOKENS,
+                system_prompt=ROUTER_SYSTEM,
+                think=True,
+            )
+        except Exception:
+            logger.exception("Router chaqiruvi muvaffaqiyatsiz: %r", question)
+            return fallback
+
+        data = result.data
+        if not isinstance(data, dict) or "raw" in data:
+            logger.warning("Router JSON qaytarmadi: %s", json.dumps(data)[:300])
+            return fallback
+
+        raw_intent = str(data.get("intent", "")).strip().lower()
+        try:
+            intent = Intent(raw_intent)
+        except ValueError:
+            logger.warning("Router noma'lum intent qaytardi: %r", raw_intent)
+            return fallback
+
+        query = str(data.get("search_query", "")).strip() or question
+        route = Route(
+            intent=intent,
+            search_query=query,
+            person_name=str(data.get("person_name", "")).strip(),
+            ip_number=str(data.get("ip_number", "")).strip(),
+            department=str(data.get("department", "")).strip(),
+            reply=str(data.get("reply", "")).strip(),
+        )
+        logger.info("Router: %r -> %r", question, route)
+        return route

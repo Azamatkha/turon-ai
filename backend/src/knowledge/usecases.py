@@ -28,8 +28,10 @@ from src.knowledge.prompts import (
     PDF_CLEAN_SYSTEM,
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
+    SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
 )
+from src.knowledge.router import Intent, QuestionRouter
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
     AnswerResult,
@@ -1372,6 +1374,8 @@ class AnswerQuestionUseCase:
         self.embedder = embedder
         self.store = store
         self.ai_client = ai_client
+        # Savolni javobdan OLDIN tushunadigan bosqich (o'ylash shu yerda yoqiq)
+        self.router = QuestionRouter(ai_client)
 
     @staticmethod
     def _category_label(source_url: str, title: str = "") -> str:
@@ -1833,8 +1837,37 @@ class AnswerQuestionUseCase:
         resolved = _resolve_list_choice(question, history)
         question = resolved or question
 
+        # Savolni TUSHUNISH: nima so'ralayotganini model aniqlaydi. Ilgari bu
+        # regex bilan qilinardi va mahsulot belgisi yo'q HAR QANDAY savol ism
+        # qidiruviga tushib ketardi ("javob" -> "Javohir"). Endi xodim yo'li
+        # faqat model shuni tasdiqlaganda ochiladi.
+        decision = None if resolved else await self.router.classify(question, history)
+
+        # Salomlashish yoki bot haqidagi savol — bazaga umuman bormaymiz
+        if decision is not None and decision.intent in (
+            Intent.SMALLTALK,
+            Intent.ABOUT_BOT,
+        ):
+            reply = decision.reply or SMALLTALK_FALLBACK_REPLY
+            yield {
+                "type": "delta",
+                "text": to_cyrillic(reply) if want_cyrillic else reply,
+            }
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
-        route = None if resolved else await self._employee_route(question)
+        route = (
+            await self._employee_route(question)
+            if decision is not None and decision.intent is Intent.EMPLOYEE
+            else None
+        )
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none"):
@@ -1986,8 +2019,25 @@ class AnswerQuestionUseCase:
         resolved = _resolve_list_choice(question, history)
         question = resolved or question
 
+        # Savolni TUSHUNISH — stream yo'li bilan bir xil mantiq
+        decision = None if resolved else await self.router.classify(question, history)
+
+        if decision is not None and decision.intent in (
+            Intent.SMALLTALK,
+            Intent.ABOUT_BOT,
+        ):
+            reply = decision.reply or SMALLTALK_FALLBACK_REPLY
+            return AnswerResult(
+                answer=to_cyrillic(reply) if want_cyrillic else reply,
+                sources=[],
+            )
+
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
-        route = None if resolved else await self._employee_route(question)
+        route = (
+            await self._employee_route(question)
+            if decision is not None and decision.intent is Intent.EMPLOYEE
+            else None
+        )
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none"):

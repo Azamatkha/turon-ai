@@ -15,6 +15,7 @@ class BaseAIClient(ABC):
         temperature: float | None = None,
         max_tokens: int,
         system_prompt: str | None = None,
+        think: bool = False,
     ) -> str:
         raise NotImplementedError
 
@@ -26,9 +27,14 @@ class BaseAIClient(ABC):
         temperature: float | None = None,
         max_tokens: int,
         system_prompt: str | None = None,
+        think: bool = False,
     ) -> TextGenResult:
         """generate_text bilan bir xil, lekin token statistikasini ham qaytaradi
-        (debug: javob token yetishmovchiligidan kesilib qolganini bilish uchun)."""
+        (debug: javob token yetishmovchiligidan kesilib qolganini bilish uchun).
+
+        `think=True` — reasoning modelga mulohaza yuritishga ruxsat beradi.
+        Bunda max_tokens kattaroq bo'lishi kerak: limit mulohaza va javob
+        o'rtasida bo'linadi."""
         raise NotImplementedError
 
     def stream_generate(
@@ -52,6 +58,7 @@ class BaseAIClient(ABC):
         temperature: float | None = None,
         max_tokens: int,
         system_prompt: str | None = None,
+        think: bool = False,
     ) -> CallResult:
         raise NotImplementedError
 
