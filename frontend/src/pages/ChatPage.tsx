@@ -150,16 +150,18 @@ export default function ChatPage() {
       <div
         className={styles.bgLayer}
         aria-hidden="true"
-        style={{ opacity: isDark ? 0.85 : 0.9 }}
+        // Light rejimda rang to'q navy — 0.9 da chekkalar deyarli qora plita
+        // bo'lib qolardi. 0.5 da fon aniq ko'rinadi, lekin sahifa ochiq qoladi.
+        style={{ opacity: isDark ? 0.85 : 0.5 }}
       >
         <GradientWaves
           // Light rejimda to'lqin rangi ATAYLAB to'q (bank palitrasidagi
-          // "trust navy" #1E3A8A): ochiq havorang #f3f5f8 fonda yorqinlik
+          // "trust navy" #1E3A8A): ochiq havorang #F8FAFC fonda yorqinlik
           // jihatidan deyarli farq qilmagani uchun umuman ko'rinmasdi.
           // O'qilishni .bgLayer dagi markaziy maska ta'minlaydi.
-          horizonColor={isDark ? "#0d1e33" : "#eef3f9"}
-          waveColor={isDark ? "#2a5f96" : "#1E3A8A"}
-          crestColor={isDark ? "#7fb3d2" : "#7fa8d4"}
+          horizonColor={isDark ? "#0B1524" : "#F8FAFC"}
+          waveColor="#1E3A5F"
+          crestColor={isDark ? "#60A5FA" : "#93C5FD"}
           speed={0.3}
           amplitude={2.5}
           waveScale={0.6}
@@ -201,7 +203,7 @@ export default function ChatPage() {
           glowRadius={160}
           gradientFrom={isDark ? "#2b4a6d" : "#b3c6d8"}
           gradientTo={isDark ? "#35597f" : "#a4bacf"}
-          glowColor={isDark ? "rgba(127,179,210,0.10)" : "rgba(23,63,115,0.08)"}
+          glowColor={isDark ? "rgba(96,165,250,0.10)" : "rgba(30,58,95,0.08)"}
         />
       </div>
 

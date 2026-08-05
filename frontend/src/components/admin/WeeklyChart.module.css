@@ -8,7 +8,7 @@
   border: 1px solid var(--adm-border);
   border-radius: 18px;
   padding: 22px 24px;
-  box-shadow: 0 1px 3px rgba(23, 63, 115, 0.04);
+  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.04);
 }
 
 .head {
@@ -50,11 +50,11 @@
 }
 
 .barNormal {
-  background: linear-gradient(180deg, #7fb3d2, #3a7ca5);
+  background: linear-gradient(180deg, #60A5FA, #2563EB);
 }
 
 .barHighlight {
-  background: linear-gradient(180deg, #2a6f97, #173f73);
+  background: linear-gradient(180deg, #2563EB, #1E3A5F);
 }
 
 /* =====================

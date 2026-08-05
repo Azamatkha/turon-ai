@@ -50,7 +50,7 @@ export default function DepartmentSelect({ value, onChange, lang, placeholder }:
         </span>
         <svg
           width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="#7d909a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
         >
           <polyline points="6 9 12 15 18 9" />

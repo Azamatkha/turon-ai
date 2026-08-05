@@ -178,7 +178,7 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
               border: "1px solid var(--adm-border)",
               borderRadius: 12,
               padding: 6,
-              boxShadow: "0 12px 32px rgba(13,33,45,.28)",
+              boxShadow: "0 12px 32px rgba(15,23,42,.28)",
               zIndex: 20,
             }}
           >

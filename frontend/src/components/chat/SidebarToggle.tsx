@@ -31,7 +31,7 @@ export default function SidebarToggle({
       style={{
         left: `${left}px`,
         ...(isDark
-          ? { background: "#1c3e56", borderColor: "rgba(255,255,255,.16)", color: "#e8eef2" }
+          ? { background: "#1D3355", borderColor: "rgba(255,255,255,.16)", color: "#E2E8F0" }
           : {}),
       }}
     >

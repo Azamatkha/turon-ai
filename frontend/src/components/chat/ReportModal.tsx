@@ -31,7 +31,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
   const [err, setErr] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const cardBg = isDark ? "rgba(255,255,255,.06)" : "#f3f5f8";
+  const cardBg = isDark ? "rgba(255,255,255,.06)" : "#F8FAFC";
 
   // Object URL faqat preview uchun — komponent yopilganda bo'shatiladi
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
                       style={{
                         background: active ? tk.card : "transparent",
                         color: active ? ACCENT : tk.muted,
-                        boxShadow: active ? "0 2px 8px rgba(9,20,34,.14)" : "none",
+                        boxShadow: active ? "0 2px 8px rgba(15,23,42,.14)" : "none",
                       }}
                     >
                       {t.label}

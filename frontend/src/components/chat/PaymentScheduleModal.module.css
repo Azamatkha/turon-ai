@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   padding: 2vh 2vw;
-  background: rgba(9, 20, 34, 0.55);
+  background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(4px);
   animation: schFade 0.18s ease both;
 }
@@ -24,7 +24,7 @@
   max-height: 92vh;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 26px 70px rgba(9, 20, 34, 0.5);
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.5);
   animation: schPop 0.26s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 

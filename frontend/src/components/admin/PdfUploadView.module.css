@@ -55,7 +55,7 @@
 }
 
 .dropOver {
-  border-color: var(--adm-primary, #173f73);
+  border-color: var(--adm-primary, #1E3A5F);
   background: var(--adm-hover);
 }
 
@@ -105,7 +105,7 @@
 }
 
 .input:focus {
-  border-color: var(--adm-primary, #173f73);
+  border-color: var(--adm-primary, #1E3A5F);
 }
 
 .submitBtn {
@@ -118,7 +118,7 @@
   margin-top: 18px;
   border: none;
   border-radius: 11px;
-  background: var(--adm-primary, #173f73);
+  background: var(--adm-primary, #1E3A5F);
   color: #fff;
   font-size: 14px;
   font-weight: 600;

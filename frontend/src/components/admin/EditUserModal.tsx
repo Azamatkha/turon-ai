@@ -95,7 +95,7 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang 
           </div>
         </div>
 
-        <HButton onClick={submit} className={styles.submitBtn} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(23, 63, 115,.28)" }}>
+        <HButton onClick={submit} className={styles.submitBtn} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(30, 58, 95,.28)" }}>
           {saving ? <span className={styles.spinner} /> : <span>{admin.save}</span>}
         </HButton>
       </div>

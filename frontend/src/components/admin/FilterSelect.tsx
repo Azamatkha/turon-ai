@@ -71,7 +71,7 @@ export default function FilterSelect({ value, options, onChange, fullWidth, plac
           fontSize: 13,
           fontWeight: 600,
           cursor: "pointer",
-          boxShadow: "0 1px 2px rgba(23,63,115,.05)",
+          boxShadow: "0 1px 2px rgba(30,58,95,.05)",
         }}
       >
         <span
@@ -117,7 +117,7 @@ export default function FilterSelect({ value, options, onChange, fullWidth, plac
             background: "var(--adm-card)",
             border: "1px solid var(--adm-border)",
             borderRadius: 12,
-            boxShadow: "0 16px 40px rgba(13,33,45,.18)",
+            boxShadow: "0 16px 40px rgba(15,23,42,.18)",
             padding: 6,
             maxHeight: 280,
             overflowY: "auto",
@@ -151,7 +151,7 @@ export default function FilterSelect({ value, options, onChange, fullWidth, plac
                   fontWeight: active ? 600 : 500,
                   textAlign: "left",
                   color: "var(--adm-text-strong)",
-                  background: active ? "rgba(47,102,144,.12)" : hovered ? "var(--adm-hover-2)" : "transparent",
+                  background: active ? "rgba(37,99,235,.12)" : hovered ? "var(--adm-hover-2)" : "transparent",
                 }}
               >
                 {/* modalda (fullWidth) uzun nomlar o'ralsin — quti tashqarisiga

@@ -16,10 +16,10 @@
 /* =====================
    Containers
    ===================== */
-/* Asosiy fon — logotip rangidan (#173f73) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
+/* Asosiy fon — logotip rangidan (#1E3A5F) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
 .panel {
-  background: linear-gradient(150deg, #173f73 0%, #2a6f97 38%, #173f73 85%, #2a6f97 100%);
-  color: #eef3f6;
+  background: linear-gradient(150deg, #1E3A5F 0%, #2563EB 38%, #1E3A5F 85%, #2563EB 100%);
+  color: #F1F5F9;
 }
 
 /* Pastdagi 3 ta ".blob*"/".deco*" — panelni "bo'sh" ko'rinmasligi uchun fonga
@@ -34,7 +34,7 @@
   width: 420px;
   height: 420px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(217, 220, 214, 0.18), transparent 70%);
+  background: radial-gradient(circle at 30% 30%, rgba(203, 213, 225, 0.18), transparent 70%);
   pointer-events: none;
 }
 
@@ -108,7 +108,7 @@
 .logoIcon {
   width: 32px;
   height: 32px;
-  color: #bfe0f0;
+  color: #BFDBFE;
 }
 
 .logoText {

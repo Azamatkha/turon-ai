@@ -84,7 +84,7 @@
 
 .searchRow:focus-within {
   background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(127, 179, 210, 0.55);
+  border-color: rgba(96, 165, 250, 0.55);
 }
 
 .searchIcon {
@@ -106,7 +106,7 @@
 }
 
 .searchInput::placeholder {
-  color: rgba(217, 220, 214, 0.5);
+  color: rgba(203, 213, 225, 0.5);
 }
 
 .searchClear {
@@ -190,7 +190,7 @@
   height: 32px;
   border-radius: 9px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #3a7ca5, #3a7ca5);
+  background: linear-gradient(140deg, #2563EB, #2563EB);
   /* ACCENT ikki marta takrorlangan — original gradient ham shunday edi */
   display: flex;
   align-items: center;
@@ -311,7 +311,7 @@
 }
 
 .moreBtn:focus-visible {
-  outline: 2px solid #7fb3d2;
+  outline: 2px solid #60A5FA;
   outline-offset: 1px;
 }
 
@@ -321,8 +321,8 @@
 .moreMenu {
   position: fixed;
   z-index: 1000;
-  background: #1f3f63;
-  color: #eef2ef;
+  background: #274B73;
+  color: #F1F5F9;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 10px;
   padding: 6px;
@@ -374,7 +374,7 @@
 .moreMenuItemDanger:hover,
 .moreMenuItemDanger:focus-visible {
   background: rgba(192, 57, 43, 0.25);
-  color: #ff8a80;
+  color: #F87171;
 }
 
 .chatDot {
@@ -422,7 +422,7 @@
 .newChatBtn:focus-visible,
 .chatItem:focus-visible,
 .profileTrigger:focus-visible {
-  outline: 2px solid #7fb3d2;
+  outline: 2px solid #60A5FA;
   outline-offset: 2px;
 }
 

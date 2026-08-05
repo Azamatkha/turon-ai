@@ -39,8 +39,8 @@
    Containers
    ===================== */
 .switchLight {
-  background: linear-gradient(135deg, #1b4b7a, #3a7ca5);
-  box-shadow: inset 0 1px 3px rgba(23, 63, 115, 0.25);
+  background: linear-gradient(135deg, #1E3A5F, #2563EB);
+  box-shadow: inset 0 1px 3px rgba(30, 58, 95, 0.25);
 }
 
 .switchDark {

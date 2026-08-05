@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   padding: 32px 36px;
-  background: #f4f6f3;
+  background: #F1F5F9;
 }
 
 .langSwitcherWrap {
@@ -62,9 +62,9 @@
   padding: 11px 14px;
   margin-bottom: 18px;
   border-radius: 11px;
-  background: #fdeceb;
-  border: 1px solid #f6c9c5;
-  color: #c0392b;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
   font-size: 13.5px;
   font-weight: 500;
   animation: shake 0.4s ease both;
@@ -78,8 +78,8 @@
   border-radius: 12px;
   padding: 0 14px;
   height: 50px;
-  border: 1.6px solid #dde2dc;
-  box-shadow: 0 1px 2px rgba(23, 63, 115, 0.03);
+  border: 1.6px solid #CBD5E1;
+  box-shadow: 0 1px 2px rgba(30, 58, 95, 0.03);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
@@ -90,8 +90,8 @@
 /* Register sahifasi fokus holatini JS bilan kuzatmaydi — :focus-within yetarli */
 .field:focus-within,
 .fieldActive {
-  border-color: #2a6f97;
-  box-shadow: 0 0 0 4px rgba(47, 102, 144, 0.12);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
   transform: translateY(-1px);
 }
 
@@ -105,7 +105,7 @@
   border: none;
   border-radius: 7px;
   background: transparent;
-  color: #7d909a;
+  color: #94A3B8;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -134,8 +134,8 @@
 }
 
 .checkboxChecked {
-  border-color: #2a6f97;
-  background: #2a6f97;
+  border-color: #2563EB;
+  background: #2563EB;
 }
 
 .submitBtn {
@@ -147,16 +147,16 @@
   border: none;
   border-radius: 13px;
   cursor: pointer;
-  background: linear-gradient(135deg, #2a6f97, #173f73);
+  background: linear-gradient(135deg, #2563EB, #1E3A5F);
   color: #fff;
-  box-shadow: 0 8px 22px rgba(23, 63, 115, 0.22);
+  box-shadow: 0 8px 22px rgba(30, 58, 95, 0.22);
   /* Bosilganda ozgina kichraytirib, "bosildi" degan darhol fizik tuyg'u beradi */
   transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.3s ease;
 }
 
 .submitBtnLoading {
   cursor: default;
-  background: #3a7ca5;
+  background: #2563EB;
 }
 
 .submitBtn:active {
@@ -198,12 +198,12 @@
   font-weight: 700;
   letter-spacing: -0.5px;
   margin: 0 0 7px;
-  color: #173f73;
+  color: #1E3A5F;
 }
 
 .subtitle {
   font-size: 14.5px;
-  color: #6b7d86;
+  color: #64748B;
   margin: 0;
 }
 
@@ -211,7 +211,7 @@
   display: block;
   font-size: 13.5px;
   font-weight: 600;
-  color: #42565f;
+  color: #334155;
   margin-bottom: 7px;
   letter-spacing: 0.2px;
 }
@@ -223,14 +223,14 @@
   outline: none;
   background: transparent;
   font-size: 15px;
-  color: #173f73;
+  color: #1E3A5F;
   height: 100%;
   padding: 0;
 }
 
 .rememberLabel {
   font-size: 13.5px;
-  color: #42565f;
+  color: #334155;
   white-space: nowrap;
 }
 
@@ -241,7 +241,7 @@
 .helpLink {
   font-size: 13.5px;
   font-weight: 600;
-  color: #2a6f97;
+  color: #2563EB;
   text-decoration: none;
   white-space: nowrap;
   border: none;
@@ -252,7 +252,7 @@
 }
 
 .helpLink:hover {
-  color: #173f73;
+  color: #1E3A5F;
   text-decoration: underline;
 }
 
@@ -264,11 +264,11 @@
   white-space: nowrap;
   padding: 9px 13px;
   border-radius: 10px;
-  background: #173f73;
+  background: #1E3A5F;
   color: #eaf1f6;
   font-size: 12.5px;
   font-weight: 500;
-  box-shadow: 0 10px 26px rgba(13, 33, 45, 0.28);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.28);
   animation: helpPop 0.18s ease both;
 }
 
@@ -278,11 +278,11 @@
   right: 16px;
   top: 100%;
   border: 6px solid transparent;
-  border-top-color: #173f73;
+  border-top-color: #1E3A5F;
 }
 
 .helpPhone {
-  color: #7fb3d2;
+  color: #60A5FA;
   font-weight: 700;
   text-decoration: none;
 }
@@ -291,18 +291,18 @@
 .noAccountBtn {
   font-size: 13.5px;
   font-weight: 600;
-  color: #2a6f97;
+  color: #2563EB;
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
-  border-bottom: 1px dashed rgba(42, 111, 151, 0.5);
+  border-bottom: 1px dashed rgba(37, 99, 235, 0.5);
   transition: color 0.15s ease;
 }
 
 .noAccountBtn:hover {
-  color: #173f73;
-  border-bottom-color: #173f73;
+  color: #1E3A5F;
+  border-bottom-color: #1E3A5F;
 }
 
 /* Modal — ekran markazida, hujjat oqimidan TASHQARIDA. Shuning uchun
@@ -327,14 +327,14 @@
   padding: 24px;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 24px 60px rgba(13, 33, 45, 0.35);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
   animation: hintRise 0.2s ease both;
 }
 
 .hintTitle {
   font-size: 16px;
   font-weight: 700;
-  color: #173f73;
+  color: #1E3A5F;
   margin-bottom: 10px;
 }
 
@@ -350,7 +350,7 @@
   padding: 11px;
   border: none;
   border-radius: 10px;
-  background: #173f73;
+  background: #1E3A5F;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -359,7 +359,7 @@
 }
 
 .hintClose:hover {
-  background: #1b4b7a;
+  background: #1E3A5F;
 }
 
 @keyframes hintFade {

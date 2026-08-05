@@ -34,7 +34,7 @@ export default function PaymentScheduleModal({
   );
 
   const border = tk.cardBorder;
-  const headBg = isDark ? "rgba(255,255,255,.06)" : "#eef2f6";
+  const headBg = isDark ? "rgba(255,255,255,.06)" : "#F1F5F9";
 
   const download = () =>
     downloadSchedule(

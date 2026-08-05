@@ -95,8 +95,8 @@ export default function ChatHeader({
             data-tip={s.adminPanel}
             aria-label={s.adminPanel}
             className={styles.adminBtn}
-            baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#dde2dc"), color: isDark ? "#e8eef2" : "#173f73" }}
-            hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#eef3f6", transform: "translateY(-1px)" }}
+            baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"), color: isDark ? "#E2E8F0" : "#1E3A5F" }}
+            hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#F1F5F9", transform: "translateY(-1px)" }}
           >
             <MdOutlineAdminPanelSettings size={20} />
           </HButton>
@@ -106,8 +106,8 @@ export default function ChatHeader({
           data-tip={s.calculator}
           aria-label={s.calculator}
           className={styles.adminBtn}
-          baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#dde2dc"), color: isDark ? "#e8eef2" : "#173f73" }}
-          hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#eef3f6", transform: "translateY(-1px)" }}
+          baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"), color: isDark ? "#E2E8F0" : "#1E3A5F" }}
+          hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#F1F5F9", transform: "translateY(-1px)" }}
         >
           <FaCalculator size={17} />
         </HButton>
@@ -116,8 +116,8 @@ export default function ChatHeader({
           data-tip={s.report}
           aria-label={s.report}
           className={styles.adminBtn}
-          baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#dde2dc"), color: isDark ? "#e8eef2" : "#173f73" }}
-          hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#eef3f6", transform: "translateY(-1px)" }}
+          baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"), color: isDark ? "#E2E8F0" : "#1E3A5F" }}
+          hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#F1F5F9", transform: "translateY(-1px)" }}
         >
           <MdReportGmailerrorred size={21} />
         </HButton>

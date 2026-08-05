@@ -122,7 +122,7 @@ export default function MessageArea({
                 onClick={() => onSuggestionClick(label)}
                 className={styles.suggestionChip}
                 baseStyle={{ background: tk.card, border: "1px solid " + tk.cardBorder, color: tk.strong, boxShadow: tk.chipShadow }}
-                hoverStyle={{ background: tk.card, borderColor: isDark ? "rgba(127,179,210,.5)" : "#bcd0e0", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(23, 63, 115,.1)" }}
+                hoverStyle={{ background: tk.card, borderColor: isDark ? "rgba(96,165,250,.5)" : "#CBD5E1", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(30, 58, 95,.1)" }}
               >
                 <span className={styles.suggestionIcon}>{suggIcons[idx]}</span>
                 {label}
@@ -217,7 +217,7 @@ export default function MessageArea({
               <div key={m.id} className={`${styles.messageRow} ${styles.messageRowBot}`}>
                 <div className={styles.botAvatar}><Logo size={17} /></div>
                 <div className={styles.botCol}>
-                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(23, 63, 115,.04)" }}>
+                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(30, 58, 95,.04)" }}>
                     <MessageContent text={m.text} />
                   </div>
 
@@ -227,7 +227,7 @@ export default function MessageArea({
                     <div className={styles.actions}>
                       <button onClick={() => copyMsg(m)} className={styles.actBtn} data-tip={copiedId === m.id ? s.copied : s.copy} aria-label={copiedId === m.id ? s.copied : s.copy}>
                         {copiedId === m.id ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1f8a5b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         ) : (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
                         )}
@@ -253,11 +253,11 @@ export default function MessageArea({
                     {m.debug && !!m.text && m.debug.completionTokens > 0 && (
                       <span
                         className={styles.tokenMeter}
-                        style={{ color: m.debug.finishReason === "length" ? "#c0392b" : tk.muted }}
+                        style={{ color: m.debug.finishReason === "length" ? "#DC2626" : tk.muted }}
                       >
                         <RiCopperCoinLine
                           size={13}
-                          style={{ color: m.debug.finishReason === "length" ? "#c0392b" : ACCENT }}
+                          style={{ color: m.debug.finishReason === "length" ? "#DC2626" : ACCENT }}
                         />
                         {m.debug.completionTokens} token
                       </span>
@@ -278,7 +278,7 @@ export default function MessageArea({
             <div className={styles.typingRow}>
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
-                <TypingIndicator color={isDark ? "#7fb3d2" : "#3a7ca5"} />
+                <TypingIndicator color={isDark ? "#60A5FA" : "#2563EB"} />
                 {/* Javob kutilayotgan vaqt (soniya) — uzoq kutishda jarayon ketayotgani bilinadi */}
                 {elapsed >= 1 && (
                   <span className={styles.tokenMeter} style={{ color: tk.muted, marginLeft: 4 }}>

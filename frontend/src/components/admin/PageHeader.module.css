@@ -65,8 +65,8 @@
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #2a6f97, #173f73);
-  box-shadow: 0 4px 14px rgba(23, 63, 115, 0.22);
+  background: linear-gradient(135deg, #2563EB, #1E3A5F);
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.22);
   transition: all 0.18s ease;
 }
 

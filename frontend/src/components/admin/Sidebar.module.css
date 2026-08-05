@@ -9,7 +9,7 @@
   width: 248px;
   flex: 0 0 auto;
   background: var(--adm-sidebar);
-  color: #eef2ef;
+  color: #F1F5F9;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -88,7 +88,7 @@
 .logoIcon {
   width: 30px;
   height: 30px;
-  color: #7fb3d2;
+  color: #60A5FA;
   flex: 0 0 auto;
 }
 
@@ -108,8 +108,8 @@
 
 .navItemActive {
   color: #fff;
-  background: linear-gradient(120deg, #2a6f97, #3a7ca5);
-  box-shadow: 0 4px 14px rgba(47, 102, 144, 0.4);
+  background: linear-gradient(120deg, #2563EB, #2563EB);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
 }
 
 .navItemInactive {
@@ -136,8 +136,8 @@
   font-weight: 700;
   padding: 1px 8px;
   border-radius: 99px;
-  background: rgba(127, 179, 210, 0.22);
-  color: #bfe0f0;
+  background: rgba(96, 165, 250, 0.22);
+  color: #BFDBFE;
 }
 
 .footerAvatar {
@@ -145,7 +145,7 @@
   height: 34px;
   border-radius: 10px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #2a6f97, #3a7ca5);
+  background: linear-gradient(140deg, #2563EB, #2563EB);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,7 +179,7 @@
   font-weight: 600;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: #7fb3d2;
+  color: #60A5FA;
   margin-top: 3px;
 }
 
@@ -193,5 +193,5 @@
 
 .footerRole {
   font-size: 11.5px;
-  color: rgba(217, 220, 214, 0.55);
+  color: rgba(203, 213, 225, 0.55);
 }

@@ -175,7 +175,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
   const [months, setMonths] = useState(24);
 
   const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
-  const cardBg = isDark ? "rgba(255,255,255,.05)" : "#f4f6f9";
+  const cardBg = isDark ? "rgba(255,255,255,.05)" : "#F1F5F9";
   const monthsCfg =
     mode === "deposit" ? MONTHS_DEP : mode === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
   // Oddiy kreditda eng past stavka 20%
@@ -298,7 +298,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
                 style={{
                   background: active ? tk.card : "transparent",
                   color: active ? accent : tk.muted,
-                  boxShadow: active ? "0 2px 8px rgba(9,20,34,.14)" : "none",
+                  boxShadow: active ? "0 2px 8px rgba(15,23,42,.14)" : "none",
                 }}
               >
                 {t.label}
@@ -359,7 +359,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
               </div>
               <div className={styles.resultRow} style={{ color: tk.muted }}>
                 <span>{s.calcProfit}</span>
-                <span className={styles.resultRowValue} style={{ color: "#2f9e6f" }}>
+                <span className={styles.resultRowValue} style={{ color: "#059669" }}>
                   + {groupNum(result.profit ?? 0)} {cur}
                 </span>
               </div>

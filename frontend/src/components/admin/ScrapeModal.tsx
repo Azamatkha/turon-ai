@@ -132,7 +132,7 @@ export default function ScrapeModal({
           )}
         </div>
 
-        <HButton onClick={onSubmit} className={styles.submitBtn} baseStyle={{}} hoverStyle={loading ? {} : { transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(23, 63, 115,.28)" }}>
+        <HButton onClick={onSubmit} className={styles.submitBtn} baseStyle={{}} hoverStyle={loading ? {} : { transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(30, 58, 95,.28)" }}>
           {loading ? <span className={styles.spinner} /> : <span>{admin.knowledgeAdd}</span>}
         </HButton>
       </div>

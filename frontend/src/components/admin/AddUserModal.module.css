@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(13, 33, 45, 0.42);
+  background: rgba(15, 23, 42, 0.42);
   backdrop-filter: blur(3px);
   animation: fadeIn 0.2s ease both;
 }
@@ -20,7 +20,7 @@
   background: var(--adm-card);
   border-radius: 20px;
   padding: 26px;
-  box-shadow: 0 24px 70px rgba(13, 33, 45, 0.4);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.4);
   animation: popIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -114,11 +114,11 @@
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  background: linear-gradient(135deg, #2a6f97, #173f73);
+  background: linear-gradient(135deg, #2563EB, #1E3A5F);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
-  box-shadow: 0 6px 18px rgba(23, 63, 115, 0.2);
+  box-shadow: 0 6px 18px rgba(30, 58, 95, 0.2);
   transition: all 0.2s ease;
 }
 
@@ -191,7 +191,7 @@
 .roleBtnActive {
   border: 1.4px solid var(--adm-accent);
   color: var(--adm-accent);
-  background: rgba(47, 102, 144, 0.08);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .roleBtnInactive {

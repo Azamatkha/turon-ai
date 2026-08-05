@@ -145,12 +145,12 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         className={headerStyles.adminBtn}
         baseStyle={{
           background: isDark ? "rgba(255,255,255,.08)" : "#fff",
-          border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#dde2dc"),
-          color: isDark ? "#e8eef2" : "#173f73",
+          border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"),
+          color: isDark ? "#E2E8F0" : "#1E3A5F",
           position: "relative",
         }}
         hoverStyle={{
-          background: isDark ? "rgba(255,255,255,.16)" : "#eef3f6",
+          background: isDark ? "rgba(255,255,255,.16)" : "#F1F5F9",
           transform: "translateY(-1px)",
         }}
       >

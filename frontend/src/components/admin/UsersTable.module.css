@@ -10,7 +10,7 @@
   /* overflow: visible — qator "..." dropdown menyusi kesilmasligi uchun.
      Yumaloq burchaklar header va oxirgi qatorga radius berish orqali saqlanadi. */
   overflow: visible;
-  box-shadow: 0 1px 3px rgba(23, 63, 115, 0.04);
+  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.04);
 }
 
 .headRow {
@@ -61,7 +61,7 @@
   height: 36px;
   border-radius: 10px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #2a6f97, #3a7ca5);
+  background: linear-gradient(140deg, #2563EB, #2563EB);
   display: flex;
   align-items: center;
   justify-content: center;

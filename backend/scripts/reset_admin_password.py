@@ -46,6 +46,6 @@ async def reset_admin_password(new_password: str) -> None:
 
 if __name__ == "__main__":
     password = (
-        sys.argv[1] if len(sys.argv) > 1 else config.administration.SUPER_ADMIN_PASSWORD
+        sys.argv[1] if len(sys.argv) > 1  else config.administration.SUPER_ADMIN_PASSWORD
     )
     asyncio.run(reset_admin_password(password))
