@@ -9,7 +9,7 @@
   overflow-y: auto;
   box-sizing: border-box;
   background: radial-gradient(circle at 50% 0%, #e6edef 0%, #d4dee2 55%, #bfd0d8 100%);
-  color: #1E3A5F;
+  color: #003978;
 }
 
 .card {
@@ -24,7 +24,7 @@
   border-radius: 30px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 40px 80px -20px rgba(15, 23, 42, 0.32), 0 0 0 1px rgba(30, 58, 95, 0.04);
+  box-shadow: 0 40px 80px -20px rgba(15, 23, 42, 0.32), 0 0 0 1px rgba(0, 57, 120, 0.04);
   animation: riseIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 

@@ -16,9 +16,9 @@
 /* =====================
    Containers
    ===================== */
-/* Asosiy fon — logotip rangidan (#1E3A5F) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
+/* Asosiy fon — logotip rangidan (#003978) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
 .panel {
-  background: linear-gradient(150deg, #1E3A5F 0%, #2563EB 38%, #1E3A5F 85%, #2563EB 100%);
+  background: linear-gradient(150deg, #003978 0%, #0B5FA5 38%, #003978 85%, #0B5FA5 100%);
   color: #F1F5F9;
 }
 
@@ -46,7 +46,7 @@
   width: 520px;
   height: 520px;
   border-radius: 50%;
-  background: radial-gradient(circle at 60% 40%, rgba(58, 124, 165, 0.42), transparent 70%);
+  background: radial-gradient(circle at 60% 40%, rgba(11, 95, 165, 0.42), transparent 70%);
   pointer-events: none;
 }
 
@@ -92,7 +92,7 @@
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  background: rgba(127, 209, 168, 0.12);
+  background: rgba(52, 211, 153, 0.12);
   pointer-events: none;
 }
 
@@ -108,7 +108,7 @@
 .logoIcon {
   width: 32px;
   height: 32px;
-  color: #BFDBFE;
+  color: #CFE1F2;
 }
 
 .logoText {
@@ -134,7 +134,7 @@
   align-items: center;
   gap: 8px;
   font-size: 10.5px;
-  color: rgba(238, 243, 246, 0.55);
+  color: rgba(241, 245, 249, 0.55);
 }
 
 /* =====================
@@ -152,7 +152,7 @@
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #cfe3ef;
+  color: #CFE1F2;
   margin-bottom: 12px;
   white-space: nowrap;
 }
@@ -161,8 +161,8 @@
   width: 6px;
   height: 6px;
   border-radius: 99px;
-  background: #7fd1a8;
-  box-shadow: 0 0 0 3px rgba(127, 209, 168, 0.25);
+  background: #34D399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25);
 }
 
 .headline {
@@ -179,7 +179,7 @@
 .subtext {
   font-size: 12.5px;
   line-height: 1.55;
-  color: rgba(238, 243, 246, 0.78);
+  color: rgba(241, 245, 249, 0.78);
   margin: 0 0 13px;
   max-width: 340px;
 }

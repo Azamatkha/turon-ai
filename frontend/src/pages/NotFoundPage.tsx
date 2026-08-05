@@ -15,7 +15,7 @@ export default function NotFoundPage() {
         justifyContent: "center",
         gap: 8,
         background: "#F8FAFC",
-        color: "#1E3A5F",
+        color: "#003978",
         textAlign: "center",
         padding: 24,
         overflow: "hidden",
@@ -32,11 +32,11 @@ export default function NotFoundPage() {
           glowRadius={160}
           gradientFrom="#dbe0e7"
           gradientTo="#cfd6df"
-          glowColor="rgba(37,99,235,0.07)"
+          glowColor="rgba(11,95,165,0.07)"
         />
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, color: "#2563EB", marginBottom: 2 }}>
+      <div style={{ position: "relative", zIndex: 1, color: "#0B5FA5", marginBottom: 2 }}>
         <Logo size={52} />
       </div>
 
@@ -48,11 +48,11 @@ export default function NotFoundPage() {
           fontWeight: 900,
           lineHeight: 0.9,
           letterSpacing: -8,
-          background: "linear-gradient(160deg, #2563EB 0%, #1E3A5F 60%, #0d2747 100%)",
+          background: "linear-gradient(160deg, #0B5FA5 0%, #003978 60%, #0d2747 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",
-          textShadow: "0 24px 60px rgba(30,58,95,.2)",
+          textShadow: "0 24px 60px rgba(0,57,120,.2)",
         }}
       >
         404
@@ -73,12 +73,12 @@ export default function NotFoundPage() {
           marginTop: 20,
           padding: "12px 26px",
           borderRadius: 14,
-          background: "linear-gradient(135deg, #2563EB, #1E3A5F)",
+          background: "linear-gradient(135deg, #0B5FA5, #003978)",
           color: "#fff",
           fontWeight: 600,
           fontSize: 14.5,
           textDecoration: "none",
-          boxShadow: "0 10px 26px rgba(30, 58, 95, 0.3)",
+          boxShadow: "0 10px 26px rgba(0, 57, 120, 0.3)",
         }}
       >
         Bosh sahifaga qaytish

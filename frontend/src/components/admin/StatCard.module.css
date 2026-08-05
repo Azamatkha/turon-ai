@@ -8,7 +8,7 @@
   border: 1px solid var(--adm-border);
   border-radius: 18px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 57, 120, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
@@ -18,7 +18,7 @@
 .card:hover {
   transform: translateY(-3px);
   border-color: var(--adm-accent-light);
-  box-shadow: 0 10px 24px rgba(30, 58, 95, 0.1);
+  box-shadow: 0 10px 24px rgba(0, 57, 120, 0.1);
 }
 
 .head {
@@ -43,7 +43,7 @@
   padding: 3px 9px;
   border-radius: 99px;
   color: var(--adm-success);
-  background: rgba(31, 138, 91, 0.1);
+  background: rgba(5, 150, 105, 0.1);
 }
 
 /* =====================

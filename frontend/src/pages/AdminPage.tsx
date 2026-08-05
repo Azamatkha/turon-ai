@@ -307,7 +307,7 @@ export default function AdminPage() {
   return (
     <div className={styles.page}>
       <div className={styles.bgLayer} aria-hidden="true">
-        <DotField dotRadius={3.5} dotSpacing={26} bulgeOnly bulgeStrength={18} cursorRadius={220} glowRadius={160} gradientFrom={isDark ? "#22455c" : "#dbe0e7"} gradientTo={isDark ? "#2a5570" : "#cfd6df"} glowColor={isDark ? "rgba(96,165,250,0.10)" : "rgba(37,99,235,0.07)"} />
+        <DotField dotRadius={3.5} dotSpacing={26} bulgeOnly bulgeStrength={18} cursorRadius={220} glowRadius={160} gradientFrom={isDark ? "#22455c" : "#dbe0e7"} gradientTo={isDark ? "#2a5570" : "#cfd6df"} glowColor={isDark ? "rgba(95,163,214,0.10)" : "rgba(11,95,165,0.07)"} />
       </div>
 
       <Sidebar

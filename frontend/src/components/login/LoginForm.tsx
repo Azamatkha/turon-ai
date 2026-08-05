@@ -71,7 +71,7 @@ export default function LoginForm({
         <div className={styles.fieldGroup}>
           <label className={styles.fieldLabel}>{t.login}</label>
           <div className={focus === "login" ? `${styles.field} ${styles.fieldActive}` : styles.field}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={focus === "login" ? "#2563EB" : "#94A3B8"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "0 0 auto", transition: "stroke .2s ease" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={focus === "login" ? "#0B5FA5" : "#94A3B8"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "0 0 auto", transition: "stroke .2s ease" }}>
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
@@ -92,7 +92,7 @@ export default function LoginForm({
         <div className={styles.fieldGroupTight}>
           <label className={styles.fieldLabel}>{t.password}</label>
           <div className={focus === "pw" ? `${styles.field} ${styles.fieldActive}` : styles.field}>
-            <RiLockPasswordLine size={19} color={focus === "pw" ? "#2563EB" : "#94A3B8"} style={{ flex: "0 0 auto", transition: "color .2s ease" }} />
+            <RiLockPasswordLine size={19} color={focus === "pw" ? "#0B5FA5" : "#94A3B8"} style={{ flex: "0 0 auto", transition: "color .2s ease" }} />
             <input
               className={styles.input}
               value={password}

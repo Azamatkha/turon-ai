@@ -31,7 +31,7 @@
   width: 46vw;
   height: 46vw;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(37, 99, 235, 0.22), transparent 68%);
+  background: radial-gradient(circle at 35% 35%, rgba(11, 95, 165, 0.22), transparent 68%);
   filter: blur(20px);
 }
 
@@ -42,7 +42,7 @@
   width: 52vw;
   height: 52vw;
   border-radius: 50%;
-  background: radial-gradient(circle at 60% 40%, rgba(58, 124, 165, 0.2), transparent 70%);
+  background: radial-gradient(circle at 60% 40%, rgba(11, 95, 165, 0.2), transparent 70%);
   filter: blur(20px);
 }
 
@@ -53,7 +53,7 @@
   width: 30vw;
   height: 30vw;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.16), transparent 72%);
+  background: radial-gradient(circle at 50% 50%, rgba(95, 163, 214, 0.16), transparent 72%);
   filter: blur(24px);
 }
 

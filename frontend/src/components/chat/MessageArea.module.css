@@ -81,12 +81,12 @@
   height: 30px;
   flex: 0 0 auto;
   border-radius: 9px;
-  background: linear-gradient(140deg, #1E3A5F, #2563EB);
+  background: linear-gradient(140deg, #003978, #0B5FA5);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #E2E8F0;
-  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 57, 120, 0.2);
 }
 
 .bubble {
@@ -101,7 +101,7 @@
 .bubbleUser {
   width: fit-content;
   max-width: 76%;
-  background: linear-gradient(135deg, #1E3A5F, #1E3A5F);
+  background: linear-gradient(135deg, #003978, #003978);
   color: #fff;
   padding: 11px 16px;
   border-radius: 18px 18px 5px 18px;
@@ -109,7 +109,7 @@
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.18);
+  box-shadow: 0 1px 3px rgba(0, 57, 120, 0.18);
 }
 
 .bubbleBot {
@@ -137,7 +137,7 @@
   gap: 6px;
   margin: 6px 4px 0 0;
   padding: 6px 12px;
-  border: 1px solid rgba(58, 124, 165, 0.3);
+  border: 1px solid rgba(11, 95, 165, 0.3);
   border-radius: 99px;
   background: transparent;
   color: inherit;
@@ -147,7 +147,7 @@
 }
 
 .resendBtn:hover {
-  background: rgba(58, 124, 165, 0.12);
+  background: rgba(11, 95, 165, 0.12);
 }
 
 .resendBtn:active {
@@ -191,7 +191,7 @@
 
 .msgMenuBtn:hover,
 .msgMenuBtnActive {
-  background: rgba(58, 124, 165, 0.12);
+  background: rgba(11, 95, 165, 0.12);
   opacity: 1;
 }
 
@@ -204,7 +204,7 @@
   min-width: 168px;
   padding: 6px;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(30, 58, 95, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 57, 120, 0.16);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -227,7 +227,7 @@
 }
 
 .msgMenuItem:hover {
-  background: rgba(58, 124, 165, 0.1);
+  background: rgba(11, 95, 165, 0.1);
 }
 
 @keyframes msgMenuIn {
@@ -242,7 +242,7 @@
   border: 1px solid;
   border-radius: 16px;
   padding: 10px 12px;
-  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 57, 120, 0.1);
 }
 
 .editArea {
@@ -273,7 +273,7 @@
 }
 
 .editBtnGhost:hover {
-  background: rgba(58, 124, 165, 0.1);
+  background: rgba(11, 95, 165, 0.1);
 }
 
 .editBtnPrimary {
@@ -282,7 +282,7 @@
   font-size: 12.5px;
   padding: 6px 14px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #1E3A5F, #1E3A5F);
+  background: linear-gradient(135deg, #003978, #003978);
   color: #fff;
 }
 
@@ -348,8 +348,8 @@
 }
 
 .actBtn:hover {
-  background: rgba(58, 124, 165, 0.12);
-  color: #2563EB;
+  background: rgba(11, 95, 165, 0.12);
+  color: #0B5FA5;
 }
 
 .actBtn:active {
@@ -357,7 +357,7 @@
 }
 
 .actBtn:focus-visible {
-  outline: 2px solid #60A5FA;
+  outline: 2px solid #5FA3D6;
   outline-offset: 1px;
 }
 
@@ -366,7 +366,7 @@
 }
 
 .actBtnUp:hover {
-  background: rgba(31, 138, 91, 0.12);
+  background: rgba(5, 150, 105, 0.12);
   color: #059669;
 }
 
@@ -399,7 +399,7 @@
   width: 7px;
   height: 7px;
   border-radius: 99px;
-  background: #2563EB;
+  background: #0B5FA5;
   animation: dot 1.3s infinite both;
 }
 

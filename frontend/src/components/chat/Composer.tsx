@@ -48,14 +48,14 @@ export default function Composer({ draft, setDraft, canSend, onSend, generating,
   return (
     <div className={styles.wrap} style={{ background: "transparent" }}>
       <div className={styles.inner}>
-        <div className={styles.bar} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "0 4px 20px rgba(0,0,0,.3)" : "0 4px 20px rgba(30, 58, 95,.07)" }}>
+        <div className={styles.bar} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "0 4px 20px rgba(0,0,0,.3)" : "0 4px 20px rgba(0, 57, 120,.07)" }}>
           <textarea ref={taRef} value={draft} onChange={onDraft} onKeyDown={onKey} rows={1} placeholder={placeholder} className={styles.textarea} style={{ color: tk.input }} />
           {generating ? (
-            <HButton onClick={onStop} data-tip={s.stop} aria-label={s.stop} className={styles.sendBtn} baseStyle={{ background: "#1E3A5F", cursor: "pointer" }} hoverStyle={{ transform: "scale(1.08)", background: "#16304D" }}>
+            <HButton onClick={onStop} data-tip={s.stop} aria-label={s.stop} className={styles.sendBtn} baseStyle={{ background: "#003978", cursor: "pointer" }} hoverStyle={{ transform: "scale(1.08)", background: "#00305F" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="6" width="12" height="12" rx="2.5" /></svg>
             </HButton>
           ) : (
-            <HButton onClick={send} data-tip={s.send} aria-label={s.send} className={styles.sendBtn} baseStyle={{ background: canSend ? ACCENT : "#CBD5E1", cursor: canSend ? "pointer" : "default" }} hoverStyle={canSend ? { transform: "scale(1.08)", background: "#1E3A5F" } : {}}>
+            <HButton onClick={send} data-tip={s.send} aria-label={s.send} className={styles.sendBtn} baseStyle={{ background: canSend ? ACCENT : "#CBD5E1", cursor: canSend ? "pointer" : "default" }} hoverStyle={canSend ? { transform: "scale(1.08)", background: "#003978" } : {}}>
               <GrSend size={16} color="#fff" />
             </HButton>
           )}

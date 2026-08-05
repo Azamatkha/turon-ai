@@ -122,7 +122,7 @@ export default function MessageArea({
                 onClick={() => onSuggestionClick(label)}
                 className={styles.suggestionChip}
                 baseStyle={{ background: tk.card, border: "1px solid " + tk.cardBorder, color: tk.strong, boxShadow: tk.chipShadow }}
-                hoverStyle={{ background: tk.card, borderColor: isDark ? "rgba(96,165,250,.5)" : "#CBD5E1", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(30, 58, 95,.1)" }}
+                hoverStyle={{ background: tk.card, borderColor: isDark ? "rgba(95,163,214,.5)" : "#CBD5E1", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(0, 57, 120,.1)" }}
               >
                 <span className={styles.suggestionIcon}>{suggIcons[idx]}</span>
                 {label}
@@ -217,7 +217,7 @@ export default function MessageArea({
               <div key={m.id} className={`${styles.messageRow} ${styles.messageRowBot}`}>
                 <div className={styles.botAvatar}><Logo size={17} /></div>
                 <div className={styles.botCol}>
-                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(30, 58, 95,.04)" }}>
+                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(0, 57, 120,.04)" }}>
                     <MessageContent text={m.text} />
                   </div>
 
@@ -278,7 +278,7 @@ export default function MessageArea({
             <div className={styles.typingRow}>
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
-                <TypingIndicator color={isDark ? "#60A5FA" : "#2563EB"} />
+                <TypingIndicator color={isDark ? "#5FA3D6" : "#0B5FA5"} />
                 {/* Javob kutilayotgan vaqt (soniya) — uzoq kutishda jarayon ketayotgani bilinadi */}
                 {elapsed >= 1 && (
                   <span className={styles.tokenMeter} style={{ color: tk.muted, marginLeft: 4 }}>

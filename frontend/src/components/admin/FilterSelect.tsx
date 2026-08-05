@@ -71,7 +71,7 @@ export default function FilterSelect({ value, options, onChange, fullWidth, plac
           fontSize: 13,
           fontWeight: 600,
           cursor: "pointer",
-          boxShadow: "0 1px 2px rgba(30,58,95,.05)",
+          boxShadow: "0 1px 2px rgba(0,57,120,.05)",
         }}
       >
         <span
@@ -151,7 +151,7 @@ export default function FilterSelect({ value, options, onChange, fullWidth, plac
                   fontWeight: active ? 600 : 500,
                   textAlign: "left",
                   color: "var(--adm-text-strong)",
-                  background: active ? "rgba(37,99,235,.12)" : hovered ? "var(--adm-hover-2)" : "transparent",
+                  background: active ? "rgba(11,95,165,.12)" : hovered ? "var(--adm-hover-2)" : "transparent",
                 }}
               >
                 {/* modalda (fullWidth) uzun nomlar o'ralsin — quti tashqarisiga

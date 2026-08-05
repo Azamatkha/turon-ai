@@ -148,7 +148,7 @@ export default function RegisterForm(p: Props) {
         </button>
 
         <div className={styles.monitoredRow} style={{ justifyContent: "center", gap: 6 }}>
-          {t.have} <Link to="/login" style={{ color: "#2563EB", fontWeight: 600 }}>{t.signin}</Link>
+          {t.have} <Link to="/login" style={{ color: "#0B5FA5", fontWeight: 600 }}>{t.signin}</Link>
         </div>
       </div>
     </div>

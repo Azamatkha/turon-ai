@@ -159,9 +159,9 @@ export default function ChatPage() {
           // "trust navy" #1E3A8A): ochiq havorang #F8FAFC fonda yorqinlik
           // jihatidan deyarli farq qilmagani uchun umuman ko'rinmasdi.
           // O'qilishni .bgLayer dagi markaziy maska ta'minlaydi.
-          horizonColor={isDark ? "#0B1524" : "#F8FAFC"}
-          waveColor="#1E3A5F"
-          crestColor={isDark ? "#60A5FA" : "#93C5FD"}
+          horizonColor={isDark ? "#061A31" : "#F8FAFC"}
+          waveColor="#003978"
+          crestColor={isDark ? "#5FA3D6" : "#9CC6E6"}
           speed={0.3}
           amplitude={2.5}
           waveScale={0.6}
@@ -203,7 +203,7 @@ export default function ChatPage() {
           glowRadius={160}
           gradientFrom={isDark ? "#2b4a6d" : "#b3c6d8"}
           gradientTo={isDark ? "#35597f" : "#a4bacf"}
-          glowColor={isDark ? "rgba(96,165,250,0.10)" : "rgba(30,58,95,0.08)"}
+          glowColor={isDark ? "rgba(95,163,214,0.10)" : "rgba(0,57,120,0.08)"}
         />
       </div>
 

@@ -146,7 +146,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         baseStyle={{
           background: isDark ? "rgba(255,255,255,.08)" : "#fff",
           border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"),
-          color: isDark ? "#E2E8F0" : "#1E3A5F",
+          color: isDark ? "#E2E8F0" : "#003978",
           position: "relative",
         }}
         hoverStyle={{

@@ -22,7 +22,7 @@ export default function PageBackground() {
           glowRadius={180}
           gradientFrom="#c2cdd2"
           gradientTo="#aebfc7"
-          glowColor="rgba(37,99,235,0.10)"
+          glowColor="rgba(11,95,165,0.10)"
         />
       </div>
     </>

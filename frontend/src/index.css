@@ -20,67 +20,67 @@
   --adm-border-2: #E2E8F0;
   --adm-border-3: #F1F5F9;
   --adm-border-input: #CBD5E1;
-  --adm-text-strong: #1E3A5F;
+  --adm-text-strong: #003978;
   --adm-text-muted: #64748B;
-  --adm-text-muted-2: #2563EB;
+  --adm-text-muted-2: #0B5FA5;
   --adm-text-body: #334155;
   --adm-text-body-2: #475569;
   --adm-text-chunk: #334155;
-  --adm-accent: #2563EB;
-  --adm-accent-2: #0d0d0e;
-  --adm-accent-light: #60A5FA;
+  --adm-accent: #0B5FA5;
+  --adm-accent-2: #003978;
+  --adm-accent-light: #5FA3D6;
   --adm-danger: #DC2626;
   --adm-danger-bg: #FEF2F2;
   --adm-danger-border: #FECACA;
   --adm-success: #059669;
-  --adm-success-bg: rgba(31, 138, 91, 0.12);
+  --adm-success-bg: rgba(5, 150, 105, 0.12);
   /* "info" (Admin roli, xabarlar statistikasi) — dark'da yorqinlashadi */
-  --adm-info: #0284C7;
-  --adm-info-bg: rgba(91, 143, 176, 0.12);
-  --adm-accent-bg: rgba(37, 99, 235, 0.12);
-  --adm-accent-2-bg: rgba(58, 124, 165, 0.12);
-  --adm-sidebar: #1E3A5F;
+  --adm-info: #0B5FA5;
+  --adm-info-bg: rgba(11, 95, 165, 0.12);
+  --adm-accent-bg: rgba(11, 95, 165, 0.12);
+  --adm-accent-2-bg: rgba(11, 95, 165, 0.12);
+  --adm-sidebar: #003978;
   /* Qidiruv maydoni — alohida rang. Ilgari --adm-hover ishlatilardi va u
-     dark rejimda kulrang-ko'kish (#1D3355) bo'lib, "seriy" ko'rinardi. */
+     dark rejimda kulrang-ko'kish (#153A62) bo'lib, "seriy" ko'rinardi. */
   --adm-search-bg: #f1f5f9;
-  --adm-search-border: rgba(30, 58, 95, 0.14);
+  --adm-search-border: rgba(0, 57, 120, 0.14);
   --adm-search-ph: #94A3B8;
 }
 
 html.dark {
-  --adm-bg: #0B1524;
-  --adm-card: #152741;
-  --adm-card-alt: #101E33;
-  --adm-hover: #1D3355;
-  --adm-hover-2: #1D3355;
-  --adm-input-bg: #101E33;
+  --adm-bg: #061A31;
+  --adm-card: #0C2949;
+  --adm-card-alt: #08203A;
+  --adm-hover: #153A62;
+  --adm-hover-2: #153A62;
+  --adm-input-bg: #08203A;
   --adm-border: rgba(255, 255, 255, 0.09);
   --adm-border-2: rgba(255, 255, 255, 0.09);
   --adm-border-3: rgba(255, 255, 255, 0.06);
   --adm-border-input: rgba(255, 255, 255, 0.14);
   --adm-text-strong: #E2E8F0;
   --adm-text-muted: #94A3B8;
-  --adm-text-muted-2: #60A5FA;
+  --adm-text-muted-2: #5FA3D6;
   --adm-text-body: #CBD5E1;
   --adm-text-body-2: #CBD5E1;
   --adm-text-chunk: #E2E8F0;
-  --adm-accent: #60A5FA;
-  --adm-accent-2: #60A5FA;
-  --adm-accent-light: #60A5FA;
+  --adm-accent: #5FA3D6;
+  --adm-accent-2: #5FA3D6;
+  --adm-accent-light: #5FA3D6;
   --adm-danger: #F87171;
-  --adm-danger-bg: rgba(224, 104, 90, 0.14);
-  --adm-danger-border: rgba(224, 104, 90, 0.35);
+  --adm-danger-bg: rgba(248, 113, 113, 0.14);
+  --adm-danger-border: rgba(248, 113, 113, 0.35);
   --adm-success: #34D399;
-  --adm-success-bg: rgba(63, 184, 132, 0.16);
+  --adm-success-bg: rgba(52, 211, 153, 0.16);
   /* Qorong'u fonda o'qilishi uchun yorqinroq ko'k */
-  --adm-info: #38BDF8;
-  --adm-info-bg: rgba(142, 194, 224, 0.16);
-  --adm-accent-bg: rgba(91, 155, 196, 0.16);
-  --adm-accent-2-bg: rgba(111, 168, 201, 0.16);
-  --adm-sidebar: #0D1829;
+  --adm-info: #3FA0D8;
+  --adm-info-bg: rgba(63, 160, 216, 0.16);
+  --adm-accent-bg: rgba(95, 163, 214, 0.16);
+  --adm-accent-2-bg: rgba(95, 163, 214, 0.16);
+  --adm-sidebar: #04162C;
   /* Chuqurroq navy — kulrangdan yiroq, ramkasi biroz ko'kish */
-  --adm-search-bg: #101E33;
-  --adm-search-border: rgba(96, 165, 250, 0.22);
+  --adm-search-bg: #08203A;
+  --adm-search-border: rgba(95, 163, 214, 0.22);
   --adm-search-ph: #94A3B8;
 }
 
@@ -100,7 +100,7 @@ body * {
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(-4px);
-  background: #152741;
+  background: #0C2949;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.16);
   font-size: 12px;
@@ -121,8 +121,8 @@ body * {
 /* Dark rejimda tooltip teskari ranglarda (och fon, to'q matn) — <html class="dark"> */
 html.dark [data-tip]::after {
   background: #E2E8F0;
-  color: #1E3A5F;
-  border-color: rgba(30, 58, 95, 0.14);
+  color: #003978;
+  border-color: rgba(0, 57, 120, 0.14);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -151,7 +151,7 @@ html.dark [data-tip]::after {
 /* Chiroyli scrollbar (default brauzer scrollbar o'rniga) */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(37, 99, 235, 0.45) transparent;
+  scrollbar-color: rgba(11, 95, 165, 0.45) transparent;
 }
 *::-webkit-scrollbar {
   width: 10px;
@@ -161,13 +161,13 @@ html.dark [data-tip]::after {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(37, 99, 235, 0.4);
+  background: rgba(11, 95, 165, 0.4);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(37, 99, 235, 0.7);
+  background: rgba(11, 95, 165, 0.7);
   background-clip: content-box;
 }html,
 body,
@@ -187,7 +187,7 @@ button {
 }
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 40px #fff inset;
-  -webkit-text-fill-color: #1E3A5F;
+  -webkit-text-fill-color: #003978;
 }
 
 /* --- Dizaynda ishlatilgan animatsiyalar --- */
@@ -290,13 +290,13 @@ input:-webkit-autofill {
 /* Chiroyli skroll (chat tarixi/xabarlar uchun) */
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(30, 58, 95, 0.16);
+  background: rgba(0, 57, 120, 0.16);
   border-radius: 99px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(30, 58, 95, 0.28);
+  background: rgba(0, 57, 120, 0.28);
   background-clip: padding-box;
 }
 

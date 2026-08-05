@@ -15,7 +15,7 @@ export default function ThemeToggle({ isDark, onToggle, label = "Rejim" }: Theme
       <button onClick={onToggle} data-tip={label} aria-label={label} className={`${styles.switch} ${isDark ? styles.switchDark : styles.switchLight}`}>
         <span className={`${styles.knob} ${isDark ? styles.knobDark : styles.knobLight}`}>
           {isDark ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#1E3A5F"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#003978"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></svg>
           ) : (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f5a623" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="4.5" fill="#f5a623" stroke="none" />

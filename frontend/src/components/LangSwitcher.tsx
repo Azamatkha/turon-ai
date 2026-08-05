@@ -39,16 +39,16 @@ const THEMES: Record<"light" | "dark", ThemeTokens> = {
   light: {
     btnBg: "#fff",
     btnBorder: "#CBD5E1",
-    btnText: "#1E3A5F",
+    btnText: "#003978",
     chevron: "#94A3B8",
-    btnShadow: "0 1px 3px rgba(30, 58, 95,.06)",
+    btnShadow: "0 1px 3px rgba(0, 57, 120,.06)",
     menuBg: "#fff",
     menuBorder: "#E2E8F0",
     menuShadow: "0 16px 40px rgba(15,23,42,.18)",
-    itemText: "#1E3A5F",
+    itemText: "#003978",
     itemActiveBg: "#F1F5F9",
     itemHoverBg: "#F1F5F9",
-    check: "#2563EB",
+    check: "#0B5FA5",
   },
   dark: {
     btnBg: "rgba(255,255,255,.08)",
@@ -62,7 +62,7 @@ const THEMES: Record<"light" | "dark", ThemeTokens> = {
     itemText: "#E2E8F0",
     itemActiveBg: "rgba(255,255,255,.1)",
     itemHoverBg: "rgba(255,255,255,.06)",
-    check: "#60A5FA",
+    check: "#5FA3D6",
   },
 };
 

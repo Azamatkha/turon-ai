@@ -8,7 +8,7 @@
   border: 1px solid var(--adm-border);
   border-radius: 18px;
   padding: 22px 24px;
-  box-shadow: 0 1px 3px rgba(30, 58, 95, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 57, 120, 0.04);
 }
 
 .list {

@@ -4,7 +4,7 @@ interface TypingIndicatorProps {
   color?: string;
 }
 
-export default function TypingIndicator({ color = "#2563EB" }: TypingIndicatorProps) {
+export default function TypingIndicator({ color = "#0B5FA5" }: TypingIndicatorProps) {
   return (
     <span className="tu-typing" style={{ color }} aria-label="..." role="status">
       <span />
