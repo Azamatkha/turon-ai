@@ -22,13 +22,30 @@
   z-index: 1;
 }
 
-/* Orqa fon gradient qatlami — barcha kontent ostida, bosishni to'smaydi */
+/* Orqa fon qatlami — barcha kontent ostida, bosishni to'smaydi.
+   Markazi maska bilan so'ndiriladi: shunda fon chekkalarda to'yingan rangda
+   turadi (ko'rinadi), matn turadigan o'rta qismda esa deyarli yo'qoladi va
+   kontrast 4.5:1 dan pastga tushmaydi. */
 .bgLayer {
   position: absolute;
   inset: 0;
   z-index: 0;
   opacity: 0.5;
   pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 42% at 50% 48%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.85) 72%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 42% at 50% 48%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.85) 72%,
+    #000 100%
+  );
 }
 
 /* Nuqta qatlami — gradient ustida, kontent ostida, bosishni to'smaydi */

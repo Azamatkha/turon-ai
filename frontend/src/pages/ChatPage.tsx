@@ -150,14 +150,16 @@ export default function ChatPage() {
       <div
         className={styles.bgLayer}
         aria-hidden="true"
-        style={{ opacity: isDark ? 0.85 : 0.75 }}
+        style={{ opacity: isDark ? 0.85 : 0.9 }}
       >
         <GradientWaves
-          // Rang fondan yetarlicha farq qilishi kerak — avvalgi ochiq havorang
-          // oq fonda ham, navy fonda ham deyarli ko'rinmasdi.
-          horizonColor={isDark ? "#0d1e33" : "#dce7f2"}
-          waveColor={isDark ? "#2a5f96" : "#3f7cb5"}
-          crestColor={isDark ? "#7fb3d2" : "#cfe1f0"}
+          // Light rejimda to'lqin rangi ATAYLAB to'q (bank palitrasidagi
+          // "trust navy" #1E3A8A): ochiq havorang #f3f5f8 fonda yorqinlik
+          // jihatidan deyarli farq qilmagani uchun umuman ko'rinmasdi.
+          // O'qilishni .bgLayer dagi markaziy maska ta'minlaydi.
+          horizonColor={isDark ? "#0d1e33" : "#eef3f9"}
+          waveColor={isDark ? "#2a5f96" : "#1E3A8A"}
+          crestColor={isDark ? "#7fb3d2" : "#7fa8d4"}
           speed={0.3}
           amplitude={2.5}
           waveScale={0.6}
