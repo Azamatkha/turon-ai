@@ -11,7 +11,7 @@ import styles from "./MessageArea.module.css";
 
 // Tartib locales'dagi `sugg` massivi bilan BIR XIL bo'lishi shart — ikonka
 // indeks bo'yicha olinadi. Yangi taklif qo'shilsa, bu yerga ham ikonka qo'shing.
-const suggIcons = ["✦", "✎", "◷", "⌂", "☎", "⇄", "⊕"];
+const suggIcons = ["✦", "✎", "◷", "⊕", "⌂", "☎", "⇄"];
 
 // ISO vaqtni "14:05" ko'rinishida ko'rsatadi
 function fmtTime(iso?: string): string {
