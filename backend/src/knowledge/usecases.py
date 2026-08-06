@@ -3,6 +3,7 @@ import re
 from collections.abc import AsyncIterator
 from typing import Any
 
+from loggers import get_logger
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.uzbek_script import (
@@ -44,6 +45,8 @@ from src.knowledge.schemas import (
     SourceRef,
     UploadResult,
 )
+
+logger = get_logger(__name__)
 
 
 # ------- Xodim (telefon/IP ma'lumotnoma) qidiruv yordamchilari ------- #
@@ -1358,6 +1361,34 @@ def _title_has(title: str, word: str) -> bool:
     return any(_word_match(t, word) for t in _text_words(title))
 
 
+def _format_history(
+    history: list[ChatTurn] | None,
+    limit: int,
+    msg_chars: int,
+    total_chars: int,
+) -> str:
+    """Suhbat tarixini promptga sig'adigan qilib tayyorlaydi.
+
+    Uzun xabar (masalan 20 bandli mahsulot ro'yxati) qisqartiriladi va umumiy
+    hajm ham cheklanadi — aks holda ikkita shunday javob promptning yarmini
+    egallab, prompt num_ctx dan oshib ketardi va model javob bermay qolardi.
+    Eng OXIRGI xabarlar muhimroq, shuning uchun oxiridan boshlab yig'amiz."""
+    if not history:
+        return ""
+    lines: list[str] = []
+    used = 0
+    for turn in reversed(history[-limit:]):
+        text = " ".join(turn.content.split())
+        if len(text) > msg_chars:
+            text = text[:msg_chars].rstrip() + "..."
+        line = f"{'User' if turn.role == 'user' else 'Assistant'}: {text}"
+        if lines and used + len(line) > total_chars:
+            break
+        lines.append(line)
+        used += len(line)
+    return "\n".join(reversed(lines))
+
+
 def _merge_results(
     primary: list[tuple[dict[str, Any], float]],
     extra: list[tuple[dict[str, Any], float]],
@@ -1416,6 +1447,15 @@ class AnswerQuestionUseCase:
     # bo'ladi va 2048 token yetmay, javob o'rtasida kesilib qolardi.
     EMPLOYEE_MAX_TOKENS = 6000
     HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
+    # --- Prompt byudjeti (belgilarda) ---------------------------------- #
+    # num_ctx = 8192 token. O'zbek lotinida ~3.2 belgi = 1 token. Tizim
+    # prompti ~3600 token, javobga 2048 token ajratilgan — foydalanuvchi
+    # promptiga ~2500 token (~8000 belgi) qoladi. Quyidagi cheklovlar shu
+    # byudjetdan chiqib ketmaslikni kafolatlaydi.
+    MAX_CONTEXT_CHARS = 4000
+    MAX_CATALOG_CHARS = 2000
+    MAX_HISTORY_CHARS = 1200
+    MAX_HISTORY_MSG_CHARS = 300
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
     # chaqirmasdan tayyor "ma'lumotim yo'q" javobini qaytaramiz (tez javob uchun).
@@ -1503,17 +1543,40 @@ class AnswerQuestionUseCase:
             groups.setdefault(label, []).append((title, " ".join(texts[title])))
         return groups
 
-    async def _build_catalog(self) -> str:
+    async def _build_catalog(self, question: str = "") -> str:
         """Semantik qidiruv faqat eng yaqin bir nechtasini topadi — bu esa keng
-        savolga ("barcha kredit turlari") TO'LIQ javob berish uchun butun
-        katalogni matn ko'rinishida beradi."""
+        savolga ("barcha kredit turlari") TO'LIQ javob berish uchun katalogni
+        matn ko'rinishida beradi.
+
+        Katalog SAVOLGA TEGISHLI turkum bilan cheklanadi. Ilgari har safar
+        BUTUN katalog (filiallar bilan birga — yuzlab nom) qo'shilardi va
+        yolg'iz o'zi ~2200 token joy egallab, promptni num_ctx dan chiqarib
+        yubordi. Filiallar ro'yxati bundan tashqari deterministik yo'l bilan
+        (_branch_reply) beriladi, ya'ni promptda takrorlanishi shart emas."""
         groups = await self._catalog_groups()
         if not groups:
             return ""
-        blocks = [
-            f"### {cat}\n" + "\n".join(f"- {t}" for t in items)
-            for cat, items in groups.items()
+        q = _norm_apostrophes(to_latin(question).lower())
+        wanted = [
+            label
+            for label, keywords in _CATEGORY_KEYWORDS.items()
+            if label in groups and any(kw in q for kw in keywords)
         ]
+        if wanted:
+            # Aniq turkum so'ralgan — o'sha turkum TO'LIQ beriladi (sanab
+            # o'tish savoliga bitta mahsulot ham tushib qolmasligi kerak).
+            groups = {label: groups[label] for label in wanted}
+        else:
+            groups = {k: v for k, v in groups.items() if k != _BRANCH_LABEL}
+
+        blocks: list[str] = []
+        used = 0
+        for cat, items in groups.items():
+            block = f"### {cat}\n" + "\n".join(f"- {t}" for t in items)
+            if blocks and used + len(block) > self.MAX_CATALOG_CHARS:
+                break
+            blocks.append(block)
+            used += len(block)
         return "\n\n".join(blocks)
 
     async def _broad_category_reply(
@@ -1905,27 +1968,43 @@ class AnswerQuestionUseCase:
         question: str,
         history: list[ChatTurn] | None,
         results: list[tuple[dict[str, Any], float]],
+        include_catalog: bool = True,
     ) -> tuple[str, list[SourceRef]]:
-        """Topilgan bo'laklar + to'liq katalog + suhbat tarixidan yakuniy promptni
-        va manbalar ro'yxatini quradi (execute/execute_stream uchun umumiy). Katalog
-        HAR DOIM qo'shiladi — keng savolda (masalan "Bank kartalari") modelning
-        faqat bitta mahsulotni qaytarib qo'yishini oldini oladi; aniq mahsulot
-        savolida esa system prompt baribir bitta mahsulot bo'yicha javob berdiradi."""
+        """Topilgan bo'laklar + katalog + suhbat tarixidan yakuniy promptni va
+        manbalar ro'yxatini quradi (execute/execute_stream uchun umumiy).
+
+        PROMPT HAJMI QAT'IY CHEKLANADI. Ilgari cheklov yo'q edi va prompt
+        muntazam ravishda num_ctx (8192 token) dan oshib ketardi:
+          system ~3600 + katalog ~2200 + kontekst ~2000 + tarix ~1300
+          + javobga 2048 = ~11 000 token.
+        Ollama ortiqchasini JIMGINA kesadi, chat qolipi buziladi va model
+        bitta token chiqarib to'xtaydi — foydalanuvchi ko'rgan "1 token",
+        "21 token" javoblar aynan shundan. Ustiga sekin (CPU) serverda har
+        ortiqcha 1000 token promptni o'qishga qo'shimcha kutish qo'shadi."""
         # Batafsil kontekst (tanlangan mavzuga oid eng yaqin bo'laklar) —
         # aniq mahsulot bo'yicha to'liq (raqam/shart) javob berish uchun.
         # MUHIM: manba havolasi "SOURCE_URL:" yorlig'i bilan beriladi — avval
         # "(Manba: url)" edi va model uni javobga AYNAN ko'chirib, "Batafsil:
         # url(Manba: url)" kabi ikki marta havola chiqarardi (dubl link bug).
-        blocks = []
+        blocks: list[str] = []
+        used = 0
         for payload, _ in results:
             title = payload.get("title", "")
             source_url = payload.get("source_url", "")
             header = f"[{title}]\nSOURCE_URL: {source_url}" if source_url else f"[{title}]"
-            blocks.append(f"{header}\n{payload.get('chunk_text', '')}")
+            block = f"{header}\n{payload.get('chunk_text', '')}"
+            # Byudjet tugasa qolgan bo'laklar tashlab yuboriladi — ular
+            # baribir eng uzoq (eng kam mos) natijalar.
+            if blocks and used + len(block) > self.MAX_CONTEXT_CHARS:
+                break
+            blocks.append(block)
+            used += len(block)
         context = "\n\n---\n\n".join(blocks)
 
-        # To'liq katalog — turkumdagi HAMMA mahsulotni sanash uchun (keng savol).
-        catalog = await self._build_catalog()
+        # Katalog — turkumdagi HAMMA mahsulotni sanash uchun (keng savol).
+        # ANIQ mahsulot javobida (foydalanuvchi ro'yxatdan tanlagan) katalog
+        # keraksiz: u ~2000 token joy egallab, javobni kesilishga olib kelardi.
+        catalog = await self._build_catalog(question) if include_catalog else ""
         catalog_block = (
             f"CATALOG (all products in the database, grouped by category — use this "
             f"list for broad/category questions):\n{catalog}\n\n"
@@ -1938,16 +2017,26 @@ class AnswerQuestionUseCase:
             f"QUESTION: {question}"
         )
 
-        # Oldingi suhbatni (oxirgi HISTORY_LIMIT ta) promptga qo'shamiz
-        if history:
-            recent = history[-self.HISTORY_LIMIT :]
-            convo = "\n".join(
-                f"{'User' if t.role == 'user' else 'Assistant'}: {t.content}"
-                for t in recent
-            )
-            prompt = f"Previous conversation:\n{convo}\n\n{base}"
-        else:
-            prompt = base
+        # Oldingi suhbat. Har xabar QISQARTIRILADI: bot javobi 20 bandli
+        # ro'yxat bo'lishi mumkin (~1500 belgi) va shunday ikkita javob
+        # promptning yarmini yeb qo'yardi. Mavzu bog'liqligi uchun xabarning
+        # boshi yetarli.
+        convo = _format_history(
+            history,
+            self.HISTORY_LIMIT,
+            self.MAX_HISTORY_MSG_CHARS,
+            self.MAX_HISTORY_CHARS,
+        )
+        prompt = f"Previous conversation:\n{convo}\n\n{base}" if convo else base
+
+        logger.info(
+            "Prompt: %d belgi (~%d token) | kontekst %d, katalog %d, tarix %d",
+            len(prompt),
+            round(len(prompt) / 3.2),
+            len(context),
+            len(catalog_block),
+            len(convo),
+        )
 
         # Manbalarni sarlavha bo'yicha takrorlanmas qilib yig'amiz
         sources: list[SourceRef] = []
@@ -2151,7 +2240,13 @@ class AnswerQuestionUseCase:
             max_toks = self.EMPLOYEE_MAX_TOKENS
             sources = []
         else:
-            prompt, sources = await self._assemble(question, history, results)
+            # Sarlavha aniq ma'lum (foydalanuvchi ro'yxatdan tanlagan yoki
+            # turkumda bitta mahsulot qoldi) — bu ANIQ mahsulot javobi va
+            # katalog kerak emas. Katalog ~2000 token joy egallab, javobning
+            # o'zi uchun joy qoldirmasdi.
+            prompt, sources = await self._assemble(
+                question, history, results, include_catalog=not exact_title
+            )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
         src_dump = [{"title": s.title, "score": s.score} for s in sources]
@@ -2326,7 +2421,13 @@ class AnswerQuestionUseCase:
             max_toks = self.EMPLOYEE_MAX_TOKENS
             sources = []
         else:
-            prompt, sources = await self._assemble(question, history, results)
+            # Sarlavha aniq ma'lum (foydalanuvchi ro'yxatdan tanlagan yoki
+            # turkumda bitta mahsulot qoldi) — bu ANIQ mahsulot javobi va
+            # katalog kerak emas. Katalog ~2000 token joy egallab, javobning
+            # o'zi uchun joy qoldirmasdi.
+            prompt, sources = await self._assemble(
+                question, history, results, include_catalog=not exact_title
+            )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
 
