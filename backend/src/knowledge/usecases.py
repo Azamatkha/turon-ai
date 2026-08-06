@@ -1,6 +1,7 @@
 import math
 import re
 from collections.abc import AsyncIterator
+from itertools import chain, zip_longest
 from typing import Any
 
 from loggers import get_logger
@@ -1393,14 +1394,24 @@ def _merge_results(
     primary: list[tuple[dict[str, Any], float]],
     extra: list[tuple[dict[str, Any], float]],
 ) -> list[tuple[dict[str, Any], float]]:
-    """Vektor va leksik natijalarni takrorlanmas qilib birlashtiradi."""
+    """Vektor va leksik natijalarni NAVBAT bilan birlashtiradi:
+    vektor[0], leksik[0], vektor[1], leksik[1], ...
+
+    Navbatlashtirish shart. Promptdagi kontekstga belgilar byudjeti bor va
+    ro'yxat OXIRIDAGI bo'laklar kesib tashlanadi. Leksik natijalar oxiriga
+    qo'shilganda aynan o'shalar kesilardi: "qachon tashkil qilingan" savoliga
+    to'g'ri bo'lak TOPILGAN bo'lsa ham promptga tushmay qolardi va model
+    yana "ma'lumot yo'q" derdi."""
 
     def key(p: dict[str, Any]) -> tuple[str, Any]:
         return str(p.get("title", "")), p.get("chunk_index")
 
-    seen = {key(p) for p, _ in primary}
-    out = list(primary)
-    for payload, score in extra:
+    out: list[tuple[dict[str, Any], float]] = []
+    seen: set[tuple[str, Any]] = set()
+    for pair in chain.from_iterable(zip_longest(primary, extra)):
+        if pair is None:
+            continue
+        payload, score = pair
         if key(payload) not in seen:
             seen.add(key(payload))
             out.append((payload, score))
