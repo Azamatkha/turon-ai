@@ -386,13 +386,19 @@ def _score_by_name(
             for nt in toks:
                 nn = _name_norm(nt)
                 cp = _common_prefix_len(qn, nn)
-                # Umumiy prefiks yetarlicha uzun (kamida 4 belgi) VA qisqa
-                # so'zning aksar qismini qamrab olsin.
-                if cp >= 4 and cp >= min(len(qn), len(nn)) * 0.7:
+                # QAT'IY qoida: qisqa so'z uzunining BOSHIGA TO'LIQ tushsin.
+                # Ilgari "qisqa so'zning 70% i mos kelsa yetarli" edi va aynan
+                # shu narsa eng jirkanch xatoni tug'dirardi: "javob" so'zi
+                # "Javohir" ismiga 4 harf bilan mos kelib (4 >= 5*0.7), savol
+                # umuman xodim haqida bo'lmasa ham xodim ro'yxati qaytarilardi.
+                # Endi: "javob" -> "javohir" RAD (boshi emas), lekin
+                # "shaxzod" -> "shaxzodbek" va "xamdamboyev" QABUL.
+                if cp >= 4 and cp == min(len(qn), len(nn)):
                     best_cp = max(best_cp, cp)
                 # Prefiks bo'lmasa ham: savol so'zi ism bo'lagining ICHIDA
                 # to'liq uchrasa hisobga olamiz ("boyev" -> "Xamdamboyev").
-                elif len(qn) >= 4 and qn in nn:
+                # Kamida 5 belgi — 4 belgili bo'lak tasodifan tushib qolardi.
+                elif len(qn) >= 5 and qn in nn:
                     best_cp = max(best_cp, len(qn) - 1)
             score += best_cp
         if score:
@@ -1198,23 +1204,6 @@ _BROAD_QUESTION_STOPWORDS = {
 }
 
 
-def _matches_filters(text: str, filters: list[str]) -> bool:
-    """Mahsulot matni savoldagi qo'shimcha shart(lar)ga mos keladimi.
-
-    So'z BOSHI bo'yicha solishtiriladi — o'zbekcha qo'shimchalar tufayli
-    ("Toshkentdagi" -> "Toshkent", "Samarqanddagi" -> "Samarqand") aynan
-    tenglik ishlamaydi. Bir nechta filtr bo'lsa, kamida bittasi mos kelishi
-    yetarli (savolda odatda bitta hudud nomi bo'ladi, qolgani shovqin)."""
-    words = set(_words(to_latin(text)))
-    for f in filters:
-        for w in words:
-            if w.startswith(f) or f.startswith(w):
-                # Juda qisqa umumiy bo'lakdan tasodifiy moslik bo'lmasin
-                if min(len(w), len(f)) >= 4:
-                    return True
-    return False
-
-
 # Apostrof bir necha xil belgi bilan yoziladi: telefon klaviaturasi tipografik
 # ‘ ’ ni qo'yadi, kodda esa ASCII ' turadi. Ular solishtirishda mos kelmay,
 # "o'tkazma" kabi kalit so'z topilmay qolardi.
@@ -1236,70 +1225,64 @@ def _norm_for_match(s: str) -> str:
     return " ".join(s.translate(_QUOTE_MAP).lower().split())
 
 
-def _distinctive_filters(
-    filters: list[str], items: list[tuple[str, str]]
-) -> list[str]:
-    """Savoldagi filtr so'zlaridan FAQAT haqiqatan AJRATUVCHILARINI qoldiradi.
-
-    Muammo: "Toshkentda qaysi filiallar JOYLASHGAN" so'rovida "joylashgan"
-    so'zi deyarli HAR BIR filial matnida uchraydi. `_matches_filters` esa
-    bitta filtr mos kelsa yetarli deb hisoblaydi — natijada butun ro'yxat
-    "mos" bo'lib qolardi va Dang'ara kabi butunlay boshqa hududdagi filial
-    Toshkent so'roviga tushib ketardi.
-
-    Yechim: elementlarning YARMIDAN KO'PIDA uchraydigan so'z hech narsani
-    ajratmaydi — uni filtr sifatida hisobga olmaymiz. Umuman uchramaydigan
-    so'z ham ("tavsiya") filtr emas."""
-    if not items:
-        return []
-    keep: list[str] = []
-    for f in filters:
-        hits = sum(1 for t, x in items if _matches_filters(f"{t} {x}", [f]))
-        if 0 < hits * 2 <= len(items):
-            keep.append(f)
-    return keep
+# --- Filial HUDUDI ------------------------------------------------------- #
+# Ilgari filial ro'yxati savoldagi "qo'shimcha so'zlar" bo'yicha filtrlanardi:
+# so'z filial matnida uchrasa mos deb hisoblanardi va filtrlar OR bilan
+# birlashardi. Ikkita jiddiy xato shundan chiqardi:
+#   1) "Toshkent viloyatida qaysi BXM JOYLASHGAN" so'rovida "joylashgan" so'zi
+#      deyarli har bir filial manzilida uchraydi — butun ro'yxat "mos" bo'lib
+#      qolardi;
+#   2) Farg'ona viloyatidagi ofis manzilida "TOSHKENT ko'chasi" bo'lgani uchun
+#      u ham Toshkent so'roviga tushardi.
+# Endi so'z moslash o'rniga hudud MA'LUMOTNING O'ZIDAN ajratiladi: manzil doim
+# "<Hudud> viloyati, ..." yoki "<Hudud> shahri, ..." bilan boshlanadi. Ko'cha
+# nomi bu qolipga tushmaydi va endi shovqin qilmaydi.
+_ADMIN_RE = re.compile(
+    r"([a-z'\-]{4,})\s+(viloyat|shahar|shahr|shaxar|shaxr)\w*", re.IGNORECASE
+)
 
 
-# "shahar / viloyat / tuman" — bular hududni AJRATMAYDI, balki uning DARAJASINI
-# bildiradi. Filtr so'zi sifatida ishlatilsa "Nukus SHAHRI" ham "Toshkent
-# SHAHRIDAGI filiallar" so'roviga tushib ketadi (so'z boshi bo'yicha moslashda
-# "shahrida" va "shahri" mos keladi). Daraja _filter_by_admin_level da alohida
-# hisobga olinadi. Lotin transliteratsiyasi turlicha bo'lgani uchun (shahar /
-# shaxar) ikkala variant ham ro'yxatda.
-_ADMIN_LEVEL_WORDS = {
-    "shahar", "shahri", "shaharda", "shahridagi", "shahardagi",
-    "shaxar", "shaxri", "shaxarda", "shaxrida", "shahrida",
-    "viloyat", "viloyati", "viloyatda", "viloyatdagi", "viloyatidagi",
-    "tuman", "tumani", "tumanda", "tumandagi", "tumanidagi",
-}
-
-_CITY_MARKERS = ("shahar", "shahri", "shahrid", "shaxar", "shaxri", "shaxrid")
-_REGION_MARKERS = ("viloyat",)
+def _admin_level(word: str) -> str:
+    """Daraja: "viloyat" yoki "shahar" (transliteratsiya farqidan qat'i nazar)."""
+    return "viloyat" if word.lower().startswith("viloyat") else "shahar"
 
 
-def _filter_by_admin_level(
-    q_lower: str, matched: list[tuple[str, str]]
-) -> list[tuple[str, str]]:
-    """"Toshkent SHAHRI" va "Toshkent VILOYATI" ni ajratadi.
+def _region_key(name: str) -> str:
+    """Hudud nomini solishtirish uchun: apostrof/defissiz, kichik harflarda
+    ("Farg'ona" va "Fargona" bir xil kalitga tushsin)."""
+    return re.sub(r"['\-]", "", name.lower())
 
-    Hudud nomi ikkalasida ham bir xil ("Toshkent"), shuning uchun oddiy so'z
-    moslash ikkalasini birga qaytaradi. Savolda "shahar" yoki "viloyat"
-    aniq aytilgan bo'lsa — mos kelmaydiganini chiqarib tashlaymiz."""
-    wants_city = any(w in q_lower for w in _CITY_MARKERS)
-    wants_region = any(w in q_lower for w in _REGION_MARKERS)
-    # Ikkisi ham aytilgan yoki ikkisi ham aytilmagan — ajratishga asos yo'q.
-    if wants_city == wants_region:
-        return matched
-    out: list[tuple[str, str]] = []
-    for title, text in matched:
-        has_region = "viloyat" in to_latin(f"{title} {text}").lower()
-        if wants_city and has_region:
-            continue
-        if wants_region and not has_region:
-            continue
-        out.append((title, text))
-    # Hammasi chiqib ketsa — evristika xato ishlagan, asl ro'yxatni qaytaramiz.
-    return out or matched
+
+def _region_of(text: str) -> tuple[str, str, str]:
+    """Matndagi BIRINCHI hudud ko'rsatkichi: (kalit, daraja, ko'rinadigan nom).
+    Topilmasa — bo'sh satrlar."""
+    m = _ADMIN_RE.search(_norm_apostrophes(to_latin(text)))
+    if not m:
+        return "", "", ""
+    return _region_key(m.group(1)), _admin_level(m.group(2)), m.group(1)
+
+
+def _question_region(question: str, known: set[str]) -> tuple[str, str]:
+    """Savolda qaysi hudud so'ralganini aniqlaydi: (kalit, daraja).
+
+    Hudud nomi BAZADA mavjud bo'lishi shart — shu sabab "qaysi viloyatda"
+    savolidagi "qaysi" hudud deb qabul qilinmaydi. Daraja aytilmagan bo'lsa
+    ("Samarqanddagi filiallar") ikkinchi qiymat bo'sh qoladi va daraja
+    bo'yicha toraytirish qilinmaydi."""
+    norm = _norm_apostrophes(to_latin(question))
+    m = _ADMIN_RE.search(norm)
+    if m:
+        key = _region_key(m.group(1))
+        if key in known:
+            return key, _admin_level(m.group(2))
+    # Daraja aytilmagan — savol so'zlarini bazadagi hudud nomlariga solishtiramiz.
+    # sorted(): bir nechta hudud mos kelib qolsa natija barqaror bo'lsin.
+    for w in _words(norm.replace("'", "")):
+        if len(w) >= 4:
+            for r in sorted(known):
+                if _prefix_match(w, r):
+                    return r, ""
+    return "", ""
 
 
 # Savol shunchaki ro'yxat emas, MASLAHAT/TAVSIYA so'rayotganini bildiruvchi
@@ -1336,6 +1319,61 @@ _CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "bank xizmatlari ofisi",
     ),
 }
+
+# Turkumning O'ZINI bildiruvchi so'zlar — yuqoridagi ro'yxatdan FARQ QILADI.
+# _CATEGORY_KEYWORDS turkumni ANIQLASH uchun ("ipoteka" so'zi ham kreditlar
+# turkumiga ishora qiladi), bu esa turkum ichida TORAYTIRISHDA e'tiborga
+# olinmaydigan so'zlar. "ipoteka", "avtokredit", "mikroqarz" bu yerda YO'Q —
+# ular kredit TURI, ya'ni haqiqiy filtr. Aynan shuning uchun "Ipoteka
+# kreditlari bo'yicha ma'lumot ber" so'roviga barcha 20 ta kredit qaytarilardi.
+_CATEGORY_GENERIC: dict[str, tuple[str, ...]] = {
+    "Bank kartalari": ("karta",),
+    "Kreditlar": ("kredit",),
+    "Omonatlar": ("omonat", "depozit"),
+    "Pul o'tkazmalari": ("otkazma", "otkazish"),
+}
+
+
+def _title_has(title: str, word: str) -> bool:
+    """Mahsulot NOMIda shu so'z bormi (o'zbekcha qo'shimchalarga chidamli:
+    "avtokreditlar" ~ "Avtokrediti", "mikrokreditlar" ~ "mikrokrediti").
+
+    Bu yerda _prefix_match ISHLATILMAYDI: u umumiy prefiks qisqa so'zning
+    60% ini qamrasa yetarli deb biladi va "MIKROqarz" bilan "MIKROkrediti"
+    ni bir xil deb topardi — natijada "mikroqarz turlari" so'roviga
+    mikrokreditlar ham qo'shilib ketardi. Bu yerda qisqa so'z deyarli TO'LIQ
+    mos kelishi talab qilinadi (oxirgi bitta harf farqiga ruxsat: "avtokredit-
+    LAR" / "avtokredit-I")."""
+    words = _words(_norm_apostrophes(to_latin(title)).replace("'", ""))
+    for t in words:
+        cp = _common_prefix_len(t, word)
+        if cp >= 4 and cp >= min(len(t), len(word)) - 1:
+            return True
+    return False
+
+
+def _narrow_by_title(
+    words: list[str], items: list[tuple[str, str]]
+) -> list[tuple[str, str]] | None:
+    """Turkumni savoldagi qo'shimcha so'zlar bo'yicha MAHSULOT NOMLARI orqali
+    toraytiradi.
+
+    Nomlar bo'yicha ishlanadi, mahsulot MATNI bo'yicha emas: matnda "ipoteka"
+    so'zi boshqa kredit tavsifida ham uchrab, ro'yxatni buzardi. Nom esa qisqa
+    va bankda izchil yozilgan ("... Avtokrediti", "Ipoteka krediti ...").
+
+    None qaytsa — bu so'zlar nomlarni ajratmaydi (mahsulot xususiyati haqidagi
+    savol); chaqiruvchi bunday savolni modelga beradi."""
+    picked = list(items)
+    narrowed = False
+    for w in words:
+        hits = [(t, x) for t, x in picked if _title_has(t, w)]
+        if len(hits) == len(picked):
+            continue  # hech narsani ajratmaydi — e'tiborsiz qoldiramiz
+        if not hits:
+            return None  # bunday nomdagi mahsulot yo'q
+        picked, narrowed = hits, True
+    return picked if narrowed else None
 
 
 class AnswerQuestionUseCase:
@@ -1520,71 +1558,43 @@ class AnswerQuestionUseCase:
             if not items or not any(kw in q for kw in keywords):
                 continue
 
-            # Turkum ichida QO'SHIMCHA shart bormi ("Toshkentdagi filiallar",
-            # "Samarqand BXM") — savoldan turkum/savol so'zlarini olib
-            # tashlagach qolgan so'zlar bo'yicha filtrlaymiz. Manzil mahsulot
-            # NOMIDA emas, MATNIDA bo'lgani uchun matn bo'yicha qidiriladi.
+            # Filiallar — yagona turkum, unda toraytirish ISHONCHLI bajariladi:
+            # shart har doim HUDUD bo'ladi va hudud ma'lumotning o'zida yozilgan.
+            if label == _BRANCH_LABEL:
+                return self._branch_reply(q, items, want_cyrillic)
+
+            # Savolda turkum nomidan TASHQARI so'z bormi. Turkumning O'ZINI
+            # bildiruvchi so'z (_CATEGORY_GENERIC) hisobga olinmaydi, lekin
+            # TUR nomi ("ipoteka", "avtokredit", "mikroqarz") hisobga olinadi.
+            # Ilgari bu yerda butun _CATEGORY_KEYWORDS chiqarib tashlanardi va
+            # "ipoteka" ham o'sha ro'yxatda turgani uchun "Ipoteka kreditlari"
+            # so'rovi "qo'shimcha shartsiz" deb qabul qilinib, BARCHA 20 ta
+            # kredit qaytarilardi.
             # MUHIM: apostrofni OLIB TASHLAB bo'laklaymiz. `_words` apostrofni
             # so'z chegarasi deb biladi va "o'tkazmalari" -> "o" + "tkazmalari"
-            # bo'lib ketardi; "tkazmalari" esa turkum kalit so'ziga o'xshamay,
-            # soxta filtr bo'lib qolardi va "Pul o'tkazmalari" so'roviga
-            # ro'yxat o'rniga umumiy javob berilardi.
-            kw_bare = [k.replace("'", "") for k in keywords]
-            raw_filters = [
+            # bo'lib ketardi.
+            generic = _CATEGORY_GENERIC.get(label, keywords)
+            extra = [
                 w for w in _words(q.replace("'", ""))
                 if len(w) >= 4
                 and w not in _BROAD_QUESTION_STOPWORDS
-                and w not in _ADMIN_LEVEL_WORDS
-                and not any(w.startswith(kw) or kw.startswith(w) for kw in kw_bare)
+                and not any(w.startswith(g) or g.startswith(w) for g in generic)
             ]
-            # Deterministik toraytirish FAQAT filiallar uchun ishonchli: u
-            # HUDUD nomi bo'yicha ketadi ("Samarqanddagi filiallar"). Mahsulot
-            # turkumlarida shart mahsulot XUSUSIYATI bo'ladi ("milliy valyutada
-            # qo'yiladigan omonatlar", "xalqaro kartalar") — buni so'z moslash
-            # bilan hal qilib bo'lmaydi va noto'g'ri javob berardi (masalan
-            # dollardagi "Turon Oltin" milliy valyuta ro'yxatiga tushib qolgan).
-            # Bunday savollarni modelga beramiz — u matnni o'qib tushunadi.
-            if raw_filters and label != _BRANCH_LABEL:
-                return None, None
-
-            # Ro'yxatni haqiqatan ajratmaydigan so'zlarni ("joylashgan") tashlaymiz.
-            filters = _distinctive_filters(raw_filters, items)
-
-            # Savolda qo'shimcha so'zlar bor edi, lekin ularning BIRORTASI ham
-            # ro'yxatni ajratmadi — demak bu oddiy turkum so'rovi EMAS
-            # ("Qaysi xalqaro kartalar bor"). To'liq ro'yxat tashlash o'rniga
-            # savolni modelga beramiz, u kontekst asosida mazmunan javob bersin.
-            if raw_filters and not filters:
-                return None, None
-
             shown = items
-            note = ""
-            if filters:
-                matched = [
-                    (title, text) for title, text in items
-                    if _matches_filters(f"{title} {text}", filters)
-                ]
-                # "Toshkent shahri" va "Toshkent viloyati" ni ajratamiz.
-                matched = _filter_by_admin_level(q, matched)
-                # Faqat haqiqiy toraytirish bo'lsa qo'llaymiz.
-                if matched and len(matched) < len(items):
-                    # Ayni bitta mahsulot qoldi — ro'yxat berib "qaysi biri?"
-                    # deb so'rash keraksiz, darrov shu bo'yicha javob beriladi.
-                    if len(matched) == 1:
-                        return None, matched[0][0]
-                    shown = matched
-                    # Sarlavhada FAQAT haqiqatan mos kelgan so'zlarni
-                    # ko'rsatamiz — savoldagi qolgan so'zlarni ("hozir" kabi)
-                    # ham yozib qo'yish javobni chalkash qilardi.
-                    used = [
-                        f for f in filters
-                        if any(_matches_filters(f"{t} {x}", [f]) for t, x in matched)
-                    ]
-                    label_txt = ", ".join(used) if used else ""
-                    note = f"{label_txt} bo'yicha topilganlar:\n\n" if label_txt else ""
-                else:
-                    # Toraytirish bo'lmadi — to'liq ro'yxat o'rniga model javob bersin.
+            if extra:
+                narrowed = _narrow_by_title(extra, items)
+                # Qo'shimcha so'z mahsulot NOMLARINI ajratmadi — demak bu shart
+                # mahsulot XUSUSIYATI ("milliy valyutadagi omonatlar",
+                # "xalqaro kartalar"). Uni so'z moslash bilan hal qilib
+                # bo'lmaydi (dollardagi "Turon Oltin" milliy valyuta ro'yxatiga
+                # tushib qolgan edi) — modelga beramiz, u matnni o'qiydi.
+                if narrowed is None:
                     return None, None
+                # Ayni bitta mahsulot qoldi — ro'yxat berib "qaysi biri?" deb
+                # so'rash keraksiz, darrov shu bo'yicha javob beriladi.
+                if len(narrowed) == 1:
+                    return None, narrowed[0][0]
+                shown = narrowed
 
             numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
             closing = (
@@ -1593,9 +1603,55 @@ class AnswerQuestionUseCase:
             )
             if want_cyrillic:
                 closing = to_cyrillic(closing)
-                note = to_cyrillic(note)
-            return f"{note}{numbered}\n\n{closing}", None
+            return f"{numbered}\n\n{closing}", None
         return None, None
+
+    @staticmethod
+    def _branch_reply(
+        q: str, items: list[tuple[str, str]], want_cyrillic: bool
+    ) -> tuple[str | None, str | None]:
+        """Filiallar ro'yxati, kerak bo'lsa HUDUD bo'yicha toraytirilgan.
+
+        Toraytirish ma'lumotdan ajratilgan hudud bo'yicha ketadi (_region_of),
+        savoldagi so'zlar bo'yicha emas — sabab _ADMIN_RE izohida."""
+        regions = {
+            title: _region_of(f"{title} {text}") for title, text in items
+        }
+        known = {key for key, _, _ in regions.values() if key}
+        want_key, want_level = _question_region(q, known)
+
+        shown = items
+        note = ""
+        if want_key:
+            matched = [
+                (t, x)
+                for t, x in items
+                if regions[t][0] == want_key
+                and (not want_level or regions[t][1] == want_level)
+            ]
+            if not matched:
+                # Bu hududda filial yo'q — ro'yxat o'rniga model javob bersin.
+                return None, None
+            # Ayni bitta filial qoldi — "qaysi biri?" deb so'rash keraksiz.
+            if len(matched) == 1:
+                return None, matched[0][0]
+            shown = matched
+            _, level, display = regions[matched[0][0]]
+            level_word = "shahridagi" if level == "shahar" else "viloyatidagi"
+            note = (
+                f"{display.capitalize()} {level_word} bank xizmatlari "
+                f"markazlari va ofislari:\n\n"
+            )
+
+        numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
+        closing = (
+            "Qaysi biri bo'yicha batafsil ma'lumot beray? "
+            "Nomini yoki tartib raqamini yozing."
+        )
+        if want_cyrillic:
+            closing = to_cyrillic(closing)
+            note = to_cyrillic(note)
+        return f"{note}{numbered}\n\n{closing}", None
 
     async def _lookup_by_ip_field(self, q_lower: str) -> list[dict[str, Any]]:
         """Savoldagi 3-5 xonali raqamni Qdrant'da `ip` payload maydoni bo'yicha
@@ -1862,12 +1918,16 @@ class AnswerQuestionUseCase:
             }
             return
 
-        # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
-        route = (
-            await self._employee_route(question)
-            if decision is not None and decision.intent is Intent.EMPLOYEE
-            else None
-        )
+        # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz).
+        #
+        # MUHIM: router bu yerda QAROR QILMAYDI, faqat maslahat beradi. Ilgari
+        # xodim qidiruvi "router EMPLOYEE desa" ochilardi va model ishonchsiz
+        # ishlagani uchun butun ma'lumotnoma yopilib qolardi: yalang'och
+        # familiya ("Xamdamboyev") yozilganda router "bu kontakt so'rovi emas"
+        # deb, bazada BOR xodim "topilmadi" bo'lardi — bir xil savol goh
+        # ishlab, goh ishlamasdi. Endi qidiruvni har doim kod bajaradi (u
+        # deterministik), router esa faqat salomlashishni ajratadi.
+        route = None if resolved else await self._employee_route(question)
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none"):
@@ -1950,7 +2010,17 @@ class AnswerQuestionUseCase:
         if exact_title:
             results = await self._results_by_title(exact_title)
         if not results:
-            search_q = await self._search_query(question, history)
+            # Router savolni allaqachon o'qib, tozalangan qidiruv so'rovini
+            # bergan — o'shani ishlatamiz. Ilgari bu yerda YANA bitta LLM
+            # chaqiruvi (_search_query) ketardi va aynan shu ishni qaytadan
+            # qilardi: sekin (CPU) serverda har savol 3 ta chaqiruvga aylanib,
+            # javob bir necha daqiqa kutdirardi. Router javob bermasa — eski
+            # yo'l zaxira bo'lib qoladi.
+            search_q = (
+                decision.search_query
+                if decision is not None and len(decision.search_query.strip()) >= 3
+                else await self._search_query(question, history)
+            )
             query_vector = await self.embedder.embed(_expand_query(search_q))
             results = await self.store.search(query_vector, top_k=self.TOP_K)
 
@@ -2032,12 +2102,16 @@ class AnswerQuestionUseCase:
                 sources=[],
             )
 
-        # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz)
-        route = (
-            await self._employee_route(question)
-            if decision is not None and decision.intent is Intent.EMPLOYEE
-            else None
-        )
+        # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz).
+        #
+        # MUHIM: router bu yerda QAROR QILMAYDI, faqat maslahat beradi. Ilgari
+        # xodim qidiruvi "router EMPLOYEE desa" ochilardi va model ishonchsiz
+        # ishlagani uchun butun ma'lumotnoma yopilib qolardi: yalang'och
+        # familiya ("Xamdamboyev") yozilganda router "bu kontakt so'rovi emas"
+        # deb, bazada BOR xodim "topilmadi" bo'lardi — bir xil savol goh
+        # ishlab, goh ishlamasdi. Endi qidiruvni har doim kod bajaradi (u
+        # deterministik), router esa faqat salomlashishni ajratadi.
+        route = None if resolved else await self._employee_route(question)
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none"):
@@ -2104,7 +2178,17 @@ class AnswerQuestionUseCase:
         if exact_title:
             results = await self._results_by_title(exact_title)
         if not results:
-            search_q = await self._search_query(question, history)
+            # Router savolni allaqachon o'qib, tozalangan qidiruv so'rovini
+            # bergan — o'shani ishlatamiz. Ilgari bu yerda YANA bitta LLM
+            # chaqiruvi (_search_query) ketardi va aynan shu ishni qaytadan
+            # qilardi: sekin (CPU) serverda har savol 3 ta chaqiruvga aylanib,
+            # javob bir necha daqiqa kutdirardi. Router javob bermasa — eski
+            # yo'l zaxira bo'lib qoladi.
+            search_q = (
+                decision.search_query
+                if decision is not None and len(decision.search_query.strip()) >= 3
+                else await self._search_query(question, history)
+            )
             query_vector = await self.embedder.embed(_expand_query(search_q))
             results = await self.store.search(query_vector, top_k=self.TOP_K)
 
