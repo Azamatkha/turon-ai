@@ -1,3 +1,4 @@
+import math
 import re
 from collections.abc import AsyncIterator
 from typing import Any
@@ -1334,22 +1335,45 @@ _CATEGORY_GENERIC: dict[str, tuple[str, ...]] = {
 }
 
 
-def _title_has(title: str, word: str) -> bool:
-    """Mahsulot NOMIda shu so'z bormi (o'zbekcha qo'shimchalarga chidamli:
-    "avtokreditlar" ~ "Avtokrediti", "mikrokreditlar" ~ "mikrokrediti").
+def _word_match(a: str, b: str) -> bool:
+    """Ikki so'z o'zbekcha qo'shimcha farqi bilan bir xilmi: "bank" ~
+    "banklari", "avtokreditlar" ~ "avtokrediti", "tashkil" ~ "tashkil".
 
     Bu yerda _prefix_match ISHLATILMAYDI: u umumiy prefiks qisqa so'zning
     60% ini qamrasa yetarli deb biladi va "MIKROqarz" bilan "MIKROkrediti"
     ni bir xil deb topardi — natijada "mikroqarz turlari" so'roviga
     mikrokreditlar ham qo'shilib ketardi. Bu yerda qisqa so'z deyarli TO'LIQ
-    mos kelishi talab qilinadi (oxirgi bitta harf farqiga ruxsat: "avtokredit-
-    LAR" / "avtokredit-I")."""
-    words = _words(_norm_apostrophes(to_latin(title)).replace("'", ""))
-    for t in words:
-        cp = _common_prefix_len(t, word)
-        if cp >= 4 and cp >= min(len(t), len(word)) - 1:
-            return True
-    return False
+    mos kelishi talab qilinadi (oxirgi bitta harf farqiga ruxsat)."""
+    cp = _common_prefix_len(a, b)
+    return cp >= 4 and cp >= min(len(a), len(b)) - 1
+
+
+def _text_words(text: str) -> set[str]:
+    """Matnni solishtirishga tayyor so'zlarga ajratadi (lotin, apostrofsiz)."""
+    return set(_words(_norm_apostrophes(to_latin(text)).replace("'", "")))
+
+
+def _title_has(title: str, word: str) -> bool:
+    """Mahsulot NOMIda shu so'z bormi."""
+    return any(_word_match(t, word) for t in _text_words(title))
+
+
+def _merge_results(
+    primary: list[tuple[dict[str, Any], float]],
+    extra: list[tuple[dict[str, Any], float]],
+) -> list[tuple[dict[str, Any], float]]:
+    """Vektor va leksik natijalarni takrorlanmas qilib birlashtiradi."""
+
+    def key(p: dict[str, Any]) -> tuple[str, Any]:
+        return str(p.get("title", "")), p.get("chunk_index")
+
+    seen = {key(p) for p, _ in primary}
+    out = list(primary)
+    for payload, score in extra:
+        if key(payload) not in seen:
+            seen.add(key(payload))
+            out.append((payload, score))
+    return out
 
 
 def _narrow_by_title(
@@ -1414,6 +1438,8 @@ class AnswerQuestionUseCase:
         self.ai_client = ai_client
         # Savolni javobdan OLDIN tushunadigan bosqich (o'ylash shu yerda yoqiq)
         self.router = QuestionRouter(ai_client)
+        # Bitta so'rov davomidagi baza keshi (_scroll_points)
+        self._points: list[dict[str, Any]] | None = None
 
     @staticmethod
     def _category_label(source_url: str, title: str = "") -> str:
@@ -1683,7 +1709,7 @@ class AnswerQuestionUseCase:
         # lekin xodim qidiruvi ishlamay qolgani shunga ishora qilmoqda, chunki
         # ayni shu yozuvlarni vektor qidiruv muammosiz topadi. Python filtri
         # hech qanday Qdrant indeksiga bog'liq emas va ilgari ishlagan usul.
-        all_points = await self.store.scroll_all_pages()
+        all_points = await self._scroll_points()
         emps = [p for p in all_points if p.get("doc_type") == "employee"]
         if not emps:
             # Strukturaviy maydonlar yo'q — xodimlarni MATNDAN ajratib olamiz.
@@ -1753,6 +1779,74 @@ class AnswerQuestionUseCase:
         payloads = await self.store.search_by_field("title", title, limit=40)
         payloads.sort(key=lambda p: int(p.get("chunk_index", 0)))
         return [(p, 1.0) for p in payloads]
+
+    # Leksik qidiruvdan qo'shiladigan bo'laklar soni. Vektor natijalari
+    # ustiga qo'shiladi, ularni almashtirmaydi.
+    LEXICAL_TOP_K = 4
+
+    async def _scroll_points(self) -> list[dict[str, Any]]:
+        """Bazadagi barcha bo'laklar — bitta so'rov davomida BIR MARTA o'qiladi.
+
+        Use case har HTTP so'rovga qaytadan yaratiladi (routers.py), shuning
+        uchun kesh eskirib qolmaydi. Ilgari xodim qidiruvi va leksik qidiruv
+        bazani alohida-alohida o'qib chiqardi."""
+        if self._points is None:
+            self._points = await self.store.scroll_all_pages()
+        return self._points
+
+    async def _lexical_results(
+        self, query: str
+    ) -> list[tuple[dict[str, Any], float]]:
+        """SO'Z bo'yicha qidiruv — vektor qidiruvga QO'SHIMCHA, o'rniga emas.
+
+        NEGA KERAK: embedding modeli ingliz tiliga moslashtirilgan
+        (mxbai-embed-large), o'zbekcha savolda esa u bo'lakning SARLAVHASIGA
+        yaqinlashadi, matn ICHIDAGI gapga emas. Shuning uchun "Turonbank
+        qachon tashkil qilingan?" savoliga "ma'lumot topilmadi" qaytardi —
+        garchi "Umumiy ma'lumotlar" bo'lagi ICHIDA "1990-yil noyabr oyida
+        tashkil etilgan" jumlasi turgan bo'lsa ham. Foydalanuvchi aynan
+        sarlavhani ("Umumiy ma'lumotlar") yozgandagina javob kelardi — ya'ni
+        bot savolni emas, sarlavhani qidirardi.
+
+        Ball IDF bo'yicha: kam uchraydigan so'z ("tashkil") ko'p uchraydigan
+        so'zdan ("bank") ancha og'irroq baholanadi."""
+        qwords = {
+            w
+            for w in _text_words(query)
+            if len(w) >= 4 and w not in _BROAD_QUESTION_STOPWORDS
+        }
+        if not qwords:
+            return []
+        points = [
+            p for p in await self._scroll_points()
+            if p.get("doc_type") != "employee"
+        ]
+        if not points:
+            return []
+
+        matches: list[tuple[dict[str, Any], set[str]]] = []
+        doc_freq: dict[str, int] = dict.fromkeys(qwords, 0)
+        for p in points:
+            words = _text_words(
+                f"{p.get('title', '')} {p.get('chunk_text', '')}"
+            )
+            hit = {q for q in qwords if any(_word_match(q, w) for w in words)}
+            if hit:
+                matches.append((p, hit))
+                for w in hit:
+                    doc_freq[w] += 1
+        if not matches:
+            return []
+
+        total = len(points)
+        scored = [
+            (p, sum(math.log(total / doc_freq[w]) + 0.5 for w in hit))
+            for p, hit in matches
+        ]
+        scored.sort(key=lambda pair: -pair[1])
+        # Ballni 0..1 oralig'iga keltiramiz — vektor ballari bilan bir
+        # shkalada ko'rinsin (ular manbalar ro'yxatida ko'rsatiladi).
+        return [(p, s / (s + 3.0)) for p, s in scored[: self.LEXICAL_TOP_K]]
 
     async def _search_query(
         self, question: str, history: list[ChatTurn] | None
@@ -2007,6 +2101,7 @@ class AnswerQuestionUseCase:
         # to'g'ri olamiz, taxminiy qidiruv boshqa mahsulotni qaytarmasin.
         exact_title = resolved or only_title
         results: list[tuple[dict[str, Any], float]] = []
+        lexical: list[tuple[dict[str, Any], float]] = []
         if exact_title:
             results = await self._results_by_title(exact_title)
         if not results:
@@ -2023,9 +2118,17 @@ class AnswerQuestionUseCase:
             )
             query_vector = await self.embedder.embed(_expand_query(search_q))
             results = await self.store.search(query_vector, top_k=self.TOP_K)
+            # GIBRID QIDIRUV: vektor qidiruvi bo'lak SARLAVHASIGA tortiladi,
+            # leksik qidiruv esa matn ICHIDAGI so'zni topadi. Ikkalasining
+            # natijasi birga beriladi — shunda "qachon tashkil qilingan"
+            # savoliga sarlavhada bunday so'z bo'lmasa ham javob topiladi.
+            lexical = await self._lexical_results(f"{question} {search_q}")
+            results = _merge_results(results, lexical)
 
         top_score = results[0][1] if results else 0.0
-        if not results or top_score < self.MIN_SCORE:
+        # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
+        # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
+        if not results or (top_score < self.MIN_SCORE and not lexical):
             text = to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY
             yield {"type": "delta", "text": text}
             yield {
@@ -2175,6 +2278,7 @@ class AnswerQuestionUseCase:
         # to'g'ri olamiz, taxminiy qidiruv boshqa mahsulotni qaytarmasin.
         exact_title = resolved or only_title
         results: list[tuple[dict[str, Any], float]] = []
+        lexical: list[tuple[dict[str, Any], float]] = []
         if exact_title:
             results = await self._results_by_title(exact_title)
         if not results:
@@ -2191,12 +2295,20 @@ class AnswerQuestionUseCase:
             )
             query_vector = await self.embedder.embed(_expand_query(search_q))
             results = await self.store.search(query_vector, top_k=self.TOP_K)
+            # GIBRID QIDIRUV: vektor qidiruvi bo'lak SARLAVHASIGA tortiladi,
+            # leksik qidiruv esa matn ICHIDAGI so'zni topadi. Ikkalasining
+            # natijasi birga beriladi — shunda "qachon tashkil qilingan"
+            # savoliga sarlavhada bunday so'z bo'lmasa ham javob topiladi.
+            lexical = await self._lexical_results(f"{question} {search_q}")
+            results = _merge_results(results, lexical)
 
         # Mos kontekst yo'q (yoki eng yaqini ham juda uzoq) — LLM'ni chaqirmasdan
         # darrov "ma'lumotim yo'q" deb qaytaramiz. Bu bema'ni/aloqasiz savolga
         # modelning uzoq (bir necha daqiqa) "o'ylab" javob berishini oldini oladi.
         top_score = results[0][1] if results else 0.0
-        if not results or top_score < self.MIN_SCORE:
+        # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
+        # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
+        if not results or (top_score < self.MIN_SCORE and not lexical):
             return AnswerResult(
                 answer=to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY,
                 sources=[],
