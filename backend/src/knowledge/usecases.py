@@ -23,6 +23,7 @@ from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import extract_pdf_text
+from src.knowledge.rates_scraper import RATES_TITLE
 from src.knowledge.prompts import (
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
@@ -2199,7 +2200,15 @@ class AnswerQuestionUseCase:
         # Sarlavha aniq ma'lum (ro'yxatdan raqam tanlangan yoki turkum ichida
         # bitta mahsulot qoldi) — o'sha sarlavhaning bo'laklarini to'g'ridan-
         # to'g'ri olamiz, taxminiy qidiruv boshqa mahsulotni qaytarmasin.
+        # VALYUTA KURSI — alohida yo'nalish. Kurs bazada QAT'IY bitta sarlavha
+        # ostida turadi (RATES_TITLE, kunlik Celery vazifasi yozadi), shuning
+        # uchun uni taxminiy embedding bilan qidirishning hojati yo'q. Ilgari
+        # qidirilardi va "Valyuta kursi" savoliga kurs bo'laklari o'rniga
+        # kanallar nomi yozilgan bo'lak tushib, javob "...shoxobchasida,
+        # ilovada va bankomatda" + "ma'lumot topilmadi" bo'lib chiqardi.
         exact_title = resolved or only_title
+        if not exact_title and decision is not None and decision.intent is Intent.RATES:
+            exact_title = RATES_TITLE
         results: list[tuple[dict[str, Any], float]] = []
         lexical: list[tuple[dict[str, Any], float]] = []
         if exact_title:
@@ -2224,6 +2233,17 @@ class AnswerQuestionUseCase:
             # savoliga sarlavhada bunday so'z bo'lmasa ham javob topiladi.
             lexical = await self._lexical_results(f"{question} {search_q}")
             results = _merge_results(results, lexical)
+            # Savol xodim haqida bo'lmasa — xodim bo'laklari kontekstga
+            # UMUMAN kirmaydi. Ular tasodifiy o'xshashlik bilan tushib,
+            # mahsulot javobiga begona ism va telefon raqamlarini olib
+            # kirardi (yo'nalishlar aralashib ketardi).
+            if not (
+                (decision is not None and decision.intent is Intent.EMPLOYEE)
+                or _has_employee_intent(question.lower())
+            ):
+                results = [
+                    (p, s) for p, s in results if p.get("doc_type") != "employee"
+                ]
 
         top_score = results[0][1] if results else 0.0
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
@@ -2244,8 +2264,17 @@ class AnswerQuestionUseCase:
         # bo'yicha "IT DEPARTAMENT"), MAHSULOT promptidan foydalanmaymiz — aks
         # holda javob oxiriga "Yana qaysi kredit bo'yicha ma'lumot kerak?" kabi
         # mahsulot savoli qo'shilib ketardi.
+        #
+        # LEKIN bu yo'l faqat savol HAQIQATAN xodim haqida bo'lganda ochiladi.
+        # Ilgari yagona shart "natijalarning yarmi xodim bo'lagi" edi va
+        # o'xshashlik tasodifi yetarli bo'lardi: "Ayirboshlash SHAHOBCHASIDA"
+        # savoli embedding fazosida "SHAHRISABZ BXM" xodimlariga yaqin chiqib,
+        # valyuta kursi o'rniga xodimlar ro'yxati qaytarilgan edi.
+        wants_employees = (
+            decision is not None and decision.intent is Intent.EMPLOYEE
+        ) or _has_employee_intent(question.lower())
         emp_hits = [p for p, _ in results if p.get("doc_type") == "employee"]
-        if emp_hits and len(emp_hits) * 2 >= len(results):
+        if wants_employees and emp_hits and len(emp_hits) * 2 >= len(results):
             prompt = self._employee_prompt(question, history, emp_hits)
             system = EMPLOYEE_SYSTEM
             max_toks = self.EMPLOYEE_MAX_TOKENS
@@ -2382,7 +2411,15 @@ class AnswerQuestionUseCase:
         # Sarlavha aniq ma'lum (ro'yxatdan raqam tanlangan yoki turkum ichida
         # bitta mahsulot qoldi) — o'sha sarlavhaning bo'laklarini to'g'ridan-
         # to'g'ri olamiz, taxminiy qidiruv boshqa mahsulotni qaytarmasin.
+        # VALYUTA KURSI — alohida yo'nalish. Kurs bazada QAT'IY bitta sarlavha
+        # ostida turadi (RATES_TITLE, kunlik Celery vazifasi yozadi), shuning
+        # uchun uni taxminiy embedding bilan qidirishning hojati yo'q. Ilgari
+        # qidirilardi va "Valyuta kursi" savoliga kurs bo'laklari o'rniga
+        # kanallar nomi yozilgan bo'lak tushib, javob "...shoxobchasida,
+        # ilovada va bankomatda" + "ma'lumot topilmadi" bo'lib chiqardi.
         exact_title = resolved or only_title
+        if not exact_title and decision is not None and decision.intent is Intent.RATES:
+            exact_title = RATES_TITLE
         results: list[tuple[dict[str, Any], float]] = []
         lexical: list[tuple[dict[str, Any], float]] = []
         if exact_title:
