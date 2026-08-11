@@ -140,7 +140,7 @@ class AIConfig(BaseModel):
     OLLAMA_NUM_CTX: int = 8192
 
     # Embedding (matn -> vektor). Same Ollama server, different model.
-    EMBEDDING_MODEL: str = "mxbai-embed-large:latest"
+    EMBEDDING_MODEL: str = "bge-m3:567m"
     EMBEDDING_DIM: int = 1024
 
     TIMEOUT_SECONDS: int
