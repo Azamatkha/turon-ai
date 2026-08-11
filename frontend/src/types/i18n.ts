@@ -94,6 +94,17 @@ export interface ChatStaticStrings {
   reportTooLarge: string;
   reportBadType: string;
   reportRequired: string;
+  // Valyuta kurslari oynasi
+  rates: string;
+  ratesHeading: string;
+  ratesCurrency: string;
+  ratesBuy: string;
+  ratesSell: string;
+  ratesCb: string;
+  ratesLoading: string;
+  ratesEmpty: string;
+  ratesError: string;
+  ratesDeltaNote: string;
   // Kalkulyator (kredit / omonat)
   calculator: string;
   calcHeading: string;

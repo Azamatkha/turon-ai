@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { MdOutlineAdminPanelSettings, MdReportGmailerrorred } from "react-icons/md";
+import {
+  MdCurrencyExchange,
+  MdOutlineAdminPanelSettings,
+  MdReportGmailerrorred,
+} from "react-icons/md";
 import { FaCalculator } from "react-icons/fa6";
 import LangSwitcher from "../LangSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import CalculatorModal from "./CalculatorModal";
+import RatesModal from "./RatesModal";
 import NotificationsBell from "./NotificationsBell";
 import ReportModal from "./ReportModal";
 import HButton from "../common/HButton";
@@ -33,6 +38,7 @@ export default function ChatHeader({
   const [value, setValue] = useState(title);
   const [calcOpen, setCalcOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [ratesOpen, setRatesOpen] = useState(false);
 
   const startEdit = () => {
     if (!editableTitle || !onRenameTitle) return;
@@ -102,6 +108,16 @@ export default function ChatHeader({
           </HButton>
         )}
         <HButton
+          onClick={() => setRatesOpen(true)}
+          data-tip={s.rates}
+          aria-label={s.rates}
+          className={styles.adminBtn}
+          baseStyle={{ background: isDark ? "rgba(255,255,255,.08)" : "#fff", border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"), color: isDark ? "#E2E8F0" : "#003978" }}
+          hoverStyle={{ background: isDark ? "rgba(255,255,255,.16)" : "#F1F5F9", transform: "translateY(-1px)" }}
+        >
+          <MdCurrencyExchange size={20} />
+        </HButton>
+        <HButton
           onClick={() => setCalcOpen(true)}
           data-tip={s.calculator}
           aria-label={s.calculator}
@@ -132,6 +148,10 @@ export default function ChatHeader({
 
       {reportOpen && (
         <ReportModal tk={tk} isDark={isDark} s={s} onClose={() => setReportOpen(false)} />
+      )}
+
+      {ratesOpen && (
+        <RatesModal tk={tk} isDark={isDark} s={s} onClose={() => setRatesOpen(false)} />
       )}
     </header>
   );

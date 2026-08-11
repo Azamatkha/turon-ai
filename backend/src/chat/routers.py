@@ -29,7 +29,8 @@ from src.core.ai.interfaces import BaseAIClient
 from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
-from src.knowledge.schemas import AnswerResult, QuestionRequest
+from src.knowledge.rates_scraper import RATES_TITLE
+from src.knowledge.schemas import AnswerResult, QuestionRequest, RatesResult
 from src.knowledge.usecases import AnswerQuestionUseCase
 from src.user.auth.dependencies import get_current_user
 from src.user.models import User
@@ -239,3 +240,32 @@ async def ask_stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/rates", response_model=RatesResult)
+async def exchange_rates(
+    current_user: Annotated[User, Depends(get_current_user)],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+) -> RatesResult:
+    """Joriy valyuta kurslari — strukturali ko'rinishda (kurs oynasi uchun).
+
+    Ma'lumot kunlik `scrape_exchange_rates` vazifasi yozib qo'ygan payload'dan
+    olinadi: alohida jadval yoki takroriy so'rov (scraping) kerak emas. Har bir
+    qatorda `delta_*` maydonlari bor — kurs kechagiga nisbatan qancha o'zgargani.
+    """
+    payloads = await store.search_by_field("title", RATES_TITLE, limit=40)
+    for payload in payloads:
+        raw = payload.get("rates_json")
+        if not raw:
+            continue
+        try:
+            data = json.loads(str(raw))
+        except json.JSONDecodeError:
+            break
+        return RatesResult(
+            stamp=str(data.get("stamp", "")),
+            channels=data.get("channels", []),
+            source_url=str(payload.get("source_url", "")),
+        )
+    # Vazifa hali ishlamagan yoki eski (JSON'siz) yozuv turibdi.
+    return RatesResult()

@@ -5,6 +5,7 @@ ishga tushadi. Eski kurslar o'chirilib, yangisi yoziladi — bazada har doim
 faqat joriy kurs turadi.
 """
 
+import json
 from typing import Any
 
 import httpx
@@ -16,7 +17,13 @@ from src.core.ai.embeddings import OllamaEmbedder
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.utils.coroutine_runner import execute_coroutine_sync
 from src.core.vectorstore.qdrant_store import QdrantStore
-from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, parse_rates
+from src.knowledge.rates_scraper import (
+    RATES_TITLE,
+    RATES_URL,
+    apply_deltas,
+    parse_rates_structured,
+    render_rates,
+)
 from src.knowledge.scraper import fetch_html
 from src.knowledge.usecases import UploadKnowledgeUseCase
 from src.notifications.enums import NotificationType
@@ -32,8 +39,8 @@ def scrape_exchange_rates() -> str:
 
 async def _scrape_exchange_rates() -> str:
     html = await fetch_html(RATES_URL)
-    text = parse_rates(html)
-    if not text.strip():
+    current = parse_rates_structured(html)
+    if not current.get("channels"):
         logger.warning(
             "Valyuta kurslari topilmadi — sahifa tuzilishi o'zgargan bo'lishi mumkin: %s",
             RATES_URL,
@@ -49,10 +56,22 @@ async def _scrape_exchange_rates() -> str:
         existing = await store.scroll_all_records(limit=10000)
         stale = [(pid, p) for pid, p in existing if p.get("title") == RATES_TITLE]
         old_text = _join_chunks([p for _, p in stale])
+        # O'chirishdan OLDIN oldingi strukturali kurslarni olib qolamiz —
+        # bugungi kurs kechagisiga nisbatan qancha o'zgarganini shu asosda
+        # hisoblaymiz.
+        previous = _stored_rates([p for _, p in stale])
         await store.delete_ids([pid for pid, _ in stale])
 
+        current = apply_deltas(current, previous)
+        text = render_rates(current)
+
         result = await UploadKnowledgeUseCase(embedder=embedder, store=store).execute(
-            title=RATES_TITLE, text=text, source_url=RATES_URL
+            title=RATES_TITLE,
+            text=text,
+            source_url=RATES_URL,
+            # Matn bilan bir qatorda strukturali ko'rinish ham saqlanadi —
+            # kurs oynasi (modal) shu JSON'ni o'qiydi, alohida jadval kerak emas.
+            extra_payload={"rates_json": json.dumps(current, ensure_ascii=False)},
         )
 
     logger.info("Valyuta kurslari yangilandi: %s bo'lak", result.chunks)
@@ -63,6 +82,22 @@ async def _scrape_exchange_rates() -> str:
         await _broadcast_rates_updated()
 
     return f"rates updated: {result.chunks} chunks"
+
+
+def _stored_rates(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Payload'da saqlangan strukturali kurslarni qaytaradi (birinchi topilgani —
+    barcha bo'laklarda bir xil). Eski yozuvlarda bu maydon bo'lmasligi mumkin."""
+    for p in payloads:
+        raw = p.get("rates_json")
+        if not raw:
+            continue
+        try:
+            data: dict[str, Any] = json.loads(str(raw))
+        except json.JSONDecodeError:
+            logger.warning("rates_json o'qib bo'lmadi — farq hisoblanmaydi")
+            return None
+        return data
+    return None
 
 
 def _join_chunks(payloads: list[dict[str, Any]]) -> str:

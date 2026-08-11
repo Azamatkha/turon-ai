@@ -782,8 +782,16 @@ class UploadKnowledgeUseCase:
         self.store = store
 
     async def execute(
-        self, title: str, text: str, source_url: str = ""
+        self,
+        title: str,
+        text: str,
+        source_url: str = "",
+        extra_payload: dict[str, Any] | None = None,
     ) -> UploadResult:
+        """`extra_payload` — har bir bo'lak payload'iga qo'shiladigan qo'shimcha
+        maydonlar. Valyuta kurslari uchun ishlatiladi: matn bilan bir qatorda
+        STRUKTURALI JSON ham saqlanadi, shunda oyna (modal) uchun alohida baza
+        yoki jadval kerak bo'lmaydi."""
         chunks = chunk_text(text)
         if not chunks:
             raise InstanceProcessingException("Matn bo'sh — yozadigan narsa yo'q")
@@ -805,16 +813,17 @@ class UploadKnowledgeUseCase:
                 embed_source = f"{title}\n\n{chunk}"
                 vector = await self.embedder.embed(embed_source)
                 vectors.append(vector)
-                payloads.append(
-                    {
-                        "title": title,
-                        "chunk_text": chunk,
-                        "chunk_index": index,
-                        "lang": "uz",
-                        "source_url": source_url,  # manba havolasi (parsing uchun)
-                        "uploaded_at": uploaded_at,  # sana bo'yicha saralash uchun
-                    }
-                )
+                payload: dict[str, Any] = {
+                    "title": title,
+                    "chunk_text": chunk,
+                    "chunk_index": index,
+                    "lang": "uz",
+                    "source_url": source_url,  # manba havolasi (parsing uchun)
+                    "uploaded_at": uploaded_at,  # sana bo'yicha saralash uchun
+                }
+                if extra_payload:
+                    payload.update(extra_payload)
+                payloads.append(payload)
         except Exception as exc:
             raise InfrastructureException(
                 f"Embedding xizmati bilan bog'lanib bo'lmadi: {type(exc).__name__}: {exc!r}"
@@ -1454,7 +1463,11 @@ class AnswerQuestionUseCase:
     # Javob yozish vaqti taxminan token soniga proporsional — sekin hardware'da
     # cheklovni pasaytirsak eng yomon holatdagi kutish qisqaradi. Javoblar odatda
     # 500 tokendan qisqa, shuning uchun 1024 yetarli.
-    MAX_TOKENS = 2048
+    # 1536 token ~ 5000 belgi o'zbekcha matn — eng batafsil mahsulot javobi ham
+    # bemalol sig'adi (odatdagi javob 500 tokendan qisqa). Bu limit num_ctx
+    # ichidan JOY BAND QILADI: 2048 bo'lganda prompt bilan birga 8192 chegarasiga
+    # tegib qolar edi va javob o'rtasidan uzilardi.
+    MAX_TOKENS = 1536
     # Xodimlar ro'yxati uchun alohida, kattaroq limit: katta bo'limda 30+ xodim
     # bo'ladi va 2048 token yetmay, javob o'rtasida kesilib qolardi.
     EMPLOYEE_MAX_TOKENS = 6000

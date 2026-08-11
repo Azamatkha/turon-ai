@@ -73,6 +73,34 @@ class QuestionRequest(Base):
     history: list[ChatTurn] = []   # oldingi suhbat (mavzu davomiyligi uchun)
 
 
+class RateRow(Base):
+    """Bitta valyuta qatori. `delta_*` — oldingi yangilanishga nisbatan
+    o'zgarish; None bo'lsa o'zgarmagan yoki taqqoslash uchun ma'lumot yo'q."""
+
+    code: str                       # USD, EUR, ...
+    name: str                       # AQSh dollari
+    buy: float | None = None
+    sell: float | None = None
+    cb: float | None = None         # Markaziy bank kursi
+    delta_buy: float | None = None
+    delta_sell: float | None = None
+    delta_cb: float | None = None
+
+
+class RateChannel(Base):
+    """Kurs kanali: ayirboshlash shoxobchasi / ilova / bankomat."""
+
+    key: str                        # tab1 / tab2 / tab3
+    label: str
+    rows: list[RateRow] = []
+
+
+class RatesResult(Base):
+    stamp: str = ""                 # "11.08.2026 11:10:00 dan ma'lumotlar"
+    channels: list[RateChannel] = []
+    source_url: str = ""
+
+
 class SourceRef(Base):
     title: str      # javob qaysi hujjatdan olindi
     score: float    # o'xshashlik bahosi (0..1)
