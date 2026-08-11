@@ -169,7 +169,17 @@ export default function MessageArea({
                     )}
                     {!isEditing && (
                       <div className={styles.userMeta}>
-                        {m.time && <span className={styles.msgTimeUser} style={{ color: tk.muted }}>{fmtTime(m.time)}</span>}
+                        {/* Bot xabaridagi kabi — ustiga olib borilsa to'liq
+                            sana va soat (sekundigacha) ko'rsatiladi. */}
+                        {m.time && (
+                          <span
+                            className={`${styles.msgTimeUser} tip-end`}
+                            data-tip={fmtFullTime(m.time)}
+                            style={{ color: tk.muted }}
+                          >
+                            {fmtTime(m.time)}
+                          </span>
+                        )}
                         {!generating && !thinking && (
                           <div className={styles.msgMenuWrap} ref={menuId === m.id ? menuWrapRef : undefined}>
                             <button

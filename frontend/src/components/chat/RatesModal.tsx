@@ -26,12 +26,19 @@ const FLAG_COUNTRY: Record<string, string> = {
   AED: "ae", SAR: "sa", UZS: "uz",
 };
 
+const FLAG_SIZE = 26;
+
 /** Dumaloq bayroq. Kod ro'yxatda bo'lmasa hech narsa ko'rsatilmaydi —
- *  noto'g'ri bayroqdan ko'ra bo'sh joy yaxshi. */
+ *  noto'g'ri bayroqdan ko'ra bo'sh joy yaxshi.
+ *
+ *  O'lcham CSS'da emas, INLINE beriladi (LangSwitcher'dagi kabi): flag-icons
+ *  paketining global `.fi` klassi ham en/bo'yni belgilaydi va CSS modulidagi
+ *  qoidani bosib ketardi — bayroq doira o'rniga ensiz oval bo'lib chiqardi. */
 function Flag({ code }: { code: string }) {
   const country = FLAG_COUNTRY[code.toUpperCase()];
-  if (!country) return <span className={styles.flagGap} />;
-  return <span className={`fi fi-${country} fis ${styles.flag}`} />;
+  const box = { width: FLAG_SIZE, height: FLAG_SIZE };
+  if (!country) return <span style={{ ...box, flex: "0 0 auto" }} />;
+  return <span className={`fi fi-${country} fis ${styles.flag}`} style={box} />;
 }
 
 // 11850 -> "11 850", 11934.61 -> "11 934,61"

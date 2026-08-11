@@ -1,6 +1,12 @@
-/* Inter — asosiy shrift. Tarmoq (proxy) uni yuklay olmasa, Windows'dagi
-   Segoe UI ga tushadi, ya'ni interfeys baribir to'g'ri ko'rinadi. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Manrope — asosiy shrift: zamonaviy, geometrik, ortiqcha bezaksiz. Kirill
+   alifbosini to'liq qo'llab-quvvatlaydi (uz_cyrl va rus tili uchun shart).
+   Tarmoq (proxy) uni yuklay olmasa, Windows'dagi Segoe UI ga tushadi, ya'ni
+   interfeys baribir to'g'ri ko'rinadi.
+
+   Eski variant (qaytarish kerak bo'lsa, quyidagini oching va Manrope'ni
+   yoping — font-family ro'yxatini ham almashtiring):
+   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 
 /* Global stillar + dizayndagi animatsiyalar (keyframes) */
 * {
@@ -176,14 +182,18 @@ body,
   padding: 0;
   min-height: 100%;
 }
+/* Eski shrift (qaytarish uchun): 'Inter', 'Segoe UI', system-ui, sans-serif */
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Manrope'da raqamlar biroz tor — jadval va kurs raqamlari ustma-ust
+     tekis tursin uchun bir xil kenglikdagi (tabular) raqamlar. */
+  font-variant-numeric: tabular-nums;
 }
 input,
 textarea,
 button {
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
 }
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 40px #fff inset;
