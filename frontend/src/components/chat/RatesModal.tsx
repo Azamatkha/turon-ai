@@ -18,6 +18,22 @@ interface RatesModalProps {
 const UP = "#16A34A";
 const DOWN = "#DC2626";
 
+// Valyuta kodi -> davlat kodi (flag-icons uchun). "USD" qisqartmasini hamma
+// ham bilavermaydi, bayroq esa darrov tanilади — LangSwitcher'dagi kabi.
+const FLAG_COUNTRY: Record<string, string> = {
+  USD: "us", EUR: "eu", GBP: "gb", JPY: "jp", CHF: "ch",
+  RUB: "ru", KZT: "kz", CNY: "cn", TRY: "tr", KRW: "kr",
+  AED: "ae", SAR: "sa", UZS: "uz",
+};
+
+/** Dumaloq bayroq. Kod ro'yxatda bo'lmasa hech narsa ko'rsatilmaydi —
+ *  noto'g'ri bayroqdan ko'ra bo'sh joy yaxshi. */
+function Flag({ code }: { code: string }) {
+  const country = FLAG_COUNTRY[code.toUpperCase()];
+  if (!country) return <span className={styles.flagGap} />;
+  return <span className={`fi fi-${country} fis ${styles.flag}`} />;
+}
+
 // 11850 -> "11 850", 11934.61 -> "11 934,61"
 function money(n: number): string {
   const whole = Math.trunc(Math.abs(n));
@@ -151,8 +167,13 @@ export default function RatesModal({ tk, isDark, s, onClose }: RatesModalProps) 
                     {rows.map((r) => (
                       <tr key={r.code} style={{ borderTop: `1px solid ${tk.cardBorder}` }}>
                         <td className={styles.thLeft}>
-                          <div className={styles.code} style={{ color: tk.strong }}>{r.code}</div>
-                          <div className={styles.name} style={{ color: tk.muted }}>{r.name}</div>
+                          <div className={styles.currency}>
+                            <Flag code={r.code} />
+                            <div>
+                              <div className={styles.code} style={{ color: tk.strong }}>{r.code}</div>
+                              <div className={styles.name} style={{ color: tk.muted }}>{r.name}</div>
+                            </div>
+                          </div>
                         </td>
                         <td style={{ color: tk.strong }}>
                           <Cell value={r.buy} delta={r.delta_buy} muted={tk.muted} />

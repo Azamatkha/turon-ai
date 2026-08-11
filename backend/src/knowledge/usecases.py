@@ -1,3 +1,4 @@
+import json
 import math
 import re
 from collections.abc import AsyncIterator
@@ -23,7 +24,7 @@ from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import extract_pdf_text
-from src.knowledge.rates_scraper import RATES_TITLE
+from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.prompts import (
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
@@ -1372,6 +1373,33 @@ def _title_has(title: str, word: str) -> bool:
     return any(_word_match(t, word) for t in _text_words(title))
 
 
+# Foydalanuvchi valyutani kod bilan ham, nomi bilan ham so'raydi ("dollar",
+# "yevro", "funt"). Kod bo'yicha filtrlash uchun shu ro'yxat.
+_CURRENCY_ALIASES: dict[str, tuple[str, ...]] = {
+    "USD": ("usd", "dollar"),
+    "EUR": ("eur", "evro", "yevro", "euro"),
+    "GBP": ("gbp", "funt", "sterling"),
+    "JPY": ("jpy", "iyena", "iena", "yena"),
+    "CHF": ("chf", "frank"),
+    "RUB": ("rub", "rubl"),
+    "KZT": ("kzt", "tenge", "tenga"),
+}
+
+# Kanal (tab) — savolda qaysi so'z uchrasa o'sha kanal so'ralgan hisoblanadi.
+_RATE_CHANNEL_HINTS: dict[str, tuple[str, ...]] = {
+    "tab1": ("shoxobcha", "shahobcha", "shoxabcha", "ayirboshlash", "ofisda"),
+    "tab2": ("ilova", "myturon", "my turon", "mobil"),
+    "tab3": ("bankomat", "atm"),
+}
+
+
+def _rates_to_cyrillic(text: str) -> str:
+    """Kurs javobini kirillga o'giradi, lekin valyuta KODLARI (USD, EUR...),
+    havola va ilova nomi lotincha qoladi — "УСД" deb yozish xato bo'lardi."""
+    keep = list(_CURRENCY_ALIASES) + ["MyTuron", RATES_URL]
+    return _translit_preserving_titles(text, keep)
+
+
 def _format_history(
     history: list[ChatTurn] | None,
     limit: int,
@@ -1872,6 +1900,66 @@ class AnswerQuestionUseCase:
     # ustiga qo'shiladi, ularni almashtirmaydi.
     LEXICAL_TOP_K = 4
 
+    async def _rates_answer(self, question: str) -> str:
+        """Valyuta kursi javobini KOD tuzadi — model umuman chaqirilmaydi.
+
+        Sabab xodimlar javobinikiga o'xshash: kurs ma'lumoti to'liq
+        strukturali va aniq bo'lishi shart. Modelga qoldirilganda u
+        muntazam ravishda buzardi — sanani "11-avgust kuni" ga aylantirar,
+        valyuta nomini ("AQSh dollari") tashlab ketar, javob boshiga
+        "Men Turonbankning AI yordamchisiman..." deb kirish so'zi qo'shar,
+        va bularning hammasi uchun sekin serverda ~40 soniya ketardi.
+        Endi javob bir necha o'n millisekundda tayyor bo'ladi.
+
+        Bo'sh satr qaytsa — kurs ma'lumoti bazada yo'q (yoki eski, JSON'siz
+        yozuv turibdi); chaqiruvchi odatdagi RAG yo'liga o'tadi."""
+        payloads = await self.store.search_by_field("title", RATES_TITLE, limit=40)
+        data: dict[str, Any] | None = None
+        for payload in payloads:
+            raw = payload.get("rates_json")
+            if not raw:
+                continue
+            try:
+                data = json.loads(str(raw))
+            except json.JSONDecodeError:
+                logger.warning("rates_json o'qib bo'lmadi — RAG yo'liga o'tamiz")
+                data = None
+            break
+        if not data or not data.get("channels"):
+            return ""
+
+        q = _norm_apostrophes(to_latin(question).lower())
+        wanted_codes = {
+            code
+            for code, aliases in _CURRENCY_ALIASES.items()
+            if any(a in q for a in aliases)
+        }
+        wanted_channels = {
+            key
+            for key, hints in _RATE_CHANNEL_HINTS.items()
+            if any(h in q for h in hints)
+        }
+
+        blocks: list[str] = []
+        for channel in data["channels"]:
+            if wanted_channels and channel.get("key") not in wanted_channels:
+                continue
+            rows = channel.get("rows", [])
+            if wanted_codes:
+                rows = [r for r in rows if str(r.get("code")) in wanted_codes]
+            lines = channel_lines(rows)
+            if not lines:
+                continue
+            blocks.append(
+                f"{channel['label']}:\n" + "\n".join(f"* {line}" for line in lines)
+            )
+        if not blocks:
+            return ""
+
+        stamp = str(data.get("stamp", "")).strip()
+        head = f"Valyuta kurslari — {stamp}" if stamp else "Valyuta kurslari"
+        return f"{head}\n\n" + "\n\n".join(blocks) + f"\n\nBatafsil: {RATES_URL}"
+
     async def _scroll_points(self) -> list[dict[str, Any]]:
         """Bazadagi barcha bo'laklar — bitta so'rov davomida BIR MARTA o'qiladi.
 
@@ -2126,6 +2214,23 @@ class AnswerQuestionUseCase:
             }
             return
 
+        # Valyuta kursi — javobni kod tuzadi, model chaqirilmaydi (_rates_answer)
+        if decision is not None and decision.intent is Intent.RATES:
+            rates = await self._rates_answer(question)
+            if rates:
+                yield {
+                    "type": "delta",
+                    "text": _rates_to_cyrillic(rates) if want_cyrillic else rates,
+                }
+                yield {
+                    "type": "done",
+                    "completion_tokens": 0,
+                    "finish_reason": "stop",
+                    "max_tokens": self.MAX_TOKENS,
+                    "sources": [SourceRef(title=RATES_TITLE, score=1.0).model_dump()],
+                }
+                return
+
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz).
         #
         # MUHIM: router bu yerda QAROR QILMAYDI, faqat maslahat beradi. Ilgari
@@ -2352,6 +2457,15 @@ class AnswerQuestionUseCase:
                 answer=to_cyrillic(reply) if want_cyrillic else reply,
                 sources=[],
             )
+
+        # Valyuta kursi — javobni kod tuzadi, model chaqirilmaydi (_rates_answer)
+        if decision is not None and decision.intent is Intent.RATES:
+            rates = await self._rates_answer(question)
+            if rates:
+                return AnswerResult(
+                    answer=_rates_to_cyrillic(rates) if want_cyrillic else rates,
+                    sources=[SourceRef(title=RATES_TITLE, score=1.0)],
+                )
 
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz).
         #

@@ -119,7 +119,7 @@ _FIELD_LABELS = (
 )
 
 
-def _channel_lines(rows: list[dict[str, Any]]) -> list[str]:
+def channel_lines(rows: list[dict[str, Any]]) -> list[str]:
     """Strukturali qatorlarni matn satrlariga aylantiradi. `delta_*` maydoni
     bo'lsa — o'zgarish qavs ichida qo'shiladi ("(+50 so'm)"), shunda chatda
     kurs so'ralganda ham o'sgan/tushganini ko'rish mumkin."""
@@ -198,7 +198,7 @@ def render_rates(data: dict[str, Any]) -> str:
 
     blocks: list[str] = []
     for channel in data.get("channels", []):
-        lines = _channel_lines(channel.get("rows", []))
+        lines = channel_lines(channel.get("rows", []))
         if not lines:
             continue
         blocks.append(
