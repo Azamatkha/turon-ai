@@ -67,13 +67,23 @@ def _table_lines(group: Any) -> list[str]:
         name = _clean(name_el.get_text()) if name_el else ""
         if not code and not name:
             continue
-        buy = _cell_value(tds[1])
-        sell = _cell_value(tds[2])
-        cb = _cell_value(tds[3])
-        lines.append(
-            f"{code} ({name}): sotib olish {buy} so'm, sotish {sell} so'm, "
-            f"Markaziy bank kursi {cb} so'm."
-        )
+        # Bo'sh katak bo'lishi MUMKIN: ilova va bankomat jadvallarida ba'zi
+        # valyutalar bo'yicha sotish kursi ko'rsatilmaydi. Bunday maydonni
+        # "sotish  so'm" ko'rinishida yozib qo'ysak, model uni to'ldirishga
+        # urinib boshqa kanalning raqamini yozib yuborardi — yo'q maydonni
+        # umuman yozmaymiz.
+        parts = [
+            f"{label}: {value} so'm"
+            for label, value in (
+                ("sotib olish", _cell_value(tds[1])),
+                ("sotish", _cell_value(tds[2])),
+                ("Markaziy bank kursi", _cell_value(tds[3])),
+            )
+            if value
+        ]
+        if not parts:
+            continue
+        lines.append(f"{code} ({name}): " + ", ".join(parts) + ".")
     return lines
 
 

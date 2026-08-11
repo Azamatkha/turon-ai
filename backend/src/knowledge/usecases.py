@@ -1465,7 +1465,7 @@ class AnswerQuestionUseCase:
     # promptiga ~2500 token (~8000 belgi) qoladi. Quyidagi cheklovlar shu
     # byudjetdan chiqib ketmaslikni kafolatlaydi.
     MAX_CONTEXT_CHARS = 4000
-    MAX_CATALOG_CHARS = 2000
+    MAX_CATALOG_CHARS = 1800
     MAX_HISTORY_CHARS = 1200
     MAX_HISTORY_MSG_CHARS = 300
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
