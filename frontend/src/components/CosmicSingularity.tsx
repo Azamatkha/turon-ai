@@ -62,10 +62,10 @@ const withAlpha = (hex: string, alpha: number) => {
 };
 
 export default function CosmicSingularity({
-  particleCount = 1400,
+  particleCount = 5000,
   speed = 1,
   attraction = 1,
-  pointerRadius = 260,
+  pointerRadius = 400,
   colors,
   opacity = 0.5,
   isDark = false,
