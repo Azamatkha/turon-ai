@@ -1,0 +1,54 @@
+/* Logotip atrofidagi orbita chiziqlari (OrbitRings.tsx) */
+
+.root {
+  position: absolute;
+  top: 44%; /* Starfield halqasi markazi bilan bir xil (centerYRatio) */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, 76vh);
+  height: min(720px, 76vh);
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.ring {
+  fill: none;
+  stroke: rgba(0, 57, 120, 0.10);
+  stroke-width: 1;
+}
+
+.dot {
+  fill: #1A7CC8;
+  opacity: 0.55;
+}
+
+/* Aylanish markazi — SVG viewBox markazi (360 360) */
+.spin {
+  transform-origin: 360px 360px;
+  animation: orbit linear infinite;
+}
+
+.spin1 { animation-duration: 48s; }
+.spin2 { animation-duration: 72s; animation-direction: reverse; }
+.spin3 { animation-duration: 60s; }
+.spin4 { animation-duration: 90s; animation-direction: reverse; }
+
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+
+:global(html.dark) .ring {
+  stroke: rgba(148, 197, 240, 0.10);
+}
+
+:global(html.dark) .dot {
+  fill: #63B3F0;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

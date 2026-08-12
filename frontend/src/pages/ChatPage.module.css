@@ -156,7 +156,7 @@
   height: 100%;
   pointer-events: none;
   fill: none;
-  stroke: rgba(0, 57, 120, 0.10);
+  stroke: rgba(0, 57, 120, 0.05);
   /* To'r deyarli butun maydonni qoplaydi, faqat chekkalarda yumshoq
      so'nadi — ai.turonbank.uz dagi kabi. */
   -webkit-mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);
@@ -167,25 +167,31 @@
   stroke: rgba(148, 197, 240, 0.08);
 }
 
-/* Rangli yoyilma — to'r ostida turadi va fonni "tirik" qiladi.
-   Tarkibi: (1) yuqoridan pastga ketadigan asosiy tus, (2) uchta rangli
-   dog' — markazda ko'k, chapda ochiq havorang, o'ngda binafsharang. */
+/* Rangli yoyilma. Asosiy g'oya — MARKAZ YORUG', CHEKKALAR TO'Q: shunda
+   fon "tekis divagonal" bo'lib qolmaydi va diqqat o'rtaga tortiladi.
+   Qatlamlar (yuqoridan pastga):
+     1) markazdagi oq nur,
+     2) chekkalarni to'qlashtiruvchi vinyetka,
+     3) ikki burchakdagi rangli urg'u (havorang / binafsharang),
+     4) asosiy tus. */
 .gradientBg {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 70% 55% at 50% 32%, rgba(11, 95, 165, 0.16), transparent 72%),
-    radial-gradient(ellipse 55% 50% at 8% 4%, rgba(95, 163, 214, 0.20), transparent 70%),
-    radial-gradient(ellipse 55% 50% at 96% 92%, rgba(104, 116, 214, 0.16), transparent 72%),
-    linear-gradient(180deg, rgba(226, 238, 250, 0.55) 0%, rgba(240, 246, 252, 0.25) 45%, rgba(255, 255, 255, 0) 100%);
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(ellipse 100% 88% at 50% 42%, rgba(11, 95, 165, 0) 42%, rgba(11, 95, 165, 0.10) 74%, rgba(0, 57, 120, 0.20) 100%),
+    radial-gradient(ellipse 62% 55% at 2% 0%, rgba(95, 163, 214, 0.22), transparent 70%),
+    radial-gradient(ellipse 62% 55% at 100% 100%, rgba(104, 116, 214, 0.18), transparent 70%),
+    linear-gradient(180deg, #EDF3FA 0%, #F6FAFD 52%, #E7EFF8 100%);
 }
 
 :global(html.dark) .gradientBg {
   background:
-    radial-gradient(ellipse 70% 55% at 50% 32%, rgba(95, 163, 214, 0.18), transparent 72%),
-    radial-gradient(ellipse 55% 50% at 8% 4%, rgba(11, 95, 165, 0.28), transparent 70%),
-    radial-gradient(ellipse 55% 50% at 96% 92%, rgba(104, 116, 214, 0.22), transparent 72%),
-    linear-gradient(180deg, rgba(12, 32, 58, 0.55) 0%, rgba(9, 22, 40, 0.25) 45%, rgba(0, 0, 0, 0) 100%);
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(30, 62, 100, 0.55) 0%, rgba(30, 62, 100, 0) 62%),
+    radial-gradient(ellipse 100% 88% at 50% 42%, rgba(0, 0, 0, 0) 42%, rgba(3, 12, 26, 0.35) 74%, rgba(2, 8, 18, 0.65) 100%),
+    radial-gradient(ellipse 62% 55% at 2% 0%, rgba(11, 95, 165, 0.30), transparent 70%),
+    radial-gradient(ellipse 62% 55% at 100% 100%, rgba(104, 116, 214, 0.22), transparent 70%),
+    linear-gradient(180deg, #0C1A2E 0%, #0A1626 52%, #071120 100%);
 }

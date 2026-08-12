@@ -61,8 +61,10 @@ export default function Starfield({
   rotationSpeed = 0.0002,
   waveSpeed = 0.005,
   starSize = 3,
-  centerYRatio = 0.40,
-  stretchY = 1.75,
+  centerYRatio = 0.44,
+  // 1 = to'liq DUMALOQ halqa. Cho'zilgan ellips logotipni o'ramasdan,
+  // pastdagi yozuv maydonining ustiga chiqib ketardi.
+  stretchY = 1,
   isDark = false,
   className,
 }: StarfieldProps) {

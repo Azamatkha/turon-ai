@@ -24,6 +24,7 @@ import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import Starfield from "../components/Starfield";
 import GridPattern from "../components/GridPattern";
+import OrbitRings from "../components/OrbitRings";
 import Logo from "../components/common/Logo";
 import styles from "./AdminPage.module.css";
 
@@ -335,6 +336,7 @@ export default function AdminPage() {
             markaz joyida qoladi. */}
         <div className={styles.gradientBg} aria-hidden="true" />
         <GridPattern className={styles.gridBg} />
+        <OrbitRings />
         <Starfield className={styles.spaceBg} isDark={isDark} />
         <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 

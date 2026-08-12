@@ -15,6 +15,7 @@ import Composer from "../components/chat/Composer";
 import ProfileModal from "../components/chat/ProfileModal";
 import Starfield from "../components/Starfield";
 import GridPattern from "../components/GridPattern";
+import OrbitRings from "../components/OrbitRings";
 import Logo from "../components/common/Logo";
 import styles from "./ChatPage.module.css";
 
@@ -309,6 +310,7 @@ export default function ChatPage() {
             markaz joyida qoladi. */}
         <div className={styles.gradientBg} aria-hidden="true" />
         <GridPattern className={styles.gridBg} />
+        <OrbitRings />
         <Starfield className={styles.spaceBg} isDark={isDark} />
         <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 
