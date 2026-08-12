@@ -43,6 +43,12 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
+  /** "Uy" nuqtasi — zarracha shu joyga qaytishga intiladi. */
+  hx: number;
+  hy: number;
+  /** Uy nuqtasining o'z sekin siljishi (px/ms). */
+  hvx: number;
+  hvy: number;
   size: number;
 }
 
@@ -106,11 +112,17 @@ export default function CosmicSingularity({
       canvas.height = h;
       if (first) {
         for (let i = 0; i < particleCount; i++) {
+          const x = Math.random() * w;
+          const y = Math.random() * h;
+          // Uy nuqtasining siljishi: 2..8 px/sek — deyarli sezilmaydigan suzish
+          const ang = Math.random() * Math.PI * 2;
+          const sp = (0.002 + Math.random() * 0.006) * speed;
           particles.push({
-            x: Math.random() * w,
-            y: Math.random() * h,
-            vx: (Math.random() - 0.5) * 0.01,
-            vy: (Math.random() - 0.5) * 0.01,
+            x, y,
+            vx: 0, vy: 0,
+            hx: x, hy: y,
+            hvx: Math.cos(ang) * sp,
+            hvy: Math.sin(ang) * sp,
             size: Math.random() < 0.14 ? 2 : 1,
           });
           groups[i % groups.length].push(i);
@@ -120,37 +132,48 @@ export default function CosmicSingularity({
         for (const p of particles) {
           p.x *= sx;
           p.y *= sy;
+          p.hx *= sx;
+          p.hy *= sy;
         }
       }
     };
 
     const step = (dt: number) => {
-      const cx = w / 2;
-      const cy = h / 2;
-      // Sekin aylanma oqim: markazdan uzoqlashgan sari biroz kuchliroq
-      const swirl = 0.0000012 * speed;
-      const pull = attraction * 0.00006;
+      /** Uyga qaytarish "prujinasi" — qaytish tezligi ~30 px/sek. */
+      const spring = 0.0000022;
+      /** Kursorga tortilish — qaytishdan ANCHA kuchli, shunda yig'ilishi
+          ko'zga tashlanadi. */
+      const pull = attraction * 0.0022;
       const r2 = pointerRadius * pointerRadius;
-      // Damping kadr uzunligiga moslashadi (60 fps da ~0.988)
-      const damp = Math.pow(0.988, dt / 16.67);
+      // Damping kadr uzunligiga moslashadi. 0.90 — tez so'nadi, ya'ni
+      // zarrachalar kursor atrofida "orbitaga tushmay" to'planib qoladi.
+      const damp = Math.pow(0.9, dt / 16.67);
 
       for (const p of particles) {
-        const dx = p.x - cx;
-        const dy = p.y - cy;
-        // Perpendikulyar tezlanish — aylanma oqim
-        p.vx += -dy * swirl * dt;
-        p.vy += dx * swirl * dt;
+        // 1) Uy nuqtasi juda sekin suzadi (chekkada o'raladi)
+        p.hx += p.hvx * dt;
+        p.hy += p.hvy * dt;
+        // Uy chekkadan chiqsa, zarrachaning O'ZI ham birga ko'chiriladi —
+        // aks holda u ekranni kesib o'tib, uyi ortidan uchib ketardi.
+        if (p.hx < 0) { p.hx += w; p.x += w; }
+        else if (p.hx > w) { p.hx -= w; p.x -= w; }
+        if (p.hy < 0) { p.hy += h; p.y += h; }
+        else if (p.hy > h) { p.hy -= h; p.y -= h; }
 
+        // 2) Uyga tortilish
+        p.vx += (p.hx - p.x) * spring * dt;
+        p.vy += (p.hy - p.y) * spring * dt;
+
+        // 3) Kursorga tortilish (yaqinroq bo'lsa — kuchliroq)
         if (pointer) {
           const px = pointer.x - p.x;
           const py = pointer.y - p.y;
           const d2 = px * px + py * py;
-          if (d2 < r2 && d2 > 1) {
-            // Yaqinroq bo'lsa — kuchliroq tortiladi
-            const f = (1 - Math.sqrt(d2) / pointerRadius) * pull * dt;
-            const inv = 1 / Math.sqrt(d2);
-            p.vx += px * inv * f;
-            p.vy += py * inv * f;
+          if (d2 < r2 && d2 > 4) {
+            const d = Math.sqrt(d2);
+            const f = (1 - d / pointerRadius) * pull * dt;
+            p.vx += (px / d) * f;
+            p.vy += (py / d) * f;
           }
         }
 
@@ -158,12 +181,6 @@ export default function CosmicSingularity({
         p.vy *= damp;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-
-        // Chekkadan chiqqani qarama-qarshi tomondan kiradi
-        if (p.x < -2) p.x += w + 4;
-        else if (p.x > w + 2) p.x -= w + 4;
-        if (p.y < -2) p.y += h + 4;
-        else if (p.y > h + 2) p.y -= h + 4;
       }
     };
 
@@ -179,9 +196,16 @@ export default function CosmicSingularity({
       }
     };
 
+    let rectTick = 0;
     const render = (now: number) => {
       const dt = Math.min(50, now - last || 16);
       last = now;
+      // Canvas'ning ekrandagi o'rni har ~0.5 sekundda yangilanadi: yon panel
+      // ochilganda/yopilganda sichqoncha koordinatasi surilib qolmasin.
+      if (++rectTick % 30 === 0) {
+        const box = canvas.getBoundingClientRect();
+        rect = { left: box.left, top: box.top };
+      }
       step(dt);
       draw();
       frame = requestAnimationFrame(render);
@@ -194,6 +218,9 @@ export default function CosmicSingularity({
     // Canvas'da `pointer-events: none` (fon qatlami) — shuning uchun
     // sichqoncha oynadan tinglanadi va canvas koordinatasiga ko'chiriladi.
     const onMove = (e: PointerEvent) => {
+      // `rect` har harakatda emas, kadr boshida yangilanadi (pastdagi
+      // `render`) — canvas sahifada suriladigan element emas, lekin yon
+      // panel ochilganda chap chekkasi o'zgaradi.
       pointer = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
     const onLeave = () => {
