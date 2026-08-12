@@ -22,7 +22,8 @@ import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
 import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
-import SpaceBackground from "../components/SpaceBackground";
+import Starfield from "../components/Starfield";
+import Logo from "../components/common/Logo";
 import styles from "./AdminPage.module.css";
 
 // Faqat ikki rol: Admin va Xodim (oddiy foydalanuvchi).
@@ -311,7 +312,8 @@ export default function AdminPage() {
           harakatida nuqtalar qayta chizilardi va jadval/grafiklar bilan
           qo'shilib sahifani og'irlashtirardi. */}
       <div className={styles.bgLayer} aria-hidden="true" />
-      <SpaceBackground className={styles.spaceBg} isDark={isDark} />
+      <Starfield className={styles.spaceBg} isDark={isDark} />
+      <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 
       <Sidebar
         view={view}

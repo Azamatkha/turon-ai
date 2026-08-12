@@ -17,7 +17,14 @@
    o'zgartirish uchun endi 30 ta faylni tahrirlash kerak emas.
    ========================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap');
+/* Shrift Google Fonts'dan EMAS, loyihaning O'ZIDAN yuklanadi — main.tsx da
+   `@fontsource-variable/onest` import qilingan.
+
+   Sabab: bank tarmog'idagi proksi fonts.googleapis.com ni bloklaydi. Shrift
+   umuman yuklanmasdi va interfeys jimgina Segoe UI'ga tushib qolardi — ya'ni
+   shrift almashtirilgani bilan ekranda hech narsa "o'zgarmagandek" ko'rinardi.
+   Lokal fayl proksiga bog'liq emas, ustiga tashqi so'rov yo'qolgani uchun
+   sahifa tezroq ochiladi. Kirill subseti ham paket ichida keladi. */
 
 /* ============================================================================
    1. RESET

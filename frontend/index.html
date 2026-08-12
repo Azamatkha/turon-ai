@@ -12,17 +12,9 @@
     <meta name="theme-color" content="#061A31" media="(prefers-color-scheme: dark)" />
     <title>Turon AI</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-    <!-- Shrift: Onest (lotin + kirill to'liq).
-         preconnect — DNS/TLS qo'l siqishini oldindan bajaradi.
-         Bu yerdagi <link> shriftni index.css dagi @import dan BARVAQTROQ
-         boshlaydi, ya'ni sahifa "yalt" etib almashmaydi (FOUT kamayadi). -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Shrift loyiha ichidan yuklanadi (main.tsx: @fontsource-variable/onest).
+         Ilgari bu yerda Google Fonts havolalari turardi, lekin bank proksisi
+         fonts.googleapis.com ni bloklagani uchun shrift umuman kelmasdi. -->
   </head>
   <body>
     <div id="root"></div>
