@@ -29,6 +29,25 @@
   z-index: 1;
 }
 
+/* Barcha fon qatlamlari shu o'ramda yotadi. */
+.bgStack {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* MUHIM: oqimdagi (static) elementlar fonda joylashgan `position: absolute`
+   qatlamlardan PASTDA chiziladi — CSS chizish tartibi shunday. Fon shaffof
+   ekan bu bilinmasdi; u qorayishi bilan xabar maydoni, kartochkalar va
+   yozish paneli ko'rinmay qoldi. Yechim — mazmun elementlarini ham
+   joylashtirilgan qilib, ustki qatlamga chiqarish. */
+.main > :not(.bgStack) {
+  position: relative;
+  z-index: 1;
+}
+
 /* Orqa fon.
    ILGARI: to'liq ekranli WebGL raymarching shader (GradientWaves, har kadrda
    40 qadam) + sichqonchaga javob beradigan ikkinchi canvas (DotField).

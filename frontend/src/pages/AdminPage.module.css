@@ -49,6 +49,23 @@
   );
 }
 
+/* Barcha fon qatlamlari shu o'ramda yotadi. */
+.bgStack {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Oqimdagi (static) elementlar `position: absolute` fon qatlamlaridan
+   PASTDA chiziladi — shu sababli fon qorayganda kartochkalar va jadval
+   ko'rinmay qolgandi. Mazmunni ustki qatlamga chiqaramiz. */
+.main > :not(.bgStack) {
+  position: relative;
+  z-index: 1;
+}
+
 .content {
   flex: 1;
   overflow-y: auto;

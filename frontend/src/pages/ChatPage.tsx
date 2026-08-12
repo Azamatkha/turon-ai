@@ -15,6 +15,7 @@ import Composer from "../components/chat/Composer";
 import ProfileModal from "../components/chat/ProfileModal";
 import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
+import CosmicSingularity from "../components/CosmicSingularity";
 import Logo from "../components/common/Logo";
 import styles from "./ChatPage.module.css";
 
@@ -304,17 +305,19 @@ export default function ChatPage() {
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} isDark={isDark} />
 
       <main className={styles.main} id="chat-main">
-        {/* Fon: yoyilma -> to'r -> yulduzlar -> xira logotip. Hammasi
-            mazmun maydoni ichida, shuning uchun yon panel ochilganda ham
-            markaz joyida qoladi. */}
-        <div className={styles.gradientBg} aria-hidden="true" />
-        <GridPattern className={styles.gridBg} />
-        <OrbitRings />
-        {/* Yulduzlar foni VAQTINCHA o'chirilgan (o'rniga boshqa yechim
-            tanlanadi). Komponent joyida — qaytarish uchun shu qatorni
-            ochish kifoya:
-            <Starfield className={styles.spaceBg} isDark={isDark} /> */}
-        <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
+        {/* Fon: yoyilma -> to'r -> zarrachalar -> orbitalar -> xira logotip.
+            Hammasi BITTA o'ram (`bgStack`) ichida: shundagina "position:
+            absolute + z-index" faqat shu o'ramga tegib, sahifa mazmuni
+            (`.main > :not(.bgStack)`) doim ustida qoladi. Ilgari qatlamlar
+            to'g'ridan-to'g'ri `main` ichida edi — fon shaffof ekan bilinmadi,
+            u qorayishi bilan xabar maydoni va kartochkalarni bekitib qo'ydi. */}
+        <div className={styles.bgStack} aria-hidden="true">
+          <div className={styles.gradientBg} />
+          <GridPattern className={styles.gridBg} />
+          <CosmicSingularity className={styles.spaceBg} isDark={isDark} />
+          <OrbitRings />
+          <div className={styles.bgLogo}><Logo size={260} /></div>
+        </div>
 
         <ChatHeader
           title={active.title || T.newChat}

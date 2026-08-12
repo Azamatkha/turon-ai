@@ -24,6 +24,7 @@ import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
+import CosmicSingularity from "../components/CosmicSingularity";
 import Logo from "../components/common/Logo";
 import styles from "./AdminPage.module.css";
 
@@ -330,15 +331,15 @@ export default function AdminPage() {
       />
 
       <main className={styles.main}>
-        {/* Fon: yoyilma -> to'r -> yulduzlar -> xira logotip. Hammasi
-            mazmun maydoni ichida, shuning uchun yon panel ochilganda ham
-            markaz joyida qoladi. */}
-        <div className={styles.gradientBg} aria-hidden="true" />
-        <GridPattern className={styles.gridBg} />
-        <OrbitRings />
-        {/* Yulduzlar foni VAQTINCHA o'chirilgan — qaytarish uchun:
-            <Starfield className={styles.spaceBg} isDark={isDark} /> */}
-        <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
+        {/* Fon qatlamlari BITTA o'ramda — mazmun (`.main > :not(.bgStack)`)
+            har doim ustida qoladi. Batafsil izoh ChatPage.tsx da. */}
+        <div className={styles.bgStack} aria-hidden="true">
+          <div className={styles.gradientBg} />
+          <GridPattern className={styles.gridBg} />
+          <CosmicSingularity className={styles.spaceBg} isDark={isDark} />
+          <OrbitRings />
+          <div className={styles.bgLogo}><Logo size={260} /></div>
+        </div>
 
         <PageHeader
           view={view} search={search} setSearch={setSearch} onAddUser={openAdd}

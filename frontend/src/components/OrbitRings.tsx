@@ -1,14 +1,38 @@
 import styles from "./OrbitRings.module.css";
 
 /**
- * Logotip atrofidagi uchta nozik orbita chizig'i va ular bo'ylab sekin
- * aylanadigan sharchalar. Sof dekorativ fon elementi — hech qanday
- * o'lchov yoki holatni bildirmaydi.
+ * Logotip atrofidagi nozik orbita chiziqlari va ular bo'ylab sekin
+ * aylanadigan sharchalar. Sof dekorativ fon elementi.
  *
- * Nega SVG + CSS: aylanish `transform: rotate` bilan bajariladi, ya'ni
- * kompozitor qatlamida — JS ham, har kadrda qayta chizish ham yo'q.
+ * Nega SVG + CSS: aylanish `transform: rotate` bilan bajariladi — ya'ni
+ * kompozitor qatlamida, JS ham, har kadrda qayta chizish ham yo'q.
  * `prefers-reduced-motion` da animatsiya CSS darajasida o'chadi.
+ *
+ * Har bir sharcha IKKI guruhga o'ralgan:
+ *   tashqi guruh — boshlang'ich burchak (`phase`, qo'zg'almas),
+ *   ichki guruh — aylanish animatsiyasi.
+ * Bitta guruhda ikkalasini berib bo'lmaydi: animatsiyadagi `rotate()`
+ * statik `rotate()` ni butunlay almashtirib yuboradi.
  */
+
+/** [radius, boshlang'ich burchak (°), sharcha radiusi, aylanish davri (s)] */
+const DOTS: [number, number, number, number][] = [
+  [150, 0, 4.5, 44],
+  [150, 130, 3, 44],
+  [150, 245, 3.5, 44],
+  [230, 40, 5, 62],
+  [230, 155, 3.5, 62],
+  [230, 250, 4, 62],
+  [230, 320, 3, 62],
+  [310, 15, 4.5, 84],
+  [310, 95, 3, 84],
+  [310, 180, 5, 84],
+  [310, 235, 3.5, 84],
+  [310, 300, 4, 84],
+];
+
+const C = 360; // viewBox markazi
+
 export default function OrbitRings({ className }: { className?: string }) {
   return (
     <svg
@@ -16,23 +40,29 @@ export default function OrbitRings({ className }: { className?: string }) {
       viewBox="0 0 720 720"
       aria-hidden="true"
     >
-      <circle className={styles.ring} cx="360" cy="360" r="150" />
-      <circle className={styles.ring} cx="360" cy="360" r="230" />
-      <circle className={styles.ring} cx="360" cy="360" r="310" />
+      <circle className={styles.ring} cx={C} cy={C} r="150" />
+      <circle className={styles.ring} cx={C} cy={C} r="230" />
+      <circle className={styles.ring} cx={C} cy={C} r="310" />
 
-      {/* Har bir sharcha o'z guruhida aylanadi — tezliklar turlicha */}
-      <g className={`${styles.spin} ${styles.spin1}`}>
-        <circle className={styles.dot} cx="360" cy="210" r="5" />
-      </g>
-      <g className={`${styles.spin} ${styles.spin2}`}>
-        <circle className={styles.dot} cx="360" cy="130" r="4" />
-      </g>
-      <g className={`${styles.spin} ${styles.spin3}`}>
-        <circle className={styles.dot} cx="360" cy="670" r="4.5" />
-      </g>
-      <g className={`${styles.spin} ${styles.spin4}`}>
-        <circle className={styles.dot} cx="360" cy="590" r="3.5" />
-      </g>
+      {DOTS.map(([radius, phase, size, duration], i) => (
+        <g key={i} transform={`rotate(${phase} ${C} ${C})`}>
+          <g
+            className={styles.spin}
+            style={{
+              animationDuration: `${duration}s`,
+              // Qo'shni halqalar qarama-qarshi yo'nalishda aylansin
+              animationDirection: i % 2 ? "reverse" : "normal",
+            }}
+          >
+            <circle
+              className={styles.dot}
+              cx={C}
+              cy={C - radius}
+              r={size}
+            />
+          </g>
+        </g>
+      ))}
     </svg>
   );
 }

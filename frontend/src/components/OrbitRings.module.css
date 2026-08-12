@@ -26,13 +26,9 @@
 /* Aylanish markazi — SVG viewBox markazi (360 360) */
 .spin {
   transform-origin: 360px 360px;
+  /* Davomiylik va yo'nalish har bir sharchaga alohida (OrbitRings.tsx) */
   animation: orbit linear infinite;
 }
-
-.spin1 { animation-duration: 48s; }
-.spin2 { animation-duration: 72s; animation-direction: reverse; }
-.spin3 { animation-duration: 60s; }
-.spin4 { animation-duration: 90s; animation-direction: reverse; }
 
 @keyframes orbit {
   to { transform: rotate(360deg); }
