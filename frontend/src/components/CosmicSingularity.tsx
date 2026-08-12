@@ -1,69 +1,67 @@
 import { useEffect, useRef } from "react";
 
 /**
- * "Kosmik singulyarlik" foni: markaz atrofida aylanib, sekin ichkariga
- * tortiladigan zarrachalar buluti.
+ * Butun fon bo'ylab tarqalgan zarrachalar buluti: ular juda sekin suzadi va
+ * sichqoncha yaqinlashganda unga tortilib, to'planadi.
  *
- * Namuna sifatida `lightswind/cosmic-singularity-background` olingan, lekin
- * u WebGL (three.js) da 25 000 zarracha chizadi. Bu loyihada fon ilgari
- * aynan GPU yuki sababli olib tashlangan (bank kompyuterlari kuchsiz), shu
- * bois bu yerda 2D canvas'dagi yengil variant yozildi:
+ * Namuna — `lightswind/cosmic-singularity-background`. U three.js/WebGL da
+ * 25 000 zarracha chizadi; bu loyihada fon aynan GPU yuki sababli olib
+ * tashlangan (bank kompyuterlari kuchsiz), shuning uchun bu yerda 2D
+ * canvas'dagi yengil variant yozildi.
  *
- *  - zarrachalar soni ~1600 (WebGL emas, lekin ko'z uchun farqi kam);
- *  - rang RADIUS bo'yicha `colorInner` va `colorOuter` orasida aralashadi,
- *    lekin har kadrda 1600 marta `fillStyle` almashtirmaslik uchun ranglar
- *    oldindan 10 ta "chelak"ka bo'lingan va chizish shu chelaklar bo'yicha
- *    guruhlab bajariladi;
- *  - burchak tezligi radiusga teskari (Kepler qonuniga o'xshash): ichkaridagi
- *    zarrachalar tezroq aylanadi, shundan "burama" hosil bo'ladi;
- *  - markazga yetgan zarracha tashqi chekkada qayta tug'iladi;
- *  - `prefers-reduced-motion` da bir marta chizib to'xtaydi, tab fonga
- *    o'tsa animatsiya butunlay to'xtaydi.
+ * Harakat modeli (Dekart koordinatalarida, chunki sichqonchaga tortilishni
+ * qutb koordinatalarida ifodalash noqulay):
+ *   1. juda zaif aylanma oqim — butun maydon sekin "nafas oladi";
+ *   2. sichqoncha `pointerRadius` doirasiga kirsa — unga tomon tezlanish;
+ *   3. har kadrda tezlik so'nadi (damping), shundan zarrachalar kursor
+ *      atrofida to'planib qoladi va u ketgach yana tarqaladi;
+ *   4. chekkadan chiqqan zarracha qarama-qarshi tomondan qaytib kiradi —
+ *      shunda bulut butun fonni bir tekis qoplaydi.
+ *
+ * Ranglar zarrachaga TUG'ILGANDA biriktiriladi va o'zgarmaydi. Shu sababli
+ * "qaysi zarracha qaysi rangda" ro'yxati bir marta tuziladi: har kadrda
+ * `fillStyle` faqat ranglar soni qadar (6 marta) almashadi.
  */
 
 interface CosmicSingularityProps {
-  /** Zarrachalar soni. */
   particleCount?: number;
-  /** Aylanish tezligi ko'paytiruvchisi. */
+  /** Umumiy tezlik ko'paytiruvchisi (1 = sekin suzish). */
   speed?: number;
-  /** Markazga tortilish tezligi. */
-  gravity?: number;
-  /** Markazdagi rang (hex). */
-  colorInner?: string;
-  /** Chetdagi rang (hex). */
-  colorOuter?: string;
-  /** Umumiy shaffoflik. */
+  /** Sichqonchaga tortilish kuchi. 0 — o'chirilgan. */
+  attraction?: number;
+  /** Sichqoncha ta'sir doirasi (piksel). */
+  pointerRadius?: number;
+  /** Zarracha ranglari (hex). Berilmasa — mavzuga mos to'plam. */
+  colors?: string[];
   opacity?: number;
   isDark?: boolean;
   className?: string;
 }
 
 interface Particle {
-  /** Markazdan masofa (0..1, canvas o'lchamiga nisbatan). */
-  r: number;
-  /** Burchak (radian). */
-  a: number;
-  /** Individual tezlik tarqoqligi. */
-  jitter: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
   size: number;
 }
 
-const hexToRgb = (hex: string) => {
+const LIGHT_COLORS = ["#0B5FA5", "#1A7CC8", "#5FA3D6", "#6874D6", "#2FA8A0", "#8FB8E0"];
+const DARK_COLORS = ["#63B3F0", "#9ED8FF", "#5FA3D6", "#8C93E8", "#4FD1C5", "#3B82C4"];
+
+const withAlpha = (hex: string, alpha: number) => {
   const h = hex.replace("#", "");
-  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha.toFixed(3)})`;
 };
 
-/** Chelaklar soni: rang shu qadar bosqichda o'zgaradi. */
-const BUCKETS = 10;
-
 export default function CosmicSingularity({
-  particleCount = 1600,
+  particleCount = 1400,
   speed = 1,
-  gravity = 1,
-  colorInner,
-  colorOuter,
-  opacity = 0.55,
+  attraction = 1,
+  pointerRadius = 260,
+  colors,
+  opacity = 0.5,
   isDark = false,
   className,
 }: CosmicSingularityProps) {
@@ -75,89 +73,108 @@ export default function CosmicSingularity({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const inner = hexToRgb(colorInner ?? (isDark ? "#9ED8FF" : "#5FA3D6"));
-    const outer = hexToRgb(colorOuter ?? (isDark ? "#0B5FA5" : "#003978"));
-
-    // Rang chelaklari: markazdan chetga qarab aralashma
-    const palette = Array.from({ length: BUCKETS }, (_, i) => {
-      const t = i / (BUCKETS - 1);
-      const r = Math.round(inner.r + (outer.r - inner.r) * t);
-      const g = Math.round(inner.g + (outer.g - inner.g) * t);
-      const b = Math.round(inner.b + (outer.b - inner.b) * t);
-      // Chetga borgan sari xiraroq
-      const alpha = opacity * (1 - t * 0.55);
-      return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
-    });
-
+    const palette = (colors ?? (isDark ? DARK_COLORS : LIGHT_COLORS)).map((c) =>
+      withAlpha(c, opacity),
+    );
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     let w = 0;
     let h = 0;
-    let cx = 0;
-    let cy = 0;
-    /** Halqa radiusi piksel o'lchovida — canvas o'lchamiga bog'lanadi. */
-    let scale = 0;
     let frame = 0;
     let last = 0;
+    /** Canvas'ning ekrandagi o'rni — sichqoncha koordinatasini ko'chirish uchun. */
+    let rect = { left: 0, top: 0 };
+    let pointer: { x: number; y: number } | null = null;
 
     const particles: Particle[] = [];
-    const buckets: number[][] = Array.from({ length: BUCKETS }, () => []);
-
-    const spawn = (p: Particle, fresh: boolean) => {
-      // `fresh` — birinchi to'ldirish: butun maydonga tarqatiladi.
-      p.r = fresh ? 0.12 + Math.random() * 0.88 : 0.9 + Math.random() * 0.25;
-      p.a = Math.random() * Math.PI * 2;
-      p.jitter = 0.6 + Math.random() * 0.8;
-      p.size = Math.random() < 0.12 ? 2 : 1;
-    };
-
-    for (let i = 0; i < particleCount; i++) {
-      const p: Particle = { r: 0, a: 0, jitter: 1, size: 1 };
-      spawn(p, true);
-      particles.push(p);
-    }
+    /** Rang bo'yicha guruhlangan indekslar — bir marta tuziladi. */
+    const groups: number[][] = palette.map(() => []);
 
     const setSize = () => {
       const parent = canvas.parentElement;
       const nw = parent?.clientWidth || window.innerWidth;
       const nh = parent?.clientHeight || window.innerHeight;
+      const box = canvas.getBoundingClientRect();
+      rect = { left: box.left, top: box.top };
       if (nw === w && nh === h) return;
+      const first = w === 0;
+      const sx = first ? 1 : nw / w;
+      const sy = first ? 1 : nh / h;
       w = nw;
       h = nh;
       canvas.width = w;
       canvas.height = h;
-      cx = w / 2;
-      // Halqa markazi biroz tepada — logotip va orbitalar bilan bir joyda
-      cy = h * 0.44;
-      scale = Math.min(w, h) * 0.46;
+      if (first) {
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.01,
+            vy: (Math.random() - 0.5) * 0.01,
+            size: Math.random() < 0.14 ? 2 : 1,
+          });
+          groups[i % groups.length].push(i);
+        }
+      } else {
+        // O'lcham o'zgarsa zarrachalar nisbatan joyida qolsin
+        for (const p of particles) {
+          p.x *= sx;
+          p.y *= sy;
+        }
+      }
     };
 
-    const draw = (dt: number) => {
-      ctx.clearRect(0, 0, w, h);
-      for (const list of buckets) list.length = 0;
+    const step = (dt: number) => {
+      const cx = w / 2;
+      const cy = h / 2;
+      // Sekin aylanma oqim: markazdan uzoqlashgan sari biroz kuchliroq
+      const swirl = 0.0000012 * speed;
+      const pull = attraction * 0.00006;
+      const r2 = pointerRadius * pointerRadius;
+      // Damping kadr uzunligiga moslashadi (60 fps da ~0.988)
+      const damp = Math.pow(0.988, dt / 16.67);
 
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        // Ichkaridagilar tezroq aylanadi -> burama shakl
-        p.a += ((0.00022 * speed * p.jitter) / (p.r * p.r + 0.05)) * dt;
-        p.r -= 0.000004 * gravity * p.jitter * dt;
-        if (p.r < 0.1) spawn(p, false);
+      for (const p of particles) {
+        const dx = p.x - cx;
+        const dy = p.y - cy;
+        // Perpendikulyar tezlanish — aylanma oqim
+        p.vx += -dy * swirl * dt;
+        p.vy += dx * swirl * dt;
 
-        const idx = Math.min(BUCKETS - 1, Math.max(0, Math.floor(p.r * BUCKETS)));
-        buckets[idx].push(i);
+        if (pointer) {
+          const px = pointer.x - p.x;
+          const py = pointer.y - p.y;
+          const d2 = px * px + py * py;
+          if (d2 < r2 && d2 > 1) {
+            // Yaqinroq bo'lsa — kuchliroq tortiladi
+            const f = (1 - Math.sqrt(d2) / pointerRadius) * pull * dt;
+            const inv = 1 / Math.sqrt(d2);
+            p.vx += px * inv * f;
+            p.vy += py * inv * f;
+          }
+        }
+
+        p.vx *= damp;
+        p.vy *= damp;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        // Chekkadan chiqqani qarama-qarshi tomondan kiradi
+        if (p.x < -2) p.x += w + 4;
+        else if (p.x > w + 2) p.x -= w + 4;
+        if (p.y < -2) p.y += h + 4;
+        else if (p.y > h + 2) p.y -= h + 4;
       }
+    };
 
-      for (let b = 0; b < BUCKETS; b++) {
-        const list = buckets[b];
-        if (!list.length) continue;
-        ctx.fillStyle = palette[b];
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (let g = 0; g < groups.length; g++) {
+        ctx.fillStyle = palette[g];
+        const list = groups[g];
         for (let k = 0; k < list.length; k++) {
           const p = particles[list[k]];
-          const rad = p.r * scale;
-          const x = cx + Math.cos(p.a) * rad;
-          const y = cy + Math.sin(p.a) * rad;
-          if (x < 0 || y < 0 || x >= w || y >= h) continue;
-          ctx.fillRect(x, y, p.size, p.size);
+          ctx.fillRect(p.x, p.y, p.size, p.size);
         }
       }
     };
@@ -165,27 +182,42 @@ export default function CosmicSingularity({
     const render = (now: number) => {
       const dt = Math.min(50, now - last || 16);
       last = now;
-      draw(dt);
+      step(dt);
+      draw();
       frame = requestAnimationFrame(render);
     };
 
     setSize();
-    if (reduced) {
-      draw(0);
-    } else {
-      frame = requestAnimationFrame(render);
+    if (reduced) draw();
+    else frame = requestAnimationFrame(render);
+
+    // Canvas'da `pointer-events: none` (fon qatlami) — shuning uchun
+    // sichqoncha oynadan tinglanadi va canvas koordinatasiga ko'chiriladi.
+    const onMove = (e: PointerEvent) => {
+      pointer = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    const onLeave = () => {
+      pointer = null;
+    };
+    if (!reduced && attraction > 0) {
+      window.addEventListener("pointermove", onMove, { passive: true });
+      window.addEventListener("pointerleave", onLeave);
     }
 
-    // Yon panel ochilganda oyna o'lchami o'zgarmaydi — ota elementni kuzatamiz
     let roTimer = 0;
     const ro = new ResizeObserver(() => {
       window.clearTimeout(roTimer);
       roTimer = window.setTimeout(() => {
         setSize();
-        if (reduced) draw(0);
+        if (reduced) draw();
       }, 150);
     });
     if (canvas.parentElement) ro.observe(canvas.parentElement);
+    const onScrollOrResize = () => {
+      const box = canvas.getBoundingClientRect();
+      rect = { left: box.left, top: box.top };
+    };
+    window.addEventListener("resize", onScrollOrResize);
 
     const onVisibility = () => {
       if (reduced) return;
@@ -201,9 +233,12 @@ export default function CosmicSingularity({
       cancelAnimationFrame(frame);
       window.clearTimeout(roTimer);
       ro.disconnect();
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("resize", onScrollOrResize);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [particleCount, speed, gravity, colorInner, colorOuter, opacity, isDark]);
+  }, [particleCount, speed, attraction, pointerRadius, colors, opacity, isDark]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
