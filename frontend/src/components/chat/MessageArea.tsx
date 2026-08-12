@@ -109,7 +109,19 @@ export default function MessageArea({
     onVote?.(id, current === v ? null : v);
 
   return (
-    <div ref={scrollRef} className={styles.scrollArea}>
+    // role="log" + aria-live="polite" — bot javobi kelganda ekran o'quvchisi
+    // uni O'QIYDI. Ilgari bu yo'q edi: ko'zi ojiz foydalanuvchi savol
+    // yuborardi va javob kelgan-kelmaganini umuman bilmasdi.
+    // "polite" (assertive emas) — foydalanuvchi gapirayotgan bo'lsa,
+    // uni bo'lmasdan navbat kutadi.
+    <div
+      ref={scrollRef}
+      className={styles.scrollArea}
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-label={s.messagesRegion}
+    >
       {isEmpty && (
         <div className={styles.emptyState}>
           <div className={styles.logoBadge} style={{ color: isDark ? PRIMARY_ON_DARK : PRIMARY }}><Logo size={64} /></div>
@@ -140,7 +152,7 @@ export default function MessageArea({
               // Har bir foydalanuvchi xabari ustida (hover) "..." menyu chiqadi —
               // undan Tahrirlash yoki Qayta yuborish tanlanadi. "Qayta yuborish"
               // shu xabarni (o'sha matn bilan) qaytadan yuboradi — sahifa
-              // yangilangach javob tushib qolган bo'lsa ham qo'l keladi.
+              // yangilangach javob tushib qolgan bo'lsa ham qo'l keladi.
               const isEditing = editId === m.id;
               return (
                 <div key={m.id} className={`${styles.messageRow} ${styles.messageRowUser}`}>

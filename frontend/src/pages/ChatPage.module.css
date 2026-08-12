@@ -5,11 +5,18 @@
    ===================== */
 .page {
   position: relative;
+  /* 100vh EMAS: mobil brauzerda 100vh manzil satrini ham hisoblaydi va
+     xabar yozish paneli ekran ostiga tushib ketadi. dvh ("dynamic viewport
+     height") manzil satri yig'ilganda/ochilganda o'zi moslashadi.
+     Eski brauzerlar dvh ni bilmaydi — ular uchun oldin vh beriladi. */
   height: 100vh;
+  height: 100dvh;
   width: 100%;
   display: flex;
   overflow: hidden;
-  transition: background 0.35s ease, color 0.35s ease;
+  background: var(--tu-bg);
+  color: var(--tu-text-strong);
+  transition: background-color var(--tu-duration-slow) var(--tu-ease);
 }
 
 .main {
@@ -22,37 +29,87 @@
   z-index: 1;
 }
 
-/* Orqa fon qatlami — barcha kontent ostida, bosishni to'smaydi.
-   Markazi maska bilan so'ndiriladi: shunda fon chekkalarda to'yingan rangda
-   turadi (ko'rinadi), matn turadigan o'rta qismda esa deyarli yo'qoladi va
-   kontrast 4.5:1 dan pastga tushmaydi. */
+/* Orqa fon.
+   ILGARI: to'liq ekranli WebGL raymarching shader (GradientWaves, har kadrda
+   40 qadam) + sichqonchaga javob beradigan ikkinchi canvas (DotField).
+   Ofis kompyuterida bu doimiy GPU yuki edi — foydasi esa faqat bezak,
+   ustiga maska bilan yarmi o'chirilgan.
+
+   ENDI: ikkita statik CSS gradienti. GPU yuki nol, ko'rinishi tinchroq —
+   minimalistik uslubga ham shu mos keladi. */
 .bgLayer {
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0.5;
   pointer-events: none;
-  -webkit-mask-image: radial-gradient(
-    ellipse 58% 42% at 50% 48%,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    rgba(0, 0, 0, 0.85) 72%,
-    #000 100%
-  );
-  mask-image: radial-gradient(
-    ellipse 58% 42% at 50% 48%,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    rgba(0, 0, 0, 0.85) 72%,
-    #000 100%
-  );
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 12% 0%,
+      rgba(11, 95, 165, 0.07) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 92% 100%,
+      rgba(26, 124, 200, 0.06) 0%,
+      transparent 62%
+    );
 }
 
-/* Nuqta qatlami — gradient ustida, kontent ostida, bosishni to'smaydi */
-.dotLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.5;
-  pointer-events: none;
+:global(html.dark) .bgLayer {
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 12% 0%,
+      rgba(99, 179, 240, 0.09) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 92% 100%,
+      rgba(11, 95, 165, 0.16) 0%,
+      transparent 62%
+    );
+}
+
+/* =====================
+   Mobil — sidebar drawer
+   =====================
+   Tor ekranda sidebar oqimdan chiqib, kontent USTIGA suriladi. Ilgari u
+   qat'iy 282px flex element edi: 375px telefonda ekranning 75% ini egallab,
+   chat uchun 93px qolardi. */
+.scrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* Sidebar endi oqimda emas — chapdan suriladigan panel */
+  .page > aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    box-shadow: var(--tu-shadow-xl);
+  }
+
+  /* Panel ortidagi qorayish — bosilganda yopiladi */
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    border: none;
+    padding: 0;
+    background: rgba(4, 33, 60, 0.5);
+    backdrop-filter: blur(2px);
+    animation: fadeIn var(--tu-duration) var(--tu-ease) both;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 560px) {
+  /* Juda tor ekranda panel deyarli butun kenglikni oladi —
+     "yarim ochiq" holat barmoq bilan noqulay */
+  .page > aside {
+    width: min(88vw, 320px) !important;
+    flex-basis: min(88vw, 320px) !important;
+  }
 }

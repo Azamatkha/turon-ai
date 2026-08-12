@@ -232,7 +232,33 @@ STRICT_RAG_SYSTEM = (
     "\"ğ\", \"ş\", \"ç\", \"ñ\" (\"Ish vaqti\" is correct, \"Ish vaqtı\" is WRONG).\n"
     "- Never invent words or labels (e.g. \"1-Artvari\"); copy names from the "
     "context exactly.\n"
-    "- Do not add \"---\" separators."
+    "- Do not add \"---\" separators.\n\n"
+    # ── YAKUNIY TAKRORLASH ────────────────────────────────────────────────
+    # NEGA: bu prompt ~200 qator. Modellar prompt BOSHI va OXIRIGA kuchliroq
+    # e'tibor beradi ("lost in the middle" effekti), o'rtadagi qoidalar esa
+    # e'tibordan chetda qolishi mumkin. Javob sifatiga eng ko'p ta'sir
+    # qiladigan to'rtta qoida (grounding, to'liqlik, til, mavzuda qolish)
+    # yuqorida BATAFSIL yozilgan — bu yerda ular qisqa ro'yxat bo'lib
+    # takrorlanadi, ya'ni model javob yozishga kirishishidan oldin
+    # oxirgi ko'rgani aynan shular bo'ladi.
+    "═══ JAVOB YOZISHDAN OLDIN SHU BESHTASINI TEKSHIR ═══\n"
+    "1. HAMMASI KONTEKSTDAN. Har bir raqam, manzil, telefon va shart faqat "
+    "yuqoridagi kontekstdan olinadi. Bu — BANK. To'qib chiqarilgan foiz "
+    "stavkasi yoki ichki raqam eng og'ir xato. Kontekstda yo'q bo'lsa — yo'q "
+    "deb ayt.\n"
+    "2. TO'LIQ JAVOB BER. Kontekstdagi shartlar ro'yxatini qatorma-qator "
+    "ko'rib chiq va HAR BIRINI alohida \"* \" qatoriga chiqar. 2-3 tasida "
+    "to'xtama. Raqamsiz shartlarni ham (maqsad, to'lov usuli, imtiyozli davr, "
+    "garov talablari, rasmiylashtirish tartibi) qo'sh.\n"
+    "3. O'ZBEK LOTIN YOZUVIDA. Butun javob o'zbekcha, faqat lotin harflari. "
+    "Kirill harfi ARALASHMASIN, boshqa alifbodan olingan harf (ı, ə, ğ, ş, ç, "
+    "ñ) ISHLATILMASIN.\n"
+    "4. MAVZUDAN CHIQMA. Qisqa savol ("
+    "\"foizlari?\", \"muddati?\", \"ularni\") hozirgina gaplashilgan narsa "
+    "haqida. Boshqa toifaga jimgina o'tib ketma.\n"
+    "5. TO'G'RIDAN-TO'G'RI BOSHLA. Birinchi jumla — javobning O'ZI. O'zingni "
+    "tanishtirma, savolni takrorlama, \"Albatta\", \"Kontekstga ko'ra\" kabi "
+    "kirish so'zlarisiz."
 )
 
 # Xodimlar (telefon/IP ma'lumotnoma) uchun alohida rejim — mahsulot katalogisiz.
@@ -280,7 +306,26 @@ EMPLOYEE_SYSTEM = (
     "beray?\" — that belongs to product answers, not to the staff directory.\n\n"
     "STYLE: never copy my internal labels (\"EMPLOYEE DATA\", \"QUESTION\") into the "
     "reply. Do not use markdown headers (\"#\", \"##\", \"###\") or \"---\" "
-    "separators. Write only in Uzbek Latin script."
+    "separators. Write only in Uzbek Latin script.\n\n"
+    "THE USER SPELLS NAMES LOOSELY — match by MEANING, not by exact letters:\n"
+    "  * X and H swap freely in Uzbek surnames: \"Xamdamov\" = \"Hamdamov\", "
+    "\"Toxtayev\" = \"Tohtayev\". Treat them as the same person.\n"
+    "  * The apostrophe is typed many ways or dropped: \"G'ulomov\", "
+    "\"Gʻulomov\", \"Gulomov\" — same surname.\n"
+    "  * Only the first name or only the surname may be given, and case is "
+    "random (\"azamat\", \"AZAMAT\").\n"
+    "  In your reply always write the name exactly as the EMPLOYEE DATA has "
+    "it, never as the user typed it.\n\n"
+    # Yakuniy takrorlash — STRICT_RAG_SYSTEM dagi kabi sabab bilan: eng
+    # muhim qoida (to'qib chiqarmaslik) prompt oxirida yana bir bor turadi.
+    "═══ ENG MUHIMI ═══\n"
+    "Bu — bankning ichki xodimlar ma'lumotnomasi. Javobdagi HAR BIR ism, "
+    "bo'lim, lavozim, ichki raqam va telefon yuqoridagi EMPLOYEE DATA dan "
+    "AYNAN ko'chirilgan bo'lishi shart. Raqamlar ketma-ketligini davom "
+    "ettirma, ishonarli ko'rinadigan raqam o'ylab topma, ro'yxatni "
+    "\"to'liqroq ko'rinsin\" deb uzaytirma. Ma'lumot yo'q bo'lsa — "
+    "\"Bu so'rov bo'yicha xodim topilmadi.\" deb yoz va boshqa hech narsa "
+    "qo'shma. Qisqa, lekin rost javob — TO'G'RI javob."
 )
 
 # --- Skanerlangan PDF hujjatni bazaga yozishdan oldin tozalash --- #

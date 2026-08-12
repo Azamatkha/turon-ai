@@ -10,7 +10,6 @@ import {
 import { scrapeUrl, uploadText } from "../services/knowledgeService";
 import { listReports } from "../services/reportService";
 import { DEFAULT_DEPARTMENT } from "../services/departments";
-import DotField from "../components/DotField";
 import Sidebar from "../components/admin/Sidebar";
 import PageHeader from "../components/admin/PageHeader";
 import DashboardView from "../components/admin/DashboardView";
@@ -306,9 +305,11 @@ export default function AdminPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.bgLayer} aria-hidden="true">
-        <DotField dotRadius={3.5} dotSpacing={26} bulgeOnly bulgeStrength={18} cursorRadius={220} glowRadius={160} gradientFrom={isDark ? "#22455c" : "#dbe0e7"} gradientTo={isDark ? "#2a5570" : "#cfd6df"} glowColor={isDark ? "rgba(95,163,214,0.10)" : "rgba(11,95,165,0.07)"} />
-      </div>
+      {/* Fon — statik CSS gradienti (AdminPage.module.css).
+          Ilgari bu yerda DotField canvas'i ishlardi: har bir kursor
+          harakatida nuqtalar qayta chizilardi va jadval/grafiklar bilan
+          qo'shilib sahifani og'irlashtirardi. */}
+      <div className={styles.bgLayer} aria-hidden="true" />
 
       <Sidebar
         view={view}

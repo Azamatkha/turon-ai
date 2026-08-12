@@ -41,3 +41,34 @@
 .statGrid > *:nth-child(4) {
   animation-delay: 0.18s;
 }
+
+/* ============================================================================
+   RESPONSIVE — statistika kartalari va grafiklar
+   ----------------------------------------------------------------------------
+   `.statGrid` allaqachon auto-fit ishlatadi — u o'zi moslashadi, tegilmaydi.
+   Muammo `.chartRow` da edi: qat'iy `1.65fr 1fr` tor ekranda grafikni
+   ~200px gacha siqib, ustun yorliqlari bir-biriga yopishib ketardi.
+   ========================================================================= */
+@media (max-width: 900px) {
+  .chartRow {
+    /* Grafik va yon panel ustma-ust — har biriga to'liq kenglik */
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard {
+    gap: var(--tu-space-4);
+  }
+
+  .statGrid {
+    /* 190px minimum 375px telefonda ikki ustunga yetadi, lekin karta
+       ichidagi uzun yorliq ("Bugungi xabarlar") sig'maydi — bir ustun */
+    grid-template-columns: 1fr;
+    gap: var(--tu-space-3);
+  }
+
+  .chartRow {
+    gap: var(--tu-space-3);
+  }
+}

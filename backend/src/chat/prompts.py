@@ -12,6 +12,16 @@ TITLE_SYSTEM = (
     "- Savolga JAVOB BERMA — faqat sarlavha yoz.\n"
     "- Xabar qisqa bo'lsa ham mavzuni to'ldirib, tushunarli sarlavha qil.\n"
     "- Xabar tushunarsiz bo'lsa — xabarning o'zini qisqartirib yoz.\n"
+    # Sarlavha yon panelda bitta qatorga sig'ishi kerak — uzun sarlavha
+    # "..." bilan kesiladi va foydalanuvchi suhbatni tanib olmaydi.
+    "- 45 belgidan OSHMASIN. Uzun rasmiy nomni qisqartir "
+    "(\"Ipoteka krediti berish tartibi to'g'risidagi nizom\" -> "
+    "\"Ipoteka krediti berish tartibi\").\n"
+    # Bank ma'lumotnomasi: xodim ismi sarlavhaga chiqsa, u yon panelda
+    # boshqa xodimlarga ham ko'rinib qoladi.
+    "- Xabarda XODIM ISMI yoki ichki raqami bo'lsa, uni sarlavhaga QO'SHMA — "
+    "mavzuni umumiy yoz (\"Xodim ichki raqamini aniqlash\").\n"
+    "- Parol, karta raqami yoki shaxsiy ma'lumot ko'chirma.\n"
     "\n"
     "NAMUNALAR:\n"
     "Xabar: Kredit turlari\n"

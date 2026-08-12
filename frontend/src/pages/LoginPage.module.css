@@ -1,15 +1,20 @@
 .page {
   position: relative;
-  height: 100dvh;      /* min-height emas — aniq balandlik kerak */
+  height: 100dvh; /* min-height emas — aniq balandlik kerak */
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 28px;
+  padding: var(--tu-space-8);
   overflow-x: hidden;
   overflow-y: auto;
   box-sizing: border-box;
-  background: radial-gradient(circle at 50% 0%, #e6edef 0%, #d4dee2 55%, #bfd0d8 100%);
-  color: #003978;
+  /* Minimalistik: ilgari uch bosqichli kulrang-ko'k gradient edi va u
+     brend rangiga aloqasi yo'q "kulrang tuman" ko'rinishini berardi.
+     Endi — ochiq ko'k, brenddan olingan, bitta yumshoq radial. */
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%, var(--tu-blue-50) 0%, transparent 60%),
+    var(--tu-gray-100);
+  color: var(--tu-blue-900);
 }
 
 .card {
@@ -18,19 +23,45 @@
   width: 100%;
   max-width: 1140px;
   min-height: 660px;
-  flex-shrink: 0;      /* aks holda flex uni siqib qo'yadi */
+  flex-shrink: 0; /* aks holda flex uni siqib qo'yadi */
   margin: auto;
   display: flex;
-  border-radius: 30px;
+  border-radius: var(--tu-radius-xl);
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 40px 80px -20px rgba(15, 23, 42, 0.32), 0 0 0 1px rgba(0, 57, 120, 0.04);
-  animation: riseIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  background: var(--tu-surface);
+  /* Soya yumshoqroq — minimalistik uslubda karta "suzib yurmaydi",
+     shunchaki fondan ajralib turadi */
+  box-shadow: var(--tu-shadow-xl), 0 0 0 1px rgba(0, 57, 120, 0.05);
+  animation: riseIn 0.5s var(--tu-ease) both;
 }
 
+/* Planshet — karta ustma-ust ikki qavatga tushadi */
 @media (max-width: 860px) {
+  .page {
+    padding: var(--tu-space-4);
+  }
+
   .card {
     flex-direction: column;
     min-height: 0;
+    border-radius: var(--tu-radius-lg);
+  }
+}
+
+/* Telefon — karta butun ekranni egallaydi, "quti" ko'rinishi yo'qoladi.
+   Kichik ekranda ramka va burchak radiusi joyni behuda yeydi. */
+@media (max-width: 560px) {
+  .page {
+    padding: 0;
+    background: var(--tu-surface);
+  }
+
+  .card {
+    min-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    /* Telefonda "pastdan ko'tarilish" animatsiyasi keraksiz — sahifa
+       allaqachon butun ekran */
+    animation: fadeIn 0.3s ease both;
   }
 }

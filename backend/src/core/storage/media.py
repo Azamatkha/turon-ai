@@ -57,6 +57,28 @@ def resolve_media_path(relative_path: str) -> Path:
     return candidate
 
 
+async def read_upload_limited(upload: UploadFile, max_bytes: int) -> bytes:
+    """Read an upload into memory, refusing anything over ``max_bytes``.
+
+    Use this instead of a bare ``await upload.read()``: the latter buffers the
+    WHOLE body before anyone can object, so a single large (or deliberately
+    huge) file can exhaust the worker's memory.
+
+    Here the body arrives in 64 KB chunks and the limit is checked after each
+    one, so an oversized upload is rejected after ~64 KB rather than after
+    however many hundred megabytes the client decided to send.
+
+    Raises:
+        PayloadTooLargeException: the upload exceeds ``max_bytes``.
+    """
+    buffer = bytearray()
+    while chunk := await upload.read(CHUNK_SIZE):
+        buffer.extend(chunk)
+        if len(buffer) > max_bytes:
+            raise PayloadTooLargeException(TOO_LARGE)
+    return bytes(buffer)
+
+
 async def save_image(
     upload: UploadFile, subdir: str, max_bytes: int
 ) -> tuple[str, int]:

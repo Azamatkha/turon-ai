@@ -445,3 +445,34 @@
     transform: none;
   }
 }
+
+/* ============================================================================
+   RESPONSIVE
+   ----------------------------------------------------------------------------
+   Sidebar tor ekranda drawer'ga aylanadi — position: fixed va ustidagi
+   qorayish (scrim) `ChatPage.module.css` da beriladi. Bu yerda esa
+   drawer ICHIDAGI o'lchamlar barmoqqa moslanadi.
+   ========================================================================= */
+@media (max-width: 900px) {
+  /* Qatorlar balandroq — barmoq bilan aniq tegish uchun (WCAG 2.5.8) */
+  .chatItem {
+    padding: 10px 8px;
+  }
+
+  .moreBtn {
+    /* Teginish ekranida hover yo'q, ya'ni yashirin tugmaga umuman
+       yetib bo'lmasdi. Endi u doim ko'rinadi. */
+    opacity: 0.75;
+    width: 32px;
+    height: 32px;
+  }
+
+  .profileTrigger {
+    padding: 14px 12px;
+  }
+
+  .railBtn {
+    width: 46px;
+    height: 46px;
+  }
+}

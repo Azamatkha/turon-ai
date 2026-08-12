@@ -14,6 +14,7 @@ from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
 from src.core.schemas import SuccessResponse
+from src.core.storage.media import read_upload_limited
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.schemas import (
@@ -28,6 +29,7 @@ from src.knowledge.schemas import (
     UploadResult,
     UploadTextRequest,
 )
+from src.main.config import config
 from src.knowledge.usecases import (
     AnswerQuestionUseCase,
     DeleteKnowledgeUseCase,
@@ -173,7 +175,11 @@ async def upload_pdf(
 
     DIQQAT: OCR va tozalash sekin — ko'p sahifali hujjat bir necha daqiqa
     olishi mumkin."""
-    content = await file.read()
+    # `await file.read()` EMAS: u faylni butunlay xotiraga o'qib bo'lgach
+    # tekshirish imkonini beradi, ya'ni juda katta fayl ilova xotirasini
+    # to'ldirib bo'lgan bo'lardi. read_upload_limited bo'lak-bo'lak o'qiydi
+    # va cheklovdan oshgan zahoti to'xtaydi.
+    content = await read_upload_limited(file, config.app.KNOWLEDGE_MAX_BYTES)
     use_case = UploadPdfUseCase(embedder=embedder, store=store, ai_client=ai_client)
     result = await use_case.execute(
         file_bytes=content, filename=file.filename or "", title=title
@@ -198,7 +204,7 @@ async def upload_employees(
 ) -> UploadResult:
     """Admin: xodimlar Excel (.xlsx) faylini o'qib, har xodimni alohida
     (doc_type=employee) Qdrant'ga yozadi. Har sheet — bir bo'lim."""
-    content = await file.read()
+    content = await read_upload_limited(file, config.app.KNOWLEDGE_MAX_BYTES)
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     result = await use_case.execute(file_bytes=content)
     await broadcast.execute(

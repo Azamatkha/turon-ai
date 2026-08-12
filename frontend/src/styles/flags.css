@@ -1,0 +1,87 @@
+/* ============================================================================
+   BAYROQLAR — faqat ILOVADA ISHLATILADIGANLARI
+   ----------------------------------------------------------------------------
+   MUAMMO: `import "flag-icons/css/flag-icons.min.css"` butun paketni tortardi —
+   dunyodagi ~250 davlatning bayrog'i. Vite ularning har birini alohida asset
+   qilib chiqarardi:
+       dist/assets — 142 ta SVG, 4.8 MB
+       index.css   — 525 KB (gzip 106 KB)
+   Ilova esa atigi 13 ta bayroqdan foydalanadi.
+
+   YECHIM: kerakli bayroqlarni bu yerda qo'lda e'lon qilamiz. `.fi` va `.fis`
+   asosiy klasslari flag-icons dagi bilan AYNAN bir xil — komponentlarni
+   (`LangSwitcher`, `RatesModal`) o'zgartirish kerak emas.
+
+   YANGI BAYROQ QO'SHISH: quyidagi ro'yxatga ikki qator qo'shing —
+       .fi-<kod>     { background-image: url("flag-icons/flags/4x3/<kod>.svg"); }
+       .fi-<kod>.fis { background-image: url("flag-icons/flags/1x1/<kod>.svg"); }
+   Kodlar ISO 3166-1 alpha-2 (kichik harflar bilan).
+   ========================================================================= */
+
+/* --- Asosiy klasslar (flag-icons dan ko'chirilgan) --- */
+.fi {
+  position: relative;
+  display: inline-block;
+  width: 1.333333em;
+  line-height: 1em;
+  background-size: contain;
+  background-position: 50%;
+  background-repeat: no-repeat;
+}
+
+.fi:before {
+  content: " ";
+}
+
+/* `fis` — kvadrat (1x1) variant. Ilovada bayroqlar doira shaklida
+   kesilgani uchun hamma joyda shu ishlatiladi. */
+.fi.fis {
+  width: 1em;
+}
+
+/* ============================================================================
+   Til almashtirgich (LangSwitcher): uz — o'zbek lotin va kirill uchun, ru
+   ========================================================================= */
+.fi-uz { background-image: url("flag-icons/flags/4x3/uz.svg"); }
+.fi-uz.fis { background-image: url("flag-icons/flags/1x1/uz.svg"); }
+
+.fi-ru { background-image: url("flag-icons/flags/4x3/ru.svg"); }
+.fi-ru.fis { background-image: url("flag-icons/flags/1x1/ru.svg"); }
+
+/* ============================================================================
+   Valyuta kurslari oynasi (RatesModal) — FLAG_COUNTRY jadvalidagi valyutalar.
+   Bu ro'yxat `RatesModal.tsx` dagi FLAG_COUNTRY bilan MOS bo'lishi kerak:
+   u yerga yangi valyuta qo'shsangiz, bu yerga ham bayroq qo'shing.
+   ========================================================================= */
+.fi-us { background-image: url("flag-icons/flags/4x3/us.svg"); }   /* USD */
+.fi-us.fis { background-image: url("flag-icons/flags/1x1/us.svg"); }
+
+.fi-eu { background-image: url("flag-icons/flags/4x3/eu.svg"); }   /* EUR */
+.fi-eu.fis { background-image: url("flag-icons/flags/1x1/eu.svg"); }
+
+.fi-gb { background-image: url("flag-icons/flags/4x3/gb.svg"); }   /* GBP */
+.fi-gb.fis { background-image: url("flag-icons/flags/1x1/gb.svg"); }
+
+.fi-jp { background-image: url("flag-icons/flags/4x3/jp.svg"); }   /* JPY */
+.fi-jp.fis { background-image: url("flag-icons/flags/1x1/jp.svg"); }
+
+.fi-ch { background-image: url("flag-icons/flags/4x3/ch.svg"); }   /* CHF */
+.fi-ch.fis { background-image: url("flag-icons/flags/1x1/ch.svg"); }
+
+.fi-kz { background-image: url("flag-icons/flags/4x3/kz.svg"); }   /* KZT */
+.fi-kz.fis { background-image: url("flag-icons/flags/1x1/kz.svg"); }
+
+.fi-cn { background-image: url("flag-icons/flags/4x3/cn.svg"); }   /* CNY */
+.fi-cn.fis { background-image: url("flag-icons/flags/1x1/cn.svg"); }
+
+.fi-tr { background-image: url("flag-icons/flags/4x3/tr.svg"); }   /* TRY */
+.fi-tr.fis { background-image: url("flag-icons/flags/1x1/tr.svg"); }
+
+.fi-kr { background-image: url("flag-icons/flags/4x3/kr.svg"); }   /* KRW */
+.fi-kr.fis { background-image: url("flag-icons/flags/1x1/kr.svg"); }
+
+.fi-ae { background-image: url("flag-icons/flags/4x3/ae.svg"); }   /* AED */
+.fi-ae.fis { background-image: url("flag-icons/flags/1x1/ae.svg"); }
+
+.fi-sa { background-image: url("flag-icons/flags/4x3/sa.svg"); }   /* SAR */
+.fi-sa.fis { background-image: url("flag-icons/flags/1x1/sa.svg"); }

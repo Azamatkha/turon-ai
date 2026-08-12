@@ -138,6 +138,8 @@ python-dotenv==1.2.2
     #   pydantic-settings
 python-multipart==0.0.26
     # via -r base.in
+qdrant-client
+    # via -r base.in
 redis==7.4.0
     # via -r base.in
 regex==2025.11.3

@@ -12,6 +12,8 @@ export const chat: ChatStrings = {
 
 export const chatStatic: ChatStaticStrings = {
   openSidebar: "Панелни очиш",
+  skipToContent: "Асосий қисмга ўтиш",
+  closeSidebar: "Панелни ёпиш",
   newChatTitle: "Янги суҳбат",
   search: "Қидириш",
   searchPlaceholder: "Суҳбатлардан қидириш…",
@@ -111,6 +113,8 @@ export const chatStatic: ChatStaticStrings = {
   calcUnitMonths: "ой",
   calcCurrency: "сўм",
   send: "Юбориш",
+  newLineHint: "Янги қатор учун Shift+Enter.",
+  messagesRegion: "Суҳбат хабарлари",
   stop: "Тўхтатиш",
   copy: "Нусхалаш",
   copied: "Нусхаланди",
@@ -130,7 +134,9 @@ export const chatStatic: ChatStaticStrings = {
   newPasswordPh: "Бўш қолдирсангиз — ўзгармайди",
   confirmNewPassword: "Паролни тасдиқланг",
   passwordMismatch: "Пароллар бир хил эмас",
-  taken: "Банд",
+  currentPassword: "Жорий парол",
+  currentPasswordPh: "Ҳозирги паролингиз",
+  currentPasswordRequired: "Жорий паролни киритинг",
   saved: "Сақланди",
   saveChanges: "Ўзгаришларни сақлаш",
   logOut: "Чиқиш",

@@ -1,163 +1,414 @@
-/* Manrope — asosiy shrift: zamonaviy, geometrik, ortiqcha bezaksiz. Kirill
-   alifbosini to'liq qo'llab-quvvatlaydi (uz_cyrl va rus tili uchun shart).
-   Tarmoq (proxy) uni yuklay olmasa, Windows'dagi Segoe UI ga tushadi, ya'ni
-   interfeys baribir to'g'ri ko'rinadi.
+/* ============================================================================
+   TURON AI — DIZAYN TIZIMI (design system)
+   ----------------------------------------------------------------------------
+   SHRIFT: Onest — zamonaviy, geometrik-gumanistik, ortiqcha bezaksiz.
+   Kirill alifbosini TO'LIQ qo'llab-quvvatlaydi (uz_cyrl va rus tili uchun shart)
+   va lotin diakritikasi ham to'liq (o', g', ʻ). Manrope'dan farqi: harflar
+   kengroq va "ochiq", uzun o'zbekcha so'zlar ("rasmiylashtirish",
+   "kapitalizatsiya") siqilib ketmaydi va 13-14px da ham aniq o'qiladi.
 
-   Eski variant (qaytarish kerak bo'lsa, quyidagini oching va Manrope'ni
-   yoping — font-family ro'yxatini ham almashtiring):
-   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+   Bank tarmog'i Google Fonts'ni bloklashi mumkin — shuning uchun fallback
+   zanjiri jiddiy: Segoe UI Variable (Win11) -> Segoe UI (Win10) -> system-ui.
+   Ularning barchasi ham kirill, ham lotinni biladi, ya'ni shrift yuklanmasa
+   ham interfeys buzilmaydi, faqat ko'rinishi biroz o'zgaradi.
 
-/* Global stillar + dizayndagi animatsiyalar (keyframes) */
-* {
+   RANGLAR: barcha ranglar SHU YERDA, CSS o'zgaruvchisi sifatida. .module.css
+   fayllari ham, JS (theme.ts) ham shu manbadan oladi — brend rangini
+   o'zgartirish uchun endi 30 ta faylni tahrirlash kerak emas.
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap');
+
+/* ============================================================================
+   1. RESET
+   ========================================================================= */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-/* Admin panel rang o'zgaruvchilari — light (default) va dark (<html class="dark">).
-   Dark palitra chat sahifasidagi theme.ts bilan bir xil (butun ilova bo'ylab izchil). */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* ============================================================================
+   2. DIZAYN TOKENLARI — LIGHT (standart)
+   ========================================================================= */
 :root {
-  --adm-bg: #F8FAFC;
-  --adm-card: #ffffff;
-  --adm-card-alt: #F8FAFC;
-  --adm-hover: #F1F5F9;
-  --adm-hover-2: #F1F5F9;
-  --adm-input-bg: #F8FAFC;
-  --adm-border: #E2E8F0;
-  --adm-border-2: #E2E8F0;
-  --adm-border-3: #F1F5F9;
-  --adm-border-input: #CBD5E1;
-  --adm-text-strong: #003978;
-  --adm-text-muted: #64748B;
-  --adm-text-muted-2: #0B5FA5;
-  --adm-text-body: #334155;
-  --adm-text-body-2: #475569;
-  --adm-text-chunk: #334155;
-  --adm-accent: #0B5FA5;
-  --adm-accent-2: #003978;
-  --adm-accent-light: #5FA3D6;
-  --adm-danger: #DC2626;
-  --adm-danger-bg: #FEF2F2;
-  --adm-danger-border: #FECACA;
-  --adm-success: #059669;
-  --adm-success-bg: rgba(5, 150, 105, 0.12);
-  /* "info" (Admin roli, xabarlar statistikasi) — dark'da yorqinlashadi */
-  --adm-info: #0B5FA5;
+  /* --- Brend ko'k shkalasi (50 = eng och, 950 = eng to'q) ---------------
+     Kuchaytirilgan palitra: oldingi ranglar "yuvilgan" ko'k edi, endi
+     to'yinganlik oshirildi — ekran proyektorda va arzon monitorlarda ham
+     ko'k ko'k bo'lib ko'rinadi, kulrangga aylanmaydi. */
+  --tu-blue-50: #EFF7FE;
+  --tu-blue-100: #D9EDFB;
+  --tu-blue-200: #B2D9F6;
+  --tu-blue-300: #7FBEEC;
+  --tu-blue-400: #439CDD;
+  --tu-blue-500: #1A7CC8;
+  --tu-blue-600: #0B5FA5;
+  --tu-blue-700: #094E8A;
+  --tu-blue-800: #04406F;
+  --tu-blue-900: #003978;
+  --tu-blue-950: #04213C;
+
+  /* --- Neytral (kulrang) shkalasi -------------------------------------- */
+  --tu-gray-50: #F8FAFC;
+  --tu-gray-100: #F1F5F9;
+  --tu-gray-200: #E2E8F0;
+  --tu-gray-300: #CBD5E1;
+  --tu-gray-400: #94A3B8;
+  --tu-gray-500: #64748B;
+  --tu-gray-600: #475569;
+  --tu-gray-700: #334155;
+  --tu-gray-800: #1E293B;
+  --tu-gray-900: #0F172A;
+
+  /* --- Holat ranglari (kuchaytirilgan) --------------------------------- */
+  --tu-success: #047857;
+  --tu-success-strong: #065F46;
+  --tu-success-bg: rgba(4, 120, 87, 0.12);
+  --tu-danger: #DC2626;
+  --tu-danger-strong: #B91C1C;
+  --tu-danger-bg: #FEF2F2;
+  --tu-danger-border: #FECACA;
+  --tu-warning: #B45309;
+  --tu-warning-bg: rgba(180, 83, 9, 0.12);
+
+  /* --- Semantik tokenlar (komponentlar SHULARDAN foydalanadi) ---------- */
+  --tu-brand: var(--tu-blue-900);          /* logotip, sidebar, sarlavha */
+  --tu-accent: var(--tu-blue-600);         /* asosiy interaktiv: CTA, havola */
+  --tu-accent-hover: var(--tu-blue-700);
+  --tu-accent-vivid: var(--tu-blue-500);   /* diqqat tortadigan yorqin ko'k */
+  --tu-accent-soft: var(--tu-blue-100);
+  --tu-on-accent: #ffffff;
+
+  --tu-bg: var(--tu-gray-50);
+  --tu-surface: #ffffff;
+  --tu-surface-alt: var(--tu-gray-50);
+  --tu-surface-hover: var(--tu-gray-100);
+
+  --tu-border: var(--tu-gray-200);
+  --tu-border-strong: var(--tu-gray-300);
+  --tu-border-subtle: var(--tu-gray-100);
+
+  --tu-text: var(--tu-gray-700);           /* asosiy matn */
+  --tu-text-strong: var(--tu-blue-900);    /* sarlavha */
+  --tu-text-muted: var(--tu-gray-500);     /* ikkilamchi */
+  --tu-text-faint: var(--tu-gray-400);     /* placeholder, disclaimer */
+
+  /* --- Tipografika shkalasi ------------------------------------------- */
+  --tu-font: 'Onest', 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --tu-font-mono: 'Cascadia Mono', 'Consolas', 'SF Mono', ui-monospace, monospace;
+
+  --tu-text-xs: 0.75rem;    /* 12px — yorliq, meta */
+  --tu-text-sm: 0.8125rem;  /* 13px — ikkilamchi */
+  --tu-text-base: 0.875rem; /* 14px — interfeys standarti */
+  --tu-text-md: 0.9375rem;  /* 15px — chat xabari */
+  --tu-text-lg: 1.125rem;   /* 18px — kichik sarlavha */
+  --tu-text-xl: 1.375rem;   /* 22px — sahifa sarlavhasi */
+  --tu-text-2xl: 1.75rem;   /* 28px — salomlashuv */
+
+  --tu-leading-tight: 1.25;
+  --tu-leading-normal: 1.5;
+  --tu-leading-relaxed: 1.7;  /* uzun o'zbekcha matn uchun */
+
+  /* --- Bo'shliq (spacing) — 4px asosida -------------------------------- */
+  --tu-space-1: 4px;
+  --tu-space-2: 8px;
+  --tu-space-3: 12px;
+  --tu-space-4: 16px;
+  --tu-space-5: 20px;
+  --tu-space-6: 24px;
+  --tu-space-8: 32px;
+  --tu-space-10: 40px;
+  --tu-space-12: 48px;
+
+  /* --- Burchak radiusi ------------------------------------------------- */
+  --tu-radius-sm: 6px;
+  --tu-radius: 10px;
+  --tu-radius-md: 14px;
+  --tu-radius-lg: 18px;
+  --tu-radius-xl: 24px;
+  --tu-radius-full: 999px;
+
+  /* --- Soyalar (minimalistik: yumshoq, kam qatlamli) ------------------- */
+  --tu-shadow-xs: 0 1px 2px rgba(4, 33, 60, 0.06);
+  --tu-shadow-sm: 0 2px 6px rgba(4, 33, 60, 0.07);
+  --tu-shadow: 0 4px 16px rgba(4, 33, 60, 0.09);
+  --tu-shadow-lg: 0 12px 32px rgba(4, 33, 60, 0.13);
+  --tu-shadow-xl: 0 24px 60px rgba(4, 33, 60, 0.18);
+
+  /* --- Harakat (motion) ------------------------------------------------ */
+  --tu-ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --tu-duration-fast: 120ms;
+  --tu-duration: 200ms;
+  --tu-duration-slow: 320ms;
+
+  /* --- Fokus halqasi (accessibility) ----------------------------------- */
+  --tu-focus-ring: var(--tu-blue-500);
+  --tu-focus-ring-offset: var(--tu-surface);
+
+  /* --- Layout o'lchamlari ---------------------------------------------- */
+  --tu-sidebar-w: 282px;
+  --tu-sidebar-collapsed-w: 72px;
+  --tu-header-h: 64px;
+
+  /* ==========================================================================
+     LEGACY: --adm-* o'zgaruvchilari.
+     Admin paneldagi 20+ CSS moduli shularni ishlatadi. Ularni o'chirmasdan,
+     yuqoridagi yangi tokenlarga BOG'LAB qo'yamiz — shunda eski kod ishlashda
+     davom etadi, lekin ranglar bitta manbadan boshqariladi.
+     ======================================================================= */
+  --adm-bg: var(--tu-bg);
+  --adm-card: var(--tu-surface);
+  --adm-card-alt: var(--tu-surface-alt);
+  --adm-hover: var(--tu-surface-hover);
+  --adm-hover-2: var(--tu-surface-hover);
+  --adm-input-bg: var(--tu-surface-alt);
+  --adm-border: var(--tu-border);
+  --adm-border-2: var(--tu-border);
+  --adm-border-3: var(--tu-border-subtle);
+  --adm-border-input: var(--tu-border-strong);
+  --adm-text-strong: var(--tu-text-strong);
+  --adm-text-muted: var(--tu-text-muted);
+  --adm-text-muted-2: var(--tu-accent);
+  --adm-text-body: var(--tu-text);
+  --adm-text-body-2: var(--tu-gray-600);
+  --adm-text-chunk: var(--tu-text);
+  --adm-accent: var(--tu-accent);
+  --adm-accent-2: var(--tu-brand);
+  --adm-accent-light: var(--tu-blue-300);
+  --adm-danger: var(--tu-danger);
+  --adm-danger-bg: var(--tu-danger-bg);
+  --adm-danger-border: var(--tu-danger-border);
+  --adm-success: var(--tu-success);
+  --adm-success-bg: var(--tu-success-bg);
+  --adm-info: var(--tu-accent);
   --adm-info-bg: rgba(11, 95, 165, 0.12);
   --adm-accent-bg: rgba(11, 95, 165, 0.12);
   --adm-accent-2-bg: rgba(11, 95, 165, 0.12);
-  --adm-sidebar: #003978;
-  /* Qidiruv maydoni — alohida rang. Ilgari --adm-hover ishlatilardi va u
-     dark rejimda kulrang-ko'kish (#153A62) bo'lib, "seriy" ko'rinardi. */
-  --adm-search-bg: #f1f5f9;
-  --adm-search-border: rgba(0, 57, 120, 0.14);
-  --adm-search-ph: #94A3B8;
+  --adm-sidebar: var(--tu-brand);
+  --adm-search-bg: var(--tu-gray-100);
+  --adm-search-border: rgba(0, 57, 120, 0.16);
+  --adm-search-ph: var(--tu-text-faint);
 }
 
+/* ============================================================================
+   3. DARK MAVZU
+   Faqat SEMANTIK tokenlar qayta e'lon qilinadi — shkalalar (blue-50..950)
+   o'zgarmaydi. Shuning uchun dark rejim qo'shish 20 qator, 200 emas.
+   ========================================================================= */
 html.dark {
-  --adm-bg: #061A31;
-  --adm-card: #0C2949;
-  --adm-card-alt: #08203A;
-  --adm-hover: #153A62;
-  --adm-hover-2: #153A62;
-  --adm-input-bg: #08203A;
-  --adm-border: rgba(255, 255, 255, 0.09);
-  --adm-border-2: rgba(255, 255, 255, 0.09);
-  --adm-border-3: rgba(255, 255, 255, 0.06);
-  --adm-border-input: rgba(255, 255, 255, 0.14);
-  --adm-text-strong: #E2E8F0;
-  --adm-text-muted: #94A3B8;
-  --adm-text-muted-2: #5FA3D6;
-  --adm-text-body: #CBD5E1;
-  --adm-text-body-2: #CBD5E1;
-  --adm-text-chunk: #E2E8F0;
-  --adm-accent: #5FA3D6;
-  --adm-accent-2: #5FA3D6;
-  --adm-accent-light: #5FA3D6;
-  --adm-danger: #F87171;
-  --adm-danger-bg: rgba(248, 113, 113, 0.14);
-  --adm-danger-border: rgba(248, 113, 113, 0.35);
-  --adm-success: #34D399;
-  --adm-success-bg: rgba(52, 211, 153, 0.16);
-  /* Qorong'u fonda o'qilishi uchun yorqinroq ko'k */
-  --adm-info: #3FA0D8;
-  --adm-info-bg: rgba(63, 160, 216, 0.16);
-  --adm-accent-bg: rgba(95, 163, 214, 0.16);
-  --adm-accent-2-bg: rgba(95, 163, 214, 0.16);
+  --tu-bg: #061A31;
+  --tu-surface: #0C2949;
+  --tu-surface-alt: #08203A;
+  --tu-surface-hover: #153A62;
+
+  --tu-border: rgba(255, 255, 255, 0.10);
+  --tu-border-strong: rgba(255, 255, 255, 0.16);
+  --tu-border-subtle: rgba(255, 255, 255, 0.06);
+
+  --tu-text: var(--tu-gray-300);
+  --tu-text-strong: var(--tu-gray-200);
+  --tu-text-muted: var(--tu-gray-400);
+  --tu-text-faint: var(--tu-gray-500);
+
+  /* Qorong'u fonda to'q ko'k o'qilmaydi — aksent yorqinlashadi.
+     #63B3F0 qora-ko'k fonda 7:1 dan yuqori kontrast beradi (WCAG AAA). */
+  --tu-brand: #63B3F0;
+  --tu-accent: #63B3F0;
+  --tu-accent-hover: #8CC8F5;
+  --tu-accent-vivid: #8CC8F5;
+  --tu-accent-soft: rgba(99, 179, 240, 0.16);
+  --tu-on-accent: #04213C;
+
+  --tu-success: #34D399;
+  --tu-success-strong: #6EE7B7;
+  --tu-success-bg: rgba(52, 211, 153, 0.16);
+  --tu-danger: #FB7185;
+  --tu-danger-strong: #FDA4AF;
+  --tu-danger-bg: rgba(251, 113, 133, 0.14);
+  --tu-danger-border: rgba(251, 113, 133, 0.36);
+  --tu-warning: #FBBF24;
+  --tu-warning-bg: rgba(251, 191, 36, 0.14);
+
+  --tu-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --tu-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.34);
+  --tu-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --tu-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.48);
+  --tu-shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.56);
+
+  --tu-focus-ring: #8CC8F5;
+  --tu-focus-ring-offset: var(--tu-surface);
+
+  /* Legacy --adm-* dark qiymatlari */
+  --adm-text-muted-2: var(--tu-accent);
+  --adm-accent-2: var(--tu-accent);
+  --adm-accent-light: var(--tu-accent);
+  --adm-text-body-2: var(--tu-gray-300);
+  --adm-text-chunk: var(--tu-gray-200);
+  --adm-info: #63B3F0;
+  --adm-info-bg: rgba(99, 179, 240, 0.16);
+  --adm-accent-bg: rgba(99, 179, 240, 0.16);
+  --adm-accent-2-bg: rgba(99, 179, 240, 0.16);
   --adm-sidebar: #04162C;
-  /* Chuqurroq navy — kulrangdan yiroq, ramkasi biroz ko'kish */
   --adm-search-bg: #08203A;
-  --adm-search-border: rgba(95, 163, 214, 0.22);
-  --adm-search-ph: #94A3B8;
+  --adm-search-border: rgba(99, 179, 240, 0.24);
+  --adm-search-ph: var(--tu-gray-400);
 }
 
-/* Light/Dark mavzu almashganda silliq o'tish (inline stillarga ham ta'sir qiladi) */
+/* ============================================================================
+   4. ASOSIY ELEMENTLAR
+   ========================================================================= */
+body {
+  font-family: var(--tu-font);
+  font-size: var(--tu-text-base);
+  line-height: var(--tu-leading-normal);
+  color: var(--tu-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Jadval va kurs raqamlari ustma-ust tekis tursin */
+  font-variant-numeric: tabular-nums;
+  /* Mobil brauzerda gorizontal "sizib chiqish"ni to'sadi */
+  overflow-x: hidden;
+}
+
+input,
+textarea,
+button,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Mobil Safari sahifani zumlab yubormasligi uchun forma matni >= 16px.
+   Faqat mobil kenglikda — desktopda 14px ixchamroq ko'rinadi. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Mavzu almashganda silliq o'tish.
+   ILGARI: `body, body *` — DOM'dagi HAR BIR element uchun transition, ya'ni
+   200 qatorli jadvalda 200 ta animatsiya. Endi faqat mavzuga bog'liq
+   xossalar va faqat "qatlam" elementlarida. */
 body,
-body * {
-  transition: background-color 0.28s ease, color 0.22s ease, border-color 0.28s ease;
+[class*='card'],
+[class*='panel'],
+[class*='surface'],
+[class*='sidebar'],
+[class*='modal'],
+[class*='header'],
+input,
+textarea,
+select {
+  transition:
+    background-color var(--tu-duration-slow) var(--tu-ease),
+    color var(--tu-duration) var(--tu-ease),
+    border-color var(--tu-duration-slow) var(--tu-ease);
 }
 
-/* Chiroyli hover tooltip (default brauzer title o'rniga) — data-tip="..." qo'ying */
-[data-tip] {
-  position: relative;
+/* Brauzer avtomatik to'ldirgan maydon.
+   ILGARI: fon qattiq #fff, matn #003978 — dark rejimda oq plita bo'lib qolardi.
+   Endi mavzu tokenlariga bog'langan. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 40px var(--tu-surface) inset;
+  box-shadow: 0 0 0 40px var(--tu-surface) inset;
+  -webkit-text-fill-color: var(--tu-text-strong);
+  caret-color: var(--tu-text-strong);
 }
-[data-tip]::after {
-  content: attr(data-tip);
+
+/* ============================================================================
+   5. FOKUS — ACCESSIBILITY (WCAG 2.4.7 Focus Visible)
+   ----------------------------------------------------------------------------
+   Ilgari butun loyihada fokus stili YO'Q edi (ba'zi joyda `outline: none`).
+   Klaviatura bilan yuradigan foydalanuvchi qayerda turganini ko'rmasdi.
+
+   `:focus-visible` ishlatiladi — sichqoncha bilan bosganda halqa CHIQMAYDI,
+   faqat Tab bilan kelganda chiqadi. Ya'ni dizayn buzilmaydi, lekin
+   klaviatura foydalanuvchisi yo'lini ko'radi.
+   ========================================================================= */
+:focus-visible {
+  outline: 2px solid var(--tu-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--tu-radius-sm);
+}
+
+/* Fon to'q bo'lgan joyda (sidebar) halqa oq — ko'k ko'kda ko'rinmaydi */
+[data-surface='dark'] :focus-visible,
+aside :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Eski `outline: none` yozilgan joylarni bosib o'tamiz — fokus HAR DOIM
+   ko'rinishi kerak, bu muhokama qilinmaydi. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--tu-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   6. YORDAMCHI KLASSLAR (accessibility utilities)
+   ========================================================================= */
+
+/* Faqat ekran o'quvchisi uchun — ko'zga ko'rinmaydi, lekin o'qiladi.
+   `display: none` EMAS: u ekran o'quvchisidan ham yashiradi. */
+.sr-only {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-4px);
-  background: #0C2949;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  font-size: 12px;
-  font-weight: 500;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
-  padding: 5px 9px;
-  border-radius: 7px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  z-index: 200;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.32);
-}
-[data-tip]:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-/* Dark rejimda tooltip teskari ranglarda (och fon, to'q matn) — <html class="dark"> */
-html.dark [data-tip]::after {
-  background: #E2E8F0;
-  color: #003978;
-  border-color: rgba(0, 57, 120, 0.14);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  border: 0;
 }
 
-/* Chekka (edge)ga yopishgan elementlar uchun — tooltip konteynerdan chiqib
-   ketmasligi (gorizontal scroll/kesilish) uchun o'ngga qarab ochiladi */
-[data-tip].tip-right::after {
-  top: 50%;
-  left: calc(100% + 10px);
-  transform: translateY(-50%) translateX(-4px);
+/* "Asosiy qismga o'tish" havolasi — Tab bosilganda birinchi bo'lib chiqadi,
+   klaviatura foydalanuvchisi sidebar'dagi 30 ta suhbatni bosib o'tmasligi uchun */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--tu-space-4);
+  z-index: 9999;
+  padding: var(--tu-space-3) var(--tu-space-5);
+  background: var(--tu-accent);
+  color: var(--tu-on-accent);
+  font-weight: 600;
+  border-radius: var(--tu-radius);
+  box-shadow: var(--tu-shadow-lg);
+  text-decoration: none;
+  transition: top var(--tu-duration) var(--tu-ease);
 }
-[data-tip].tip-right:hover::after {
-  transform: translateY(-50%) translateX(0);
-}
-
-/* Konteynerning o'ng chekkasidagi elementlar uchun — tooltip faqat chapga
-   qarab ochiladi, o'ng chetdan tashqariga chiqmaydi */
-[data-tip].tip-end::after {
-  left: auto;
-  right: 0;
-  transform: translateY(-4px);
-}
-[data-tip].tip-end:hover::after {
-  transform: translateY(0);
+.skip-link:focus {
+  top: var(--tu-space-4);
 }
 
-/* Chiroyli scrollbar (default brauzer scrollbar o'rniga) */
+/* ============================================================================
+   7. SCROLLBAR — bitta joyda (ilgari ikkita zid qoida bor edi)
+   ========================================================================= */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(11, 95, 165, 0.45) transparent;
+  scrollbar-color: var(--tu-border-strong) transparent;
 }
 *::-webkit-scrollbar {
   width: 10px;
@@ -167,83 +418,119 @@ html.dark [data-tip]::after {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(11, 95, 165, 0.4);
-  border-radius: 8px;
+  background: rgba(11, 95, 165, 0.32);
+  border-radius: var(--tu-radius-full);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(11, 95, 165, 0.7);
+  background: rgba(11, 95, 165, 0.6);
   background-clip: content-box;
-}html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
 }
-/* Eski shrift (qaytarish uchun): 'Inter', 'Segoe UI', system-ui, sans-serif */
-body {
-  font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  /* Manrope'da raqamlar biroz tor — jadval va kurs raqamlari ustma-ust
-     tekis tursin uchun bir xil kenglikdagi (tabular) raqamlar. */
-  font-variant-numeric: tabular-nums;
+html.dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  background-clip: content-box;
 }
-input,
-textarea,
-button {
-  font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
-}
-input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 40px #fff inset;
-  -webkit-text-fill-color: #003978;
+html.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+  background-clip: content-box;
 }
 
-/* --- Dizaynda ishlatilgan animatsiyalar --- */
+/* ============================================================================
+   8. TOOLTIP — data-tip="..."
+   Klaviatura fokusida ham chiqadi (:focus-visible), sichqonchasiz
+   foydalanuvchi ham ko'radi. Ekran o'quvchisi uchun esa YONIDA aria-label
+   bo'lishi shart — tooltip CSS ::after bo'lgani uchun u o'qilmaydi.
+   ========================================================================= */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: var(--tu-gray-900);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: var(--tu-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  padding: 5px 9px;
+  border-radius: var(--tu-radius-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--tu-duration-fast) ease, transform var(--tu-duration-fast) ease;
+  z-index: 200;
+  box-shadow: var(--tu-shadow-lg);
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+html.dark [data-tip]::after {
+  background: var(--tu-gray-200);
+  color: var(--tu-blue-950);
+  border-color: rgba(0, 57, 120, 0.14);
+}
+
+/* Chekkaga yopishgan elementlar — tooltip o'ngga ochiladi */
+[data-tip].tip-right::after {
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px);
+}
+[data-tip].tip-right:hover::after,
+[data-tip].tip-right:focus-visible::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Konteynerning o'ng chekkasidagilar — faqat chapga ochiladi */
+[data-tip].tip-end::after {
+  left: auto;
+  right: 0;
+  transform: translateY(-4px);
+}
+[data-tip].tip-end:hover::after,
+[data-tip].tip-end:focus-visible::after {
+  transform: translateY(0);
+}
+
+/* Tor ekranda tooltip foydadan ko'ra zarar: barmoq bilan "hover" yo'q,
+   lekin uzun matn ekrandan chiqib ketadi. */
+@media (max-width: 767px) {
+  [data-tip]::after {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   9. ANIMATSIYALAR
+   ========================================================================= */
 @keyframes floaty {
-  0%, 100% { 
-    transform: translateY(0); 
-  }
-  50% { 
-    transform: translateY(-10px); 
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 @keyframes spin {
-  to { 
-    transform: rotate(360deg); 
-  }
+  to { transform: rotate(360deg); }
 }
 @keyframes riseIn {
-  from { 
-    opacity: 0;
-    transform: translateY(16px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: none; 
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes blobA {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1); 
-  }
-  50% { 
-    transform: translate(40px, -30px) scale(1.15); 
-  }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.15); }
 }
 @keyframes blobB {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1); 
-  }
-  50% { 
-    transform: translate(-30px, 40px) scale(1.2); 
-  }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, 40px) scale(1.2); }
 }
 @keyframes shake {
-  10%, 90% { 
-    transform: translateX(-2px); 
-  }
+  10%, 90% { transform: translateX(-2px); }
   30%, 70% { transform: translateX(4px); }
   50% { transform: translateX(-5px); }
 }
@@ -257,27 +544,6 @@ input:-webkit-autofill {
 }
 @keyframes dot {
   0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; }
-  40% { transform: scale(1); opacity: 1; }
-}
-
-/* Bot javobini kutish — "yozyapti" animatsiyasi (TypingIndicator komponenti).
-   Global klass (CSS-module emas) — keyframe nomi hech qachon o'zgarmaydi. */
-.tu-typing {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.tu-typing > span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: tu-typing-bounce 1.2s infinite ease-in-out both;
-}
-.tu-typing > span:nth-child(1) { animation-delay: -0.32s; }
-.tu-typing > span:nth-child(2) { animation-delay: -0.16s; }
-@keyframes tu-typing-bounce {
-  0%, 80%, 100% { transform: scale(0.5); opacity: 0.35; }
   40% { transform: scale(1); opacity: 1; }
 }
 @keyframes fadeIn {
@@ -297,22 +563,32 @@ input:-webkit-autofill {
   50% { transform: translateY(12px) rotate(2deg); }
 }
 
-/* Chiroyli skroll (chat tarixi/xabarlar uchun) */
-::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 57, 120, 0.16);
-  border-radius: 99px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+/* Bot javobini kutish — "yozyapti" animatsiyasi (TypingIndicator).
+   Global klass (CSS-module emas) — keyframe nomi hech qachon o'zgarmaydi. */
+.tu-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 57, 120, 0.28);
-  background-clip: padding-box;
+.tu-typing > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: tu-typing-bounce 1.2s infinite ease-in-out both;
+}
+.tu-typing > span:nth-child(1) { animation-delay: -0.32s; }
+.tu-typing > span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes tu-typing-bounce {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.35; }
+  40% { transform: scale(1); opacity: 1; }
 }
 
-/* Foydalanuvchi OS darajasida harakatni kamaytirishni so'ragan bo'lsa —
-   barcha CSS animatsiya/o'tishlarni (shu jumladan har bir .module.css'dagilarni
-   ham) deyarli darhol yakunlaymiz. Bitta joyda turib butun ilovaga ta'sir qiladi. */
+/* ============================================================================
+   10. HARAKATNI KAMAYTIRISH
+   Foydalanuvchi OS darajasida so'ragan bo'lsa — barcha animatsiya/o'tishlarni
+   (shu jumladan har bir .module.css'dagilarni ham) deyarli darhol yakunlaymiz.
+   ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -321,5 +597,23 @@ input:-webkit-autofill {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   11. YUQORI KONTRAST REJIMI
+   Windows'da "High contrast" yoqilgan foydalanuvchilar uchun — chegaralar
+   shaffof rangdan qat'iy rangga o'tadi.
+   ========================================================================= */
+@media (prefers-contrast: more) {
+  :root {
+    --tu-border: var(--tu-gray-400);
+    --tu-border-strong: var(--tu-gray-600);
+    --tu-text-muted: var(--tu-gray-600);
+    --tu-text-faint: var(--tu-gray-500);
+  }
+  html.dark {
+    --tu-border: rgba(255, 255, 255, 0.3);
+    --tu-border-strong: rgba(255, 255, 255, 0.45);
   }
 }

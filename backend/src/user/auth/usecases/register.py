@@ -7,32 +7,31 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceAlreadyExistsException
 from src.core.utils.security import hash_password
 from src.user.auth.schemas import CreateUserModel
+from src.user.constants import build_email, split_full_name
 from src.user.schemas import UserProfileViewModel
 
 logger = get_logger(__name__)
 
 
 class RegisterUseCase:
-    EMAIL_DOMAIN = "turonbank.uz"
-
     def __init__(self,uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
         self.uow = uow
 
     async def execute(self, data: CreateUserModel) -> UserProfileViewModel:
         async with self.uow as uow:
-            existing = await uow.users.get_single(uow.session, username=data.username)
+            existing = await uow.users.get_single(
+                uow.session, username=data.username, is_deleted=False
+            )
             if existing:
                 raise InstanceAlreadyExistsException("Bu login allaqachon band")
 
-            parts = data.full_name.strip().split(maxsplit=1)
-            first_name = parts[0]
-            last_name = parts[1] if len(parts) > 1 else ""
+            first_name, last_name = split_full_name(data.full_name)
             user_data = {
                 "first_name": first_name,
                 "last_name": last_name,
                 "username": data.username,
                 "department": data.department,
-                "email": f"{data.username}@{self.EMAIL_DOMAIN}",
+                "email": build_email(data.username),
                 "phone_number": None,
                 "password_hash": hash_password(data.password),
                 "is_verified": True,

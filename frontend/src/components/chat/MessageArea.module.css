@@ -459,3 +459,84 @@
     transform: none;
   }
 }
+/* ============================================================================
+   RESPONSIVE
+   ----------------------------------------------------------------------------
+   Ilgari bu faylda @media umuman yo'q edi. Muammolar:
+   - `.thread { max-width: min(960px, 86%) }` — 375px telefonda oqim 322px
+     bo'lib qolardi, ya'ni ikki yonida 26px'dan behuda joy;
+   - `.bubbleUser { max-width: 76% }` — tor ekranda qisqa savol ham
+     ikki-uch qatorga bo'linib ketardi;
+   - `.greeting { font-size: 27px }` — telefonda uch qatorga tushardi.
+   ========================================================================= */
+
+/* Planshet / kichik noutbuk */
+@media (max-width: 900px) {
+  .thread {
+    max-width: 100%;
+    padding: 20px 16px 12px;
+    gap: 16px;
+  }
+
+  .bubbleUser {
+    max-width: 88%;
+  }
+}
+
+/* Telefon */
+@media (max-width: 560px) {
+  .thread {
+    padding: 14px 12px 10px;
+    gap: 14px;
+  }
+
+  .messageRow,
+  .typingRow {
+    /* Avatar + bulutcha orasidagi masofa qisqaradi — matn uchun joy qoladi */
+    gap: 8px;
+  }
+
+  .bubbleUser {
+    max-width: 92%;
+    padding: 10px 13px;
+  }
+
+  .bubble {
+    padding: 11px 13px;
+  }
+
+  .emptyState {
+    padding: 20px 16px;
+    /* Markazga tekislash o'rniga tepadan — klaviatura ochilganda
+       salomlashuv ekrandan chiqib ketmasin */
+    justify-content: flex-start;
+    padding-top: 12vh;
+  }
+
+  .suggestions {
+    /* Tor ekranda chiplar bir ustunda — yonma-yon turganda har biri
+       ikki so'zga bo'linib, o'qish qiyinlashadi */
+    flex-direction: column;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .suggestionChip {
+    width: 100%;
+  }
+
+  .subtext {
+    margin-bottom: 22px;
+  }
+}
+
+/* Salomlashuv va izoh — ekran kengligiga qarab silliq o'zgaradi
+   (breakpoint'da "sakramaydi") */
+.greeting {
+  font-size: clamp(1.25rem, 0.95rem + 1.6vw, 1.6875rem);
+  line-height: 1.25;
+}
+
+.subtext {
+  font-size: clamp(0.875rem, 0.82rem + 0.28vw, 0.9375rem);
+}

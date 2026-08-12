@@ -196,3 +196,64 @@
 .blobBottom {
   animation: blobB 18s ease-in-out infinite;
 }
+
+/* =====================
+   Responsive
+   =====================
+   Ilgari bu faylda @media umuman yo'q edi. Telefonda brend paneli to'liq
+   balandlikda chiqib, login formasi ekrandan pastga tushib ketardi —
+   foydalanuvchi kirish uchun avval scroll qilishi kerak edi. */
+
+/* Planshet — panel gorizontal "kepka"ga aylanadi */
+@media (max-width: 860px) {
+  .panel {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tu-space-4);
+    padding: var(--tu-space-5) var(--tu-space-6);
+  }
+
+  .headline {
+    font-size: 1.125rem;
+    margin-bottom: 4px;
+    max-width: none;
+  }
+
+  /* Tor joyda tavsif va SSO qatori ortiqcha shovqin — olib tashlanadi.
+     Ma'lumot yo'qolmaydi: ular sof marketing matni. */
+  .subtext,
+  .ssoRow,
+  .deco1,
+  .deco2,
+  .deco3 {
+    display: none;
+  }
+
+  .headlineBlock {
+    text-align: right;
+  }
+}
+
+/* Telefon — faqat logotip va yorliq qoladi */
+@media (max-width: 560px) {
+  .panel {
+    padding: var(--tu-space-4) var(--tu-space-5);
+  }
+
+  .headline,
+  .badge {
+    display: none;
+  }
+
+  .logoText {
+    font-size: 1rem;
+  }
+
+  /* Kichik ekranda katta blob'lar faqat GPU yeydi — o'chiriladi */
+  .blobTop,
+  .blobBottom {
+    display: none;
+  }
+}

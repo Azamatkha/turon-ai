@@ -34,16 +34,20 @@ class LoginUserUseCase:
     Validations:
     - User must exist.
     - Password must be correct.
-    - User must be verified.
     - User must be active (not blocked).
 
+    NOTE on e-mail verification: the template this project started from also
+    required ``is_verified`` here. Turon-AI has NO e-mail verification — staff
+    accounts are created by an admin, so registration sets ``is_verified=True``
+    and this check was removed ON PURPOSE. The docstring used to still list it,
+    which made the code look broken; it does not.
+
     Workflow:
-    1) Retrieve user by email.
+    1) Retrieve user by username.
     2) Verify password (using dummy hash if user not found to prevent timing attacks).
-    3) Check if user is verified.
-    4) Check if user is active.
-    5) Rehash and persist the password if needed.
-    6) Generate access and refresh tokens.
+    3) Check if user is active.
+    4) Rehash and persist the password if needed.
+    5) Generate access and refresh tokens.
 
     Side effects:
     - Persists password hash updates when rehashing is required.

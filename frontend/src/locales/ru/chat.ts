@@ -11,6 +11,8 @@ export const chat: ChatStrings = {
 
 export const chatStatic: ChatStaticStrings = {
   openSidebar: "Открыть панель",
+  skipToContent: "Перейти к основному содержимому",
+  closeSidebar: "Закрыть панель",
   newChatTitle: "Новый чат",
   search: "Поиск",
   searchPlaceholder: "Поиск по чатам…",
@@ -110,6 +112,8 @@ export const chatStatic: ChatStaticStrings = {
   calcUnitMonths: "мес.",
   calcCurrency: "сум",
   send: "Отправить",
+  newLineHint: "Новая строка — Shift+Enter.",
+  messagesRegion: "Сообщения чата",
   stop: "Остановить",
   copy: "Копировать",
   copied: "Скопировано",
@@ -129,7 +133,9 @@ export const chatStatic: ChatStaticStrings = {
   newPasswordPh: "Оставьте пустым — не изменится",
   confirmNewPassword: "Подтвердите пароль",
   passwordMismatch: "Пароли не совпадают",
-  taken: "Занято",
+  currentPassword: "Текущий пароль",
+  currentPasswordPh: "Ваш текущий пароль",
+  currentPasswordRequired: "Введите текущий пароль",
   saved: "Сохранено",
   saveChanges: "Сохранить изменения",
   logOut: "Выход",

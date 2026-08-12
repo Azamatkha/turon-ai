@@ -23,16 +23,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
+from loggers import get_logger
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
+from src.core.limiter.depends import RateLimiter
 from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.rates_scraper import RATES_TITLE
 from src.knowledge.schemas import AnswerResult, QuestionRequest, RatesResult
 from src.knowledge.usecases import AnswerQuestionUseCase
-from src.user.auth.dependencies import get_current_user
+from src.user.auth.dependencies import get_current_user, get_user_id_from_token
 from src.user.models import User
 from src.chat.schemas import (
     AddMessageModel,
@@ -70,9 +72,35 @@ from src.chat.usecases import (
 )
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
-@router.post("/title", response_model=GenerateTitleResult)
+# ── LLM endpointlari uchun tezlik cheklovi ────────────────────────────────
+# NEGA KERAK: /ask va /ask/stream — ilovadagi ENG QIMMAT endpointlar, chunki
+# ular Ollama'da inference ishga tushiradi. Ilgari ular faqat `get_current_user`
+# bilan himoyalangan edi, ya'ni cheklov umuman yo'q edi: bitta xodim (yoki
+# o'g'irlangan token) skript bilan sekundiga o'nlab savol yuborsa, model
+# navbatiga to'lib qolardi va BUTUN BANK uchun chat javob bermay qolardi.
+#
+# NEGA IP EMAS, USER_ID: bank ichida hamma bitta tashqi IP (NAT) ortida
+# o'tiradi — IP bo'yicha cheklov bitta faol foydalanuvchi tufayli butun
+# ofisni bloklab qo'yardi. `get_user_id_from_token` har bir xodimni alohida
+# hisoblaydi.
+#
+# LIMIT: 20/daqiqa — tirik odam uchun bemalol yetadi (o'rtacha savol-javob
+# 20-40 soniya), skript uchun esa sezilarli to'siq.
+ASK_RATE_LIMIT = RateLimiter(times=20, minutes=1, identifier=get_user_id_from_token)
+
+# Sarlavha yaratish ham LLM chaqiradi, lekin arzonroq (32 token) va har bir
+# yangi suhbatda bir marta ishlaydi — limit bo'shroq.
+TITLE_RATE_LIMIT = RateLimiter(times=30, minutes=1, identifier=get_user_id_from_token)
+
+
+@router.post(
+    "/title",
+    response_model=GenerateTitleResult,
+    dependencies=[Depends(TITLE_RATE_LIMIT)],
+)
 async def generate_title(
     data: GenerateTitleRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -196,7 +224,11 @@ async def vote_message(
     )
 
 
-@router.post("/ask", response_model=AnswerResult)
+@router.post(
+    "/ask",
+    response_model=AnswerResult,
+    dependencies=[Depends(ASK_RATE_LIMIT)],
+)
 async def ask(
     data: QuestionRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -211,7 +243,7 @@ async def ask(
     return await use_case.execute(question=data.question, history=data.history)
 
 
-@router.post("/ask/stream")
+@router.post("/ask/stream", dependencies=[Depends(ASK_RATE_LIMIT)])
 async def ask_stream(
     data: QuestionRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -231,8 +263,25 @@ async def ask_stream(
                 question=data.question, history=data.history
             ):
                 yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
-        except Exception as exc:  # noqa: BLE001 - oqim uzilsa, xatoni klientga yuboramiz
-            payload = {"type": "error", "message": str(exc)}
+        except Exception:  # noqa: BLE001 - oqim uzilsa, klientga xabar beramiz
+            # Xatoning O'ZI faqat log'ga tushadi.
+            #
+            # ILGARI klientga `str(exc)` yuborilardi. Bu xavfli: xom xato matni
+            # ichida ichki xost nomi, port, Qdrant/Ollama manzili yoki DSN
+            # bo'lagi bo'lishi mumkin — ya'ni ichki infratuzilma xaritasi
+            # brauzer konsoliga chiqib ketardi.
+            #
+            # Foydalanuvchiga esa u baribir foydasiz edi: "ConnectionError:
+            # [Errno 111]" xodimga hech narsa aytmaydi. Endi tushunarli
+            # o'zbekcha matn boradi.
+            logger.exception("Javob oqimi uzildi: %r", data.question[:200])
+            payload = {
+                "type": "error",
+                "message": (
+                    "Javob olishda xatolik yuz berdi. Bir oz kutib, qayta "
+                    "urinib ko'ring."
+                ),
+            }
             yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(

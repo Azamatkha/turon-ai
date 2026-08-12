@@ -14,6 +14,8 @@ export const chat: ChatStrings = {
 // Bular ilgari ham doim o'zbekcha bo'lgan — shu holatni saqlab qolamiz.
 export const chatStatic: ChatStaticStrings = {
   openSidebar: "Panelni ochish",
+  skipToContent: "Asosiy qismga o'tish",
+  closeSidebar: "Panelni yopish",
   newChatTitle: "Yangi suhbat",
   search: "Qidirish",
   searchPlaceholder: "Suhbatlardan qidirish…",
@@ -113,6 +115,8 @@ export const chatStatic: ChatStaticStrings = {
   calcUnitMonths: "oy",
   calcCurrency: "so‘m",
   send: "Yuborish",
+  newLineHint: "Yangi qator uchun Shift+Enter.",
+  messagesRegion: "Suhbat xabarlari",
   stop: "To‘xtatish",
   copy: "Nusxalash",
   copied: "Nusxalandi",
@@ -132,7 +136,9 @@ export const chatStatic: ChatStaticStrings = {
   newPasswordPh: "Bo‘sh qoldirsangiz — o‘zgarmaydi",
   confirmNewPassword: "Parolni tasdiqlang",
   passwordMismatch: "Parollar bir xil emas",
-  taken: "Band",
+  currentPassword: "Joriy parol",
+  currentPasswordPh: "Hozirgi parolingiz",
+  currentPasswordRequired: "Joriy parolni kiriting",
   saved: "Saqlandi",
   saveChanges: "O‘zgarishlarni saqlash",
   logOut: "Chiqish",

@@ -40,9 +40,13 @@ export interface ChatStrings {
   greeting: (name: string) => string;
 }
 
-// Chat interfeysining tilга bog'liq statik matnlari (til almashtirgichga ulanadi)
+// Chat interfeysining tilga bog'liq statik matnlari (til almashtirgichga ulanadi)
 export interface ChatStaticStrings {
   openSidebar: string;
+  // Klaviatura bilan yuradiganlar uchun "asosiy qismga o'tish" havolasi va
+  // tor ekrandagi drawer'ni yopish tugmasi (faqat ekran o'quvchisi o'qiydi)
+  skipToContent: string;
+  closeSidebar: string;
   newChatTitle: string;
   search: string;
   searchPlaceholder: string;
@@ -146,6 +150,10 @@ export interface ChatStaticStrings {
   calcUnitMonths: string;
   calcCurrency: string;
   send: string;
+  // Faqat ekran o'quvchisi uchun: yangi qator qanday qo'shiladi
+  newLineHint: string;
+  // Xabarlar oqimi (aria-label) — ekran o'quvchisi shu nom bilan e'lon qiladi
+  messagesRegion: string;
   stop: string;
   copy: string;
   copied: string;
@@ -165,7 +173,10 @@ export interface ChatStaticStrings {
   newPasswordPh: string;
   confirmNewPassword: string;
   passwordMismatch: string;
-  taken: string;
+  // Parolni o'zgartirish uchun JORIY parol ham kerak (o'g'irlangan tokendan himoya)
+  currentPassword: string;
+  currentPasswordPh: string;
+  currentPasswordRequired: string;
   saved: string;
   saveChanges: string;
   logOut: string;

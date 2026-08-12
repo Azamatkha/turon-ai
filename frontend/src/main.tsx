@@ -2,7 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import "./index.css";
-import "flag-icons/css/flag-icons.min.css";
+// Butun flag-icons paketi EMAS — faqat ilovada ishlatiladigan 13 ta bayroq.
+// Sabab va yangi bayroq qo'shish tartibi: styles/flags.css boshidagi izoh.
+import "./styles/flags.css";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import LoginPage from "./pages/LoginPage";
 import ChatPage from "./pages/ChatPage";

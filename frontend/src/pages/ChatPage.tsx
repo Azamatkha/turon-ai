@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useChatHistory } from "../hooks/useChatHistory";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { TAKEN_USERNAMES } from "../services/seedData";
-import { fetchMe, logout, changePassword } from "../services/authService";
+import { fetchMe, logout, changePassword, updateProfile } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
-import GradientWaves from "../components/GradientWaves";
-import DotField from "../components/DotField";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import ChatHeader from "../components/chat/ChatHeader";
@@ -27,7 +25,11 @@ export default function ChatPage() {
     draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, editAndResend, voteMsg,
   } = useChatHistory(T.newChat);
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Tor ekranda sidebar kontent USTIGA suriladigan panel (drawer) bo'ladi va
+  // sukut bo'yicha YOPIQ turadi — aks holda telefonda birinchi ko'rinadigan
+  // narsa chat emas, suhbatlar ro'yxati bo'lardi.
+  const isNarrow = useMediaQuery("(max-width: 900px)");
+  const [sidebarOpen, setSidebarOpen] = useState(() => !window.matchMedia("(max-width: 900px)").matches);
   const [search, setSearch] = useState("");
   const { theme, toggleTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -37,9 +39,11 @@ export default function ChatPage() {
   const [role, setRole] = useState("user");
   const [pFullName, setPFullName] = useState("");
   const [pUsername, setPUsername] = useState("");
+  const [pCurrentPassword, setPCurrentPassword] = useState("");
   const [pPassword, setPPassword] = useState("");
   const [pConfirmPassword, setPConfirmPassword] = useState("");
   const [pError, setPError] = useState("");
+  const [pSaving, setPSaving] = useState(false);
 
   // Haqiqiy foydalanuvchini backenddan olamiz (login token bilan)
   useEffect(() => {
@@ -75,16 +79,59 @@ export default function ChatPage() {
     navigate("/login");
   };
 
-  // Xabarlar o'zgarganda pastga skroll
+  // Ekran torayganda drawer'ni yopamiz, kengayganda qaytaramiz — foydalanuvchi
+  // oynani cho'zganda sidebar "osilib" qolmasligi uchun.
+  useEffect(() => {
+    setSidebarOpen(!isNarrow);
+  }, [isNarrow]);
+
+  // Drawer ochiq bo'lsa Esc uni yopadi (klaviatura bilan ishlaydiganlar uchun)
+  useEffect(() => {
+    if (!isNarrow || !sidebarOpen) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [isNarrow, sidebarOpen]);
+
+  // Xabarlar o'zgarganda pastga skroll.
+  //
+  // ILGARI: `chats` HAR QANDAY o'zgarishida shartsiz pastga sakrardi —
+  // foydalanuvchi eski xabarni o'qiyotgan bo'lsa ham tortib tushirardi.
+  // ENDI: faqat foydalanuvchi allaqachon pastga yaqin turgan bo'lsa
+  // (yoki bot javob yozayotgan bo'lsa) skroll qilamiz.
   const scrollRef = useRef<HTMLDivElement>(null);
+  const NEAR_BOTTOM_PX = 120;
+
+  const isNearBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+  }, []);
+
+  // Foydalanuvchi o'zi yuqoriga surganini eslab qolamiz — yangi token kelganda
+  // uni majburan pastga tortmaslik uchun.
+  const stickToBottom = useRef(true);
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const onScroll = () => {
+      stickToBottom.current = isNearBottom();
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [isNearBottom]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [chats, thinking]);
 
   const openProfile = () => {
     setPFullName(fullName);
     setPUsername(username);
+    setPCurrentPassword("");
     setPPassword("");
     setPConfirmPassword("");
     setPError("");
@@ -92,24 +139,70 @@ export default function ChatPage() {
     setProfileOpen(true);
   };
 
+  // Profilni saqlash: ism/login (PATCH /v1/users/me) va parol
+  // (PATCH /v1/users/me/password) — ikkitasi ALOHIDA endpoint.
+  //
+  // Tartib muhim: avval ism/login, keyin parol. Sababi parol o'zgarganda
+  // backend BARCHA sessiyalarni bekor qiladi — undan keyingi har qanday
+  // so'rov 401 bo'lardi. Ya'ni teskari tartibda ism saqlanmay qolardi.
   const saveProfile = async () => {
-    const u = pUsername.trim();
-    if (!pFullName.trim() || !u) return;
     setPError("");
-    // Parol kiritilgan bo'lsa — o'zi to'g'ri terganini tekshirish uchun tasdiqlash bilan solishtiramiz
-    if (pPassword && pPassword !== pConfirmPassword) {
-      setPError(S.passwordMismatch);
+    const nameChanged = pFullName.trim() !== fullName;
+    const usernameChanged = pUsername.trim().toLowerCase() !== username;
+    const wantsPasswordChange = !!pPassword;
+
+    // Hech narsa o'zgarmagan bo'lsa — saqlaydigan narsa yo'q, oynani yopamiz
+    if (!nameChanged && !usernameChanged && !wantsPasswordChange) {
+      setProfileOpen(false);
       return;
     }
+
+    if (wantsPasswordChange) {
+      if (!pCurrentPassword) {
+        setPError(S.currentPasswordRequired);
+        return;
+      }
+      // O'zi to'g'ri terganini tekshirish uchun tasdiqlash bilan solishtiramiz
+      if (pPassword !== pConfirmPassword) {
+        setPError(S.passwordMismatch);
+        return;
+      }
+    }
+
+    setPSaving(true);
     try {
-      if (pPassword) await changePassword(pPassword);
+      if (nameChanged || usernameChanged) {
+        const me = await updateProfile({
+          ...(nameChanged ? { full_name: pFullName.trim() } : {}),
+          ...(usernameChanged ? { username: pUsername.trim().toLowerCase() } : {}),
+        });
+        // Ekrandagi qiymatlarni backend QAYTARGANI bilan almashtiramiz —
+        // u normalizatsiya qilingan bo'lishi mumkin (login kichik harfga
+        // tushadi, ismdagi ortiqcha bo'shliqlar olib tashlanadi).
+        setFullName(me.full_name);
+        setUsername(me.username);
+        setPFullName(me.full_name);
+        setPUsername(me.username);
+      }
+
+      if (wantsPasswordChange) {
+        await changePassword(pCurrentPassword, pPassword);
+        // Parol o'zgardi -> backend hamma sessiyani o'chirdi -> hozirgi token
+        // ham yaroqsiz. Foydalanuvchini yangi parol bilan qayta kirishga
+        // yuboramiz, aks holda u har bir so'rovda 401 olib, sababini
+        // tushunmasdi.
+        await logout();
+        navigate("/login");
+        return;
+      }
     } catch (e) {
-      setPError(e instanceof Error ? e.message : "Parolni o'zgartirishda xatolik");
+      setPError(e instanceof Error ? e.message : "Saqlashda xatolik");
       return;
+    } finally {
+      setPSaving(false);
     }
-    // Ism/login hozircha faqat ekranda yangilanadi (backendda /me yangilash endpointi hali yo'q)
-    setFullName(pFullName.trim());
-    setUsername(u);
+
+    setPCurrentPassword("");
     setPPassword("");
     setPConfirmPassword("");
     setSaved(true);
@@ -139,73 +232,43 @@ export default function ChatPage() {
     return a.id < b.id ? 1 : -1;
   });
 
-  const usernameTaken = TAKEN_USERNAMES.includes(pUsername.trim()) && pUsername.trim() !== username;
-  const usernameOk = !!pUsername.trim() && pUsername.trim() !== username && !TAKEN_USERNAMES.includes(pUsername.trim());
+  // Login band-emasligi TEKSHIRUVI FAQAT BACKENDDA.
+  //
+  // Ilgari u `services/seedData` dagi TAKEN_USERNAMES — qo'lda yozilgan MOCK
+  // ro'yxat bo'yicha ishlardi. Ya'ni haqiqiy bazada band bo'lgan login "bo'sh"
+  // ko'rinishi, mock ro'yxatdagi bemalol login esa "band" ko'rinishi mumkin edi.
+  //
+  // Endi band login yuborilsa backend 409 + "Bu login allaqachon band" beradi
+  // va u xato maydonida ko'rinadi. Har harf terilganda so'rov yuboradigan
+  // jonli tekshiruv ataylab qo'shilmadi: u har bir foydalanuvchi uchun
+  // o'nlab keraksiz so'rov degani, foydasi esa saqlashdagi bitta xabar.
 
   return (
     <div className={styles.page} style={{ background: tk.bg, color: tk.strong }}>
-      {/* Fon qatlami — GradientWaves (raymarching to'lqinlar). Ranglar brend
-          navydan olingan: light rejimda ochroq havorang, dark rejimda PRIMARY.
-          Matn ostida turadi, shuning uchun opacity past ushlab turiladi. */}
-      <div
-        className={styles.bgLayer}
-        aria-hidden="true"
-        // Light rejimda rang to'q navy — 0.9 da chekkalar deyarli qora plita
-        // bo'lib qolardi. 0.5 da fon aniq ko'rinadi, lekin sahifa ochiq qoladi.
-        style={{ opacity: isDark ? 0.85 : 0.5 }}
-      >
-        <GradientWaves
-          // Light rejimda to'lqin rangi ATAYLAB to'q (bank palitrasidagi
-          // "trust navy" #1E3A8A): ochiq havorang #F8FAFC fonda yorqinlik
-          // jihatidan deyarli farq qilmagani uchun umuman ko'rinmasdi.
-          // O'qilishni .bgLayer dagi markaziy maska ta'minlaydi.
-          horizonColor={isDark ? "#061A31" : "#F8FAFC"}
-          waveColor="#003978"
-          crestColor={isDark ? "#5FA3D6" : "#9CC6E6"}
-          speed={0.3}
-          amplitude={2.5}
-          waveScale={0.6}
-          waveRatio={0.9}
-          swell={35}
-          turbulence={20}
-          tilt={1.11}
-          zoom={1}
-          height={5.5}
-          // Kattaroq fogDepth — to'lqinlarning ko'proq qismi shaffof emas,
-          // to'liq rangda chiziladi (alpha = fogDepth / masofa).
-          fogDepth={24}
-          // "low" — 40 qadamli raymarch. Bu to'liq ekranli, har kadrda
-          // hisoblanadigan shader; ofis kompyuterlarida "medium" og'irlik qiladi.
-          detail="low"
-          brightness={1}
-          opacity={1}
-          mouseInteraction
-          parallaxStrength={0.4}
-          grain
-          grainIntensity={0.03}
-        />
-      </div>
+      {/* Klaviatura foydalanuvchisi uchun: Tab bosilganda birinchi bo'lib shu
+          havola chiqadi va sidebar'dagi o'nlab suhbatni bosib o'tmasdan
+          to'g'ridan-to'g'ri chatga o'tish imkonini beradi. */}
+      <a href="#chat-main" className="skip-link">
+        {S.skipToContent}
+      </a>
 
-      {/* Nuqta (DotField) qatlami — fon ustida, kursor bulge effekti bilan.
-          Nuqtalar juda to'q bo'lib ketmasin: rang ham ochroq, qatlamning
-          opacity'si ham past. */}
-      <div
-        className={styles.dotLayer}
-        aria-hidden="true"
-        style={{ opacity: isDark ? 0.3 : 0.4 }}
-      >
-        <DotField
-          dotRadius={3.5}
-          dotSpacing={26}
-          bulgeOnly
-          bulgeStrength={18}
-          cursorRadius={220}
-          glowRadius={160}
-          gradientFrom={isDark ? "#2b4a6d" : "#b3c6d8"}
-          gradientTo={isDark ? "#35597f" : "#a4bacf"}
-          glowColor={isDark ? "rgba(95,163,214,0.10)" : "rgba(0,57,120,0.08)"}
+      {/* Fon qatlami — statik CSS gradienti (ChatPage.module.css).
+          Ilgari bu yerda to'liq ekranli WebGL raymarching shader
+          (GradientWaves) va sichqonchaga javob beradigan canvas (DotField)
+          ishlab turardi. Ikkalasi ham olib tashlandi: ofis kompyuterida ular
+          doimiy GPU/CPU yuki edi, ko'rinadigan foydasi esa yo'q darajada. */}
+      <div className={styles.bgLayer} aria-hidden="true" />
+
+      {/* Tor ekranda drawer ortidagi qorayish — bosilganda panel yopiladi.
+          <button>: klaviatura bilan ham yopish mumkin bo'lsin. */}
+      {isNarrow && sidebarOpen && (
+        <button
+          type="button"
+          className={styles.scrim}
+          aria-label={S.closeSidebar}
+          onClick={() => setSidebarOpen(false)}
         />
-      </div>
+      )}
 
       <Sidebar
         open={sidebarOpen}
@@ -237,7 +300,7 @@ export default function ChatPage() {
 
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} isDark={isDark} />
 
-      <main className={styles.main}>
+      <main className={styles.main} id="chat-main">
         <ChatHeader
           title={active.title || T.newChat}
           lang={lang}
@@ -293,14 +356,15 @@ export default function ChatPage() {
             setPFullName={setPFullName}
             pUsername={pUsername}
             setPUsername={setPUsername}
-            usernameTaken={usernameTaken}
-            usernameOk={usernameOk}
+            pCurrentPassword={pCurrentPassword}
+            setPCurrentPassword={setPCurrentPassword}
             pPassword={pPassword}
             setPPassword={setPPassword}
             pConfirmPassword={pConfirmPassword}
             setPConfirmPassword={setPConfirmPassword}
             error={pError}
             saved={saved}
+            saving={pSaving}
             onClose={() => setProfileOpen(false)}
             onSave={saveProfile}
             onLogout={doLogout}

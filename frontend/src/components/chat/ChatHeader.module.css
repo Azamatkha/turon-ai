@@ -91,3 +91,50 @@
   white-space: nowrap;
   max-width: 34vw;
 }
+/* ============================================================================
+   RESPONSIVE
+   ========================================================================= */
+@media (max-width: 900px) {
+  .header {
+    /* Chapdagi 56px SidebarToggle uchun ajratilgan — tor ekranda ham kerak,
+       chunki drawer'ni ochadigan yagona tugma o'sha */
+    padding-right: var(--tu-space-3);
+  }
+
+  .right {
+    gap: 6px;
+  }
+
+  .title {
+    max-width: 42vw;
+  }
+}
+
+@media (max-width: 560px) {
+  .header {
+    height: 56px;
+    padding-left: 52px;
+    padding-right: var(--tu-space-2);
+  }
+
+  .left {
+    gap: var(--tu-space-2);
+  }
+
+  /* Sarlavhani tahrirlash tugmasi hover'da chiqadi — teginish ekranida
+     "hover" yo'q, shuning uchun u DOIM ko'rinadi. Aks holda telefonda
+     suhbat nomini umuman o'zgartirib bo'lmasdi. */
+  .renameBtn {
+    opacity: 0.7;
+  }
+
+  .title {
+    font-size: var(--tu-text-base);
+    max-width: 46vw;
+  }
+
+  .adminBtn {
+    width: 34px;
+    height: 34px;
+  }
+}

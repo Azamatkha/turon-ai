@@ -211,6 +211,12 @@ class AppConfig(BaseModel):
     # Bitta skrinshot uchun cheklov (bayt). nginx client_max_body_size = 10m,
     # ya'ni bu limit undan past turishi kerak.
     REPORT_MAX_BYTES: int = 5 * 1024 * 1024
+    # Bilimlar bazasiga yuklanadigan hujjat (PDF / xodimlar Excel) uchun
+    # cheklov. Ilgari `await file.read()` faylni butunlay xotiraga o'qirdi va
+    # ilova darajasida HECH QANDAY tekshiruv yo'q edi — himoya faqat nginx
+    # `client_max_body_size` da edi. U esa INFRATUZILMA sozlamasi: nginx'siz
+    # ishga tushirilgan dev/test muhitida himoya butunlay yo'qolardi.
+    KNOWLEDGE_MAX_BYTES: int = 20 * 1024 * 1024
 
     model_config = ConfigDict(extra="ignore")
 

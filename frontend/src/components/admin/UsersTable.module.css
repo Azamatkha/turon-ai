@@ -151,3 +151,44 @@
 .rowIdle {
   background: transparent;
 }
+/* ============================================================================
+   RESPONSIVE
+   ----------------------------------------------------------------------------
+   Jadval CSS grid ustunlaridan iborat (2.2fr 1.3fr 1fr 1fr 40px). Tor ekranda
+   `fr` ustunlar cheksiz siqiladi va "Bo'lim", "Rol" kabi qiymatlar bir-biriga
+   yopishib, o'qib bo'lmaydigan holga keladi.
+
+   YECHIM: gorizontal skroll. Jadval o'z konteyneri ichida suriladi —
+   BUTUN SAHIFA emas. `min-width` ustunlarga eng kam maqbul joyni kafolatlaydi.
+   ========================================================================= */
+@media (max-width: 900px) {
+  .table {
+    overflow-x: auto;
+    /* overflow-x: auto qo'yilgach, "..." dropdown menyusi kesiladi.
+       Shuning uchun pastda menyu uchun joy qoldiramiz. */
+    padding-bottom: 2px;
+  }
+
+  .headRow,
+  .row {
+    min-width: 680px;
+    gap: var(--tu-space-3);
+    padding-left: var(--tu-space-4);
+    padding-right: var(--tu-space-4);
+  }
+}
+
+@media (max-width: 560px) {
+  .headRow,
+  .row {
+    min-width: 600px;
+    font-size: var(--tu-text-sm);
+  }
+
+  .headRow {
+    /* Uzun sarlavhalar ("BO'LIM", "OXIRGI FAOLLIK") tor ustunda
+       ikki qatorga tushmasin */
+    font-size: 10.5px;
+    letter-spacing: 0.3px;
+  }
+}

@@ -19,7 +19,9 @@ const UP = "#16A34A";
 const DOWN = "#DC2626";
 
 // Valyuta kodi -> davlat kodi (flag-icons uchun). "USD" qisqartmasini hamma
-// ham bilavermaydi, bayroq esa darrov tanilади — LangSwitcher'dagi kabi.
+// ham bilavermaydi, bayroq esa darrov tanildi — LangSwitcher'dagi kabi.
+// DIQQAT: bu yerga yangi valyuta qo'shsangiz, `styles/flags.css` ga ham
+// mos bayroqni qo'shing — aks holda bayroq o'rni bo'sh chiqadi.
 const FLAG_COUNTRY: Record<string, string> = {
   USD: "us", EUR: "eu", GBP: "gb", JPY: "jp", CHF: "ch",
   RUB: "ru", KZT: "kz", CNY: "cn", TRY: "tr", KRW: "kr",

@@ -293,3 +293,10 @@
 .saveBtnSaved {
   background: #059669;
 }
+/* Ism/login nega tahrirlanmasligi haqidagi izoh — maydon ostida, kichik */
+.readOnlyNote {
+  margin: 6px 2px 0;
+  font-size: var(--tu-text-xs);
+  line-height: 1.4;
+  color: var(--tu-text-muted);
+}

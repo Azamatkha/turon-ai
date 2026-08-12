@@ -1,3 +1,8 @@
+/* Login formasi — minimalistik uslub.
+   Ranglar `index.css` dagi --tu-* tokenlaridan. Ilgari har bir hex qo'lda
+   yozilgan edi; brend rangini o'zgartirish uchun 20 ta joyni tahrirlash
+   kerak bo'lardi. */
+
 /* =====================
    Layout
    ===================== */
@@ -8,14 +13,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 36px;
-  background: #F1F5F9;
+  padding: var(--tu-space-8) var(--tu-space-10);
+  background: var(--tu-gray-100);
 }
 
 .langSwitcherWrap {
   position: absolute;
-  top: 24px;
-  right: 26px;
+  top: var(--tu-space-6);
+  right: var(--tu-space-6);
   z-index: 20;
 }
 
@@ -25,31 +30,31 @@
 }
 
 .headerBlock {
-  margin-bottom: 22px;
+  margin-bottom: var(--tu-space-6);
 }
 
 .fieldGroup {
-  margin-bottom: 16px;
+  margin-bottom: var(--tu-space-4);
 }
 
 .fieldGroupTight {
-  margin-bottom: 14px;
+  margin-bottom: var(--tu-space-3);
 }
 
 .rememberRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: var(--tu-space-6);
 }
 
 .monitoredRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 22px;
-  color: #9aa7a2;
-  font-size: 13px;
+  gap: var(--tu-space-2);
+  margin-top: var(--tu-space-5);
+  color: var(--tu-text-muted);
+  font-size: var(--tu-text-sm);
 }
 
 /* =====================
@@ -60,39 +65,46 @@
   align-items: center;
   gap: 9px;
   padding: 11px 14px;
-  margin-bottom: 18px;
-  border-radius: 11px;
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
-  color: #DC2626;
-  font-size: 13.5px;
+  margin-bottom: var(--tu-space-4);
+  border-radius: var(--tu-radius);
+  background: var(--tu-danger-bg);
+  border: 1px solid var(--tu-danger-border);
+  color: var(--tu-danger);
+  font-size: var(--tu-text-sm);
   font-weight: 500;
   animation: shake 0.4s ease both;
 }
 
+/* Minimalistik: gradient olib tashlandi, tekis oq fon.
+   Chegara ham 1.6px dan 1.5px ga — nozikroq, lekin baribir aniq ko'rinadi. */
 .field {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: linear-gradient(180deg, #ffffff, #fbfcfb);
-  border-radius: 12px;
-  padding: 0 14px;
+  gap: var(--tu-space-3);
+  background: var(--tu-surface);
+  border-radius: var(--tu-radius-md);
+  padding: 0 var(--tu-space-4);
   height: 50px;
-  border: 1.6px solid #CBD5E1;
-  box-shadow: 0 1px 2px rgba(0, 57, 120, 0.03);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  border: 1.5px solid var(--tu-border-strong);
+  transition: border-color var(--tu-duration) var(--tu-ease),
+    box-shadow var(--tu-duration) var(--tu-ease);
 }
 
 .field:hover {
-  border-color: #c2d2d8;
+  border-color: var(--tu-blue-300);
 }
 
 /* Register sahifasi fokus holatini JS bilan kuzatmaydi — :focus-within yetarli */
 .field:focus-within,
 .fieldActive {
-  border-color: #0B5FA5;
-  box-shadow: 0 0 0 4px rgba(11, 95, 165, 0.12);
-  transform: translateY(-1px);
+  border-color: var(--tu-accent);
+  box-shadow: 0 0 0 4px var(--tu-accent-soft);
+}
+
+/* Maydon ichidagi input o'z halqasini chizmaydi — halqani .field beradi.
+   Aks holda ikkita fokus halqasi ustma-ust tushardi. */
+.input:focus-visible {
+  outline: none;
 }
 
 .pwToggleBtn {
@@ -100,20 +112,27 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
+  /* 30px -> 34px: barmoq bilan bosish uchun minimal maqbul o'lcham
+     (WCAG 2.5.8 Target Size — kamida 24x24 CSS px) */
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: 7px;
+  border-radius: var(--tu-radius-sm);
   background: transparent;
-  color: #94A3B8;
+  color: var(--tu-text-faint);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color var(--tu-duration-fast) ease, background var(--tu-duration-fast) ease;
+}
+
+.pwToggleBtn:hover {
+  color: var(--tu-accent);
+  background: var(--tu-gray-100);
 }
 
 .rememberBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tu-space-2);
   background: none;
   border: none;
   cursor: pointer;
@@ -126,18 +145,21 @@
   justify-content: center;
   width: 19px;
   height: 19px;
-  border-radius: 6px;
+  border-radius: var(--tu-radius-sm);
   flex: 0 0 auto;
-  border: 1.8px solid #c2ccc9;
-  background: #fff;
-  transition: all 0.18s ease;
+  border: 1.8px solid var(--tu-border-strong);
+  background: var(--tu-surface);
+  transition: all var(--tu-duration) ease;
 }
 
 .checkboxChecked {
-  border-color: #0B5FA5;
-  background: #0B5FA5;
+  border-color: var(--tu-accent);
+  background: var(--tu-accent);
 }
 
+/* Minimalistik: gradient o'rniga tekis, TO'YINGAN brend ko'k.
+   Gradient "2015" ko'rinish beradi; tekis rang esa brendni kuchliroq
+   ko'rsatadi va dark mavzuga ham osonroq moslashadi. */
 .submitBtn {
   width: 100%;
   height: 52px;
@@ -145,22 +167,33 @@
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 13px;
+  border-radius: var(--tu-radius-md);
   cursor: pointer;
-  background: linear-gradient(135deg, #0B5FA5, #003978);
+  background: var(--tu-blue-900);
   color: #fff;
-  box-shadow: 0 8px 22px rgba(0, 57, 120, 0.22);
-  /* Bosilganda ozgina kichraytirib, "bosildi" degan darhol fizik tuyg'u beradi */
-  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.3s ease;
+  box-shadow: 0 6px 18px rgba(0, 57, 120, 0.24);
+  transition: transform var(--tu-duration-fast) ease,
+    box-shadow var(--tu-duration) ease,
+    background var(--tu-duration) ease;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--tu-blue-700);
+  box-shadow: 0 8px 24px rgba(0, 57, 120, 0.3);
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.submitBtn:disabled {
+  cursor: default;
 }
 
 .submitBtnLoading {
   cursor: default;
-  background: #0B5FA5;
-}
-
-.submitBtn:active {
-  transform: scale(0.98);
+  background: var(--tu-accent);
+  box-shadow: none;
 }
 
 .submitContent {
@@ -194,26 +227,31 @@
    Typography
    ===================== */
 .title {
-  font-size: 27px;
+  /* clamp() — ekran kengligiga qarab 22px..27px orasida silliq o'zgaradi.
+     Telefonda 27px sarlavha ikki qatorga tushib ketardi. */
+  font-size: clamp(1.375rem, 1.1rem + 1.4vw, 1.6875rem);
   font-weight: 700;
   letter-spacing: -0.5px;
+  line-height: var(--tu-leading-tight);
   margin: 0 0 7px;
-  color: #003978;
+  color: var(--tu-blue-900);
 }
 
 .subtitle {
-  font-size: 14.5px;
-  color: #64748B;
+  font-size: var(--tu-text-md);
+  color: var(--tu-text-muted);
   margin: 0;
 }
 
 .fieldLabel {
   display: block;
-  font-size: 13.5px;
+  font-size: var(--tu-text-sm);
   font-weight: 600;
-  color: #334155;
+  color: var(--tu-text);
   margin-bottom: 7px;
   letter-spacing: 0.2px;
+  /* Yorliq bosilganda maydon fokuslanadi — kursor buni bildirsin */
+  cursor: pointer;
 }
 
 .input {
@@ -222,15 +260,19 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
-  color: #003978;
+  font-size: var(--tu-text-md);
+  color: var(--tu-blue-900);
   height: 100%;
   padding: 0;
 }
 
+.input::placeholder {
+  color: var(--tu-text-faint);
+}
+
 .rememberLabel {
-  font-size: 13.5px;
-  color: #334155;
+  font-size: var(--tu-text-sm);
+  color: var(--tu-text);
   white-space: nowrap;
 }
 
@@ -239,20 +281,20 @@
 }
 
 .helpLink {
-  font-size: 13.5px;
+  font-size: var(--tu-text-sm);
   font-weight: 600;
-  color: #0B5FA5;
+  color: var(--tu-accent);
   text-decoration: none;
   white-space: nowrap;
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: color var(--tu-duration-fast) ease;
 }
 
 .helpLink:hover {
-  color: #003978;
+  color: var(--tu-blue-900);
   text-decoration: underline;
 }
 
@@ -263,12 +305,12 @@
   z-index: 30;
   white-space: nowrap;
   padding: 9px 13px;
-  border-radius: 10px;
-  background: #003978;
+  border-radius: var(--tu-radius);
+  background: var(--tu-blue-900);
   color: #eaf1f6;
-  font-size: 12.5px;
+  font-size: var(--tu-text-xs);
   font-weight: 500;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.28);
+  box-shadow: var(--tu-shadow-lg);
   animation: helpPop 0.18s ease both;
 }
 
@@ -278,31 +320,31 @@
   right: 16px;
   top: 100%;
   border: 6px solid transparent;
-  border-top-color: #003978;
+  border-top-color: var(--tu-blue-900);
 }
 
 .helpPhone {
-  color: #5FA3D6;
+  color: var(--tu-blue-300);
   font-weight: 700;
   text-decoration: none;
 }
 
 /* "Hisobingiz yo'qmi?" — saytda ro'yxatdan o'tish yopilgani haqidagi izoh */
 .noAccountBtn {
-  font-size: 13.5px;
+  font-size: var(--tu-text-sm);
   font-weight: 600;
-  color: #0B5FA5;
+  color: var(--tu-accent);
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
   border-bottom: 1px dashed rgba(11, 95, 165, 0.5);
-  transition: color 0.15s ease;
+  transition: color var(--tu-duration-fast) ease;
 }
 
 .noAccountBtn:hover {
-  color: #003978;
-  border-bottom-color: #003978;
+  color: var(--tu-blue-900);
+  border-bottom-color: var(--tu-blue-900);
 }
 
 /* Modal — ekran markazida, hujjat oqimidan TASHQARIDA. Shuning uchun
@@ -315,8 +357,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(11, 26, 44, 0.45);
+  padding: var(--tu-space-5);
+  background: rgba(4, 33, 60, 0.5);
   backdrop-filter: blur(2px);
   animation: hintFade 0.16s ease both;
 }
@@ -324,52 +366,47 @@
 .hintModal {
   width: 100%;
   max-width: 400px;
-  padding: 24px;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  padding: var(--tu-space-6);
+  border-radius: var(--tu-radius-lg);
+  background: var(--tu-surface);
+  box-shadow: var(--tu-shadow-xl);
   animation: hintRise 0.2s ease both;
 }
 
 .hintTitle {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
-  color: #003978;
-  margin-bottom: 10px;
+  color: var(--tu-blue-900);
+  margin-bottom: var(--tu-space-3);
 }
 
 .hintText {
-  margin: 0 0 20px;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: #3c5a72;
+  margin: 0 0 var(--tu-space-5);
+  font-size: var(--tu-text-sm);
+  line-height: var(--tu-leading-relaxed);
+  color: var(--tu-text);
 }
 
 .hintClose {
   width: 100%;
   padding: 11px;
   border: none;
-  border-radius: 10px;
-  background: #003978;
+  border-radius: var(--tu-radius);
+  background: var(--tu-blue-900);
   color: #fff;
-  font-size: 14px;
+  font-size: var(--tu-text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background var(--tu-duration-fast) ease;
 }
 
 .hintClose:hover {
-  background: #003978;
+  background: var(--tu-blue-700);
 }
 
 @keyframes hintFade {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes hintRise {
@@ -377,7 +414,6 @@
     opacity: 0;
     transform: translateY(10px) scale(0.98);
   }
-
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -389,7 +425,6 @@
     opacity: 0;
     transform: translateY(4px);
   }
-
   to {
     opacity: 1;
     transform: none;
@@ -397,7 +432,81 @@
 }
 
 .submitText {
-  font-size: 15.5px;
+  font-size: var(--tu-text-md);
   font-weight: 600;
   letter-spacing: 0.2px;
+}
+
+/* =====================
+   Responsive
+   =====================
+   Ilgari bu faylda bironta ham @media yo'q edi — forma telefonda ham
+   32px/36px ichki bo'shliq bilan chiqardi va 360px ekranda maydonlar
+   chekkaga yopishib qolardi. */
+
+/* Planshet va kichik noutbuk */
+@media (max-width: 860px) {
+  .panel {
+    padding: var(--tu-space-8) var(--tu-space-6);
+    background: var(--tu-surface);
+  }
+
+  /* Til almashtirgich brend paneli ustiga tushmasin */
+  .langSwitcherWrap {
+    top: var(--tu-space-4);
+    right: var(--tu-space-4);
+  }
+}
+
+/* Telefon */
+@media (max-width: 560px) {
+  .panel {
+    padding: var(--tu-space-6) var(--tu-space-5) var(--tu-space-8);
+    align-items: flex-start;
+  }
+
+  .formBox {
+    max-width: none;
+  }
+
+  /* iOS Safari 16px dan KICHIK matnli maydonga fokus tushganda sahifani
+     avtomatik ZUMLAB yuboradi — foydalanuvchi keyin qo'lda kichraytirishi
+     kerak bo'ladi. index.css dagi global `input { font-size: 16px }` bu
+     yerda yetmaydi: CSS moduli `.input` ni maxsusroq (specificity) tanlaydi
+     va uni bosib ketadi. Shuning uchun modul ichida qaytaramiz. */
+  .input {
+    font-size: 16px;
+  }
+
+  /* Barmoq uchun balandroq nishonlar */
+  .field {
+    height: 52px;
+  }
+
+  .submitBtn {
+    height: 54px;
+  }
+
+  .headerBlock {
+    /* Til almashtirgich uchun joy */
+    margin-top: var(--tu-space-6);
+    margin-bottom: var(--tu-space-5);
+  }
+}
+
+/* Juda past ekran (yotiq holatdagi telefon) — vertikal bo'shliqlar qisqaradi */
+@media (max-height: 560px) {
+  .panel {
+    align-items: flex-start;
+    padding-top: var(--tu-space-5);
+    padding-bottom: var(--tu-space-5);
+  }
+
+  .headerBlock {
+    margin-bottom: var(--tu-space-4);
+  }
+
+  .rememberRow {
+    margin-bottom: var(--tu-space-4);
+  }
 }

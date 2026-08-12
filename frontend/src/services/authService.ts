@@ -168,11 +168,54 @@ export async function logout(): Promise<void> {
   clearStorage();
 }
 
-// Foydalanuvchi o'z parolini o'zgartiradi (kuchli parol talab qilinadi)
-export async function changePassword(newPassword: string): Promise<void> {
+// Foydalanuvchi o'z ismini/loginini o'zgartiradi.
+// Backend `user_id` ni TOKENDAN oladi, shuning uchun bu yerda id yuborilmaydi.
+export async function updateProfile(input: {
+  full_name?: string;
+  username?: string;
+}): Promise<Me> {
+  const res = await apiFetch("/v1/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    throw new ApiError(await readError(res, "Profilni saqlashda xatolik"), res.status);
+  }
+  const u = await res.json();
+  const me: Me = {
+    id: u.id,
+    username: u.username,
+    email: u.email,
+    full_name: u.full_name,
+    department: u.department ?? null,
+    role: u.role,
+  };
+  localStorage.setItem(ROLE_KEY, me.role);
+  localStorage.setItem(ME_KEY, JSON.stringify(me));
+  return me;
+}
+
+// Foydalanuvchi o'z parolini o'zgartiradi.
+// JORIY parol majburiy: o'g'irlangan token bilan hisobni egallab olishning
+// oldini oladi (backend `UserNewPassword` docstring'iga qarang).
+// Muvaffaqiyatli o'zgarishdan keyin backend BARCHA sessiyalarni bekor qiladi,
+// shuning uchun chaqiruvchi tomon foydalanuvchini qayta login qilishga
+// yuborishi kerak.
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
   const res = await apiFetch("/v1/users/me/password", {
     method: "PATCH",
-    body: JSON.stringify({ password: newPassword }),
+    body: JSON.stringify({
+      current_password: currentPassword,
+      password: newPassword,
+    }),
   });
-  if (!res.ok) throw new Error(await readError(res, "Parolni o'zgartirishda xatolik"));
+  if (!res.ok) {
+    throw new ApiError(
+      await readError(res, "Parolni o'zgartirishda xatolik"),
+      res.status,
+    );
+  }
 }

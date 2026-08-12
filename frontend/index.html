@@ -2,16 +2,27 @@
 <html lang="uz">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover — iPhone'da "notch" ostidagi xavfsiz zona
+         (safe-area-inset) CSS'ga ochiladi, composer pastki chiziq ostiga
+         tushib qolmaydi. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Turon AI — Turonbank xodimlari uchun ichki AI yordamchi." />
+    <!-- Brauzer manzil satri rangi (mobil): mavzu bilan mos keladi -->
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#061A31" media="(prefers-color-scheme: dark)" />
     <title>Turon AI</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Shrift: Onest (lotin + kirill to'liq).
+         preconnect — DNS/TLS qo'l siqishini oldindan bajaradi.
+         Bu yerdagi <link> shriftni index.css dagi @import dan BARVAQTROQ
+         boshlaydi, ya'ni sahifa "yalt" etib almashmaydi (FOUT kamayadi). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Ilgari bu yerda Hanken Grotesk yuklanardi, lekin u hech qayerda
-         ishlatilmasdi — bekorga tarmoq so'rovi bo'lardi. Asosiy shrift
-         (Manrope) index.css da ham import qilinadi; bu yerdagi havola uni
-         BARVAQTROQ yuklaydi, ya'ni sahifa "yalt" etib almashmaydi. -->
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

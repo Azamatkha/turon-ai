@@ -18,19 +18,23 @@ from src.user.auth.schemas import UserNewPassword
 from src.user.dependencies import get_user_service
 from src.user.models import User
 from src.user.schemas import (
+    AdminCreateUserModel,
+    AdminUpdateUserModel,
+    UpdateOwnProfileModel,
+    UserAdminListItem,
     UserProfileViewModel,
     UserSummaryViewModel,
-    AdminCreateUserModel,
-    UserAdminListItem,
-    AdminUpdateUserModel
 )
 from src.user.services import UserService
-from src.user.schemas import AdminCreateUserModel, UserAdminListItem
 from src.user.usecases.admin_create_user import (
     AdminCreateUserUseCase,
     get_admin_create_user_use_case
 )
 from src.user.usecases.list_users import ListUsersUseCase, get_list_users_use_case
+from src.user.usecases.update_own_profile import (
+    UpdateOwnProfileUseCase,
+    get_update_own_profile_use_case
+)
 from src.user.usecases.update_password import (
     UpdateUserPasswordUseCase,
     get_update_user_password_use_case
@@ -60,6 +64,32 @@ async def get_user_profile(
     Returns the current user's information.
     """
     return UserProfileViewModel.model_validate(current_user)
+
+
+# DIQQAT: bu marshrut `PATCH /{user_id}` DAN OLDIN turishi shart.
+# FastAPI marshrutlarni yozilish tartibida tekshiradi; agar `/{user_id}`
+# oldinroq bo'lsa, "me" satri UUID sifatida o'qilmoqchi bo'lib 422 qaytarardi.
+@router.patch(
+    "/me",
+    response_model=UserProfileViewModel,
+    dependencies=[
+        Depends(RateLimiter(times=10, minutes=60, identifier=get_user_id_from_token))
+    ],
+)
+async def update_own_profile(
+    user_form_data: UpdateOwnProfileModel,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[
+        UpdateOwnProfileUseCase, Depends(get_update_own_profile_use_case)
+    ],
+) -> UserProfileViewModel:
+    """
+    Foydalanuvchi o'z ismini va loginini o'zgartiradi.
+
+    `user_id` tanadan emas, TOKENDAN olinadi — shuning uchun bu endpoint orqali
+    boshqa foydalanuvchining profiliga tegib bo'lmaydi.
+    """
+    return await use_case.execute(user_id=current_user.id, data=user_form_data)
 
 
 @router.get("/{user_id}", response_model=UserSummaryViewModel)

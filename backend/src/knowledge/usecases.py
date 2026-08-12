@@ -1501,10 +1501,28 @@ class AnswerQuestionUseCase:
     EMPLOYEE_MAX_TOKENS = 6000
     HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
     # --- Prompt byudjeti (belgilarda) ---------------------------------- #
-    # num_ctx = 8192 token. O'zbek lotinida ~3.2 belgi = 1 token. Tizim
-    # prompti ~3600 token, javobga 2048 token ajratilgan — foydalanuvchi
-    # promptiga ~2500 token (~8000 belgi) qoladi. Quyidagi cheklovlar shu
-    # byudjetdan chiqib ketmaslikni kafolatlaydi.
+    # num_ctx = 8192 token. O'zbek lotinida ~3.2 belgi = 1 token.
+    #
+    # HAMMASI SHU 8192 GA SIG'ISHI KERAK — system prompt, kontekst, katalog,
+    # suhbat tarixi VA javob. Sig'masa Ollama promptning BOSHINI jimgina
+    # kesib tashlaydi, ya'ni birinchi bo'lib SYSTEM PROMPT yo'qoladi va model
+    # barcha qoidalarni "unutadi" (javob inglizcha chiqadi, raqamlar to'qib
+    # chiqariladi). Xato xabari berilmaydi — shuning uchun byudjet shu yerda
+    # aniq yozilgan.
+    #
+    # Joriy hisob:
+    #   STRICT_RAG_SYSTEM  ~4 000 token   (prompts.py — o'lchash: len(s)/3.2)
+    #   MAX_CONTEXT_CHARS   1 250 token   (4000 belgi)
+    #   MAX_CATALOG_CHARS     560 token   (1800 belgi)
+    #   MAX_HISTORY_CHARS     375 token   (1200 belgi)
+    #   MAX_TOKENS (javob)  1 536 token
+    #   ────────────────────────────────
+    #   JAMI                ~7 720 token  -> 8192 dan ~470 token zaxira
+    #
+    # DIQQAT: zaxira KAM. STRICT_RAG_SYSTEM ga yangi qoida qo'shsangiz yoki
+    # quyidagi cheklovlarni oshirsangiz, avval shu hisobni qayta chiqaring.
+    # Zaxira tugasa — config.ai.OLLAMA_NUM_CTX ni oshiring (12288), lekin
+    # bu Ollama serverida ko'proq RAM talab qiladi.
     MAX_CONTEXT_CHARS = 4000
     MAX_CATALOG_CHARS = 1800
     MAX_HISTORY_CHARS = 1200

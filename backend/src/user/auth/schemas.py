@@ -48,4 +48,18 @@ class LogoutRequestModel(Base):
 
 
 class UserNewPassword(StrongPasswordValidationMixin, Base):
+    """Parolni o'zgartirish so'rovi.
+
+    `current_password` MAJBURIY. Sababi: access token o'g'irlansa (masalan
+    xodim kompyuterini qulflamay ketsa yoki XSS orqali), token egasi eski
+    parolni bilmasa ham yangi parol qo'yib, HAQIQIY egasini o'z hisobidan
+    butunlay chiqarib yubora olardi. Joriy parolni so'rash bu yo'lni yopadi.
+
+    `StrongPasswordValidationMixin` faqat `password` maydonini tekshiradi
+    (`check_fields=False` bilan nom bo'yicha), `current_password` esa xohlagan
+    ko'rinishda bo'lishi mumkin — u eskisi, uni qayta validatsiya qilish
+    noto'g'ri bo'lardi (talablar o'zgargan bo'lishi mumkin).
+    """
+
+    current_password: str
     password: str

@@ -6,6 +6,8 @@
 .wrap {
   flex: 0 0 auto;
   padding: 10px 22px 16px;
+  /* iPhone'dagi pastki "home indicator" chizig'i ostida qolib ketmasin */
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
 .inner {
@@ -20,9 +22,19 @@
 .bar {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
-  border-radius: 22px;
+  gap: var(--tu-space-2);
+  border-radius: var(--tu-radius-xl);
   padding: 8px 8px 8px 16px;
+  transition: border-color var(--tu-duration) var(--tu-ease),
+    box-shadow var(--tu-duration) var(--tu-ease);
+}
+
+/* Maydon fokusda bo'lganda butun panel yorishadi — foydalanuvchi qayerda
+   yozayotganini aniq ko'radi. Halqa textarea'ning o'zida emas, panelda:
+   aks holda halqa panel ichida "qamalib" qolardi. */
+.bar:focus-within {
+  border-color: var(--tu-accent) !important;
+  box-shadow: 0 0 0 3px var(--tu-accent-soft) !important;
 }
 
 .textarea {
@@ -31,10 +43,14 @@
   outline: none;
   resize: none;
   background: transparent;
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: var(--tu-text-md);
+  line-height: var(--tu-leading-normal);
   max-height: 160px;
   padding: 6px 4px;
+}
+
+.textarea::placeholder {
+  color: var(--tu-text-faint);
 }
 
 .sendBtn {
@@ -46,7 +62,7 @@
   flex: 0 0 auto;
   border-radius: 50%;
   border: none;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: background var(--tu-duration) ease, transform var(--tu-duration-fast) ease;
 }
 
 /* =====================
@@ -54,6 +70,56 @@
    ===================== */
 .disclaimer {
   text-align: center;
-  font-size: 11.5px;
+  font-size: var(--tu-text-xs);
   margin-top: 9px;
+}
+
+/* =====================
+   Responsive
+   =====================
+   `max-width: min(960px, 86%)` tor ekranda 86% degani — 375px telefonda
+   panel atigi 322px bo'lib, ikki yonida 26px'dan bo'sh joy qolardi. */
+@media (max-width: 900px) {
+  .inner {
+    max-width: 100%;
+  }
+
+  .wrap {
+    padding-left: var(--tu-space-4);
+    padding-right: var(--tu-space-4);
+  }
+}
+
+@media (max-width: 560px) {
+  .wrap {
+    padding: var(--tu-space-2) var(--tu-space-3);
+    padding-bottom: max(var(--tu-space-3), env(safe-area-inset-bottom));
+  }
+
+  .bar {
+    padding: 6px 6px 6px 12px;
+    border-radius: var(--tu-radius-lg);
+  }
+
+  /* iOS Safari 16px dan kichik maydonga fokusda sahifani zumlaydi.
+     Chat maydoni — eng ko'p ishlatiladigan element, bu yerda ayniqsa
+     bezovta qiladi. (index.css dagi global qoida CSS modul
+     specificity'si tufayli yetmaydi.) */
+  .textarea {
+    font-size: 16px;
+  }
+
+  /* Barmoq uchun kattaroq nishon */
+  .sendBtn {
+    width: 42px;
+    height: 42px;
+  }
+
+  /* Telefonda uzun ogohlantirish matni ikki-uch qator joy yeydi —
+     shrift kichrayadi, lekin butunlay yo'qolmaydi (huquqiy matn). */
+  .disclaimer {
+    font-size: 10.5px;
+    margin-top: 6px;
+    line-height: 1.35;
+  }
 }
