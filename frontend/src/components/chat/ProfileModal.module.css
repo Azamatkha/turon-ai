@@ -275,6 +275,15 @@
   letter-spacing: 0.2px;
 }
 
+/* Joriy parol nima uchun so'ralayotganini tushuntiruvchi kichik izoh —
+   busiz maydon ortiqcha to'siqdek tuyulardi. */
+.fieldHint {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #64748B;
+  margin-top: 6px;
+}
+
 .takenLabel {
   color: #DC2626;
   font-size: 12px;

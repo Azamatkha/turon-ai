@@ -1,6 +1,7 @@
 import { useState, KeyboardEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
+import { useForceLightTheme } from "../hooks/useForceLightTheme";
 import { loginDict } from "../locales";
 import { login as loginRequest, isAuthenticated, ApiError } from "../services/authService";
 import PageBackground from "../components/login/PageBackground";
@@ -17,6 +18,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<"" | "invalid" | "rateLimited">("");
   const { lang, setLang, t } = useLang(loginDict);
+  // Chatdagi tungi rejim bu sahifaga o'tib ketmasin (yozuvlar ko'rinmay qolardi)
+  useForceLightTheme();
 
   // Allaqachon login qilingan bo'lsa — to'g'ridan-to'g'ri bosh sahifaga
   if (isAuthenticated()) return <Navigate to="/" replace />;

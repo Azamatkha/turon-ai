@@ -279,7 +279,7 @@ export default function MessageArea({
                       >
                         <RiCopperCoinLine
                           size={13}
-                          style={{ color: m.debug.finishReason === "length" ? "#DC2626" : ACCENT }}
+                          style={{ color: m.debug.finishReason === "length" ? "#DC2626" : (isDark ? PRIMARY_ON_DARK : ACCENT) }}
                         />
                         {m.debug.completionTokens} token
                       </span>

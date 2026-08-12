@@ -1,6 +1,7 @@
 import { useState, KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
+import { useForceLightTheme } from "../hooks/useForceLightTheme";
 import { loginDict } from "../locales";
 import type { Lang } from "../types/lang";
 import PageBackground from "../components/login/PageBackground";
@@ -43,6 +44,8 @@ const ERR: Record<Lang, {
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { lang, setLang, t } = useLang(loginDict);
+  // Chatdagi tungi rejim bu sahifaga o'tib ketmasin (yozuvlar ko'rinmay qolardi)
+  useForceLightTheme();
   const err = ERR[lang];
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");

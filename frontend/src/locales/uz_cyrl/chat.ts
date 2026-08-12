@@ -137,6 +137,7 @@ export const chatStatic: ChatStaticStrings = {
   currentPassword: "Жорий парол",
   currentPasswordPh: "Ҳозирги паролингиз",
   currentPasswordRequired: "Жорий паролни киритинг",
+  currentPasswordHint: "Бу — хавфсизлик учун: ҳисобингизга биров кириб қолса, сизнинг эски паролингизни билмасдан уни алмаштира олмайди.",
   saved: "Сақланди",
   saveChanges: "Ўзгаришларни сақлаш",
   logOut: "Чиқиш",

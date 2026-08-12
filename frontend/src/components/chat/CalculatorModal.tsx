@@ -398,7 +398,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
               </div>
               <div className={styles.resultRow} style={{ color: tk.muted }}>
                 <span>{s.calcOverpay}</span>
-                <span className={styles.resultRowValue} style={{ color: ACCENT }}>
+                <span className={styles.resultRowValue} style={{ color: accent }}>
                   {groupNum(result.overpay ?? 0)} {cur}
                 </span>
               </div>

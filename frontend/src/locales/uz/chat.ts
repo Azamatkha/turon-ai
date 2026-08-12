@@ -139,6 +139,7 @@ export const chatStatic: ChatStaticStrings = {
   currentPassword: "Joriy parol",
   currentPasswordPh: "Hozirgi parolingiz",
   currentPasswordRequired: "Joriy parolni kiriting",
+  currentPasswordHint: "Bu — xavfsizlik uchun: hisobingizga birov kirib qolsa, sizning eski parolingizni bilmasdan uni almashtira olmaydi.",
   saved: "Saqlandi",
   saveChanges: "O‘zgarishlarni saqlash",
   logOut: "Chiqish",

@@ -136,6 +136,7 @@ export const chatStatic: ChatStaticStrings = {
   currentPassword: "Текущий пароль",
   currentPasswordPh: "Ваш текущий пароль",
   currentPasswordRequired: "Введите текущий пароль",
+  currentPasswordHint: "Это нужно для безопасности: если кто-то получит доступ к вашему аккаунту, он не сможет сменить пароль, не зная старого.",
   saved: "Сохранено",
   saveChanges: "Сохранить изменения",
   logOut: "Выход",

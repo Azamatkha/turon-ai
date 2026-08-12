@@ -49,6 +49,13 @@
   padding: 6px 4px;
 }
 
+/* Halqa panelda (.bar:focus-within) chiziladi. Global `textarea:focus-visible`
+   qoidasi undan kuchliroq bo'lgani uchun yuqoridagi `outline: none` ishlamay,
+   panel ichida ikkinchi ramka chiqib qolardi. */
+.textarea:focus-visible {
+  outline: none;
+}
+
 .textarea::placeholder {
   color: var(--tu-text-faint);
 }

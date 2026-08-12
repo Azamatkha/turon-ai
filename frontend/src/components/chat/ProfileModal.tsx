@@ -94,6 +94,7 @@ export default function ProfileModal({
                   {eyeIcon(currentPwVisible)}
                 </button>
               </div>
+              <div className={styles.fieldHint}>{s.currentPasswordHint}</div>
             </div>
           )}
           <div>

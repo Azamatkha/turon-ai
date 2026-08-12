@@ -274,8 +274,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* Jadval va kurs raqamlari ustma-ust tekis tursin */
-  font-variant-numeric: tabular-nums;
+  /* DIQQAT: bu yerga `font-variant-numeric: tabular-nums` QO'YILMAYDI.
+     Bir xil kenglikdagi raqamlar JADVAL uchun yaxshi, lekin oddiy matnda
+     g'alati ko'rinadi: raqamlar orasida keraksiz bo'shliq paydo bo'lib,
+     chatdagi valyuta javoblari yamoq-yamoq bo'lib qolgan edi. U faqat
+     kerakli joyda — kurs jadvalida (RatesModal) qo'llanadi. */
   /* Mobil brauzerda gorizontal "sizib chiqish"ni to'sadi */
   overflow-x: hidden;
 }

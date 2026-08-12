@@ -105,6 +105,15 @@
   font-weight: 500;
 }
 
+/* Fokus halqasi QUTIning o'zida chiziladi (.searchRow:focus-within). Global
+   `input:focus-visible` qoidasi esa inputning ICHIGA ham halqa chizardi —
+   natijada quti ichida ikkinchi dumaloq to'rtburchak paydo bo'lib, qidiruv
+   ikonkasi undan tashqarida qolib ketardi. Yuqoridagi `outline: none` buni
+   to'xtata olmasdi: `input:focus-visible` oddiy klassdan kuchliroq. */
+.searchInput:focus-visible {
+  outline: none;
+}
+
 .searchInput::placeholder {
   color: rgba(203, 213, 225, 0.5);
 }

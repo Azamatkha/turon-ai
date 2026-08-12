@@ -177,6 +177,7 @@ export interface ChatStaticStrings {
   currentPassword: string;
   currentPasswordPh: string;
   currentPasswordRequired: string;
+  currentPasswordHint: string;
   saved: string;
   saveChanges: string;
   logOut: string;

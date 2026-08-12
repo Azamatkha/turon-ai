@@ -13,6 +13,7 @@ import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
 import ProfileModal from "../components/chat/ProfileModal";
+import SpaceBackground from "../components/SpaceBackground";
 import styles from "./ChatPage.module.css";
 
 export default function ChatPage() {
@@ -258,6 +259,7 @@ export default function ChatPage() {
           ishlab turardi. Ikkalasi ham olib tashlandi: ofis kompyuterida ular
           doimiy GPU/CPU yuki edi, ko'rinadigan foydasi esa yo'q darajada. */}
       <div className={styles.bgLayer} aria-hidden="true" />
+      <SpaceBackground className={styles.spaceBg} isDark={isDark} />
 
       {/* Tor ekranda drawer ortidagi qorayish — bosilganda panel yopiladi.
           <button>: klaviatura bilan ham yopish mumkin bo'lsin. */}

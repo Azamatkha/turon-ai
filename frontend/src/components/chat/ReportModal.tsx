@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MdReportGmailerrorred } from "react-icons/md";
 import { createReport, type ReportKind } from "../../services/reportService";
-import { ACCENT } from "./theme";
+import { ACCENT, PRIMARY_ON_DARK } from "./theme";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import styles from "./ReportModal.module.css";
@@ -31,6 +31,8 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
   const [err, setErr] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Tungi fonda to'q ko'k o'qilmaydi (kontrast 2.24 — WCAG 4.5 talab qiladi)
+  const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
   const cardBg = isDark ? "rgba(255,255,255,.06)" : "#F8FAFC";
 
   // Object URL faqat preview uchun — komponent yopilganda bo'shatiladi
@@ -100,7 +102,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
         <div className={styles.scroll}>
           <div className={styles.head}>
             <div className={styles.headTitle} style={{ color: tk.strong }}>
-              <MdReportGmailerrorred size={21} color={ACCENT} />
+              <MdReportGmailerrorred size={21} color={accent} />
               {s.reportHeading}
             </div>
             <button
@@ -129,7 +131,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
                       onClick={() => setKind(t.id)}
                       style={{
                         background: active ? tk.card : "transparent",
-                        color: active ? ACCENT : tk.muted,
+                        color: active ? accent : tk.muted,
                         boxShadow: active ? "0 2px 8px rgba(15,23,42,.14)" : "none",
                       }}
                     >
@@ -173,7 +175,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
                 </label>
                 <div
                   className={dragOver ? `${styles.drop} ${styles.dropOver}` : styles.drop}
-                  style={{ borderColor: dragOver ? ACCENT : tk.cardBorder, background: cardBg }}
+                  style={{ borderColor: dragOver ? accent : tk.cardBorder, background: cardBg }}
                   onClick={() => inputRef.current?.click()}
                   onDragOver={(e) => {
                     e.preventDefault();
