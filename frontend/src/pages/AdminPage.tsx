@@ -22,7 +22,6 @@ import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
 import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
-import Starfield from "../components/Starfield";
 import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
 import Logo from "../components/common/Logo";
@@ -337,7 +336,8 @@ export default function AdminPage() {
         <div className={styles.gradientBg} aria-hidden="true" />
         <GridPattern className={styles.gridBg} />
         <OrbitRings />
-        <Starfield className={styles.spaceBg} isDark={isDark} />
+        {/* Yulduzlar foni VAQTINCHA o'chirilgan — qaytarish uchun:
+            <Starfield className={styles.spaceBg} isDark={isDark} /> */}
         <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 
         <PageHeader

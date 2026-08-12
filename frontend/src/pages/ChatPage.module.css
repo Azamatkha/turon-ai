@@ -129,7 +129,9 @@
    to'ldiradi. Juda past shaffoflik: u fon, diqqatni tortmasligi kerak. */
 .bgLogo {
   position: absolute;
-  top: 50%;
+  /* Orbita halqalari markazi bilan bir xil (OrbitRings `.root { top: 44% }`) —
+     shunda logotip aylananing aynan o'rtasida turadi. */
+  top: 44%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 0;

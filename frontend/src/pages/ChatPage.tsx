@@ -13,7 +13,6 @@ import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
 import ProfileModal from "../components/chat/ProfileModal";
-import Starfield from "../components/Starfield";
 import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
 import Logo from "../components/common/Logo";
@@ -311,7 +310,10 @@ export default function ChatPage() {
         <div className={styles.gradientBg} aria-hidden="true" />
         <GridPattern className={styles.gridBg} />
         <OrbitRings />
-        <Starfield className={styles.spaceBg} isDark={isDark} />
+        {/* Yulduzlar foni VAQTINCHA o'chirilgan (o'rniga boshqa yechim
+            tanlanadi). Komponent joyida — qaytarish uchun shu qatorni
+            ochish kifoya:
+            <Starfield className={styles.spaceBg} isDark={isDark} /> */}
         <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 
         <ChatHeader

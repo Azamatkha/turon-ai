@@ -124,7 +124,6 @@ export default function MessageArea({
     >
       {isEmpty && (
         <div className={styles.emptyState}>
-          <div className={styles.logoBadge} style={{ color: isDark ? PRIMARY_ON_DARK : PRIMARY }}><Logo size={64} /></div>
           <div className={styles.greeting} style={{ color: tk.strong, whiteSpace: "pre-line" }}>{greeting}</div>
           <div className={styles.subtext} style={{ color: tk.muted }}>{sub}</div>
           <div className={styles.suggestions}>
