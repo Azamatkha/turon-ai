@@ -118,3 +118,47 @@
   opacity: 0.1;
   color: #5FA3D6;
 }
+
+/* --- Fon qatlamlari -------------------------------------------------------
+   Uchalasi ham MAIN ichida turadi (sahifa ildizida emas) — shunda yulduzlar
+   halqasi va logotip yon panel ochiq bo'lganda ham MAZMUN markaziga to'g'ri
+   keladi. Ilgari ular butun sahifaga nisbatan markazlashgani uchun panel
+   ochilganda o'nga siljib qolardi. */
+.gridBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: none;
+  stroke: rgba(0, 57, 120, 0.10);
+  /* To'r deyarli butun maydonni qoplaydi, faqat chekkalarda yumshoq so'nadi */
+  -webkit-mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);
+}
+
+:global(html.dark) .gridBg {
+  stroke: rgba(148, 197, 240, 0.08);
+}
+
+/* Rangli yoyilma — to'r ostida turadi va fonni "tirik" qiladi. */
+.gradientBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 32%, rgba(11, 95, 165, 0.16), transparent 72%),
+    radial-gradient(ellipse 55% 50% at 8% 4%, rgba(95, 163, 214, 0.20), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 96% 92%, rgba(104, 116, 214, 0.16), transparent 72%),
+    linear-gradient(180deg, rgba(226, 238, 250, 0.55) 0%, rgba(240, 246, 252, 0.25) 45%, rgba(255, 255, 255, 0) 100%);
+}
+
+:global(html.dark) .gradientBg {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 32%, rgba(95, 163, 214, 0.18), transparent 72%),
+    radial-gradient(ellipse 55% 50% at 8% 4%, rgba(11, 95, 165, 0.28), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 96% 92%, rgba(104, 116, 214, 0.22), transparent 72%),
+    linear-gradient(180deg, rgba(12, 32, 58, 0.55) 0%, rgba(9, 22, 40, 0.25) 45%, rgba(0, 0, 0, 0) 100%);
+}

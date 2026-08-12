@@ -23,6 +23,7 @@ import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModa
 import FilterSelect from "../components/admin/FilterSelect";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import Starfield from "../components/Starfield";
+import GridPattern from "../components/GridPattern";
 import Logo from "../components/common/Logo";
 import styles from "./AdminPage.module.css";
 
@@ -312,8 +313,6 @@ export default function AdminPage() {
           harakatida nuqtalar qayta chizilardi va jadval/grafiklar bilan
           qo'shilib sahifani og'irlashtirardi. */}
       <div className={styles.bgLayer} aria-hidden="true" />
-      <Starfield className={styles.spaceBg} isDark={isDark} />
-      <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 
       <Sidebar
         view={view}
@@ -331,6 +330,14 @@ export default function AdminPage() {
       />
 
       <main className={styles.main}>
+        {/* Fon: yoyilma -> to'r -> yulduzlar -> xira logotip. Hammasi
+            mazmun maydoni ichida, shuning uchun yon panel ochilganda ham
+            markaz joyida qoladi. */}
+        <div className={styles.gradientBg} aria-hidden="true" />
+        <GridPattern className={styles.gridBg} />
+        <Starfield className={styles.spaceBg} isDark={isDark} />
+        <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
+
         <PageHeader
           view={view} search={search} setSearch={setSearch} onAddUser={openAdd}
           isDark={isDark} onToggleTheme={toggleTheme}

@@ -14,6 +14,7 @@ import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
 import ProfileModal from "../components/chat/ProfileModal";
 import Starfield from "../components/Starfield";
+import GridPattern from "../components/GridPattern";
 import Logo from "../components/common/Logo";
 import styles from "./ChatPage.module.css";
 
@@ -260,8 +261,6 @@ export default function ChatPage() {
           ishlab turardi. Ikkalasi ham olib tashlandi: ofis kompyuterida ular
           doimiy GPU/CPU yuki edi, ko'rinadigan foydasi esa yo'q darajada. */}
       <div className={styles.bgLayer} aria-hidden="true" />
-      <Starfield className={styles.spaceBg} isDark={isDark} />
-      <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
 
       {/* Tor ekranda drawer ortidagi qorayish — bosilganda panel yopiladi.
           <button>: klaviatura bilan ham yopish mumkin bo'lsin. */}
@@ -305,6 +304,14 @@ export default function ChatPage() {
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} isDark={isDark} />
 
       <main className={styles.main} id="chat-main">
+        {/* Fon: yoyilma -> to'r -> yulduzlar -> xira logotip. Hammasi
+            mazmun maydoni ichida, shuning uchun yon panel ochilganda ham
+            markaz joyida qoladi. */}
+        <div className={styles.gradientBg} aria-hidden="true" />
+        <GridPattern className={styles.gridBg} />
+        <Starfield className={styles.spaceBg} isDark={isDark} />
+        <div className={styles.bgLogo} aria-hidden="true"><Logo size={260} /></div>
+
         <ChatHeader
           title={active.title || T.newChat}
           lang={lang}
