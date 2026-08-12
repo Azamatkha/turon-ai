@@ -540,3 +540,29 @@
 .subtext {
   font-size: clamp(0.875rem, 0.82rem + 0.28vw, 0.9375rem);
 }
+
+/* --- Glassmorphism -------------------------------------------------
+   Fon rangi (shaffofligi) `theme.ts` dagi `tk.card` dan keladi, bu
+   yerda esa faqat ORQA FON BLURI qo'shiladi. Alohida blok qilingani
+   sabab: mavjud qoidalarga tegmasdan, effektni bitta joydan
+   yoqish/o'chirish qulay. */
+.bubbleBot {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}
+.typingBubble {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}
+.suggestionChip {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}
+.msgMenu {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}
+.editBox {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}

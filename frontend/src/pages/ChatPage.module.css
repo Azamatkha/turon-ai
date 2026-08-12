@@ -29,23 +29,22 @@
   z-index: 1;
 }
 
-/* Barcha fon qatlamlari shu o'ramda yotadi. */
+/* Barcha fon qatlamlari shu o'ramda yotadi.
+   `z-index: -1` — MUHIM: oqimdagi (static) elementlar `position: absolute`
+   qatlamlardan pastda chiziladi, shuning uchun fon qoraygach xabar maydoni
+   va kartochkalar ko'rinmay qolgandi. Manfiy z-index fon o'ramini mazmun
+   ORTIGA tushiradi, lekin `.main` ning o'zidan chiqarib yubormaydi (u
+   `position: relative; z-index: 1` bilan alohida kontekst hosil qiladi).
+
+   Ilgari buning o'rniga `.main > :not(.bgStack) { position: relative }`
+   qoidasi turardi — u modal oynalarning `position: fixed` ini bekor qilib,
+   profil oynasini sahifa ichiga "cho'ktirib" yuborardi. */
 .bgStack {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   overflow: hidden;
   pointer-events: none;
-}
-
-/* MUHIM: oqimdagi (static) elementlar fonda joylashgan `position: absolute`
-   qatlamlardan PASTDA chiziladi — CSS chizish tartibi shunday. Fon shaffof
-   ekan bu bilinmasdi; u qorayishi bilan xabar maydoni, kartochkalar va
-   yozish paneli ko'rinmay qoldi. Yechim — mazmun elementlarini ham
-   joylashtirilgan qilib, ustki qatlamga chiqarish. */
-.main > :not(.bgStack) {
-  position: relative;
-  z-index: 1;
 }
 
 /* Orqa fon.

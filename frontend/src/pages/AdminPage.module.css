@@ -49,21 +49,17 @@
   );
 }
 
-/* Barcha fon qatlamlari shu o'ramda yotadi. */
+/* Barcha fon qatlamlari shu o'ramda yotadi.
+   `z-index: -1` — fon o'rami mazmun ORTIGA tushadi, lekin `.main` ichida
+   qoladi. Batafsil izoh ChatPage.module.css da: ilgari bu yerda
+   `.main > :not(.bgStack) { position: relative }` turardi va u modal
+   oynalarning `position: fixed` ini buzardi. */
 .bgStack {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   overflow: hidden;
   pointer-events: none;
-}
-
-/* Oqimdagi (static) elementlar `position: absolute` fon qatlamlaridan
-   PASTDA chiziladi — shu sababli fon qorayganda kartochkalar va jadval
-   ko'rinmay qolgandi. Mazmunni ustki qatlamga chiqaramiz. */
-.main > :not(.bgStack) {
-  position: relative;
-  z-index: 1;
 }
 
 .content {

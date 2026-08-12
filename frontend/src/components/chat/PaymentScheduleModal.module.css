@@ -168,3 +168,13 @@
     transform: none;
   }
 }
+
+/* --- Glassmorphism -------------------------------------------------
+   Fon rangi (shaffofligi) `theme.ts` dagi `tk.card` dan keladi, bu
+   yerda esa faqat ORQA FON BLURI qo'shiladi. Alohida blok qilingani
+   sabab: mavjud qoidalarga tegmasdan, effektni bitta joydan
+   yoqish/o'chirish qulay. */
+.modal {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}

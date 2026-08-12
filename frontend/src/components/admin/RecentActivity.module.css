@@ -60,3 +60,11 @@
   color: var(--adm-text-muted-2);
   flex: 0 0 auto;
 }
+/* --- Glassmorphism -------------------------------------------------
+   Fon rangi `--adm-card` tokenidan (index.css) keladi — u endi yarim
+   shaffof. Bu yerda faqat ORQA FON BLURI qo'shiladi: `backdrop-filter`
+   ni tokendan berib bo'lmaydi, u har bir elementga alohida kerak. */
+.card {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}

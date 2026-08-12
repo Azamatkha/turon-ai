@@ -23,8 +23,10 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
         headBorder: "rgba(255,255,255,.10)",
         strong: "#E2E8F0",
         muted: "#94A3B8",
-        card: "#0C2949",
-        cardBorder: "rgba(255,255,255,.10)",
+        // Shisha (glassmorphism): fon to'liq shaffofmas emas. Blur esa
+        // CSS modullardagi `backdrop-filter: var(--tu-glass-blur)` orqali.
+        card: "rgba(12,41,73,.58)",
+        cardBorder: "rgba(255,255,255,.12)",
         input: "#E2E8F0",
         disc: "#64748B",
         chipShadow: "none",
@@ -35,8 +37,9 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
         headBorder: "#E2E8F0",
         strong: NAVY,
         muted: "#64748B",
-        card: "#ffffff",
-        cardBorder: "#E2E8F0",
+        // Shisha (glassmorphism) — izoh yuqorida
+        card: "rgba(255,255,255,.62)",
+        cardBorder: "rgba(255,255,255,.70)",
         input: NAVY,
         disc: "#94A3B8",
         chipShadow: "0 1px 2px rgba(4, 33, 60, .06)",

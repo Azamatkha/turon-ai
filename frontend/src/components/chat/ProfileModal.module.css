@@ -19,7 +19,9 @@
 .modal {
   width: 100%;
   max-width: 420px;
-  background: #fff;
+  /* Shisha fon: oynaning ortidagi sahifa xira ko'rinib turadi */
+  background: var(--tu-glass-bg-strong);
+  border: 1px solid var(--tu-glass-border);
   border-radius: 20px;
   padding: 26px;
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.4);
@@ -319,4 +321,14 @@
   font-size: var(--tu-text-xs);
   line-height: 1.4;
   color: var(--tu-text-muted);
+}
+
+/* --- Glassmorphism -------------------------------------------------
+   Fon rangi (shaffofligi) `theme.ts` dagi `tk.card` dan keladi, bu
+   yerda esa faqat ORQA FON BLURI qo'shiladi. Alohida blok qilingani
+   sabab: mavjud qoidalarga tegmasdan, effektni bitta joydan
+   yoqish/o'chirish qulay. */
+.modal {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
 }

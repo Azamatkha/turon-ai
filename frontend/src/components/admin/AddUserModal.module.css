@@ -199,3 +199,12 @@
   color: var(--adm-text-muted);
   background: var(--adm-card);
 }
+
+/* --- Glassmorphism -------------------------------------------------
+   Fon rangi `--adm-card` tokenidan (index.css) keladi — u endi yarim
+   shaffof. Bu yerda faqat ORQA FON BLURI qo'shiladi: `backdrop-filter`
+   ni tokendan berib bo'lmaydi, u har bir elementga alohida kerak. */
+.modal {
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+}

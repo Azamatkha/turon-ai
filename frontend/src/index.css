@@ -103,6 +103,19 @@ body,
   --tu-border-strong: var(--tu-gray-300);
   --tu-border-subtle: var(--tu-gray-100);
 
+  /* --- Shisha (glassmorphism) qatlami ------------------------------------
+     Kartochka/panel foni endi to'liq shaffofmas emas: ortidagi gradient va
+     zarrachalar biroz ko'rinib turadi, lekin `backdrop-filter` ularni
+     xiralashtirgani uchun matn o'qilishi buzilmaydi.
+     `--tu-glass-blur` shuning uchun alohida token: uni faqat KERAKLI
+     elementlarga qo'shamiz (backdrop-filter qimmat effekt, uni har bir
+     mayda elementga berish sahifani sekinlashtiradi). */
+  --tu-glass-bg: rgba(255, 255, 255, 0.62);
+  --tu-glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --tu-glass-border: rgba(255, 255, 255, 0.70);
+  --tu-glass-blur: blur(14px) saturate(140%);
+  --tu-glass-shadow: 0 8px 32px rgba(4, 33, 60, 0.10);
+
   --tu-text: var(--tu-gray-700);           /* asosiy matn */
   --tu-text-strong: var(--tu-blue-900);    /* sarlavha */
   --tu-text-muted: var(--tu-gray-500);     /* ikkilamchi */
@@ -173,7 +186,9 @@ body,
      davom etadi, lekin ranglar bitta manbadan boshqariladi.
      ======================================================================= */
   --adm-bg: var(--tu-bg);
-  --adm-card: var(--tu-surface);
+  /* Admin kartochkalari — shisha fon. `backdrop-filter` esa har bir
+     kartochka klassiga alohida qo'shilgan (tokendan kelmaydi). */
+  --adm-card: var(--tu-glass-bg);
   --adm-card-alt: var(--tu-surface-alt);
   --adm-hover: var(--tu-surface-hover);
   --adm-hover-2: var(--tu-surface-hover);
@@ -220,6 +235,12 @@ html.dark {
   --tu-border: rgba(255, 255, 255, 0.10);
   --tu-border-strong: rgba(255, 255, 255, 0.16);
   --tu-border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Shisha qatlami — to'q mavzuda oq emas, to'q ko'k asosda */
+  --tu-glass-bg: rgba(12, 41, 73, 0.58);
+  --tu-glass-bg-strong: rgba(12, 41, 73, 0.80);
+  --tu-glass-border: rgba(255, 255, 255, 0.12);
+  --tu-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 
   --tu-text: var(--tu-gray-300);
   --tu-text-strong: var(--tu-gray-200);
