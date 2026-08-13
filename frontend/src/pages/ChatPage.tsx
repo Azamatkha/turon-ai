@@ -311,8 +311,7 @@ export default function ChatPage() {
             (`.main > :not(.bgStack)`) doim ustida qoladi. Ilgari qatlamlar
             to'g'ridan-to'g'ri `main` ichida edi — fon shaffof ekan bilinmadi,
             u qorayishi bilan xabar maydoni va kartochkalarni bekitib qo'ydi. */}
-        <div className={styles.bgStack} aria-hidden="true">
-          <div className={styles.gradientBg} />
+        <div className={styles.bgStack} aria-hidden="true">
           <GridPattern className={styles.gridBg} />
           <CosmicSingularity className={styles.spaceBg} isDark={isDark} />
           <OrbitRings />

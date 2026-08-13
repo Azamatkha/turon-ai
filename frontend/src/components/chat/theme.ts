@@ -52,7 +52,7 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 // (mavzudan qat'iy nazar), faqat fon rangi ozgina o'zgaradi (dark mode'da yanada qorong'i)
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
-    bg: isDark ? "#04162C" : NAVY,
+    bg: isDark ? "rgba(4,22,44,.72)" : "rgba(0,57,120,.72)",
     fg: "#F1F5F9",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.

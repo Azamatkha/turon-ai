@@ -333,8 +333,7 @@ export default function AdminPage() {
       <main className={styles.main}>
         {/* Fon qatlamlari BITTA o'ramda — mazmun (`.main > :not(.bgStack)`)
             har doim ustida qoladi. Batafsil izoh ChatPage.tsx da. */}
-        <div className={styles.bgStack} aria-hidden="true">
-          <div className={styles.gradientBg} />
+        <div className={styles.bgStack} aria-hidden="true">
           <GridPattern className={styles.gridBg} />
           <CosmicSingularity className={styles.spaceBg} isDark={isDark} />
           <OrbitRings />

@@ -99,30 +99,41 @@ function buildLogoTargets(size: number, want: number) {
     for (let x = 0; x < size; x++) if (filled(x, y)) count++;
   }
 
-  // MUHIM: nuqtalar TO'R (grid) bo'yicha olinadi. Ilgari barcha piksellar
-  // qator-qator ro'yxatga yig'ilib, undan har N-chisi tanlanardi — qator
-  // uzunligi bilan qadam "rezonansga" kirib, natijada logotip to'lmasdan
-  // faqat diagonal chiziqlar chiqardi.
-  const step = Math.max(1, Math.round(Math.sqrt(count / Math.max(1, want))));
-  const points: { x: number; y: number }[] = [];
-  for (let y = 0; y < size; y += step) {
-    for (let x = 0; x < size; x += step) {
-      if (filled(x, y)) points.push({ x: x - size / 2, y: y - size / 2 });
+  // Nuqtalar TO'R (grid) bo'yicha olinadi va ULARNING HAMMASI zarracha
+  // bilan to'ldiriladi. Qadam shunday tanlanadi-ki, nuqtalar soni mavjud
+  // zarrachadan OSHIB KETMASIN: aks holda ortiqcha nuqtalar bo'sh qolib,
+  // logotip chala chiqadi (ilgari aynan shu bo'lgan — shakl "xira" va
+  // yarim edi).
+  const grid = (step: number) => {
+    const pts: { x: number; y: number }[] = [];
+    for (let y = 0; y < size; y += step) {
+      for (let x = 0; x < size; x += step) {
+        if (filled(x, y)) pts.push({ x: x - size / 2, y: y - size / 2 });
+      }
     }
+    return pts;
+  };
+
+  // Taxminiy qadamdan boshlab, sig'adigan birinchi qadamni topamiz.
+  const start = Math.max(1, Math.floor(Math.sqrt(count / Math.max(1, want))));
+  for (let step = start; step <= 8; step++) {
+    const pts = grid(step);
+    if (pts.length <= want) return pts;
   }
-  return points;
+  return grid(8);
 }
 
 export default function CosmicSingularity({
   // Kamroq, lekin yirikroq va to'qroq zarracha — 3200 tasi fonni
   // "chang bosgan" ko'rinishga solib qo'yardi.
-  particleCount = 1500,
+  particleCount = 1200,
   speed = 1,
   attraction = 1,
   pointerRadius = 320,
   holdDelay = 650,
-  // Kursordan sal kattaroq — 140 px hali ham yirik ko'rinardi.
-  logoSize = 60,
+  // Kursordan sal kattaroq. 90 px + 2 px qadam ≈ 950 nuqta — bu shaklga
+  // ajratilgan zarracha soniga to'g'ri keladi, ya'ni logotip TO'LIQ to'ladi.
+  logoSize = 90,
   colors,
   opacity = 0.7,
   isDark = false,
@@ -156,9 +167,8 @@ export default function CosmicSingularity({
     const particles: Particle[] = [];
     /** Rang bo'yicha guruhlangan indekslar — bir marta tuziladi. */
     const groups: number[][] = palette.map(() => []);
-    // Zarrachalarning 65% i shaklga yig'iladi, 35% i fonda qoladi.
-    // (30% da logotip to'lmasdi, 70% da esa fon bo'shab qolardi.)
-    const formerCount = Math.round(particleCount * 0.65);
+    // Zarrachalarning 80% i shaklga yig'iladi, 20% i fonda qoladi.
+    const formerCount = Math.round(particleCount * 0.8);
     const targets = holdDelay > 0 ? buildLogoTargets(logoSize, formerCount) : [];
 
     const setSize = () => {
@@ -195,7 +205,15 @@ export default function CosmicSingularity({
             // ekran bo'ylab bir tekis tarqalgan holda), qolgani fonda
             // qoladi. Har biriga O'ZINING nishoni tegadi — shuning uchun
             // nuqtalar ustma-ust tushmaydi.
-            slot: i % 20 < 13 && slot < targets.length ? slot++ : -1,
+            // Nishonlar zarrachalar orasiga BIR TEKIS taqsimlanadi
+            // (Bresenham): shaklga ketadiganlar ham, fonda qoladiganlar ham
+            // butun ekran bo'ylab tarqoq bo'ladi, bir joydan olinmaydi.
+            slot:
+              slot < targets.length &&
+              Math.floor(((i + 1) * targets.length) / particleCount) >
+                Math.floor((i * targets.length) / particleCount)
+                ? slot++
+                : -1,
           });
           groups[i % groups.length].push(i);
         }

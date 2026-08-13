@@ -110,13 +110,13 @@ body,
      `--tu-glass-blur` shuning uchun alohida token: uni faqat KERAKLI
      elementlarga qo'shamiz (backdrop-filter qimmat effekt, uni har bir
      mayda elementga berish sahifani sekinlashtiradi). */
-  --tu-glass-bg: rgba(255, 255, 255, 0.62);
-  --tu-glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --tu-glass-bg: rgba(255, 255, 255, 0.52);
+  --tu-glass-bg-strong: rgba(255, 255, 255, 0.74);
   /* Shisha kartochka ICHIDAGI yuzalar (input, jadval sarlavhasi, satr
      hover) — kartochkadan biroz ajralib tursin, lekin uni "og'irlashtirmasin" */
-  --tu-glass-bg-soft: rgba(255, 255, 255, 0.38);
+  --tu-glass-bg-soft: rgba(255, 255, 255, 0.26);
   --tu-glass-border: rgba(255, 255, 255, 0.70);
-  --tu-glass-blur: blur(14px) saturate(140%);
+  --tu-glass-blur: blur(18px) saturate(165%);
   --tu-glass-shadow: 0 8px 32px rgba(4, 33, 60, 0.10);
 
   --tu-text: var(--tu-gray-700);           /* asosiy matn */
@@ -222,7 +222,7 @@ body,
   --adm-info-bg: rgba(11, 95, 165, 0.12);
   --adm-accent-bg: rgba(11, 95, 165, 0.12);
   --adm-accent-2-bg: rgba(11, 95, 165, 0.12);
-  --adm-sidebar: var(--tu-brand);
+  --adm-sidebar: rgba(0, 57, 120, 0.72);
   --adm-search-bg: var(--tu-gray-100);
   --adm-search-border: rgba(0, 57, 120, 0.16);
   --adm-search-ph: var(--tu-text-faint);
@@ -244,8 +244,8 @@ html.dark {
   --tu-border-subtle: rgba(255, 255, 255, 0.06);
 
   /* Shisha qatlami — to'q mavzuda oq emas, to'q ko'k asosda */
-  --tu-glass-bg: rgba(12, 41, 73, 0.58);
-  --tu-glass-bg-strong: rgba(12, 41, 73, 0.80);
+  --tu-glass-bg: rgba(12, 41, 73, 0.48);
+  --tu-glass-bg-strong: rgba(12, 41, 73, 0.70);
   --tu-glass-bg-soft: rgba(255, 255, 255, 0.05);
   --tu-glass-border: rgba(255, 255, 255, 0.12);
   --tu-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
