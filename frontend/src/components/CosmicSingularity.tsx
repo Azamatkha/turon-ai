@@ -63,7 +63,8 @@ interface Particle {
   slot: number;
 }
 
-const LIGHT_COLORS = ["#0B5FA5", "#1A7CC8", "#5FA3D6", "#6874D6", "#2FA8A0", "#8FB8E0"];
+// Yorug' mavzuda ochiq havorang deyarli ko'rinmasdi — to'plam to'qlashtirildi
+const LIGHT_COLORS = ["#003978", "#0B5FA5", "#1A7CC8", "#25507F", "#1F8F87", "#4A57C0"];
 const DARK_COLORS = ["#63B3F0", "#9ED8FF", "#5FA3D6", "#8C93E8", "#4FD1C5", "#3B82C4"];
 
 const withAlpha = (hex: string, alpha: number) => {
@@ -109,16 +110,16 @@ function buildLogoTargets(size: number, want: number) {
 }
 
 export default function CosmicSingularity({
-  particleCount = 2400,
+  particleCount = 3200,
   speed = 1,
   attraction = 1,
   pointerRadius = 320,
   holdDelay = 650,
-  // Kursordan sal kattaroq bo'lsa yetarli — katta shakl uchun zarracha
-  // yetmay, kontur siyrak chiqadi.
-  logoSize = 110,
+  // Kursordan sal kattaroq. Zarracha o'lchami 2–3 px ga o'sgani uchun
+  // 110 px da nuqtalar bir-birining ustiga chiqib, shakl "dog'" bo'lardi.
+  logoSize = 140,
   colors,
-  opacity = 0.5,
+  opacity = 0.7,
   isDark = false,
   className,
 }: CosmicSingularityProps) {
@@ -183,7 +184,8 @@ export default function CosmicSingularity({
             hx: x, hy: y,
             hvx: Math.cos(ang) * sp,
             hvy: Math.sin(ang) * sp,
-            size: Math.random() < 0.14 ? 2 : 1,
+            // Kattaroq zarracha: 1–2 px "chang" bo'lib ko'rinmaydi
+            size: Math.random() < 0.25 ? 3 : 2,
             // Har o'ntadan uchtasi shaklga qo'shiladi (butun ekran bo'ylab
             // bir tekis tarqalgan holda), qolgani fonda qoladi. Har biriga
             // O'ZINING nishoni tegadi — shuning uchun nuqtalar ustma-ust
@@ -228,11 +230,12 @@ export default function CosmicSingularity({
           // Nishonga yaqinlashgan sari burama so'nadi.
           // Koeffitsiyentlar ataylab kichik: ilgari zarrachalar bir zumda
           // "otilib" borardi, endi ~2 sekundda oqib kelib joylashadi.
-          // Har kadrda qolgan masofaning ~1% i bosib o'tiladi: shakl ~1.5
-          // sekundda yig'iladi (ilgari 0.3 sekund — "otilib" borardi).
-          const swirl = Math.min(1, d / 200) * 0.000011;
-          p.vx += (dx * 0.000004 - dy * swirl) * dt;
-          p.vy += (dy * 0.000004 + dx * swirl) * dt;
+          // Har kadrda qolgan masofaning ~3% i bosib o'tiladi: shakl ~2
+          // sekundda to'liq yig'iladi. (0.000004 da "dumi" cho'zilib,
+          // oxirgi zarrachalar 15 sekundgacha kelardi.)
+          const swirl = Math.min(1, d / 200) * 0.00003;
+          p.vx += (dx * 0.000012 - dy * swirl) * dt;
+          p.vy += (dy * 0.000012 + dx * swirl) * dt;
         } else {
           // --- Bo'sh holat --------------------------------------------
           p.hx += p.hvx * dt;

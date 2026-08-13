@@ -33,7 +33,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
 
   // Tungi fonda to'q ko'k o'qilmaydi (kontrast 2.24 — WCAG 4.5 talab qiladi)
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
-  const cardBg = isDark ? "rgba(255,255,255,.06)" : "#F8FAFC";
+  const cardBg = "var(--tu-glass-bg-soft)";
 
   // Object URL faqat preview uchun — komponent yopilganda bo'shatiladi
   useEffect(() => {

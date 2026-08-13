@@ -10,8 +10,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 28px 0 56px;
-  background: var(--adm-card);
-  border-bottom: 1px solid var(--adm-border-2);
+  /* Yuqori panelning O'ZIDA fon yo'q — orqadagi sahifa foni (gradient,
+     to'r, zarrachalar) uzluksiz ko'rinib tursin. "Shisha" faqat panel
+     ichidagi tugmalarda. */
+  background: transparent;
+  border-bottom: none;
   /* Til tanlash ro'yxati sarlavha ostidagi kartochkalar USTIDA ochilishi
      kerak. Sarlavha joylashtirilmagan bo'lsa, undan keyingi mazmun keyin
      chizilib, ro'yxatning pastki qismini bekitib qo'yardi. */
@@ -84,7 +87,7 @@
    ===================== */
 .title {
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.3px;
   color: var(--adm-text-strong);
 }
@@ -98,7 +101,8 @@
    Fon rangi `--adm-card` tokenidan (index.css) keladi — u endi yarim
    shaffof. Bu yerda faqat ORQA FON BLURI qo'shiladi: `backdrop-filter`
    ni tokendan berib bo'lmaydi, u har bir elementga alohida kerak. */
-.header {
+/* Panelning o'zi shaffof — blur faqat ichidagi qidiruv qutisida. */
+.searchBox {
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
 }

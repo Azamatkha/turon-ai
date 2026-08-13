@@ -125,8 +125,10 @@ body,
   --tu-text-faint: var(--tu-gray-400);     /* placeholder, disclaimer */
 
   /* --- Tipografika shkalasi ------------------------------------------- */
-  --tu-font: 'Onest', 'Segoe UI Variable Text', 'Segoe UI', system-ui,
-    -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  /* Inter — `@fontsource-variable/inter` orqali LOKAL yuklanadi (main.tsx),
+     Google Fonts'dan emas: bank proksisi fonts.googleapis.com ni bloklaydi. */
+  --tu-font: 'Inter Variable', 'Inter', 'Segoe UI Variable Text', 'Segoe UI',
+    system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   --tu-font-mono: 'Cascadia Mono', 'Consolas', 'SF Mono', ui-monospace, monospace;
 
   --tu-text-xs: 0.75rem;    /* 12px — yorliq, meta */
@@ -334,6 +336,25 @@ select {
   select {
     font-size: 16px;
   }
+}
+
+/* Tipografika qalinliklari (Inter uchun).
+   Inter'ning 400 qalinligi Onest'nikidan ingichkaroq ko'rinadi — shuning
+   uchun asosiy matn 500 ga ko'tarildi, sarlavhalar esa 800 (Inter'da 700 va
+   800 orasidagi farq seziladi, 800 "boshqaruv paneli" uslubiga mos).
+   Komponentlarning O'Z font-weight'i bo'lsa, u kuchliroq — bu faqat asos. */
+body {
+  font-weight: 500;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 
 /* Mavzu almashganda silliq o'tish.

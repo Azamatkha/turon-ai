@@ -85,7 +85,7 @@
    ===================== */
 .title {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -147,4 +147,72 @@
 .header {
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
+}
+
+/* --- "Shiny" tugma ramkasi ------------------------------------------------
+   Namuna: ShinyButton (conic-gradient bilan aylanuvchi yorug' ramka).
+   Farqlar (ataylab):
+     1. Google Fonts import yo'q — bank proksisi uni bloklaydi (index.css
+        dagi izohga qarang), shrift baribir loyihadan keladi.
+     2. Animatsiya FAQAT hover/fokusda ishlaydi. Namunada u doim aylanadi:
+        yuqori panelda 5 ta tugma bor, ya'ni 5 ta uzluksiz animatsiya —
+        kuchsiz kompyuterda bekorga CPU yeydi.
+     3. Fon o'zgarmaydi — tugma shishaligicha qoladi (`--tu-glass-bg`),
+        chunki panelning o'zi shaffof va orqadagi fon ko'rinib turishi kerak.
+   `@property` qo'llab-quvvatlanmagan brauzerda burchak animatsiya qilinmaydi
+   va tugma oddiy shisha tugma bo'lib qolaveradi — buzilmaydi. */
+@property --tu-shine-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.adminBtn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Yorug' halqa — ramka o'rnida turadigan qatlam (mask bilan faqat chetlari) */
+.adminBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--tu-shine-angle),
+    transparent 0%,
+    var(--tu-accent) 12%,
+    #ffffff 18%,
+    var(--tu-accent) 24%,
+    transparent 40%
+  );
+  /* Faqat 1px chegara ko'rinsin: ichki to'rtburchak "kesib" olinadi */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.adminBtn:hover::before,
+.adminBtn:focus-visible::before {
+  opacity: 1;
+  animation: tuShine 2.4s linear infinite;
+}
+
+@keyframes tuShine {
+  to {
+    --tu-shine-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adminBtn:hover::before,
+  .adminBtn:focus-visible::before {
+    animation: none;
+  }
 }

@@ -73,7 +73,7 @@ function Cell({ value, delta, muted }: { value: number | null; delta: number | n
 
 export default function RatesModal({ tk, isDark, s, onClose }: RatesModalProps) {
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
-  const cardBg = isDark ? "rgba(255,255,255,.06)" : "#F1F5F9";
+  const cardBg = "var(--tu-glass-bg-soft)";
 
   const [data, setData] = useState<RatesResult | null>(null);
   const [error, setError] = useState(false);

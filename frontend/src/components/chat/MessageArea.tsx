@@ -133,7 +133,9 @@ export default function MessageArea({
                 onClick={() => onSuggestionClick(label)}
                 className={styles.suggestionChip}
                 baseStyle={{ background: tk.card, border: "1px solid " + tk.cardBorder, color: tk.strong, boxShadow: tk.chipShadow }}
-                hoverStyle={{ background: tk.card, borderColor: isDark ? "rgba(95,163,214,.5)" : "#CBD5E1", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(0, 57, 120,.1)" }}
+                // Hover'da chegara BREND ko'kiga o'tadi (ilgari kulrang
+                // #CBD5E1 edi — shisha fonda qora ramkadek ko'rinardi)
+                hoverStyle={{ background: "var(--tu-glass-bg-strong)", borderColor: isDark ? "rgba(95,163,214,.55)" : "rgba(11,95,165,.45)", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(0, 57, 120,.1)" }}
               >
                 <span className={styles.suggestionIcon}>{suggIcons[idx]}</span>
                 {label}

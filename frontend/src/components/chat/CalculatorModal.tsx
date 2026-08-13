@@ -175,7 +175,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
   const [months, setMonths] = useState(24);
 
   const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
-  const cardBg = isDark ? "rgba(255,255,255,.05)" : "#F1F5F9";
+  const cardBg = "var(--tu-glass-bg-soft)";
   const monthsCfg =
     mode === "deposit" ? MONTHS_DEP : mode === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
   // Oddiy kreditda eng past stavka 20%
