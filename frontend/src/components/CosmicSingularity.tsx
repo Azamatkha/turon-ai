@@ -163,6 +163,9 @@ export default function CosmicSingularity({
     let movedAt = 0;
     /** Logotip yig'ilyaptimi. */
     let forming = false;
+    /** Vektor logotipning ko'rinish darajasi (0..1). */
+    let logoAlpha = 0;
+    const logoPath = new Path2D(LOGO_PATH);
 
     const particles: Particle[] = [];
     /** Rang bo'yicha guruhlangan indekslar — bir marta tuziladi. */
@@ -240,25 +243,20 @@ export default function CosmicSingularity({
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        if (formable && pointer && p.slot >= 0) {
-          // --- Logotip yig'ilishi -------------------------------------
-          const t = targets[p.slot];
-          const tx = pointer.x + t.x;
-          const ty = pointer.y + t.y;
-          const dx = tx - p.x;
-          const dy = ty - p.y;
+        if (formable && pointer) {
+          // --- Logotip paydo bo'lishi -----------------------------------
+          // Zarrachalar logotip SHAKLINI chizmaydi (nuqtalardan aniq shakl
+          // chiqmadi) — ular kursor atrofida burama HALQAGA yig'iladi,
+          // logotipning o'zi esa vektor sifatida ustiga chiqadi.
+          const dx = pointer.x - p.x;
+          const dy = pointer.y - p.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
-          // Radial tortilish + perpendikulyar (burama) tashkil etuvchi:
-          // shundan zarracha to'g'ri uchmay, aylanib kelib joylashadi.
-          // Nishonga yaqinlashgan sari burama so'nadi.
-          // Koeffitsiyentlar ataylab kichik: ilgari zarrachalar bir zumda
-          // "otilib" borardi, endi ~2 sekundda oqib kelib joylashadi.
-          // Har kadrda qolgan masofaning ~3% i bosib o'tiladi: shakl ~2
-          // sekundda to'liq yig'iladi. (0.000004 da "dumi" cho'zilib,
-          // oxirgi zarrachalar 15 sekundgacha kelardi.)
-          const swirl = Math.min(1, d / 200) * 0.00003;
-          p.vx += (dx * 0.000012 - dy * swirl) * dt;
-          p.vy += (dy * 0.000012 + dx * swirl) * dt;
+          // Halqa radiusi: logotipdan sal kattaroq
+          const ring = logoSize * 0.75;
+          // (d - ring) > 0 bo'lsa ichkariga, < 0 bo'lsa tashqariga
+          const radial = (d - ring) * 0.00004;
+          p.vx += (dx / d) * radial * dt - (dy / d) * 0.0004 * dt;
+          p.vy += (dy / d) * radial * dt + (dx / d) * 0.0004 * dt;
         } else {
           // --- Bo'sh holat --------------------------------------------
           p.hx += p.hvx * dt;
@@ -305,6 +303,20 @@ export default function CosmicSingularity({
           ctx.fillRect(p.x, p.y, p.size, p.size);
         }
       }
+
+      // Vektor logotip — kursor ustida yumshoq paydo bo'ladi/yo'qoladi.
+      // Nuqtalardan yig'ilgan shakl har doim chala/xira chiqqani uchun
+      // logotipning O'ZI chiziladi: kontur 100% aniq.
+      if (logoAlpha > 0.01 && pointer) {
+        const k = (logoSize / Math.max(LOGO_VB.w, LOGO_VB.h)) * (0.82 + 0.18 * logoAlpha);
+        ctx.save();
+        ctx.globalAlpha = logoAlpha;
+        ctx.fillStyle = isDark ? "#9ED8FF" : "#0B5FA5";
+        ctx.translate(pointer.x - (LOGO_VB.w * k) / 2, pointer.y - (LOGO_VB.h * k) / 2);
+        ctx.scale(k, k);
+        ctx.fill(logoPath);
+        ctx.restore();
+      }
     };
 
     let rectTick = 0;
@@ -319,6 +331,10 @@ export default function CosmicSingularity({
       }
       forming =
         holdDelay > 0 && !!pointer && movedAt > 0 && now - movedAt > holdDelay;
+      // Paydo bo'lish ~450 ms, yo'qolish ~250 ms
+      logoAlpha = forming
+        ? Math.min(1, logoAlpha + dt / 450)
+        : Math.max(0, logoAlpha - dt / 250);
       step(dt);
       draw();
       frame = requestAnimationFrame(render);

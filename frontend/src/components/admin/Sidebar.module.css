@@ -9,8 +9,6 @@
   width: 248px;
   flex: 0 0 auto;
   background: var(--adm-sidebar);
-  backdrop-filter: var(--tu-glass-blur);
-  -webkit-backdrop-filter: var(--tu-glass-blur);
   color: #F1F5F9;
   height: 100%;
   display: flex;

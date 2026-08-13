@@ -485,10 +485,3 @@
     height: 46px;
   }
 }
-
-/* Shisha: fon (`side.bg`) yarim shaffof, ortidagi sahifa yoyilmasi
-   (.bgLayer) xiralashib ko'rinadi. */
-.aside {
-  backdrop-filter: var(--tu-glass-blur);
-  -webkit-backdrop-filter: var(--tu-glass-blur);
-}
