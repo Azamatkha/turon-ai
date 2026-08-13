@@ -112,6 +112,9 @@ body,
      mayda elementga berish sahifani sekinlashtiradi). */
   --tu-glass-bg: rgba(255, 255, 255, 0.62);
   --tu-glass-bg-strong: rgba(255, 255, 255, 0.82);
+  /* Shisha kartochka ICHIDAGI yuzalar (input, jadval sarlavhasi, satr
+     hover) — kartochkadan biroz ajralib tursin, lekin uni "og'irlashtirmasin" */
+  --tu-glass-bg-soft: rgba(255, 255, 255, 0.38);
   --tu-glass-border: rgba(255, 255, 255, 0.70);
   --tu-glass-blur: blur(14px) saturate(140%);
   --tu-glass-shadow: 0 8px 32px rgba(4, 33, 60, 0.10);
@@ -189,10 +192,12 @@ body,
   /* Admin kartochkalari — shisha fon. `backdrop-filter` esa har bir
      kartochka klassiga alohida qo'shilgan (tokendan kelmaydi). */
   --adm-card: var(--tu-glass-bg);
-  --adm-card-alt: var(--tu-surface-alt);
-  --adm-hover: var(--tu-surface-hover);
-  --adm-hover-2: var(--tu-surface-hover);
-  --adm-input-bg: var(--tu-surface-alt);
+  /* Kartochka ichidagi yuzalar ham shishaga moslandi — aks holda shaffof
+     kartochka ustida qattiq kulrang bloklar "yamoq" bo'lib ko'rinardi. */
+  --adm-card-alt: var(--tu-glass-bg-soft);
+  --adm-hover: var(--tu-glass-bg-soft);
+  --adm-hover-2: var(--tu-glass-bg-soft);
+  --adm-input-bg: var(--tu-glass-bg-soft);
   --adm-border: var(--tu-border);
   --adm-border-2: var(--tu-border);
   --adm-border-3: var(--tu-border-subtle);
@@ -239,6 +244,7 @@ html.dark {
   /* Shisha qatlami — to'q mavzuda oq emas, to'q ko'k asosda */
   --tu-glass-bg: rgba(12, 41, 73, 0.58);
   --tu-glass-bg-strong: rgba(12, 41, 73, 0.80);
+  --tu-glass-bg-soft: rgba(255, 255, 255, 0.05);
   --tu-glass-border: rgba(255, 255, 255, 0.12);
   --tu-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 

@@ -58,6 +58,9 @@ interface Particle {
   hvx: number;
   hvy: number;
   size: number;
+  /** Logotipdagi nishon nuqta indeksi. -1 — bu zarracha shaklga
+      qo'shilmaydi, fon bo'm-bo'sh qolmasligi uchun joyida qoladi. */
+  slot: number;
 }
 
 const LIGHT_COLORS = ["#0B5FA5", "#1A7CC8", "#5FA3D6", "#6874D6", "#2FA8A0", "#8FB8E0"];
@@ -87,26 +90,33 @@ function buildLogoTargets(size: number, want: number) {
   octx.fill(new Path2D(LOGO_PATH));
 
   const data = octx.getImageData(0, 0, size, size).data;
-  const points: { x: number; y: number }[] = [];
-  // Qadam bilan yuramiz: har bir piksel emas, taxminan `want` ta nuqta kerak
-  const step = Math.max(1, Math.round(Math.sqrt((size * size) / (want * 3))));
-  for (let y = 0; y < size; y += step) {
-    for (let x = 0; x < size; x += step) {
+  const all: { x: number; y: number }[] = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
       if (data[(y * size + x) * 4 + 3] > 128) {
-        points.push({ x: x - size / 2, y: y - size / 2 });
+        all.push({ x: x - size / 2, y: y - size / 2 });
       }
     }
   }
+  // Nuqta zarrachadan ko'p bo'lsa — BIR TEKIS siyraklashtiramiz.
+  // (Ilgari ro'yxat shundayligicha ishlatilardi va zarrachalar faqat
+  // birinchi nuqtalarga — ya'ni logotipning YUQORI qismiga yetardi.)
+  if (all.length <= want) return all;
+  const stride = all.length / want;
+  const points: { x: number; y: number }[] = [];
+  for (let i = 0; i < want; i++) points.push(all[Math.floor(i * stride)]);
   return points;
 }
 
 export default function CosmicSingularity({
-  particleCount = 1500,
+  particleCount = 2400,
   speed = 1,
   attraction = 1,
   pointerRadius = 320,
   holdDelay = 650,
-  logoSize = 230,
+  // Kursordan sal kattaroq bo'lsa yetarli — katta shakl uchun zarracha
+  // yetmay, kontur siyrak chiqadi.
+  logoSize = 110,
   colors,
   opacity = 0.5,
   isDark = false,
@@ -140,7 +150,10 @@ export default function CosmicSingularity({
     const particles: Particle[] = [];
     /** Rang bo'yicha guruhlangan indekslar — bir marta tuziladi. */
     const groups: number[][] = palette.map(() => []);
-    const targets = holdDelay > 0 ? buildLogoTargets(logoSize, particleCount) : [];
+    // Zarrachalarning ATIGI 30% i shaklga yig'iladi, 70% i fonda qoladi —
+    // aks holda kursor bir joyda turganda sahifa fonida hech narsa qolmaydi.
+    const formerCount = Math.round(particleCount * 0.3);
+    const targets = holdDelay > 0 ? buildLogoTargets(logoSize, formerCount) : [];
 
     const setSize = () => {
       const parent = canvas.parentElement;
@@ -157,6 +170,7 @@ export default function CosmicSingularity({
       canvas.width = w;
       canvas.height = h;
       if (first) {
+        let slot = 0;
         for (let i = 0; i < particleCount; i++) {
           const x = Math.random() * w;
           const y = Math.random() * h;
@@ -170,6 +184,11 @@ export default function CosmicSingularity({
             hvx: Math.cos(ang) * sp,
             hvy: Math.sin(ang) * sp,
             size: Math.random() < 0.14 ? 2 : 1,
+            // Har o'ntadan uchtasi shaklga qo'shiladi (butun ekran bo'ylab
+            // bir tekis tarqalgan holda), qolgani fonda qoladi. Har biriga
+            // O'ZINING nishoni tegadi — shuning uchun nuqtalar ustma-ust
+            // tushmaydi.
+            slot: i % 10 < 3 && slot < targets.length ? slot++ : -1,
           });
           groups[i % groups.length].push(i);
         }
@@ -196,9 +215,9 @@ export default function CosmicSingularity({
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        if (formable && pointer) {
+        if (formable && pointer && p.slot >= 0) {
           // --- Logotip yig'ilishi -------------------------------------
-          const t = targets[i % targets.length];
+          const t = targets[p.slot];
           const tx = pointer.x + t.x;
           const ty = pointer.y + t.y;
           const dx = tx - p.x;
@@ -207,9 +226,13 @@ export default function CosmicSingularity({
           // Radial tortilish + perpendikulyar (burama) tashkil etuvchi:
           // shundan zarracha to'g'ri uchmay, aylanib kelib joylashadi.
           // Nishonga yaqinlashgan sari burama so'nadi.
-          const swirl = Math.min(1, d / 220) * 0.00004;
-          p.vx += (dx * 0.00007 - dy * swirl) * dt;
-          p.vy += (dy * 0.00007 + dx * swirl) * dt;
+          // Koeffitsiyentlar ataylab kichik: ilgari zarrachalar bir zumda
+          // "otilib" borardi, endi ~2 sekundda oqib kelib joylashadi.
+          // Har kadrda qolgan masofaning ~1% i bosib o'tiladi: shakl ~1.5
+          // sekundda yig'iladi (ilgari 0.3 sekund — "otilib" borardi).
+          const swirl = Math.min(1, d / 200) * 0.000011;
+          p.vx += (dx * 0.000004 - dy * swirl) * dt;
+          p.vy += (dy * 0.000004 + dx * swirl) * dt;
         } else {
           // --- Bo'sh holat --------------------------------------------
           p.hx += p.hvx * dt;
@@ -224,7 +247,9 @@ export default function CosmicSingularity({
           p.vx += (p.hx - p.x) * spring * dt;
           p.vy += (p.hy - p.y) * spring * dt;
 
-          if (pointer) {
+          // Shakl yig'ilayotganda qolgan 70% zarracha kursorga TORTILMAYDI —
+          // aks holda ular ham markazga to'planib, fon bo'shab qolardi.
+          if (pointer && !forming) {
             const px = pointer.x - p.x;
             const py = pointer.y - p.y;
             const d2 = px * px + py * py;

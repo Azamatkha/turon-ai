@@ -22,8 +22,10 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
-  background: #fff;
+  border: 1px solid var(--tu-glass-border);
+  background: var(--tu-glass-bg);
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
   color: #003978;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 57, 120, 0.14);

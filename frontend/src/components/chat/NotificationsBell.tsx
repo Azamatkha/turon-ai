@@ -144,9 +144,11 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         aria-label={s.notifications}
         className={headerStyles.adminBtn}
         baseStyle={{
-          background: isDark ? "rgba(255,255,255,.08)" : "#fff",
-          border: "1px solid " + (isDark ? "rgba(255,255,255,.16)" : "#CBD5E1"),
+          background: "var(--tu-glass-bg)",
+          border: "1px solid var(--tu-glass-border)",
           color: isDark ? "#E2E8F0" : "#003978",
+          backdropFilter: "var(--tu-glass-blur)",
+          WebkitBackdropFilter: "var(--tu-glass-blur)",
           position: "relative",
         }}
         hoverStyle={{

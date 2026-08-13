@@ -12,6 +12,11 @@
   padding: 0 28px 0 56px;
   background: var(--adm-card);
   border-bottom: 1px solid var(--adm-border-2);
+  /* Til tanlash ro'yxati sarlavha ostidagi kartochkalar USTIDA ochilishi
+     kerak. Sarlavha joylashtirilmagan bo'lsa, undan keyingi mazmun keyin
+     chizilib, ro'yxatning pastki qismini bekitib qo'yardi. */
+  position: relative;
+  z-index: 20;
 }
 
 .actions {
@@ -96,4 +101,11 @@
 .header {
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
+}
+
+/* Fokus halqasi QUTIning o'zida chiziladi (`.searchBox:focus-within`).
+   Global `input:focus-visible` qoidasi bo'lmasa, input ichida IKKINCHI
+   halqa paydo bo'lib, "quti ichida quti" ko'rinardi. */
+.searchInput:focus-visible {
+  outline: none;
 }

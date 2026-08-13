@@ -211,7 +211,9 @@
   border: 1px solid #FECACA;
   border-radius: 12px;
   cursor: pointer;
-  background: #fff;
+  background: var(--tu-glass-bg);
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
   color: #DC2626;
   font-size: 14px;
   font-weight: 600;
