@@ -144,10 +144,10 @@
    yerda esa faqat ORQA FON BLURI qo'shiladi. Alohida blok qilingani
    sabab: mavjud qoidalarga tegmasdan, effektni bitta joydan
    yoqish/o'chirish qulay. */
-.header {
-  backdrop-filter: var(--tu-glass-blur);
-  -webkit-backdrop-filter: var(--tu-glass-blur);
-}
+/* Yuqori panelning O'ZIDA na fon, na blur bor — orqadagi sahifa foni
+   o'zgarishsiz ko'rinadi. (Ilgari shu yerda `backdrop-filter` turardi:
+   fon rangi bo'lmasa ham blur butun panel bo'ylab sutdek oq yo'l hosil
+   qilardi.) "Shisha" faqat panel ICHIDAGI tugmalarda. */
 
 /* --- "Shiny" tugma ramkasi ------------------------------------------------
    Namuna: ShinyButton (conic-gradient bilan aylanuvchi yorug' ramka).
@@ -198,10 +198,17 @@
   pointer-events: none;
 }
 
+/* Yaltirash DOIM aylanadi (namunadagidek), hover'da esa yorqinlashadi.
+   38px li tugmada bu bitta kompozitor animatsiyasi — yuk sezilarli emas. */
+.adminBtn::before {
+  animation: tuShine 3.6s linear infinite;
+  opacity: 0.55;
+}
+
 .adminBtn:hover::before,
 .adminBtn:focus-visible::before {
   opacity: 1;
-  animation: tuShine 2.4s linear infinite;
+  animation-duration: 2s;
 }
 
 @keyframes tuShine {
@@ -211,6 +218,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .adminBtn::before,
   .adminBtn:hover::before,
   .adminBtn:focus-visible::before {
     animation: none;
