@@ -126,14 +126,14 @@ function buildLogoTargets(size: number, want: number) {
 export default function CosmicSingularity({
   // Kamroq, lekin yirikroq va to'qroq zarracha — 3200 tasi fonni
   // "chang bosgan" ko'rinishga solib qo'yardi.
-  particleCount = 1200,
+  particleCount = 1400,
   speed = 1,
-  attraction = 1,
+  attraction = 0.5,
   pointerRadius = 320,
   holdDelay = 650,
   // Kursordan sal kattaroq. 90 px + 2 px qadam ≈ 950 nuqta — bu shaklga
   // ajratilgan zarracha soniga to'g'ri keladi, ya'ni logotip TO'LIQ to'ladi.
-  logoSize = 90,
+  logoSize = 70,
   colors,
   opacity = 0.7,
   isDark = false,
@@ -163,15 +163,12 @@ export default function CosmicSingularity({
     let movedAt = 0;
     /** Logotip yig'ilyaptimi. */
     let forming = false;
-    /** Vektor logotipning ko'rinish darajasi (0..1). */
-    let logoAlpha = 0;
-    const logoPath = new Path2D(LOGO_PATH);
 
     const particles: Particle[] = [];
     /** Rang bo'yicha guruhlangan indekslar — bir marta tuziladi. */
     const groups: number[][] = palette.map(() => []);
     // Zarrachalarning 80% i shaklga yig'iladi, 20% i fonda qoladi.
-    const formerCount = Math.round(particleCount * 0.8);
+    const formerCount = Math.round(particleCount * 0.5);
     const targets = holdDelay > 0 ? buildLogoTargets(logoSize, formerCount) : [];
 
     const setSize = () => {
@@ -203,7 +200,8 @@ export default function CosmicSingularity({
             hvx: Math.cos(ang) * sp,
             hvy: Math.sin(ang) * sp,
             // Kattaroq zarracha: 1–2 px "chang" bo'lib ko'rinmaydi
-            size: Math.random() < 0.25 ? 3 : 2,
+            // Mayda nuqta — logotip konturi shundagina aniq chiqadi
+            size: Math.random() < 0.2 ? 2 : 1,
             // Har o'ntadan oltitasi-yettitasi shaklga qo'shiladi (butun
             // ekran bo'ylab bir tekis tarqalgan holda), qolgani fonda
             // qoladi. Har biriga O'ZINING nishoni tegadi — shuning uchun
@@ -243,20 +241,21 @@ export default function CosmicSingularity({
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        if (formable && pointer) {
-          // --- Logotip paydo bo'lishi -----------------------------------
-          // Zarrachalar logotip SHAKLINI chizmaydi (nuqtalardan aniq shakl
-          // chiqmadi) — ular kursor atrofida burama HALQAGA yig'iladi,
-          // logotipning o'zi esa vektor sifatida ustiga chiqadi.
-          const dx = pointer.x - p.x;
-          const dy = pointer.y - p.y;
+        if (formable && pointer && p.slot >= 0) {
+          // --- Logotip shakli -------------------------------------------
+          // Har zarrachaning O'Z nishoni bor va nishonlar soni shaklga
+          // ajratilgan zarracha sonidan OSHMAYDI — shuning uchun kontur
+          // to'liq to'ladi, bo'sh nuqta qolmaydi.
+          const t = targets[p.slot];
+          const tx = pointer.x + t.x;
+          const ty = pointer.y + t.y;
+          const dx = tx - p.x;
+          const dy = ty - p.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
-          // Halqa radiusi: logotipdan sal kattaroq
-          const ring = logoSize * 0.75;
-          // (d - ring) > 0 bo'lsa ichkariga, < 0 bo'lsa tashqariga
-          const radial = (d - ring) * 0.00004;
-          p.vx += (dx / d) * radial * dt - (dy / d) * 0.0004 * dt;
-          p.vy += (dy / d) * radial * dt + (dx / d) * 0.0004 * dt;
+          // Burama tashkil etuvchi nishonga yaqinlashgach so'nadi
+          const swirl = Math.min(1, d / 200) * 0.00002;
+          p.vx += (dx * 0.00001 - dy * swirl) * dt;
+          p.vy += (dy * 0.00001 + dx * swirl) * dt;
         } else {
           // --- Bo'sh holat --------------------------------------------
           p.hx += p.hvx * dt;
@@ -304,19 +303,6 @@ export default function CosmicSingularity({
         }
       }
 
-      // Vektor logotip — kursor ustida yumshoq paydo bo'ladi/yo'qoladi.
-      // Nuqtalardan yig'ilgan shakl har doim chala/xira chiqqani uchun
-      // logotipning O'ZI chiziladi: kontur 100% aniq.
-      if (logoAlpha > 0.01 && pointer) {
-        const k = (logoSize / Math.max(LOGO_VB.w, LOGO_VB.h)) * (0.82 + 0.18 * logoAlpha);
-        ctx.save();
-        ctx.globalAlpha = logoAlpha;
-        ctx.fillStyle = isDark ? "#9ED8FF" : "#0B5FA5";
-        ctx.translate(pointer.x - (LOGO_VB.w * k) / 2, pointer.y - (LOGO_VB.h * k) / 2);
-        ctx.scale(k, k);
-        ctx.fill(logoPath);
-        ctx.restore();
-      }
     };
 
     let rectTick = 0;
@@ -331,10 +317,6 @@ export default function CosmicSingularity({
       }
       forming =
         holdDelay > 0 && !!pointer && movedAt > 0 && now - movedAt > holdDelay;
-      // Paydo bo'lish ~450 ms, yo'qolish ~250 ms
-      logoAlpha = forming
-        ? Math.min(1, logoAlpha + dt / 450)
-        : Math.max(0, logoAlpha - dt / 250);
       step(dt);
       draw();
       frame = requestAnimationFrame(render);

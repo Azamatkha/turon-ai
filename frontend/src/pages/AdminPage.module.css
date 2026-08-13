@@ -38,19 +38,23 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 100% 88% at 50% 42%, rgba(104, 116, 214, 0) 40%, rgba(104, 116, 214, 0.10) 72%, rgba(63, 76, 170, 0.20) 100%),
-    radial-gradient(ellipse 62% 55% at 2% 0%, rgba(139, 152, 232, 0.28), transparent 70%),
-    radial-gradient(ellipse 55% 50% at 98% 8%, rgba(95, 163, 214, 0.22), transparent 70%),
-    radial-gradient(ellipse 62% 55% at 100% 100%, rgba(104, 116, 214, 0.24), transparent 70%),
-    linear-gradient(160deg, #EEF0FC 0%, #E8EEFA 45%, #E4EAF7 100%);
+    /* Kuchli, ko'rinadigan yoyilma: chap-yuqorida binafsha, o'ngda moviy,
+       o'rtada yorug'lik, chekkalarda to'qlashuv (ai.turonbank.uz uslubi) */
+    radial-gradient(ellipse 55% 45% at 8% 4%, rgba(124, 108, 240, 0.38), transparent 66%),
+    radial-gradient(ellipse 50% 45% at 95% 6%, rgba(86, 152, 232, 0.34), transparent 68%),
+    radial-gradient(ellipse 60% 50% at 88% 96%, rgba(140, 118, 245, 0.34), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 6% 92%, rgba(96, 178, 226, 0.26), transparent 70%),
+    radial-gradient(ellipse 70% 55% at 50% 45%, rgba(255, 255, 255, 0.55), transparent 62%),
+    linear-gradient(135deg, #E7E6FB 0%, #E4ECFA 38%, #EDEAFB 68%, #E1E9F7 100%);
 }
 
 :global(html.dark) .bgLayer {
   background:
-    radial-gradient(ellipse 100% 88% at 50% 42%, rgba(0, 0, 0, 0) 42%, rgba(3, 12, 26, 0.35) 74%, rgba(2, 8, 18, 0.65) 100%),
-    radial-gradient(ellipse 62% 55% at 2% 0%, rgba(11, 95, 165, 0.30), transparent 70%),
-    radial-gradient(ellipse 62% 55% at 100% 100%, rgba(104, 116, 214, 0.22), transparent 70%),
-    linear-gradient(160deg, #0C1A2E 0%, #0A1626 52%, #071120 100%);
+    radial-gradient(ellipse 55% 45% at 8% 4%, rgba(96, 84, 200, 0.40), transparent 66%),
+    radial-gradient(ellipse 50% 45% at 95% 6%, rgba(11, 95, 165, 0.42), transparent 68%),
+    radial-gradient(ellipse 60% 50% at 88% 96%, rgba(104, 116, 214, 0.34), transparent 70%),
+    radial-gradient(ellipse 100% 88% at 50% 42%, rgba(0, 0, 0, 0) 45%, rgba(2, 8, 18, 0.55) 100%),
+    linear-gradient(135deg, #101A38 0%, #0B1730 42%, #131A3D 72%, #08132A 100%);
 }
 
 /* Barcha fon qatlamlari shu o'ramda yotadi.
