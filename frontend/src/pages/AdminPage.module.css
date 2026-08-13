@@ -38,23 +38,23 @@
   z-index: -1;
   pointer-events: none;
   background:
-    /* Kuchli, ko'rinadigan yoyilma: chap-yuqorida binafsha, o'ngda moviy,
-       o'rtada yorug'lik, chekkalarda to'qlashuv (ai.turonbank.uz uslubi) */
-    radial-gradient(ellipse 55% 45% at 8% 4%, rgba(124, 108, 240, 0.38), transparent 66%),
-    radial-gradient(ellipse 50% 45% at 95% 6%, rgba(86, 152, 232, 0.34), transparent 68%),
-    radial-gradient(ellipse 60% 50% at 88% 96%, rgba(140, 118, 245, 0.34), transparent 70%),
-    radial-gradient(ellipse 55% 45% at 6% 92%, rgba(96, 178, 226, 0.26), transparent 70%),
-    radial-gradient(ellipse 70% 55% at 50% 45%, rgba(255, 255, 255, 0.55), transparent 62%),
-    linear-gradient(135deg, #E7E6FB 0%, #E4ECFA 38%, #EDEAFB 68%, #E1E9F7 100%);
+    /* "Mesh" yoyilma — namunadagi kabi keng, yumshoq dog'lar bir-birining
+       ustiga tushadi. Ranglar brendniki: siyohrang-binafsha + bank ko'ki. */
+    radial-gradient(ellipse 90% 70% at 12% 8%, rgba(124, 108, 240, 0.55) 0%, transparent 62%),
+    radial-gradient(ellipse 80% 65% at 92% 12%, rgba(26, 124, 200, 0.42) 0%, transparent 60%),
+    radial-gradient(ellipse 95% 75% at 88% 92%, rgba(150, 120, 245, 0.50) 0%, transparent 64%),
+    radial-gradient(ellipse 85% 70% at 4% 96%, rgba(11, 95, 165, 0.32) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 45% at 52% 48%, rgba(255, 255, 255, 0.75) 0%, transparent 70%),
+    linear-gradient(135deg, #EFEDFD 0%, #E6EEFB 35%, #F1ECFD 65%, #E7EEF9 100%);
 }
 
 :global(html.dark) .bgLayer {
   background:
-    radial-gradient(ellipse 55% 45% at 8% 4%, rgba(96, 84, 200, 0.40), transparent 66%),
-    radial-gradient(ellipse 50% 45% at 95% 6%, rgba(11, 95, 165, 0.42), transparent 68%),
-    radial-gradient(ellipse 60% 50% at 88% 96%, rgba(104, 116, 214, 0.34), transparent 70%),
-    radial-gradient(ellipse 100% 88% at 50% 42%, rgba(0, 0, 0, 0) 45%, rgba(2, 8, 18, 0.55) 100%),
-    linear-gradient(135deg, #101A38 0%, #0B1730 42%, #131A3D 72%, #08132A 100%);
+    radial-gradient(ellipse 90% 70% at 12% 8%, rgba(108, 92, 224, 0.42) 0%, transparent 62%),
+    radial-gradient(ellipse 80% 65% at 92% 12%, rgba(11, 95, 165, 0.48) 0%, transparent 60%),
+    radial-gradient(ellipse 95% 75% at 88% 92%, rgba(124, 108, 240, 0.34) 0%, transparent 64%),
+    radial-gradient(ellipse 60% 45% at 52% 48%, rgba(95, 163, 214, 0.16) 0%, transparent 70%),
+    linear-gradient(135deg, #141B3E 0%, #0B1730 40%, #191B45 70%, #08132A 100%);
 }
 
 /* Barcha fon qatlamlari shu o'ramda yotadi.

@@ -135,7 +135,7 @@ export default function CosmicSingularity({
   // ajratilgan zarracha soniga to'g'ri keladi, ya'ni logotip TO'LIQ to'ladi.
   logoSize = 70,
   colors,
-  opacity = 0.7,
+  opacity = 0.75,
   isDark = false,
   className,
 }: CosmicSingularityProps) {
@@ -292,6 +292,11 @@ export default function CosmicSingularity({
       }
     };
 
+    // Logotip yig'ilganda zarrachalar BITTA to'q rangda va to'liq
+    // shaffofmas chiziladi — rang-barang yarim shaffof nuqtalardan shakl
+    // xira ko'rinardi.
+    const formColor = isDark ? "#BFE3FF" : "#003978";
+
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
       for (let g = 0; g < groups.length; g++) {
@@ -299,7 +304,17 @@ export default function CosmicSingularity({
         const list = groups[g];
         for (let k = 0; k < list.length; k++) {
           const p = particles[list[k]];
+          if (forming && p.slot >= 0) continue; // pastda alohida chiziladi
           ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+      }
+
+      if (forming) {
+        ctx.fillStyle = formColor;
+        for (const p of particles) {
+          if (p.slot < 0) continue;
+          // Shakldagi nuqta doim 2px — kontur zich va aniq bo'lsin
+          ctx.fillRect(p.x, p.y, 2, 2);
         }
       }
 
