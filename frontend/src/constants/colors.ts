@@ -32,6 +32,12 @@ export const PALE_BLUE = BLUE_100; // juda ochiq ko'k fon/chegara
 /* Dark rejimdagi aksent — qora-ko'k fonda 7:1 kontrast (WCAG AAA) */
 export const ACCENT_ON_DARK = "#63B3F0";
 
+/* --- Sidebar gradienti uchun binafsha-indigo juftlik ---
+   Faqat DEKORATIV: sidebar foni, hover/faol holat tovlanishi. Matn yoki
+   ikonka rangi sifatida ishlatilmaydi (oq fonda kontrasti yetarli emas). */
+export const VIOLET = "#7B4DFF";
+export const INDIGO = "#5A78E0";
+
 /* --- Neytral --- */
 export const TEXT_STRONG = "#334155";
 export const TEXT_MUTED = "#64748B";

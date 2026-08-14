@@ -138,10 +138,12 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
 
   return (
     <div className={styles.wrap} ref={wrapRef}>
+      {/* Belgi endi tugmadan tashqarida va `aria-hidden` — sonni skrin-riderga
+          tugmaning o'z nomi (aria-label) orqali yetkazamiz */}
       <HButton
         onClick={toggle}
         data-tip={s.notifications}
-        aria-label={s.notifications}
+        aria-label={unread > 0 ? `${s.notifications} (${unread})` : s.notifications}
         className={headerStyles.adminBtn}
         baseStyle={{
           border: "1px solid var(--tu-glass-border)",
@@ -159,10 +161,17 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         <span className={unread > 0 ? styles.bellRing : undefined}>
           <MdNotificationsActive size={20} />
         </span>
-        {unread > 0 && (
-          <span className={styles.badge}>{unread > 99 ? "99+" : unread}</span>
-        )}
       </HButton>
+
+      {/* Belgi ATAYLAB tugmadan TASHQARIDA turadi: `.adminBtn` da
+          `overflow: hidden` bor (yorug' ramka maskasi uchun kerak), ichkarida
+          qolsa dumaloqning yuqori-o'ng qismi kesilib ketardi. Endi u
+          `.wrap` ga nisbatan joylashadi va to'liq ko'rinadi. */}
+      {unread > 0 && (
+        <span className={styles.badge} aria-hidden="true">
+          {unread > 99 ? "99+" : unread}
+        </span>
+      )}
 
       {open &&
         pos &&

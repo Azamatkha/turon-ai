@@ -49,17 +49,24 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 }
 
 // Sidebar uchun alohida token to'plami — sidebar har doim qorong'i fonda turadi
-// (mavzudan qat'iy nazar), faqat fon rangi ozgina o'zgaradi (dark mode'da yanada qorong'i)
+// (mavzudan qat'iy nazar), faqat fon rangi ozgina o'zgaradi (dark mode'da yanada qorong'i).
+//
+// Fon endi TEKIS rang emas, diagonal gradient: brend navy (#003978) dan indigo
+// (#5A78E0) orqali binafsha (#7B4DFF) ga o'tadi. Rangi to'liq shaffofmas emas —
+// Sidebar.module.css dagi `backdrop-filter` bilan birga "shisha" effektini beradi.
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
-    bg: isDark ? "#04162C" : NAVY,
+    bg: isDark
+      ? `linear-gradient(168deg, rgba(4,22,44,.94) 0%, rgba(30,32,86,.94) 52%, rgba(62,42,124,.94) 100%)`
+      : `linear-gradient(168deg, ${NAVY} 0%, rgba(90,120,224,.92) 58%, rgba(123,77,255,.90) 100%)`,
     fg: "#F1F5F9",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.
     sub: "rgba(203,213,225,.72)",
-    active: "rgba(255,255,255,.15)",
-    border: "rgba(255,255,255,.11)",
+    active: "rgba(255,255,255,.16)",
+    border: "rgba(255,255,255,.14)",
     logo: ACCENT_ON_DARK,
-    btn: "rgba(255,255,255,.08)",
+    // "Yangi suhbat" tugmasi — binafsha→indigo shisha to'ldirmasi
+    btn: "linear-gradient(135deg, rgba(123,77,255,.55) 0%, rgba(90,120,224,.42) 100%)",
   };
 }

@@ -232,7 +232,7 @@ export default function Sidebar({
       // hodisalari aralashmasin deb.
       <div
         key={c.id}
-        className={styles.chatRow}
+        className={`${styles.chatRow} ${act ? styles.chatRowActive : ""}`}
         style={{ background: act ? side.active : undefined, ...rowVars }}
       >
         <HButton
