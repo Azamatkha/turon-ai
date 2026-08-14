@@ -22,9 +22,10 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ view, search, setSearch, onAddUser, isDark, onToggleTheme, lang, setLang, t: admin }: PageHeaderProps) {
+  // "Foydalanuvchi qo'shish" FAQAT "Foydalanuvchilar" sahifasida. Dashboard —
+  // ko'rsatkichlar sahifasi, u yerda amal tugmasi turishi mantiqsiz edi
+  // (ro'yxat ham yo'q, qo'shilgandan keyin natija ko'rinmasdi).
   const onUsers = view === "users";
-  // "Foydalanuvchi qo'shish" tugmasi faqat dashboard/users sahifalarida
-  const showAddUser = view === "dashboard" || view === "users";
   const titles: Record<AdminView, string> = {
     dashboard: admin.dashboardTitle,
     users: admin.usersTitle,
@@ -50,8 +51,8 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
             <input className={styles.searchInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={admin.searchUsersPh} />
           </div>
         )}
-        {showAddUser && (
-          <HButton onClick={onAddUser} className={styles.addBtn} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 8px 20px rgba(0, 57, 120,.3)" }}>
+        {onUsers && (
+          <HButton onClick={onAddUser} className={styles.addBtn} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)" }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {admin.addUser}
           </HButton>

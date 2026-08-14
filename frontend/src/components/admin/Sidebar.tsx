@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
-import { PRIMARY } from "../chat/theme";
+import { PRIMARY, getSideTokens } from "../chat/theme";
+import { useTheme } from "../../contexts/ThemeContext";
 import type { AdminView } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import { fetchMe, logout, type Me } from "../../services/authService";
@@ -28,6 +29,10 @@ interface SidebarProps {
 
 export default function Sidebar({ view, setView, usersCount, newReportsCount, collapsed, t: admin }: SidebarProps) {
   const navigate = useNavigate();
+  // Ranglar chat sidebar'i bilan AYNAN bir manbadan (`chat/theme.ts`) keladi —
+  // ikki panel bir xil ko'rinishi kerak, faqat ichidagi funksiyalar farq qiladi.
+  const { theme } = useTheme();
+  const side = getSideTokens(theme === "dark");
   const [me, setMe] = useState<Me | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const footerRef = useRef<HTMLDivElement>(null);
@@ -93,13 +98,19 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
   return (
     <aside
       className={styles.aside}
-      style={{ width: collapsed ? 76 : 248, transition: "width .2s ease" }}
+      style={{
+        width: collapsed ? 72 : 282,
+        transition: "width .2s ease",
+        background: side.bg,
+        color: side.fg,
+        borderRight: "1px solid " + side.border,
+      }}
     >
       <div
         className={styles.brandRow}
-        style={collapsed ? { justifyContent: "center", padding: 0 } : undefined}
+        style={collapsed ? { justifyContent: "center", padding: 0, borderBottomColor: side.border } : { borderBottomColor: side.border }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: PRIMARY, background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.22)" }}><Logo size={collapsed ? 22 : 24} /></div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: PRIMARY, background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)", flex: "0 0 auto" }}><Logo size={collapsed ? 22 : 24} /></div>
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className={styles.brandName}>Turon<span className={styles.brandNameAi}> AI</span></div>
@@ -117,7 +128,7 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
               onClick={() => setView(item.id)}
               className={`${styles.navItem} ${act ? styles.navItemActive : styles.navItemInactive}`}
               baseStyle={collapsed ? { justifyContent: "center" } : {}}
-              hoverStyle={act ? {} : { background: "rgba(255,255,255,.06)", color: "#fff" }}
+              hoverStyle={act ? {} : { background: side.active, color: "#fff" }}
             >
               <span className={styles.navIcon}>{item.icon}</span>
               {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
@@ -130,14 +141,14 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
           onClick={() => navigate("/")}
           className={`${styles.navItem} ${styles.navItemInactive}`}
           baseStyle={collapsed ? { justifyContent: "center" } : {}}
-          hoverStyle={{ background: "rgba(255,255,255,.06)", color: "#fff" }}
+          hoverStyle={{ background: side.active, color: "#fff" }}
         >
           <span className={styles.navIcon}><IoMdChatboxes size={20} /></span>
           {!collapsed && <span className={styles.navLabel}>{admin.chatNav}</span>}
         </HButton>
       </nav>
 
-      <div className={styles.footer} style={{ position: "relative" }} ref={footerRef}>
+      <div className={styles.footer} style={{ position: "relative", borderTopColor: side.border }} ref={footerRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
           style={{

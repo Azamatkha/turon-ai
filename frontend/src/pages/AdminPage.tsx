@@ -324,16 +324,18 @@ export default function AdminPage() {
         t={t}
       />
 
+      {/* `left` sidebar kengligi bilan bir xil bo'lishi shart — panel chat
+          sidebar'i bilan bir xil o'lchamga (282/72) o'tkazilgan */}
       <SidebarToggle
         open={!navCollapsed}
         onToggle={() => setNavCollapsed((v) => !v)}
-        left={navCollapsed ? 76 : 248}
+        left={navCollapsed ? 72 : 282}
       />
 
       <main className={styles.main}>
         {/* Fon qatlamlari BITTA o'ramda — mazmun (`.main > :not(.bgStack)`)
             har doim ustida qoladi. Batafsil izoh ChatPage.tsx da. */}
-        <div className={styles.bgStack} aria-hidden="true">
+        <div className={styles.bgStack} aria-hidden="true">
           <GridPattern className={styles.gridBg} />
           <CosmicSingularity className={styles.spaceBg} isDark={isDark} />
           <OrbitRings />

@@ -152,10 +152,9 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
           WebkitBackdropFilter: "var(--tu-glass-blur)",
           position: "relative",
         }}
-        hoverStyle={{
-          background: isDark ? "rgba(255,255,255,.16)" : "#F1F5F9",
-          transform: "translateY(-1px)",
-        }}
+        /* Fon hover'i .adminBtn:hover da — `background` qisqartmasi bu yerda
+           gradientni o'chirib yuborardi (ChatHeader.module.css dagi izoh) */
+        hoverStyle={{ transform: "translateY(-1px)" }}
       >
         {/* O'qilmagan bo'lsa qo'ng'iroq chayqaladi va belgi puls beradi */}
         <span className={unread > 0 ? styles.bellRing : undefined}>

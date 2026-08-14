@@ -222,7 +222,9 @@ body,
   --adm-info-bg: rgba(11, 95, 165, 0.12);
   --adm-accent-bg: rgba(11, 95, 165, 0.12);
   --adm-accent-2-bg: rgba(11, 95, 165, 0.12);
-  --adm-sidebar: var(--tu-blue-900);
+  /* --adm-sidebar OLIB TASHLANDI: admin sidebar foni endi chat sidebar'i
+     bilan bir manbadan — `chat/theme.ts` -> getSideTokens().bg (gradient),
+     u komponentga inline uzatiladi. */
   --adm-search-bg: var(--tu-gray-100);
   --adm-search-border: rgba(0, 57, 120, 0.16);
   --adm-search-ph: var(--tu-text-faint);
@@ -293,7 +295,7 @@ html.dark {
   --adm-info-bg: rgba(99, 179, 240, 0.16);
   --adm-accent-bg: rgba(99, 179, 240, 0.16);
   --adm-accent-2-bg: rgba(99, 179, 240, 0.16);
-  --adm-sidebar: #04162C;
+  /* --adm-sidebar — yuqoridagi izohga qarang (getSideTokens dan keladi) */
   --adm-search-bg: #08203A;
   --adm-search-border: rgba(99, 179, 240, 0.24);
   --adm-search-ph: var(--tu-gray-400);

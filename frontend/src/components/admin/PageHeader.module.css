@@ -61,7 +61,16 @@
   color: var(--adm-search-ph);
 }
 
+/* "Foydalanuvchi qo'shish" — yuqori paneldagi ikonka tugmalari bilan BIR XIL
+   uslubda: siljib turuvchi gradient fon + hover/fokusda aylanadigan yorug'
+   ramka (`ChatHeader.module.css` dagi "shiny" retsepti). Farqi: bu tugma
+   matnli va brend ko'kida (asosiy amal — ajralib turishi kerak).
+
+   DIQQAT: `overflow: hidden` YO'Q — u `[data-tip]::after` izohini qirqib
+   tashlardi (ChatHeader'dagi xuddi shu xatoga qarang). */
 .addBtn {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -73,13 +82,78 @@
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #0B5FA5, #003978);
+  background-image: linear-gradient(120deg, #0B5FA5 0%, #1A7CC8 28%, #003978 58%, #0B5FA5 100%);
+  background-size: 300% 300%;
   box-shadow: 0 4px 14px rgba(0, 57, 120, 0.22);
-  transition: all 0.18s ease;
+  animation: addGradFlow 14s ease-in-out infinite;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+@keyframes addGradFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Burchakni animatsiya qilish uchun u RO'YXATDAN o'tgan bo'lishi kerak.
+   `@property` CSS-modul tomonidan scope qilinmaydi (global), ChatHeader'da
+   ham xuddi shu e'lon bor — takrorlanishi zararsiz, lekin bu fayl o'zicha
+   ham to'liq ishlaydi (u fayl yuklanmasa ham). */
+@property --tu-shine-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Yorug' ramka — mask bilan faqat 1px chegara ko'rinadi */
+.addBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--tu-shine-angle),
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 12%,
+    #ffffff 18%,
+    rgba(255, 255, 255, 0.55) 24%,
+    transparent 40%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.addBtn:hover {
+  box-shadow: 0 8px 20px rgba(0, 57, 120, 0.3);
+}
+
+.addBtn:hover::before,
+.addBtn:focus-visible::before {
+  opacity: 1;
+  animation: addShine 2s linear infinite;
+}
+
+@keyframes addShine {
+  to {
+    --tu-shine-angle: 360deg;
+  }
 }
 
 .addBtn:active {
   transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .addBtn,
+  .addBtn::before {
+    animation: none;
+  }
 }
 
 /* =====================

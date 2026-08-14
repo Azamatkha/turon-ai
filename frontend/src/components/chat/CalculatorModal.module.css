@@ -1,5 +1,10 @@
 /* Kredit / Omonat kalkulyatori oynasi. Ranglar ChatHeader'dan (tk) inline
-   uzatiladi; bu yerda faqat tuzilma va slayder ko'rinishi. */
+   uzatiladi; bu yerda faqat tuzilma va slayder ko'rinishi.
+
+   O'LCHAM: oyna ataylab IXCHAM. Ilgari kengligi 520px, matnlar 15-26px edi —
+   ekranning yarmini egallab, "bank formasi" emas, taqdimot slaydiga
+   o'xshardi. Hozirgi shkala: sarlavha 15px, qiymat inputi 15px, asosiy
+   natija 20px. */
 
 .overlay {
   position: fixed;
@@ -17,39 +22,38 @@
 
 .modal {
   width: 100%;
-  max-width: 520px;
-  /* Barqaror, lekin bo'g'ilmagan o'lcham: juda kichrayib ketmasin (min-height),
-     lekin baland rejimda ham 90vh gacha o'sib, faqat shundan oshsa ichida
-     scroll bo'lsin. Scroll ICHKI .scroll'da — shuning uchun scrollbar dumaloq
-     burchaklardan tashqariga chiqmaydi (overflow:hidden clip qiladi). */
+  max-width: 410px;
+  /* min-height YO'Q: oyna mazmuni bo'yicha o'sadi. (Ilgari 480px turardi —
+     omonat rejimida maydonlar kam bo'lsa ham oyna baland qolib, pastda
+     bo'sh joy osilib turardi.) Scroll ICHKI .scroll'da — shuning uchun
+     scrollbar dumaloq burchaklardan tashqariga chiqmaydi. */
   display: flex;
   flex-direction: column;
-  min-height: 480px;
-  max-height: 90vh;
+  max-height: 88vh;
   overflow: hidden;
-  border-radius: 22px;
-  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.45);
+  border-radius: 18px;
+  box-shadow: 0 20px 54px rgba(15, 23, 42, 0.4);
   animation: popIn 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
 .scroll {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 22px;
+  padding: 16px;
 }
 
 .head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .headTitle {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 18px;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -57,10 +61,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   cursor: pointer;
   background: transparent;
   transition: background 0.15s ease;
@@ -70,25 +74,25 @@
 .tabs {
   display: flex;
   align-items: stretch;
-  gap: 5px;
-  padding: 4px;
-  margin-bottom: 20px;
-  border-radius: 13px;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 14px;
+  border-radius: 11px;
 }
 
 .tab {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 44px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 4px 6px;
   border: none;
-  border-radius: 10px;
+  border-radius: 9px;
   background: transparent;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
   line-height: 1.15;
   cursor: pointer;
@@ -97,32 +101,32 @@
 
 /* To'lov turi tanlagichi (Ustama / Annuitet / Differensial) */
 .methodRow {
-  margin-bottom: 18px;
+  margin-bottom: 13px;
 }
 
 .methodLabel {
   display: block;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .methodTabs {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   padding: 3px;
-  border-radius: 11px;
+  border-radius: 10px;
 }
 
 .methodTab {
   flex: 1 1 0;
   min-width: 0;
-  height: 34px;
+  height: 28px;
   padding: 0 4px;
   border: none;
-  border-radius: 8px;
+  border-radius: 7px;
   background: transparent;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
@@ -130,14 +134,14 @@
 
 /* Maydon: label + qutili input + slayder */
 .field {
-  margin-bottom: 18px;
+  margin-bottom: 13px;
 }
 
 .label {
   display: block;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 /* Qutili qiymat inputi (namuna dizayni: ramkali quti, ichida qiymat + birlik) */
@@ -145,10 +149,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 46px;
-  padding: 0 14px;
-  border-radius: 12px;
-  margin-bottom: 12px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  margin-bottom: 9px;
 }
 
 .valueInput {
@@ -157,7 +161,7 @@
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   outline: none;
   padding: 0;
@@ -166,7 +170,7 @@
 
 .unit {
   flex: 0 0 auto;
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 600;
   opacity: 0.65;
 }
@@ -176,7 +180,7 @@
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 6px;
+  height: 5px;
   border-radius: 999px;
   outline: none;
   cursor: pointer;
@@ -185,12 +189,12 @@
 .range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--calc-accent, #003978);
   border: 3px solid #fff;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.32);
   cursor: pointer;
   margin-top: -1px;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -202,16 +206,16 @@
 
 .range:active::-webkit-slider-thumb {
   transform: scale(1.22);
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.4);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.38);
 }
 
 .range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   background: var(--calc-accent, #003978);
   border: 3px solid #fff;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.32);
   cursor: pointer;
   transition: transform 0.12s ease;
 }
@@ -227,9 +231,9 @@
 
 /* Natija kartasi */
 .results {
-  margin-top: 22px;
-  border-radius: 16px;
-  padding: 18px 20px;
+  margin-top: 15px;
+  border-radius: 13px;
+  padding: 13px 15px;
   animation: contentIn 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -249,16 +253,16 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .resultMainLabel {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .resultMainValue {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -270,21 +274,21 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  font-size: 15px;
-  padding: 6px 0;
+  font-size: 12px;
+  padding: 4px 0;
 }
 
 .resultRowValue {
   font-weight: 700;
-  font-size: 15.5px;
+  font-size: 12.5px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .scheduleRow {
   display: flex;
-  gap: 9px;
-  margin-top: 16px;
+  gap: 7px;
+  margin-top: 12px;
 }
 
 .scheduleBtn,
@@ -294,11 +298,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 44px;
+  gap: 6px;
+  height: 36px;
   padding: 0 8px;
-  border-radius: 12px;
-  font-size: 12.5px;
+  border-radius: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease;
@@ -326,9 +330,9 @@
 }
 
 .note {
-  margin-top: 14px;
-  font-size: 11.5px;
-  line-height: 1.5;
+  margin-top: 10px;
+  font-size: 10.5px;
+  line-height: 1.45;
   text-align: center;
   opacity: 0.7;
 }

@@ -1,4 +1,12 @@
-/* Admin panelning chap navigatsiya paneli: logotip, Dashboard/Foydalanuvchilar bo'limlari, admin profili */
+/* Admin panelning chap navigatsiya paneli: logotip, Dashboard/Foydalanuvchilar
+   bo'limlari, admin profili.
+
+   USLUB: chat sidebar'i (`components/chat/Sidebar.module.css`) bilan ATAYLAB
+   bir xil — bir xil kenglik (282/72), bir xil 60px sarlavha balandligi, bir
+   xil radius/qalinlik shkalasi, bir xil shisha effekti va yorug'lik dog'lari.
+   Fon/chegara ranglari ham bitta manbadan (`chat/theme.ts` -> getSideTokens)
+   inline uzatiladi. Farq faqat MAZMUNDA: admin bo'limlari, belgilar (badge),
+   chiqish menyusi. */
 
 /* =====================
    Layout
@@ -6,52 +14,75 @@
 .aside {
   position: relative;
   z-index: 1;
-  width: 248px;
   flex: 0 0 auto;
-  background: var(--adm-sidebar);
-  color: #F1F5F9;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  /* Fon, matn rangi va o'ng chegara Sidebar.tsx dan inline keladi */
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08), 12px 0 40px -18px rgba(10, 12, 45, 0.55);
+}
+
+/* Yumshoq yorug'lik dog'lari — chat sidebar'idagi bilan bir xil qiymatlar */
+.aside::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 40% at 10% 0%, rgba(123, 77, 255, 0.09), transparent 70%),
+    radial-gradient(100% 34% at 100% 96%, rgba(90, 120, 224, 0.10), transparent 68%);
+}
+
+/* Kontent yorug'lik dog'laridan yuqorida */
+.brandRow,
+.nav,
+.footer {
+  position: relative;
+  z-index: 1;
 }
 
 .brandRow {
   display: flex;
   align-items: center;
-  gap: 11px;
-  height: 66px;
-  padding: 0 18px;
+  gap: 10px;
+  height: 60px;
+  padding: 0 14px 0 16px;
   box-sizing: border-box;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  flex: 0 0 auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .nav {
   flex: 1;
-  padding: 14px 12px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  overflow-y: auto;
 }
 
 .footer {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 13px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 11px 12px;
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .logoutBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
   border: none;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: rgba(241, 245, 249, 0.7);
   cursor: pointer;
   transition: all 0.18s ease;
@@ -66,14 +97,14 @@
   flex: 0 0 auto;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: rgba(241, 245, 249, 0.75);
   cursor: pointer;
   transition: all 0.18s ease;
 }
 
 .toggleBtn:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
@@ -86,34 +117,50 @@
    Containers
    ===================== */
 .logoIcon {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   color: #5FA3D6;
   flex: 0 0 auto;
 }
 
+/* Chat sidebar'idagi suhbat qatori bilan bir xil o'lcham va qalinlik */
 .navItem {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.18s ease;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
+/* Faol bo'lim: chat'dagi faol suhbat bilan bir xil — oq yarim shaffof fon va
+   chap chetida binafsha→indigo yorug'lik chizig'i. (Ilgari to'q ko'k gradient
+   + katta soya edi: chat panelidan butunlay boshqacha ko'rinardi.) */
 .navItemActive {
   color: #fff;
-  background: linear-gradient(120deg, #0B5FA5, #0B5FA5);
-  box-shadow: 0 4px 14px rgba(11, 95, 165, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.navItemActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #8C7BF0, #5A78E0);
 }
 
 .navItemInactive {
-  color: rgba(241, 245, 249, 0.66);
+  color: rgba(241, 245, 249, 0.72);
   background: transparent;
 }
 
@@ -129,29 +176,34 @@
 .navLabel {
   flex: 1;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .navBadge {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 1px 8px;
+  padding: 1px 7px;
   border-radius: 99px;
-  background: rgba(95, 163, 214, 0.22);
-  color: #CFE1F2;
+  background: rgba(255, 255, 255, 0.16);
+  color: #E4ECF8;
 }
 
+/* Chat sidebar'idagi profil avatari bilan bir xil */
 .footerAvatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #0B5FA5, #0B5FA5);
+  background: linear-gradient(140deg, #5A78E0, #34509E);
+  box-shadow: 0 3px 10px rgba(10, 20, 60, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 13.5px;
 }
 
 .footerMeta {
@@ -163,10 +215,11 @@
    Typography
    ===================== */
 .brandName {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 700;
   letter-spacing: -0.3px;
-  line-height: 1;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .brandNameAi {
@@ -175,12 +228,12 @@
 }
 
 .panelLabel {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.1px;
   text-transform: uppercase;
-  color: #5FA3D6;
-  margin-top: 3px;
+  color: rgba(203, 213, 225, 0.72);
+  margin-top: 2px;
 }
 
 .footerName {
@@ -193,8 +246,20 @@
 
 .footerRole {
   font-size: 11.5px;
-  color: rgba(203, 213, 225, 0.55);
+  color: rgba(203, 213, 225, 0.72);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+/* Klaviatura fokusi — chat sidebar'i bilan bir xil halqa */
+.navItem:focus-visible,
+.toggleBtn:focus-visible,
+.logoutBtn:focus-visible {
+  outline: 2px solid #B49BFF;
+  outline-offset: 2px;
+}
+
 /* ============================================================================
    RESPONSIVE
    ========================================================================= */
@@ -202,11 +267,10 @@
   /* Drawer rejimi — joylashuvni AdminPage.module.css beradi, bu yerda
      faqat ichki o'lchamlar barmoqqa moslanadi */
   .aside {
-    width: min(84vw, 268px);
+    width: min(84vw, 282px);
   }
 
-  .nav {
-    padding: var(--tu-space-3) var(--tu-space-2);
-    gap: var(--tu-space-1);
+  .navItem {
+    padding: 12px 11px;
   }
 }

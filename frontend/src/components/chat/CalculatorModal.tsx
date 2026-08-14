@@ -316,7 +316,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         <div className={styles.scroll}>
         <div className={styles.head}>
           <div className={styles.headTitle} style={{ color: tk.strong }}>
-            <FaCalculator size={17} color={accent} />
+            <FaCalculator size={14} color={accent} />
             {s.calcHeading}
           </div>
           <button
@@ -327,7 +327,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
             onMouseEnter={(e) => (e.currentTarget.style.background = cardBg)}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
           </button>
         </div>
 
@@ -464,7 +464,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
               style={{ color: accent, borderColor: accent }}
               onClick={() => setScheduleOpen(true)}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="9" y1="4" x2="9" y2="22" /></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="9" y1="4" x2="9" y2="22" /></svg>
               {s.calcScheduleView}
             </button>
             <button
@@ -473,7 +473,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
               disabled={dlBusy}
               onClick={() => void downloadXls()}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               {s.calcScheduleDownload}
             </button>
           </div>
