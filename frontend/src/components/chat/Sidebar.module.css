@@ -24,8 +24,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 46% at 8% 0%, rgba(123, 77, 255, 0.34), transparent 62%),
-    radial-gradient(90% 38% at 100% 92%, rgba(90, 120, 224, 0.32), transparent 60%);
+    radial-gradient(120% 42% at 8% 0%, rgba(123, 77, 255, 0.12), transparent 66%),
+    radial-gradient(90% 36% at 100% 94%, rgba(90, 120, 224, 0.14), transparent 64%);
 }
 
 /* Kontent yorug'lik dog'laridan yuqorida turishi kerak */
@@ -111,8 +111,8 @@
 
 .searchRow:focus-within {
   background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(123, 77, 255, 0.75);
-  box-shadow: 0 0 0 3px rgba(123, 77, 255, 0.18);
+  border-color: rgba(140, 165, 240, 0.7);
+  box-shadow: 0 0 0 3px rgba(90, 120, 224, 0.16);
 }
 
 .searchIcon {
@@ -227,8 +227,8 @@
   height: 32px;
   border-radius: 9px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #7B4DFF, #5A78E0);
-  box-shadow: 0 4px 12px rgba(64, 40, 140, 0.38);
+  background: linear-gradient(140deg, #5A78E0, #34509E);
+  box-shadow: 0 3px 10px rgba(10, 20, 60, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,7 +282,7 @@
   white-space: nowrap;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 6px 18px -8px rgba(123, 77, 255, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 12px -8px rgba(10, 20, 60, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transition: all 0.18s ease;
 }
 
@@ -316,7 +316,7 @@
   bottom: 7px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #7B4DFF, #5A78E0);
+  background: linear-gradient(180deg, #8C7BF0, #5A78E0);
 }
 
 .chatItem {
@@ -377,7 +377,7 @@
 .moreMenu {
   position: fixed;
   z-index: 1000;
-  background: linear-gradient(160deg, rgba(16, 34, 78, 0.94), rgba(58, 40, 124, 0.94));
+  background: linear-gradient(160deg, rgba(9, 40, 92, 0.95), rgba(32, 44, 100, 0.95));
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   color: #F1F5F9;

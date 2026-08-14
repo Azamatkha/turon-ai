@@ -51,22 +51,23 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 // Sidebar uchun alohida token to'plami — sidebar har doim qorong'i fonda turadi
 // (mavzudan qat'iy nazar), faqat fon rangi ozgina o'zgaradi (dark mode'da yanada qorong'i).
 //
-// Fon endi TEKIS rang emas, diagonal gradient: brend navy (#003978) dan indigo
-// (#5A78E0) orqali binafsha (#7B4DFF) ga o'tadi. Rangi to'liq shaffofmas emas —
-// Sidebar.module.css dagi `backdrop-filter` bilan birga "shisha" effektini beradi.
+// Fon TEKIS rang emas, diagonal gradient — lekin ATAYLAB jim: asosini brend
+// navy (#003978) tutadi, indigo/binafsha faqat pastki qismida sezilar-sezilmas
+// tovlanadi. (Ilgari to'liq #5A78E0 → #7B4DFF ga chiqardi — sidebar juda
+// yorqin/rang-barang bo'lib, sahifaning tinch foniga mos tushmadi.)
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
     bg: isDark
-      ? `linear-gradient(168deg, rgba(4,22,44,.94) 0%, rgba(30,32,86,.94) 52%, rgba(62,42,124,.94) 100%)`
-      : `linear-gradient(168deg, ${NAVY} 0%, rgba(90,120,224,.92) 58%, rgba(123,77,255,.90) 100%)`,
+      ? `linear-gradient(172deg, #04162C 0%, #0A1E3E 55%, #17193A 100%)`
+      : `linear-gradient(172deg, ${NAVY} 0%, #0A3A7C 52%, #22306E 100%)`,
     fg: "#F1F5F9",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.
     sub: "rgba(203,213,225,.72)",
-    active: "rgba(255,255,255,.16)",
-    border: "rgba(255,255,255,.14)",
+    active: "rgba(255,255,255,.14)",
+    border: "rgba(255,255,255,.12)",
     logo: ACCENT_ON_DARK,
-    // "Yangi suhbat" tugmasi — binafsha→indigo shisha to'ldirmasi
-    btn: "linear-gradient(135deg, rgba(123,77,255,.55) 0%, rgba(90,120,224,.42) 100%)",
+    // "Yangi suhbat" tugmasi — oq shisha, ustida juda yengil indigo tovlanish
+    btn: "linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(90,120,224,.18) 100%)",
   };
 }
