@@ -243,19 +243,25 @@ export default function CosmicSingularity({
 
         if (formable && pointer && p.slot >= 0) {
           // --- Logotip shakli -------------------------------------------
-          // Har zarrachaning O'Z nishoni bor va nishonlar soni shaklga
-          // ajratilgan zarracha sonidan OSHMAYDI — shuning uchun kontur
-          // to'liq to'ladi, bo'sh nuqta qolmaydi.
+          // MUHIM: bu yerda "tezlanish + damping" ishlatilmaydi. U bilan
+          // zarrachalar nishondan oshib ketib, atrofida tebranardi va shakl
+          // umuman yig'ilmasdi. Endi zarracha nishoniga TO'G'RIDAN-TO'G'RI,
+          // eksponensial ravishda yaqinlashadi (har kadrda qolgan
+          // masofaning bir ulushi) — bu har doim va aniq yig'iladi.
           const t = targets[p.slot];
           const tx = pointer.x + t.x;
           const ty = pointer.y + t.y;
           const dx = tx - p.x;
           const dy = ty - p.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
-          // Burama tashkil etuvchi nishonga yaqinlashgach so'nadi
-          const swirl = Math.min(1, d / 200) * 0.00006;
-          p.vx += (dx * 0.00004 - dy * swirl) * dt;
-          p.vy += (dy * 0.00004 + dx * swirl) * dt;
+          // tau ≈ 260 ms: ~1 sekundda deyarli to'liq shakl
+          const k = 1 - Math.exp(-dt / 260);
+          // Uzoqda burama bo'ladi, yaqinda so'nadi — "aylanib kelish" effekti
+          const sw = Math.min(0.6, d / 400) * k;
+          p.x += dx * k - dy * sw;
+          p.y += dy * k + dx * sw;
+          p.vx = 0;
+          p.vy = 0;
         } else {
           // --- Bo'sh holat --------------------------------------------
           p.hx += p.hvx * dt;

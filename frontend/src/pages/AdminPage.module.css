@@ -40,23 +40,21 @@
   z-index: -1;
   pointer-events: none;
   background:
-    /* "Mesh" yoyilma — namunadagi kabi keng, yumshoq dog'lar bir-birining
-       ustiga tushadi. Ranglar brendniki: siyohrang-binafsha + bank ko'ki. */
-    radial-gradient(ellipse 90% 70% at 12% 8%, rgba(124, 108, 240, 0.55) 0%, transparent 62%),
-    radial-gradient(ellipse 80% 65% at 92% 12%, rgba(26, 124, 200, 0.42) 0%, transparent 60%),
-    radial-gradient(ellipse 95% 75% at 88% 92%, rgba(150, 120, 245, 0.50) 0%, transparent 64%),
-    radial-gradient(ellipse 85% 70% at 4% 96%, rgba(11, 95, 165, 0.32) 0%, transparent 62%),
-    radial-gradient(ellipse 60% 45% at 52% 48%, rgba(255, 255, 255, 0.75) 0%, transparent 70%),
-    linear-gradient(135deg, #EFEDFD 0%, #E6EEFB 35%, #F1ECFD 65%, #E7EEF9 100%);
+    /* Yoyilma faqat CHEKKALARDA — markaz toza (oq-moviy). Ranglar: brend
+       ko'ki va #7B4DFF binafshasi, past shaffoflikda. */
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(123, 77, 255, 0.20) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(11, 95, 165, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(123, 77, 255, 0.18) 0%, transparent 64%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(26, 124, 200, 0.14) 0%, transparent 62%),
+    linear-gradient(180deg, #F7F8FD 0%, #FBFCFE 45%, #F5F7FC 100%);
 }
 
 :global(html.dark) .bgLayer {
   background:
-    radial-gradient(ellipse 90% 70% at 12% 8%, rgba(108, 92, 224, 0.42) 0%, transparent 62%),
-    radial-gradient(ellipse 80% 65% at 92% 12%, rgba(11, 95, 165, 0.48) 0%, transparent 60%),
-    radial-gradient(ellipse 95% 75% at 88% 92%, rgba(124, 108, 240, 0.34) 0%, transparent 64%),
-    radial-gradient(ellipse 60% 45% at 52% 48%, rgba(95, 163, 214, 0.16) 0%, transparent 70%),
-    linear-gradient(135deg, #141B3E 0%, #0B1730 40%, #191B45 70%, #08132A 100%);
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(123, 77, 255, 0.26) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(11, 95, 165, 0.30) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(123, 77, 255, 0.22) 0%, transparent 64%),
+    linear-gradient(180deg, #0B1730 0%, #0A1526 50%, #08122A 100%);
 }
 
 /* Barcha fon qatlamlari shu o'ramda yotadi.
