@@ -72,10 +72,10 @@
   background:
     /* Yoyilma faqat CHEKKALARDA — markaz toza (oq-moviy). Ranglar: brend
        ko'ki va #7B4DFF binafshasi, past shaffoflikda. */
-    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(123, 77, 255, 0.20) 0%, transparent 62%),
-    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(11, 95, 165, 0.16) 0%, transparent 60%),
-    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(123, 77, 255, 0.18) 0%, transparent 64%),
-    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(26, 124, 200, 0.14) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(123, 77, 255, 0.34) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(11, 95, 165, 0.26) 0%, transparent 68%),
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(123, 77, 255, 0.30) 0%, transparent 72%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(26, 124, 200, 0.24) 0%, transparent 70%),
     linear-gradient(180deg, #F7F8FD 0%, #FBFCFE 45%, #F5F7FC 100%);
 }
 

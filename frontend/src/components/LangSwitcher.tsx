@@ -108,7 +108,7 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
         aria-label={tip}
         data-tip={tip}
         className={`${styles.trigger} tip-end`}
-        style={{ background: t.btnBg, border: "1px solid " + t.btnBorder, boxShadow: t.btnShadow }}
+        style={{ border: "1px solid var(--tu-glass-border)", boxShadow: t.btnShadow }}
       >
         <Flag code={lang} size={20} />
         <span className={styles.shortLabel} style={{ color: t.btnText }}>{current.short}</span>
