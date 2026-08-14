@@ -12,6 +12,8 @@
   display: flex;
   background: var(--adm-bg);
   color: var(--adm-text-strong);
+  /* `.bgLayer` (z-index: -1) sahifa foni ostiga tushib ketmasligi uchun */
+  isolation: isolate;
 }
 
 .main {

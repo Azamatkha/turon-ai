@@ -16,6 +16,10 @@
   overflow: hidden;
   background: var(--tu-bg);
   color: var(--tu-text-strong);
+  /* MUHIM: o'z stacking kontekstini hosil qiladi. Aks holda `.bgLayer`
+     (z-index: -1) ildiz kontekstiga chiqib, `.page` ning O'Z foni ostida
+     qolib ketadi — yoyilma umuman ko'rinmasdi. */
+  isolation: isolate;
   transition: background-color var(--tu-duration-slow) var(--tu-ease);
 }
 

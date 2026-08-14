@@ -253,9 +253,9 @@ export default function CosmicSingularity({
           const dy = ty - p.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
           // Burama tashkil etuvchi nishonga yaqinlashgach so'nadi
-          const swirl = Math.min(1, d / 200) * 0.00002;
-          p.vx += (dx * 0.00001 - dy * swirl) * dt;
-          p.vy += (dy * 0.00001 + dx * swirl) * dt;
+          const swirl = Math.min(1, d / 200) * 0.00006;
+          p.vx += (dx * 0.00004 - dy * swirl) * dt;
+          p.vy += (dy * 0.00004 + dx * swirl) * dt;
         } else {
           // --- Bo'sh holat --------------------------------------------
           p.hx += p.hvx * dt;
@@ -348,7 +348,9 @@ export default function CosmicSingularity({
       const y = e.clientY - rect.top;
       // Mayda titrash "harakat" hisoblanmasin — aks holda logotip yig'ilishi
       // hech qachon boshlanmaydi.
-      if (!pointer || Math.abs(x - pointer.x) > 3 || Math.abs(y - pointer.y) > 3) {
+      // 10 px — sichqonchaning mayda titrashi "harakat" hisoblanmaydi,
+      // aks holda shakl arzimagan qimirlashda ham tarqalib ketardi.
+      if (!pointer || Math.abs(x - pointer.x) > 10 || Math.abs(y - pointer.y) > 10) {
         movedAt = performance.now();
       }
       pointer = { x, y };
