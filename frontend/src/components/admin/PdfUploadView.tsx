@@ -106,7 +106,7 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
           />
         </div>
 
-        <button className={styles.submitBtn} onClick={submit} disabled={!file || loading}>
+        <button className={`${styles.submitBtn} tu-shiny`} onClick={submit} disabled={!file || loading}>
           {loading ? (
             <>
               <span className={styles.spinner} />

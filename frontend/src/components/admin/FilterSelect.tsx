@@ -54,6 +54,9 @@ export default function FilterSelect({ value, options, onChange, fullWidth, plac
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
+        /* Aylanuvchi yorug' ramka — yuqori paneldagi tugmalar bilan bir xil
+           (index.css dagi `.tu-shiny` utilitasi) */
+        className="tu-shiny"
         style={{
           display: "flex",
           alignItems: "center",

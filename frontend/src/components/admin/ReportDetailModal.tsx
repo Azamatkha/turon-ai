@@ -137,7 +137,7 @@ export default function ReportDetailModal({
 
           <button
             type="button"
-            className={styles.saveBtn}
+            className={`${styles.saveBtn} tu-shiny`}
             disabled={saving}
             onClick={() => void save()}
           >

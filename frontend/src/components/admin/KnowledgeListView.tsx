@@ -132,7 +132,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         <div className={styles.headActions}>
           <HButton
             onClick={onAddClick}
-            className={styles.addBtn}
+            className={`${styles.addBtn} tu-shiny`}
             baseStyle={{}}
             hoverStyle={{ transform: "translateY(-1px)", boxShadow: "0 8px 20px rgba(0, 57, 120,.28)" }}
           >
@@ -148,7 +148,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           />
           <HButton
             onClick={() => fileRef.current?.click()}
-            className={styles.reloadBtn}
+            className={`${styles.reloadBtn} tu-shiny`}
             baseStyle={{ opacity: empUploading ? 0.6 : 1 }}
             hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
           >
@@ -157,7 +157,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           </HButton>
           <HButton
             onClick={checkStats}
-            className={styles.reloadBtn}
+            className={`${styles.reloadBtn} tu-shiny`}
             baseStyle={{ opacity: empUploading ? 0.6 : 1 }}
             hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
           >
@@ -166,7 +166,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           </HButton>
           <HButton
             onClick={load}
-            className={styles.reloadBtn}
+            className={`${styles.reloadBtn} tu-shiny`}
             baseStyle={{}}
             hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
           >

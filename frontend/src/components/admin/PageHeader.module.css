@@ -66,11 +66,10 @@
    ramka (`ChatHeader.module.css` dagi "shiny" retsepti). Farqi: bu tugma
    matnli va brend ko'kida (asosiy amal — ajralib turishi kerak).
 
+   Yorug' ramka `tu-shiny` global klassidan (PageHeader.tsx da qo'shiladi).
    DIQQAT: `overflow: hidden` YO'Q — u `[data-tip]::after` izohini qirqib
    tashlardi (ChatHeader'dagi xuddi shu xatoga qarang). */
 .addBtn {
-  position: relative;
-  isolation: isolate;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -95,54 +94,15 @@
   100% { background-position: 0% 50%; }
 }
 
-/* Burchakni animatsiya qilish uchun u RO'YXATDAN o'tgan bo'lishi kerak.
-   `@property` CSS-modul tomonidan scope qilinmaydi (global), ChatHeader'da
-   ham xuddi shu e'lon bor — takrorlanishi zararsiz, lekin bu fayl o'zicha
-   ham to'liq ishlaydi (u fayl yuklanmasa ham). */
-@property --tu-shine-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-/* Yorug' ramka — mask bilan faqat 1px chegara ko'rinadi */
-.addBtn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: conic-gradient(
-    from var(--tu-shine-angle),
-    transparent 0%,
-    rgba(255, 255, 255, 0.55) 12%,
-    #ffffff 18%,
-    rgba(255, 255, 255, 0.55) 24%,
-    transparent 40%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
+/* Yorug' ramka global `.tu-shiny` utilitasidan keladi (index.css) — bu yerda
+   faqat uning rangini brend ko'k fonga moslaymiz (aks holda ko'k ustida ko'k
+   chiziq ko'rinmasdi). */
+.addBtn {
+  --tu-shine-color: rgba(255, 255, 255, 0.6);
 }
 
 .addBtn:hover {
   box-shadow: 0 8px 20px rgba(0, 57, 120, 0.3);
-}
-
-.addBtn:hover::before,
-.addBtn:focus-visible::before {
-  opacity: 1;
-  animation: addShine 2s linear infinite;
-}
-
-@keyframes addShine {
-  to {
-    --tu-shine-angle: 360deg;
-  }
 }
 
 .addBtn:active {
@@ -150,8 +110,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .addBtn,
-  .addBtn::before {
+  .addBtn {
     animation: none;
   }
 }

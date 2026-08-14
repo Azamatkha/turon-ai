@@ -31,7 +31,7 @@
 }
 
 .card {
-  border: 1px solid var(--adm-border);
+  border: 1px solid var(--adm-border-2);
   border-radius: 14px;
   background: var(--adm-card);
   overflow: hidden;
@@ -152,11 +152,6 @@
   color: var(--adm-text-muted-2);
 }
 
-/* --- Glassmorphism -------------------------------------------------
-   Fon rangi `--adm-card` tokenidan (index.css) keladi — u endi yarim
-   shaffof. Bu yerda faqat ORQA FON BLURI qo'shiladi: `backdrop-filter`
-   ni tokendan berib bo'lmaydi, u har bir elementga alohida kerak. */
-.card {
-  backdrop-filter: var(--tu-glass-blur);
-  -webkit-backdrop-filter: var(--tu-glass-blur);
-}
+/* Blur ATAYLAB yoʼq: knowledge kartalari (namuna) blursiz — orqadagi
+   rangli fon tiniq koʻrinadi va aynan shu "shisha" taʼmini beradi. Blur
+   qoʻyilganda karta sutdek xiralashib, tekis rangga oʻxshab qolardi. */

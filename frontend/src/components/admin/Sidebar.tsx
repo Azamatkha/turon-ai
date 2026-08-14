@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import { PRIMARY, getSideTokens } from "../chat/theme";
@@ -137,15 +136,11 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
           );
         })}
 
-        <HButton
-          onClick={() => navigate("/")}
-          className={`${styles.navItem} ${styles.navItemInactive}`}
-          baseStyle={collapsed ? { justifyContent: "center" } : {}}
-          hoverStyle={{ background: side.active, color: "#fff" }}
-        >
-          <span className={styles.navIcon}><IoMdChatboxes size={20} /></span>
-          {!collapsed && <span className={styles.navLabel}>{admin.chatNav}</span>}
-        </HButton>
+        {/* "Chatga o'tish" ATAYLAB bu yerda emas — u admin panelning BO'LIMI
+            emas, boshqa sahifaga o'tish. Endi yuqori panelda, til va mavzu
+            almashtirgichlar yonida ikonka tugma sifatida turadi
+            (`PageHeader.tsx`), xuddi chat sahifasidagi "admin panel"
+            tugmasining ko'zgusi kabi. */}
       </nav>
 
       <div className={styles.footer} style={{ position: "relative", borderTopColor: side.border }} ref={footerRef}>

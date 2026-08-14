@@ -677,3 +677,88 @@ html.dark [data-tip]::after {
     --tu-border-strong: rgba(255, 255, 255, 0.45);
   }
 }
+
+/* ============================================================================
+   "SHINY" RAMKA — .tu-shiny
+   ----------------------------------------------------------------------------
+   Hover/fokusda element chegarasi bo'ylab aylanadigan yorug' chiziq
+   (conic-gradient + mask). Ilgari bu retsept ChatHeader.module.css va
+   PageHeader.module.css da IKKI MARTA takrorlangan edi — endi bitta joyda.
+
+   QANDAY ISHLATILADI: elementga `tu-shiny` klassini qo'shish kifoya
+   (CSS-modul klassi bilan birga: className={`${styles.btn} tu-shiny`}).
+   Element o'zining fonini va `border-radius` ini o'zi beradi — bu utilita
+   ularga tegmaydi.
+
+   • `.tu-shiny`        — ramka faqat hover/fokusda ko'rinadi
+   • `.tu-shiny-always` — ramka doim xira ko'rinib turadi, hover'da to'liq
+
+   MUHIM: bu klass qo'yilgan elementga `overflow: hidden` BERMANG — u
+   tooltip (`[data-tip]::after`) va belgilarni qirqib tashlaydi. Ramkaning
+   o'zi `inset: 0` bo'lgani uchun baribir tashqariga chiqmaydi.
+
+   `@property` qo'llab-quvvatlanmagan brauzerda burchak animatsiya qilinmaydi
+   — ramka shunchaki qimirlamaydi, hech narsa buzilmaydi. */
+@property --tu-shine-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.tu-shiny {
+  position: relative;
+  isolation: isolate;
+}
+
+.tu-shiny::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--tu-shine-angle),
+    transparent 0%,
+    var(--tu-shine-color, var(--tu-accent)) 12%,
+    #ffffff 18%,
+    var(--tu-shine-color, var(--tu-accent)) 24%,
+    transparent 40%
+  );
+  /* Faqat 1px chegara ko'rinsin: ichki to'rtburchak "kesib" olinadi */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tu-shiny-always::before {
+  opacity: 0.55;
+  animation: tuShineSpin 3.6s linear infinite;
+}
+
+.tu-shiny:hover::before,
+.tu-shiny:focus-visible::before,
+.tu-shiny:focus-within::before {
+  opacity: 1;
+  animation: tuShineSpin 2s linear infinite;
+}
+
+@keyframes tuShineSpin {
+  to {
+    --tu-shine-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tu-shiny::before,
+  .tu-shiny-always::before,
+  .tu-shiny:hover::before,
+  .tu-shiny:focus-visible::before,
+  .tu-shiny:focus-within::before {
+    animation: none;
+  }
+}

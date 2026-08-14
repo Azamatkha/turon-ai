@@ -12,7 +12,9 @@ interface ThemeToggleProps {
 export default function ThemeToggle({ isDark, onToggle, label = "Rejim" }: ThemeToggleProps) {
   return (
     <div className={styles.wrap}>
-      <button onClick={onToggle} data-tip={label} aria-label={label} className={`${styles.switch} ${isDark ? styles.switchDark : styles.switchLight}`}>
+      {/* `tu-shiny-always` — yuqori paneldagi qolgan tugmalar bilan bir xil
+          aylanuvchi yorug' ramka (index.css dagi utilita) */}
+      <button onClick={onToggle} data-tip={label} aria-label={label} className={`${styles.switch} ${isDark ? styles.switchDark : styles.switchLight} tu-shiny tu-shiny-always`}>
         <span className={`${styles.knob} ${isDark ? styles.knobDark : styles.knobLight}`}>
           {isDark ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#003978"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></svg>

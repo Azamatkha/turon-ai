@@ -77,12 +77,15 @@
 .trigger {
   background-image:
     linear-gradient(120deg,
-      rgba(255, 255, 255, 0.92) 0%,
-      rgba(226, 236, 252, 0.92) 22%,
-      rgba(214, 226, 250, 0.92) 42%,
-      rgba(230, 226, 252, 0.92) 62%,
-      rgba(255, 255, 255, 0.92) 82%,
-      rgba(226, 236, 252, 0.92) 100%);
+      /* Alfa 0.97 — 0.92 da orqadagi logo suvbelgisi tugma ichidan
+         ko'rinib, matnni o'qishga xalaqit qilardi (ChatHeader'dagi
+         xuddi shu tuzatish) */
+      rgba(255, 255, 255, 0.97) 0%,
+      rgba(226, 236, 252, 0.97) 22%,
+      rgba(214, 226, 250, 0.97) 42%,
+      rgba(230, 226, 252, 0.97) 62%,
+      rgba(255, 255, 255, 0.97) 82%,
+      rgba(226, 236, 252, 0.97) 100%);
   background-size: 300% 300%;
   animation: tuGradFlow2 14s ease-in-out infinite;
   backdrop-filter: var(--tu-glass-blur);
@@ -92,11 +95,11 @@
 :global(html.dark) .trigger {
   background-image:
     linear-gradient(120deg,
-      rgba(16, 42, 74, 0.85) 0%,
-      rgba(22, 56, 96, 0.85) 25%,
-      rgba(28, 48, 104, 0.85) 50%,
-      rgba(18, 46, 84, 0.85) 75%,
-      rgba(16, 42, 74, 0.85) 100%);
+      rgba(16, 42, 74, 0.96) 0%,
+      rgba(22, 56, 96, 0.96) 25%,
+      rgba(28, 48, 104, 0.96) 50%,
+      rgba(18, 46, 84, 0.96) 75%,
+      rgba(16, 42, 74, 0.96) 100%);
 }
 
 @keyframes tuGradFlow2 {

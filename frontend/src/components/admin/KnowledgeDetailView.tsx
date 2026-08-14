@@ -91,14 +91,14 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <button className={styles.backBtn} onClick={onBack}>
+        <button className={`${styles.backBtn} tu-shiny`} onClick={onBack}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
           {admin.knowledgeBack}
         </button>
         {!editing && detail && (
           <div className={styles.actions}>
-            <button className={styles.editBtn} onClick={startEdit}>{admin.knowledgeEdit}</button>
-            <button className={styles.delBtn} onClick={() => setConfirmDel(true)}>{admin.knowledgeDelete}</button>
+            <button className={`${styles.editBtn} tu-shiny`} onClick={startEdit}>{admin.knowledgeEdit}</button>
+            <button className={`${styles.delBtn} tu-shiny`} onClick={() => setConfirmDel(true)}>{admin.knowledgeDelete}</button>
           </div>
         )}
       </div>
@@ -117,7 +117,7 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
           {err && <div className={styles.errMsg} style={{ marginTop: 14 }}>{err}</div>}
           <div className={styles.editActions}>
             <button className={styles.cancelBtn} onClick={() => setEditing(false)} disabled={busy}>{admin.knowledgeCancel}</button>
-            <HButton onClick={save} className={styles.saveBtn} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)" }}>
+            <HButton onClick={save} className={`${styles.saveBtn} tu-shiny`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)" }}>
               {busy ? <span className={styles.spinnerSm} /> : admin.knowledgeSave}
             </HButton>
           </div>
@@ -142,7 +142,7 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
             <div className={styles.confirmText}>{admin.knowledgeDeleteConfirm}</div>
             <div className={styles.confirmActions}>
               <button className={styles.cancelBtn} onClick={() => setConfirmDel(false)} disabled={busy}>{admin.knowledgeCancel}</button>
-              <button className={styles.delConfirmBtn} onClick={del} disabled={busy}>
+              <button className={`${styles.delConfirmBtn} tu-shiny`} onClick={del} disabled={busy}>
                 {busy ? <span className={styles.spinnerSm} /> : admin.knowledgeDelete}
               </button>
             </div>

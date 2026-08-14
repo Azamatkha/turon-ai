@@ -144,7 +144,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         onClick={toggle}
         data-tip={s.notifications}
         aria-label={unread > 0 ? `${s.notifications} (${unread})` : s.notifications}
-        className={headerStyles.adminBtn}
+        className={`${headerStyles.adminBtn} tu-shiny tu-shiny-always`}
         baseStyle={{
           border: "1px solid var(--tu-glass-border)",
           color: isDark ? "#E2E8F0" : "#003978",

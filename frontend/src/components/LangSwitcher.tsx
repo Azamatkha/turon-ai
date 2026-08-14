@@ -107,7 +107,9 @@ export default function LangSwitcher({ lang, onChange, theme = "light", align = 
         aria-expanded={open}
         aria-label={tip}
         data-tip={tip}
-        className={`${styles.trigger} tip-end`}
+        /* `tu-shiny-always` — yuqori paneldagi qolgan tugmalar bilan bir xil
+           aylanuvchi yorug' ramka (index.css dagi utilita) */
+        className={`${styles.trigger} tip-end tu-shiny tu-shiny-always`}
         style={{ border: "1px solid var(--tu-glass-border)", boxShadow: t.btnShadow }}
       >
         <Flag code={lang} size={20} />

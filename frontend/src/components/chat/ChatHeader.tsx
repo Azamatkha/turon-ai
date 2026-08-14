@@ -100,7 +100,7 @@ export default function ChatHeader({
             onClick={() => onAdmin?.()}
             data-tip={s.adminPanel}
             aria-label={s.adminPanel}
-            className={styles.adminBtn}
+            className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
             baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
             /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
@@ -113,7 +113,7 @@ export default function ChatHeader({
           onClick={() => setRatesOpen(true)}
           data-tip={s.rates}
           aria-label={s.rates}
-          className={styles.adminBtn}
+          className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
           baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
@@ -125,7 +125,7 @@ export default function ChatHeader({
           onClick={() => setCalcOpen(true)}
           data-tip={s.calculator}
           aria-label={s.calculator}
-          className={styles.adminBtn}
+          className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
           baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
@@ -137,7 +137,7 @@ export default function ChatHeader({
           onClick={() => setReportOpen(true)}
           data-tip={s.report}
           aria-label={s.report}
-          className={styles.adminBtn}
+          className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
           baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */

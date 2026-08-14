@@ -279,3 +279,13 @@
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
 }
+
+/* Toʼla ranglangan (brend koʻk / qizil) tugmalarda `tu-shiny` ramkasi
+   OQ boʻlishi kerak — standart koʻk rang koʻk fonda koʻrinmaydi. */
+.saveBtn {
+  --tu-shine-color: rgba(255, 255, 255, 0.6);
+}
+
+.delConfirmBtn {
+  --tu-shine-color: rgba(255, 255, 255, 0.6);
+}

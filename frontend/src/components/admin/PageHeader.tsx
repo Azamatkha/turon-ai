@@ -1,7 +1,12 @@
+import { useNavigate } from "react-router-dom";
+import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
 import ThemeToggle from "../chat/ThemeToggle";
 import NotificationsBell from "../chat/NotificationsBell";
 import { getThemeTokens } from "../chat/theme";
+// Chatga o'tish tugmasi chat sahifasidagi "admin panel" tugmasining aynan
+// o'zi bo'lishi uchun uslub ham o'sha yerdan olinadi.
+import headerStyles from "../chat/ChatHeader.module.css";
 import LangSwitcher from "../LangSwitcher";
 import { chatStaticDict } from "../../locales";
 import type { AdminView } from "../../types/admin";
@@ -22,6 +27,7 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ view, search, setSearch, onAddUser, isDark, onToggleTheme, lang, setLang, t: admin }: PageHeaderProps) {
+  const navigate = useNavigate();
   // "Foydalanuvchi qo'shish" FAQAT "Foydalanuvchilar" sahifasida. Dashboard —
   // ko'rsatkichlar sahifasi, u yerda amal tugmasi turishi mantiqsiz edi
   // (ro'yxat ham yo'q, qo'shilgandan keyin natija ko'rinmasdi).
@@ -43,6 +49,19 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
         {/* Bildirishnomalar chatdagi bilan bir xil komponent — admin murojaat
             xabarini shu yerdan ham ko'ra oladi */}
         <NotificationsBell tk={getThemeTokens(isDark)} isDark={isDark} s={chatStaticDict[lang]} />
+        {/* Chatga qaytish — chat sahifasidagi "admin panel" tugmasining
+            ko'zgusi. Ilgari u yon panelda bo'lim sifatida turardi, lekin u
+            BO'LIM emas, boshqa sahifaga o'tish — o'rni shu yerda. */}
+        <HButton
+          onClick={() => navigate("/")}
+          data-tip={admin.chatNav}
+          aria-label={admin.chatNav}
+          className={`${headerStyles.adminBtn} tu-shiny tu-shiny-always`}
+          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+          hoverStyle={{ transform: "translateY(-1px)" }}
+        >
+          <IoMdChatboxes size={20} />
+        </HButton>
         <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={admin.selectLanguage} />
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} label={isDark ? admin.dayMode : admin.nightMode} />
         {onUsers && (
@@ -52,7 +71,7 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
           </div>
         )}
         {onUsers && (
-          <HButton onClick={onAddUser} className={styles.addBtn} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)" }}>
+          <HButton onClick={onAddUser} className={`${styles.addBtn} tu-shiny`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)" }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {admin.addUser}
           </HButton>
