@@ -112,6 +112,7 @@ export const chatStatic: ChatStaticStrings = {
   calcProfit: "Qo‘shiladigan foyda",
   calcTotal: "Jami summa",
   calcNote: "Hisob taxminiy. Aniq shartlar bank tomonidan alohida belgilanadi.",
+  calcError: "Hisoblab bo‘lmadi. Internetni tekshiring va qaytadan urinib ko‘ring.",
   calcUnitMonths: "oy",
   calcCurrency: "so‘m",
   send: "Yuborish",

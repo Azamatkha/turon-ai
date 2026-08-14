@@ -1,14 +1,14 @@
-// To'lov jadvali (amortizatsiya) hisobi va Excel'ga eksporti.
-// Ko'rish oynasi ham, yuklash tugmasi ham SHU yerdan foydalanadi — jadval
-// ikki joyda ikki xil chiqmasligi uchun.
+// To'lov jadvalini KO'RSATISH va Excel'ga eksport qilish.
+//
+// HISOB BU YERDA EMAS: jadval qatorlari backenddan keladi
+// (`services/calculatorService.ts` -> POST /v1/calculator/schedule).
+// Ilgari shu faylda `buildSchedule()` bor edi — ya'ni kredit formulasi
+// frontda ham, backendda ham turishi kerak bo'lardi. Endi formula yagona
+// manbada (backend `src/calculator/services.py`), bu fayl esa faqat
+// ko'rinish qatlami.
 
+import type { ScheduleResultDto } from "../services/calculatorService";
 import { packXlsx, xmlEsc } from "./xlsx";
-
-export type PayMethod = "flat" | "annuity" | "diff";
-
-// Sug'urta — asosiy qarzning shu ulushi. Rasmiy sayt shablonidan olindi:
-// 1 000 000 -> 12 000 va 20 000 000 -> 240 000 (ikkalasi ham 1.2%).
-export const INSURANCE_RATE = 0.012;
 
 export interface ScheduleRow {
   k: number;          // tartib raqami
@@ -29,67 +29,33 @@ export interface ScheduleResult {
   fullCost: number;
 }
 
-const addMonths = (date: Date, m: number): Date => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + m);
-  return d;
-};
-
-export function buildSchedule(
-  principal: number,
-  ratePct: number,
-  months: number,
-  method: PayMethod,
-  startDate: Date = new Date()
-): ScheduleResult {
-  const r = ratePct / 100 / 12;
-  const n = Math.max(1, Math.round(months));
-  const annuityPay =
-    r === 0 ? principal / n : (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  // Ustama (flat): foiz butun summaga hisoblanadi, oylarga teng bo'linadi
-  const flatInterestPer = (principal * (ratePct / 100) * (n / 12)) / n;
-
-  const rows: ScheduleRow[] = [];
-  let balance = principal;
-  let prev = startDate;
-  let totalInterest = 0;
-
-  for (let k = 1; k <= n; k++) {
-    const date = addMonths(startDate, k);
-    const days = Math.round((date.getTime() - prev.getTime()) / 86_400_000);
-    const bal = balance;
-    let interest: number;
-    let principalPay: number;
-
-    if (method === "annuity") {
-      interest = bal * r;
-      principalPay = annuityPay - interest;
-    } else if (method === "diff") {
-      principalPay = principal / n;
-      interest = bal * r;
-    } else {
-      principalPay = principal / n;
-      interest = flatInterestPer;
-    }
-    // Oxirgi oy — qoldiqni to'liq yopamiz (yumaloqlash qoldig'i qolmasin)
-    if (k === n) principalPay = bal;
-
-    const total = principalPay + interest;
-    totalInterest += interest;
-    rows.push({ k, date, balance: bal, principal: principalPay, interest, total, days });
-    balance = bal - principalPay;
-    prev = date;
-  }
-
-  const insurance = principal * INSURANCE_RATE;
-  const totalPaid = principal + totalInterest;
+/**
+ * Backend javobini (snake_case, sana — ISO matn) ko'rinish qatlami
+ * kutadigan shaklga (camelCase, sana — `Date`) o'giradi.
+ *
+ * Sana `new Date("2026-08-14")` bilan emas, qo'lda ajratib yasaladi: ISO
+ * "kun" formatini brauzer UTC deb o'qiydi va UTC+5 da sana bir kun orqaga
+ * surilib ketardi (14-avgust -> 13-avgust).
+ */
+export function scheduleFromDto(dto: ScheduleResultDto): ScheduleResult {
   return {
-    rows,
-    totalPrincipal: principal,
-    totalInterest,
-    totalPaid,
-    insurance,
-    fullCost: totalPaid + insurance,
+    rows: dto.rows.map((r) => {
+      const [y, m, d] = r.date.split("-").map(Number);
+      return {
+        k: r.k,
+        date: new Date(y, m - 1, d),
+        balance: r.balance,
+        principal: r.principal,
+        interest: r.interest,
+        total: r.total,
+        days: r.days,
+      };
+    }),
+    totalPrincipal: dto.total_principal,
+    totalInterest: dto.total_interest,
+    totalPaid: dto.total_paid,
+    insurance: dto.insurance,
+    fullCost: dto.full_cost,
   };
 }
 

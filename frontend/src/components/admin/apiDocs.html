@@ -188,12 +188,19 @@
     </div>
   </div>
 
-  <input id="filter" class="filter" type="text" placeholder="Filter by tag — masalan: login, chat, users" autocomplete="off" />
+  <input id="filter" class="filter" type="text" placeholder="Filter by tag — masalan: login, chat, calculator, notifications, reports" autocomplete="off" />
   <div id="content"></div>
 </div>
 
 <script>
-  // ── Endpointlar (backend Swagger teglariga mos: Users / Chat / Admin / Knowledge / System) ──
+  // ── Endpointlar. Teglar backend Swagger'idagi teglar bilan bir xil tartibda:
+  //    Users / Chat / Calculator / Admin / Knowledge / Notifications / Reports / System
+  //    (manba: backend `src/main/presentation.py` -> include_routers).
+  //
+  //    YANGI ENDPOINT QO'SHGANDA shu ro'yxatga ham qo'shing — bu sahifa
+  //    Swagger'dan avtomatik generatsiya qilinmaydi, qo'lda yuritiladi. Har bir
+  //    yozuvda `sum` maydonida endpoint NIMA QILISHI aniq yozilsin, `note` da
+  //    esa nozik joylar (huquq, cheklov, sekinligi, nojo'ya holatlar).
   var GROUPS = [
     { tag: "Users", eps: [
       { m:"post", p:"/v1/users/auth/register", auth:"public", sum:"Signup User — yangi foydalanuvchi ro'yxatdan o'tkazish.",
@@ -220,6 +227,11 @@
         resp:{ id:"1a2b3c...", username:"alivaliyev", full_name:"Ali Valiyev", department:"Xavfsizlik", role:"ADMIN", is_active:true } },
       { m:"delete", p:"/v1/users/{user_id}", auth:"admin", sum:"Delete User Admin — foydalanuvchini o'chirish (yumshoq).",
         params:[ {n:"user_id",in:"path",t:"UUID",req:true,d:"foydalanuvchi id"} ], body:null, st:"200", resp:{ success:true } },
+      { m:"patch", p:"/v1/users/me", auth:"user", sum:"Update Own Profile — o'z ismi va loginini o'zgartirish.",
+        body:{ full_name:"Ali Valiyev", username:"alivaliyev" },
+        bodyNote:"Ikkala maydon ham ixtiyoriy — null yoki yuborilmasa o'sha maydonga tegilmaydi.", params:[], st:"200",
+        resp:{ id:"1a2b3c...", first_name:"Ali", last_name:"Valiyev", full_name:"Ali Valiyev", username:"alivaliyev", department:"IT bo'limi", role:"USER", email:"alivaliyev@turonbank.uz", phone_number:null, is_verified:true },
+        note:"user_id TOKENDAN olinadi — bu endpoint orqali BOSHQA foydalanuvchi profiliga tegib bo'lmaydi. role/department/is_active bu yerda yo'q (ular faqat adminda). Rate limit: 60 daqiqada 10 marta." },
       { m:"patch", p:"/v1/users/me/password", auth:"user", sum:"Update User Password — o'z parolini o'zgartirish.",
         body:{ password:"YangiParol1!" }, params:[], st:"200", resp:{ success:true }, note:"Rate limit: 60 daqiqada 5 marta." },
       { m:"get", p:"/v1/users", auth:"admin", sum:"List Users — ro'yxat, qidiruv va bo'lim filtri.",
@@ -261,7 +273,31 @@
       { m:"post", p:"/v1/chat/ask/stream", auth:"user", stage2:true, sum:"Ask Stream — javobni token-token (SSE oqim).",
         body:{ question:"Ipoteka shartlari qanday?", history:[] }, st:"200",
         respRaw:"text/event-stream (SSE):\ndata: {\"type\":\"token\",\"text\":\"Ipoteka\"}\ndata: {\"type\":\"token\",\"text\":\" krediti\"}\ndata: {\"type\":\"done\",\"completion_tokens\":210}",
-        note:"Javob JSON emas — SSE oqimi." }
+        note:"Javob JSON emas — SSE oqimi." },
+      { m:"get", p:"/v1/chat/rates", auth:"user", sum:"Exchange Rates — valyuta kurslari (strukturali jadval).", body:null, params:[], st:"200",
+        resp:{ stamp:"11.08.2026 11:10:00 dan ma'lumotlar",
+          channels:[ { key:"tab1", label:"Ayirboshlash shoxobchalari", rows:[ { code:"USD", name:"AQSh dollari", buy:12550, sell:12700, cb:12610, delta_buy:15, delta_sell:null, delta_cb:-5 } ] } ],
+          source_url:"https://turonbank.uz/uz/kurslar/" },
+        note:"Kurslarni kunlik fon vazifasi saytdan olib vektor bazaga yozadi — bu so'rov saytga qayta chiqmaydi, shuning uchun tez. delta_* — oldingi yangilanishga nisbatan o'zgarish (null = o'zgarmagan yoki taqqoslash uchun ma'lumot yo'q)." }
+    ]},
+    { tag: "Calculator", eps: [
+      { m:"post", p:"/v1/calculator/loan", auth:"user", sum:"Loan — kredit/ipoteka oylik to'lovi va ortiqcha to'lovi.",
+        body:{ amount:50000000, rate:21.99, months:24, method:"flat" },
+        bodyNote:"Kredit tanasi ikki xil beriladi: oddiy kredit/avtokredit — amount; IPOTEKA — price (uy narxi) + down_payment (boshlang'ich to'lov), tana ularning ayirmasi. method: 'flat' (ustama — har oy bir xil), 'annuity' (teng to'lov, foiz qoldiqqa), 'diff' (differensial — to'lov oydan oyga kamayadi). rate — YILLIK foiz, months — 1..360.",
+        params:[], st:"200",
+        resp:{ principal:50000000, first_payment:2999583.33, last_payment:2999583.33, total_paid:71990000, overpay:21990000, varies:false },
+        note:"varies=true faqat differensialda — UI shunda '1-oy' va 'oxirgi oy' to'lovini alohida ko'rsatadi. Ipoteka namunasi: {\"price\":300000000,\"down_payment\":60000000,\"rate\":18,\"months\":120,\"method\":\"annuity\"}." },
+      { m:"post", p:"/v1/calculator/deposit", auth:"user", sum:"Deposit — omonat bo'yicha muddat oxiridagi summa va foyda.",
+        body:{ amount:10000000, rate:18, months:12 }, params:[], st:"200",
+        resp:{ total:11800000, profit:1800000 },
+        note:"Oddiy foiz — kapitallashuv (foizga foiz) hisoblanmaydi, bankdagi standart omonat shartlari shunday." },
+      { m:"post", p:"/v1/calculator/schedule", auth:"user", sum:"Schedule — oylik to'lov jadvali (amortizatsiya).",
+        body:{ amount:50000000, rate:21.99, months:24, method:"annuity", start_date:"2026-08-14" },
+        bodyNote:"Body /loan bilan bir xil, ustiga ixtiyoriy start_date (berilmasa — bugungi sana).",
+        params:[], st:"200",
+        resp:{ rows:[ { k:1, date:"2026-09-14", balance:50000000, principal:1677410.82, interest:916250, total:2593660.82, days:31 } ],
+          total_principal:50000000, total_interest:12247859.79, total_paid:62247859.79, insurance:600000, full_cost:62847859.79 },
+        note:"Har qator: to'lovdan OLDINGI qoldiq, asosiy qarz ulushi, foiz ulushi, jami to'lov va oldingi to'lovdan beri o'tgan kunlar. Oxirgi oyda qoldiq to'liq yopiladi. insurance — kredit tanasining 1.2% i. Excel fayl SERVER emas, brauzerda shu qatorlardan yig'iladi." }
     ]},
     { tag: "Admin", eps: [
       { m:"get", p:"/v1/admin/stats", auth:"admin", sum:"Dashboard Stats — userlar, suhbatlar, xabarlar, bo'limlar.", body:null, params:[], st:"200",
@@ -289,8 +325,56 @@
         body:[ { department:"IT bo'limi", division:"Tarmoq", position:"Muhandis", fish:"Ali Valiyev", ip:"101", phone:"+998901234567" } ], params:[], st:"200", resp:{ chunks:1, vector_dim:1024, total_points:201 } },
       { m:"get", p:"/v1/admin/knowledge/employee-stats", auth:"admin", stage2:true, sum:"Employee Stats — diagnostika: xodimlar soni/bo'limlar.", body:null, params:[], st:"200",
         resp:{ total_points:201, employee_count:80, departments:{ "IT bo'limi":12 }, sample:{ doc_type:"employee", department:"IT bo'limi", fish:"Ali Valiyev", ip:"101", phone:"+998901234567" } } },
+      { m:"post", p:"/v1/admin/knowledge/pdf", auth:"admin", stage2:true, sum:"Upload PDF — PDF hujjatni (kerak bo'lsa OCR bilan) bazaga yozadi.",
+        multipart:true,
+        params:[ {n:"file",in:"form-data",t:"file (.pdf)",req:true,d:"yuklanadigan hujjat"}, {n:"title",in:"form-data",t:"string",req:false,d:"sarlavha; bo'sh bo'lsa hujjat mavzusi avtomatik aniqlanadi"} ],
+        body:null, st:"200",
+        resp:{ chunks:14, vector_dim:1024, total_points:227, title:"Ipoteka kreditlash tartibi", pages:12, ocr_pages:3, chars:18240 },
+        note:"Matn qatlami bor sahifalar to'g'ridan-to'g'ri o'qiladi, skanerlanganlari Tesseract OCR dan o'tadi; so'ng LLM imzo/muhr/OCR shovqinini tozalaydi. SEKIN — ko'p sahifali hujjat bir necha daqiqa olishi mumkin. Yakunda barcha faol foydalanuvchilarga 'bilim bazasi yangilandi' bildirishnomasi tarqaladi." },
       { m:"post", p:"/v1/admin/knowledge/scrape", auth:"admin", stage2:true, sum:"Scrape — URL'ni ochib matnini bazaga yozadi.",
         body:{ url:"https://turonbank.uz/kreditlar" }, params:[], st:"200", resp:{ chunks:12, vector_dim:1024, total_points:213 } }
+    ]},
+    { tag: "Notifications", eps: [
+      { m:"get", p:"/v1/notifications", auth:"user", sum:"List — joriy foydalanuvchining bildirishnomalari (yangisidan eskisiga).",
+        params:[ {n:"limit",in:"query",t:"int 1..100",req:false,d:"nechta qaytarilsin (standart 30)"}, {n:"offset",in:"query",t:"int >= 0",req:false,d:"nechtasini o'tkazib yuborish (standart 0)"}, {n:"only_unread",in:"query",t:"bool",req:false,d:"true — faqat o'qilmaganlari"} ],
+        body:null, st:"200",
+        resp:{ items:[ { id:"n1...", type:"knowledge_updated", params:{ title:"Kredit qoidalari" }, is_read:false, created_at:"2026-08-14T09:30:00", entity_id:null } ], unread_count:1, total:12 },
+        note:"type — bildirishnoma turi, params — shu turga mos o'zgaruvchilar. Matn TAYYOR holda kelmaydi: mijoz type+params dan foydalanuvchi tilida jumla yig'adi." },
+      { m:"get", p:"/v1/notifications/unread-count", auth:"user", sum:"Unread Count — o'qilmaganlar soni (qo'ng'iroqdagi qizil belgi).", body:null, params:[], st:"200",
+        resp:{ count:3 } },
+      { m:"get", p:"/v1/notifications/stream", auth:"user", sum:"Stream — real vaqtdagi signal (SSE oqim).", body:null, params:[], st:"200",
+        respRaw:"text/event-stream (SSE):\n: connected\n: ping        <- har 25 soniyada, ulanish uzilmasin uchun\ndata: {\"type\":\"new\"}",
+        note:"Bildirishnomaning O'ZI yuborilmaydi — faqat 'yangisi bor' signali. Klient signalni olgach ro'yxatni API'dan so'raydi. Nega kerak: fondagi tabda brauzer taymerni daqiqada bir martaga sekinlashtiradi, ya'ni polling kechikadi." },
+      { m:"post", p:"/v1/notifications/read-all", auth:"user", sum:"Read All — barchasini o'qilgan deb belgilaydi.", body:null, params:[], st:"200", resp:{ success:true } },
+      { m:"post", p:"/v1/notifications/{notification_id}/read", auth:"user", sum:"Read One — bittasini o'qilgan deb belgilaydi.",
+        params:[ {n:"notification_id",in:"path",t:"UUID",req:true,d:"bildirishnoma id"} ], body:null, st:"200", resp:{ success:true },
+        note:"Birovning bildirishnomasini belgilab bo'lmaydi — so'rov token'dagi user_id bo'yicha filtrlanadi." }
+    ]},
+    { tag: "Reports", eps: [
+      { m:"post", p:"/v1/reports", auth:"user", sum:"Create Report — muammo haqida xabar yoki taklif yuborish.",
+        multipart:true,
+        params:[ {n:"kind",in:"form-data",t:"'problem' | 'suggestion'",req:true,d:"murojaat turi"}, {n:"title",in:"form-data",t:"string 1..200",req:true,d:"qisqa sarlavha"}, {n:"description",in:"form-data",t:"string 1..5000",req:true,d:"batafsil tavsif"}, {n:"screenshot",in:"form-data",t:"file (rasm)",req:false,d:"ixtiyoriy skrinshot"} ],
+        body:null, st:"201",
+        resp:{ id:"r1...", kind:"problem", title:"Chat javob bermayapti", description:"Kredit haqida so'raganda...", status:"new", has_screenshot:true, created_at:"2026-08-14T09:30:00" },
+        note:"kind noto'g'ri bo'lsa 406 qaytadi. Javobda skrinshot YO'LI yo'q — faqat has_screenshot bayrog'i; faylning o'zi alohida, huquq tekshiriladigan endpoint orqali olinadi." },
+      { m:"get", p:"/v1/admin/reports", auth:"admin", sum:"List Reports — murojaatlar ro'yxati (sahifalab).",
+        params:[ {n:"status",in:"query",t:"'new' | 'in_progress' | 'resolved'",req:false,d:"holat bo'yicha filtr"}, {n:"page",in:"query",t:"int >= 1",req:false,d:"sahifa (standart 1)"}, {n:"size",in:"query",t:"int 1..100",req:false,d:"sahifa hajmi (standart 20)"} ],
+        body:null, st:"200",
+        resp:{ items:[ { id:"r1...", kind:"problem", title:"Chat javob bermayapti", description:"...", status:"new", has_screenshot:true, created_at:"2026-08-14T09:30:00", user_name:"Ali Valiyev", user_department:"IT bo'limi", admin_comment:"", resolved_at:null } ], total:37, new_count:5 },
+        note:"VIEW_REPORTS huquqi kerak. new_count — 'yangi' holatdagilar soni (admin panelda belgi sifatida ko'rsatiladi)." },
+      { m:"get", p:"/v1/admin/reports/{report_id}", auth:"admin", sum:"Get Report — bitta murojaat tafsiloti.",
+        params:[ {n:"report_id",in:"path",t:"UUID",req:true,d:"murojaat id"} ], body:null, st:"200",
+        resp:{ id:"r1...", kind:"problem", title:"Chat javob bermayapti", description:"...", status:"in_progress", has_screenshot:true, created_at:"2026-08-14T09:30:00", user_name:"Ali Valiyev", user_department:"IT bo'limi", admin_comment:"Tekshirilyapti", resolved_at:null } },
+      { m:"get", p:"/v1/admin/reports/{report_id}/screenshot", auth:"admin", sum:"Screenshot — murojaatga biriktirilgan rasm fayli.",
+        params:[ {n:"report_id",in:"path",t:"UUID",req:true,d:"murojaat id"} ], body:null, st:"200",
+        respRaw:"image/* (fayl oqimi — JSON emas)",
+        note:"Fayl ochiq URL'da TURMAYDI: shu endpointda avval huquq tekshiriladi, keyin diskdan o'qiladi. Skrinshot bo'lmasa 404." },
+      { m:"patch", p:"/v1/admin/reports/{report_id}", auth:"admin", sum:"Update Report — holatni va admin izohini yangilash.",
+        params:[ {n:"report_id",in:"path",t:"UUID",req:true,d:"murojaat id"} ],
+        body:{ status:"resolved", admin_comment:"Tuzatildi, yangi versiyada chiqadi." },
+        bodyNote:"status majburiy: 'new' | 'in_progress' | 'resolved'. admin_comment ixtiyoriy (5000 belgigacha).", st:"200",
+        resp:{ id:"r1...", kind:"problem", title:"Chat javob bermayapti", description:"...", status:"resolved", has_screenshot:true, created_at:"2026-08-14T09:30:00", user_name:"Ali Valiyev", user_department:"IT bo'limi", admin_comment:"Tuzatildi, yangi versiyada chiqadi.", resolved_at:"2026-08-14T11:05:00" },
+        note:"MANAGE_REPORTS huquqi kerak (ko'rish uchun VIEW_REPORTS yetardi). 'resolved' ga o'tkazilganda resolved_at avtomatik qo'yiladi." }
     ]},
     { tag: "System", eps: [
       { m:"get", p:"/health/", auth:"public", root:true, sum:"Health — xizmat va bog'liqliklar holati.", body:null, params:[], st:"200", resp:{ status:"ok" } },
@@ -311,11 +395,23 @@
   }
   function codeBlock(html){ return '<div class="code"><button class="copy" type="button">Nusxa</button><pre><code>'+html+'</code></pre></div>'; }
   function curlFor(ep){
-    var url = "http://localhost:8100" + ep.p.replace("{user_id}","<id>").replace("{session_id}","<id>").replace("{message_id}","<id>");
+    // Har qanday {…} o'rniga <id> — yangi endpoint qo'shilganda bu funksiyani
+    // qayta tahrirlash shart emas ({notification_id}, {report_id} va h.k.)
+    var url = "http://localhost:8100" + ep.p.replace(/\{[^}]+\}/g, "<id>");
     var c = '<span class="tok-cmd">curl</span> -X '+ep.m.toUpperCase()+' \\\n  \''+esc(url)+'\'';
     if (ep.auth==="user"||ep.auth==="admin") c += ' \\\n  -H \'Authorization: Bearer &lt;access_token&gt;\'';
     if (ep.auth==="refresh") c += ' \\\n  -H \'Authorization: Bearer &lt;refresh_token&gt;\'';
-    if (ep.multipart) { c += ' \\\n  -F \'file=@xodimlar.xlsx\''; return c; }
+    if (ep.multipart) {
+      // -F qatorlari form-data parametrlaridan yig'iladi (ilgari qat'iy
+      // "file=@xodimlar.xlsx" edi — PDF va murojaat formasiga to'g'ri kelmasdi)
+      var forms = (ep.params||[]).filter(function(pr){ return pr.in === "form-data"; });
+      if (!forms.length) { c += ' \\\n  -F \'file=@fayl\''; return c; }
+      forms.forEach(function(pr){
+        var isFile = pr.t.indexOf("file") === 0;
+        c += ' \\\n  -F \'' + esc(pr.n) + '=' + (isFile ? '@fayl' + (pr.t.indexOf(".xlsx")>-1 ? '.xlsx' : pr.t.indexOf(".pdf")>-1 ? '.pdf' : '.png') : '&lt;qiymat&gt;') + '\'';
+      });
+      return c;
+    }
     if (ep.body!=null){ c += ' \\\n  -H \'Content-Type: application/json\''; c += ' \\\n  -d \''+esc(JSON.stringify(ep.body))+'\''; }
     return c;
   }

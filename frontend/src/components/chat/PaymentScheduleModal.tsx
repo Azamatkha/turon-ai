@@ -1,42 +1,51 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
+import { fetchSchedule, type LoanInput } from "../../services/calculatorService";
 import {
-  buildSchedule,
   downloadSchedule,
   scheduleFileName,
+  scheduleFromDto,
   fmt2,
   fmtDate,
-  type PayMethod,
+  type ScheduleResult,
 } from "../../utils/paymentSchedule";
 import { PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import styles from "./PaymentScheduleModal.module.css";
 
 interface Props {
-  principal: number;
-  rate: number;
-  months: number;
-  method: PayMethod;
+  /** Kredit parametrlari — jadval shu bo'yicha backendda hisoblanadi */
+  input: LoanInput;
   tk: ThemeTokens;
   isDark: boolean;
   s: ChatStaticStrings;
   onClose: () => void;
 }
 
-export default function PaymentScheduleModal({
-  principal, rate, months, method, tk, isDark, s, onClose,
-}: Props) {
+export default function PaymentScheduleModal({ input, tk, isDark, s, onClose }: Props) {
   const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
-  const res = useMemo(
-    () => buildSchedule(principal, rate, months, method),
-    [principal, rate, months, method]
-  );
+
+  // Jadval backenddan keladi. Oyna ochilganda bir marta so'raladi —
+  // parametrlar oyna ichida o'zgarmaydi.
+  const [res, setRes] = useState<ScheduleResult | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchSchedule(input, ctrl.signal)
+      .then((dto) => setRes(scheduleFromDto(dto)))
+      .catch(() => {
+        if (!ctrl.signal.aborted) setFailed(true);
+      });
+    return () => ctrl.abort();
+  }, [input]);
 
   const border = tk.cardBorder;
   const headBg = isDark ? "rgba(255,255,255,.06)" : "#F1F5F9";
 
-  const download = () =>
+  const download = () => {
+    if (!res) return;
     downloadSchedule(
       res,
       {
@@ -55,6 +64,7 @@ export default function PaymentScheduleModal({
       },
       scheduleFileName()
     );
+  };
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
@@ -86,6 +96,14 @@ export default function PaymentScheduleModal({
         </div>
 
         <div className={styles.scroll}>
+          {/* Jadval kelmaguncha (yoki xato bo'lsa) faqat izoh ko'rinadi —
+              bo'sh jadval karkasini chizishdan ma'no yo'q */}
+          {!res ? (
+            <div className={styles.note} style={{ color: failed ? "#DC2626" : tk.muted }} role={failed ? "alert" : undefined}>
+              {failed ? s.calcError : "…"}
+            </div>
+          ) : (
+          <>
           <table className={styles.table}>
             <thead>
               <tr style={{ color: tk.muted }}>
@@ -136,6 +154,8 @@ export default function PaymentScheduleModal({
           </div>
 
           <div className={styles.note} style={{ color: tk.muted }}>{s.calcNote}</div>
+          </>
+          )}
         </div>
       </div>
     </div>,

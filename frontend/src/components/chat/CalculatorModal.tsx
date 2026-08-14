@@ -1,13 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaCalculator } from "react-icons/fa6";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import {
-  buildSchedule,
+  calcDeposit,
+  calcLoan,
+  fetchSchedule,
+  type LoanInput,
+  type PayMethod,
+} from "../../services/calculatorService";
+import {
   downloadSchedule,
   scheduleFileName,
-  type PayMethod,
+  scheduleFromDto,
 } from "../../utils/paymentSchedule";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import PaymentScheduleModal from "./PaymentScheduleModal";
@@ -28,8 +34,13 @@ interface FieldConfig {
   step: number;
 }
 
-// PayMethod umumiy modulda (utils/paymentSchedule) — jadval hisobi ham shu
-// turdan foydalanadi, ikki joyda ikki xil bo'lib ketmasin.
+// PayMethod umumiy modulda (services/calculatorService) — jadval so'rovi ham
+// shu turdan foydalanadi, ikki joyda ikki xil bo'lib ketmasin.
+
+// Slayder surilganda har piksel uchun so'rov yubormaslik uchun kutish vaqti.
+// 260ms — barmoq/sichqoncha to'xtagani sezilarli, lekin foydalanuvchi
+// "kechikish" deb his qilmaydigan oraliq.
+const DEBOUNCE_MS = 260;
 
 // Oddiy kredit: 6 oydan 60 oygacha (6 oy qadam). Ipoteka/avtokredit: 240 oygacha.
 const MONTHS_CREDIT: FieldConfig = { min: 6, max: 60, step: 6 };
@@ -53,34 +64,10 @@ const groupNum = (n: number): string =>
 const clamp = (v: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, v));
 
-// Kredit natijasi to'lov turiga qarab:
-//  - flat (ustama): foiz butun summaga, oylar teng;
-//  - annuity: har oy teng to'lov, foiz qolgan qarzga;
-//  - diff (differensial): asosiy qarz teng, foiz kamayadi -> to'lov kamayib boradi.
-function loanResult(principal: number, ratePct: number, months: number, method: PayMethod) {
-  const r = ratePct / 100 / 12;
-  const n = months || 1;
-  let first: number;
-  let last: number;
-  let totalPaid: number;
-  if (method === "annuity") {
-    const m = r === 0 ? principal / n : (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-    first = m;
-    last = m;
-    totalPaid = m * n;
-  } else if (method === "diff") {
-    const principalPart = principal / n;
-    first = principalPart + principal * r; // 1-oy: qarz to'liq
-    last = principalPart + principalPart * r; // oxirgi oy: qarz eng kam
-    totalPaid = principal + r * principal * (n + 1) / 2;
-  } else {
-    const interest = principal * (ratePct / 100) * (n / 12);
-    totalPaid = principal + interest;
-    first = totalPaid / n;
-    last = first;
-  }
-  return { principal, first, last, totalPaid, overpay: totalPaid - principal, varies: method === "diff" };
-}
+// HISOB FORMULALARI BU YERDA EMAS — backendda (`src/calculator/services.py`,
+// POST /v1/calculator/*). Ilgari shu faylda `loanResult()` turardi; bank
+// shartlari o'zgarsa formulani front va backendda alohida yangilash kerak
+// bo'lardi va ular farq qilib ketishi mumkin edi.
 
 interface NumFieldProps {
   label: string;
@@ -194,7 +181,20 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
     setMode(m);
   };
 
-  const result = useMemo<{
+  // Kredit so'rovi tanasi. Ipotekada backend kredit tanasini o'zi hisoblaydi
+  // (narx - boshlang'ich to'lov), shuning uchun ayirmani bu yerda qilmaymiz.
+  const loanInput = useMemo<LoanInput>(
+    () =>
+      mode === "mortgage"
+        ? { price, down_payment: down, rate, months, method }
+        : { amount, rate, months, method },
+    [mode, amount, price, down, rate, months, method]
+  );
+
+  // Natija endi serverdan keladi. Kutish paytida OLDINGI natija ekranda
+  // qoladi (faqat xiralashadi) — aks holda har slayder harakatida raqamlar
+  // yo'qolib-paydo bo'lib, "sakrab" ko'rinardi.
+  const [result, setResult] = useState<{
     total?: number;
     profit?: number;
     principal?: number;
@@ -203,14 +203,46 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
     totalPaid?: number;
     overpay?: number;
     varies?: boolean;
-  }>(() => {
-    if (mode === "deposit") {
-      const profit = amount * (rate / 100) * (months / 12);
-      return { total: amount + profit, profit };
-    }
-    const principal = mode === "mortgage" ? Math.max(0, price - down) : amount;
-    return loanResult(principal, rate, months, method);
-  }, [mode, amount, price, down, rate, months, method]);
+  }>({});
+  const [pending, setPending] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setPending(true);
+    const timer = setTimeout(() => {
+      const run = async () => {
+        try {
+          if (mode === "deposit") {
+            const r = await calcDeposit({ amount, rate, months }, ctrl.signal);
+            setResult({ total: r.total, profit: r.profit });
+          } else {
+            const r = await calcLoan(loanInput, ctrl.signal);
+            setResult({
+              principal: r.principal,
+              first: r.first_payment,
+              last: r.last_payment,
+              totalPaid: r.total_paid,
+              overpay: r.overpay,
+              varies: r.varies,
+            });
+          }
+          setFailed(false);
+        } catch {
+          // Bekor qilingan so'rov (yangi qiymat kiritildi) — xato emas
+          if (!ctrl.signal.aborted) setFailed(true);
+        } finally {
+          if (!ctrl.signal.aborted) setPending(false);
+        }
+      };
+      void run();
+    }, DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [mode, amount, rate, months, loanInput]);
 
   const numField = (
     label: string,
@@ -233,27 +265,39 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
     />
   );
 
-  // Jadvalni ko'rmasdan to'g'ridan-to'g'ri Excel'ga yuklash
-  const downloadXls = () => {
-    const res = buildSchedule(result.principal ?? 0, rate, months, method);
-    downloadSchedule(
-      res,
-      {
-        title: s.calcSchedule,
-        no: s.schNo,
-        date: s.schDate,
-        balance: s.schBalance,
-        principal: s.schPrincipal,
-        interest: s.schInterest,
-        total: s.schTotal,
-        days: s.schDays,
-        totalRow: s.schTotalRow,
-        insurance: s.schInsurance,
-        fullCost: s.schFullCost,
-        currency: s.calcCurrency,
-      },
-      scheduleFileName()
-    );
+  // Jadvalni ko'rmasdan to'g'ridan-to'g'ri Excel'ga yuklash. Qatorlar
+  // backenddan olinadi, Excel fayl esa brauzerda yig'iladi (server fayl
+  // yaratmaydi — yuklama va vaqtinchalik fayllar bilan ovora bo'lmaydi).
+  const [dlBusy, setDlBusy] = useState(false);
+  const downloadXls = async () => {
+    if (dlBusy) return;
+    setDlBusy(true);
+    try {
+      const dto = await fetchSchedule(loanInput);
+      downloadSchedule(
+        scheduleFromDto(dto),
+        {
+          title: s.calcSchedule,
+          no: s.schNo,
+          date: s.schDate,
+          balance: s.schBalance,
+          principal: s.schPrincipal,
+          interest: s.schInterest,
+          total: s.schTotal,
+          days: s.schDays,
+          totalRow: s.schTotalRow,
+          insurance: s.schInsurance,
+          fullCost: s.schFullCost,
+          currency: s.calcCurrency,
+        },
+        scheduleFileName()
+      );
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    } finally {
+      setDlBusy(false);
+    }
   };
 
   const tabs: { id: Mode; label: string }[] = [
@@ -348,7 +392,14 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
           {numField(s.calcMonths, months, setMonths, monthsCfg, s.calcUnitMonths)}
         </div>
 
-        <div className={styles.results} style={{ background: cardBg }} key={`res-${mode}`}>
+        {/* Server javobi kutilayotganda natija butunlay yo'qolmaydi — biroz
+            xiralashadi. Shunda slayder surilganda raqamlar "sakramaydi". */}
+        <div
+          className={styles.results}
+          style={{ background: cardBg, opacity: pending ? 0.55 : 1, transition: "opacity .15s ease" }}
+          aria-busy={pending}
+          key={`res-${mode}`}
+        >
           {mode === "deposit" ? (
             <>
               <div className={styles.resultMain}>
@@ -418,8 +469,9 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
             </button>
             <button
               className={styles.scheduleBtnFill}
-              style={{ background: accent }}
-              onClick={downloadXls}
+              style={{ background: accent, opacity: dlBusy ? 0.6 : 1 }}
+              disabled={dlBusy}
+              onClick={() => void downloadXls()}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               {s.calcScheduleDownload}
@@ -427,16 +479,16 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
           </div>
         )}
 
+        {failed && (
+          <div className={styles.note} style={{ color: "#DC2626" }} role="alert">{s.calcError}</div>
+        )}
         <div className={styles.note} style={{ color: tk.muted }}>{s.calcNote}</div>
         </div>
       </div>
 
       {scheduleOpen && isLoan && (
         <PaymentScheduleModal
-          principal={result.principal ?? 0}
-          rate={rate}
-          months={months}
-          method={method}
+          input={loanInput}
           tk={tk}
           isDark={isDark}
           s={s}

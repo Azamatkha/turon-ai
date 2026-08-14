@@ -109,6 +109,7 @@ export const chatStatic: ChatStaticStrings = {
   calcProfit: "Начисляемый доход",
   calcTotal: "Итоговая сумма",
   calcNote: "Расчёт приблизительный. Точные условия определяются банком индивидуально.",
+  calcError: "Не удалось рассчитать. Проверьте соединение и попробуйте снова.",
   calcUnitMonths: "мес.",
   calcCurrency: "сум",
   send: "Отправить",

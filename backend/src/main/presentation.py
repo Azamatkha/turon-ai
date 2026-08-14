@@ -37,6 +37,7 @@ from src.core.errors.handlers import (
     handle_validation_error,
 )
 from src.admin import routers as admin_routers
+from src.calculator import routers as calculator_routers
 from src.chat import routers as chat_routers
 from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers
@@ -125,6 +126,9 @@ def include_routers(app: FastAPI) -> None:
     v1_router = APIRouter()
     v1_router.include_router(user_routers.router, prefix="/users", tags=["Users"])
     v1_router.include_router(chat_routers.router, prefix="/chat", tags=["Chat"])
+    v1_router.include_router(
+        calculator_routers.router, prefix="/calculator", tags=["Calculator"]
+    )
     v1_router.include_router(admin_routers.router, prefix="/admin", tags=["Admin"])
     v1_router.include_router(
         knowledge_routers.router, prefix="/admin/knowledge", tags=["Knowledge"]

@@ -147,6 +147,8 @@ export interface ChatStaticStrings {
   calcProfit: string;
   calcTotal: string;
   calcNote: string;
+  /* Backend hisobi muvaffaqiyatsiz bo'lganda (tarmoq/server) ko'rsatiladi */
+  calcError: string;
   calcUnitMonths: string;
   calcCurrency: string;
   send: string;
