@@ -70,26 +70,23 @@
   z-index: -1;
   pointer-events: none;
   background:
-    /* Yoyilma maydonning KO'P QISMINI qoplaydi: burchak dog'lari kattaroq va
-       ular markazgacha yetib boradi, ustiga esa yumshoq markaziy tovlanish
-       qo'shilgan. (Ilgari dog'lar kichkina edi — o'rtasi tekis oq bo'lib,
-       gradient faqat chekkalarda "chizilgandek" ko'rinardi.) */
-    radial-gradient(ellipse 95% 80% at 0% 0%, rgba(123, 77, 255, 0.30) 0%, transparent 78%),
-    radial-gradient(ellipse 90% 75% at 100% 0%, rgba(11, 95, 165, 0.24) 0%, transparent 76%),
-    radial-gradient(ellipse 100% 85% at 100% 100%, rgba(123, 77, 255, 0.28) 0%, transparent 80%),
-    radial-gradient(ellipse 95% 80% at 0% 100%, rgba(26, 124, 200, 0.24) 0%, transparent 78%),
-    /* Markaziy yumshoq tovlanish — o'rta qism ham "bo'sh" qolmasin */
-    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(90, 120, 224, 0.16) 0%, transparent 72%),
-    linear-gradient(180deg, #F5F7FD 0%, #F9FBFE 45%, #F2F5FC 100%);
+    /* Yoyilma chekkalardan ancha ichkariga kiradi (avvalgi 60%×50% emas),
+       lekin MARKAZ ataylab toza qoldiriladi — matn shu yerda o'qiladi.
+       Markaziy tovlanish sinab ko'rilgandi: butun ekran gradient bo'lib,
+       "bo'g'iq" ko'rindi. */
+    radial-gradient(ellipse 78% 66% at 0% 0%, rgba(123, 77, 255, 0.30) 0%, transparent 72%),
+    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(11, 95, 165, 0.24) 0%, transparent 70%),
+    radial-gradient(ellipse 82% 70% at 100% 100%, rgba(123, 77, 255, 0.28) 0%, transparent 74%),
+    radial-gradient(ellipse 78% 66% at 0% 100%, rgba(26, 124, 200, 0.24) 0%, transparent 72%),
+    linear-gradient(180deg, #F6F8FD 0%, #FAFCFE 45%, #F4F6FC 100%);
 }
 
 :global(html.dark) .bgLayer {
   background:
-    radial-gradient(ellipse 95% 80% at 0% 0%, rgba(123, 77, 255, 0.24) 0%, transparent 74%),
-    radial-gradient(ellipse 90% 75% at 100% 0%, rgba(11, 95, 165, 0.28) 0%, transparent 72%),
-    radial-gradient(ellipse 100% 85% at 100% 100%, rgba(123, 77, 255, 0.20) 0%, transparent 76%),
-    radial-gradient(ellipse 95% 80% at 0% 100%, rgba(26, 124, 200, 0.20) 0%, transparent 74%),
-    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(90, 120, 224, 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 78% 66% at 0% 0%, rgba(123, 77, 255, 0.24) 0%, transparent 68%),
+    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(11, 95, 165, 0.28) 0%, transparent 66%),
+    radial-gradient(ellipse 82% 70% at 100% 100%, rgba(123, 77, 255, 0.20) 0%, transparent 70%),
+    radial-gradient(ellipse 78% 66% at 0% 100%, rgba(26, 124, 200, 0.20) 0%, transparent 68%),
     linear-gradient(180deg, #0B1730 0%, #0A1526 50%, #08122A 100%);
 }
 

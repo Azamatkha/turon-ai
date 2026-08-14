@@ -26,6 +26,9 @@ export interface ThemeTokens {
   strong: string;
   muted: string;
   card: string;
+  /* Xabar bulutchasi — `card` dan SHAFFOFROQ. Alohida token, chunki menyu va
+     kartochkalar shaffof bo'lsa ortidagi matn ko'rinib ketadi. */
+  bubble: string;
   cardBorder: string;
   input: string;
   disc: string;

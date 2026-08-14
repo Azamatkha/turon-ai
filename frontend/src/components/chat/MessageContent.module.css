@@ -23,8 +23,11 @@
   margin: 3px 0;
 }
 
+/* Asosiy matn 500 (MessageArea `.bubble`), shuning uchun qalin matn 700 emas,
+   600 — farq baribir seziladi, lekin ro'yxatlar "hammasi qalin" bo'lib
+   ko'rinmaydi */
 .content strong {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Model ba'zan markdown sarlavha chiqaradi — xom "###" ko'rinmasin */

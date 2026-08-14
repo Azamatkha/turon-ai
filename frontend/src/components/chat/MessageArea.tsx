@@ -240,7 +240,7 @@ export default function MessageArea({
               <div key={m.id} className={`${styles.messageRow} ${styles.messageRowBot}`}>
                 <div className={styles.botAvatar}><Logo size={17} /></div>
                 <div className={styles.botCol}>
-                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.card, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(0, 57, 120,.04)" }}>
+                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(0, 57, 120,.04)" }}>
                     <MessageContent text={m.text} />
                   </div>
 

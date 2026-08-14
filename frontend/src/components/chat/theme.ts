@@ -26,6 +26,7 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
         // Shisha (glassmorphism): fon to'liq shaffofmas emas. Blur esa
         // CSS modullardagi `backdrop-filter: var(--tu-glass-blur)` orqali.
         card: "rgba(12,41,73,.58)",
+        bubble: "rgba(12,41,73,.40)",
         cardBorder: "rgba(255,255,255,.18)",
         input: "#E2E8F0",
         disc: "#64748B",
@@ -41,6 +42,7 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
         // Chegara OQ emas, ko'kish: oq chiziq oq fonda ko'rinmasdi va
         // tugmalar "ramkasiz" bo'lib qolgandi.
         card: "rgba(255,255,255,.62)",
+        bubble: "rgba(255,255,255,.42)",
         cardBorder: "rgba(0,57,120,.16)",
         input: NAVY,
         disc: "#94A3B8",
@@ -58,8 +60,8 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
     bg: isDark
-      ? `linear-gradient(172deg, #04162C 0%, #0A1E3E 55%, #17193A 100%)`
-      : `linear-gradient(172deg, ${NAVY} 0%, #0A3A7C 52%, #22306E 100%)`,
+      ? `linear-gradient(176deg, #04162C 0%, #071B36 60%, #101A33 100%)`
+      : `linear-gradient(176deg, ${NAVY} 0%, #063775 58%, #16295E 100%)`,
     fg: "#F1F5F9",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.
