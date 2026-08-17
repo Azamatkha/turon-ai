@@ -43,7 +43,7 @@
     /* Yoyilma faqat CHEKKALARDA — markaz toza (oq-moviy). Ranglar: brend
        ko'ki va #7B4DFF binafshasi, past shaffoflikda. */
     radial-gradient(ellipse 60% 50% at 0% 0%, rgba(123, 77, 255, 0.34) 0%, transparent 70%),
-    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(11, 95, 165, 0.26) 0%, transparent 68%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(64, 89, 190, 0.26) 0%, transparent 68%),
     radial-gradient(ellipse 65% 55% at 100% 100%, rgba(123, 77, 255, 0.30) 0%, transparent 72%),
     radial-gradient(ellipse 60% 50% at 0% 100%, rgba(26, 124, 200, 0.24) 0%, transparent 70%),
     linear-gradient(180deg, #F7F8FD 0%, #FBFCFE 45%, #F5F7FC 100%);
@@ -52,7 +52,7 @@
 :global(html.dark) .bgLayer {
   background:
     radial-gradient(ellipse 60% 50% at 0% 0%, rgba(123, 77, 255, 0.26) 0%, transparent 62%),
-    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(11, 95, 165, 0.30) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(64, 89, 190, 0.30) 0%, transparent 60%),
     radial-gradient(ellipse 65% 55% at 100% 100%, rgba(123, 77, 255, 0.22) 0%, transparent 64%),
     linear-gradient(180deg, #0B1730 0%, #0A1526 50%, #08122A 100%);
 }
@@ -133,12 +133,12 @@
   z-index: 0;
   pointer-events: none;
   opacity: 0.07;
-  color: #003978;
+  color: #193070;
 }
 
 :global(html.dark) .bgLogo {
   opacity: 0.1;
-  color: #5FA3D6;
+  color: #8195E6;
 }
 
 /* --- Fon qatlamlari -------------------------------------------------------
@@ -154,7 +154,7 @@
   height: 100%;
   pointer-events: none;
   fill: none;
-  stroke: rgba(0, 57, 120, 0.05);
+  stroke: rgba(25, 48, 112, 0.05);
   /* To'r deyarli butun maydonni qoplaydi, faqat chekkalarda yumshoq so'nadi */
   -webkit-mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);
   mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);

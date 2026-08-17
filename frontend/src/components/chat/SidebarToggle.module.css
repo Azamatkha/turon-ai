@@ -23,12 +23,12 @@
   height: 28px;
   border-radius: 8px;
   border: 1px solid var(--tu-glass-border);
-  background: var(--tu-glass-bg);
+  background: var(--tu-glass-bg-strong);
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
-  color: #003978;
+  color: var(--tu-text-strong);
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 57, 120, 0.14);
+  box-shadow: 0 2px 6px rgba(25, 48, 112, 0.14);
   /* Sidebar kengligi o'zgarganda tugma ham bir xil tezlikda birga suriladi */
   transition: left 0.38s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
@@ -36,9 +36,26 @@
 /* =====================
    States
    ===================== */
+/* Rang dark rejimda MAVZU TOKENIDAN keladi, prop'dan emas.
+   ILGARI: rang `isDark` prop'i orqali inline berilardi va AdminPage uni
+   umuman uzatmagandi — admin panelda tugma to'q ko'k fonda to'q ko'k
+   bo'lib qolib, ko'rinmasdi. Token bilan bunday "unutish" mumkin emas. */
+:global(html.dark) .toggle {
+  background: var(--tu-surface-hover);
+  border-color: var(--tu-border-strong);
+  color: var(--tu-text-strong);
+  box-shadow: 0 2px 8px rgba(4, 6, 20, 0.45);
+}
+
 .toggle:hover {
-  background: #F1F5F9;
-  box-shadow: 0 4px 10px rgba(0, 57, 120, 0.2);
+  background: var(--tu-surface-hover);
+  box-shadow: 0 4px 10px rgba(25, 48, 112, 0.2);
+}
+
+:global(html.dark) .toggle:hover {
+  background: var(--tu-accent-soft);
+  border-color: var(--tu-accent);
+  color: #fff;
 }
 
 .toggle:active {
@@ -46,7 +63,7 @@
 }
 
 .toggle:focus-visible {
-  outline: 2px solid #5FA3D6;
+  outline: 2px solid var(--tu-focus-ring);
   outline-offset: 2px;
 }
 

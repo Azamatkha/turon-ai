@@ -18,35 +18,40 @@ export const PRIMARY_ON_DARK = ACCENT_ON_DARK;
 export function getThemeTokens(isDark: boolean): ThemeTokens {
   return isDark
     ? {
-        bg: "#061A31",
-        headBg: "rgba(6,26,49,.86)",
-        headBorder: "rgba(255,255,255,.10)",
-        strong: "#E2E8F0",
-        muted: "#94A3B8",
+        bg: "#0A1029",
+        headBg: "rgba(10,16,41,.86)",
+        headBorder: "rgba(154,172,236,.16)",
+        strong: "#DFE4F5",
+        muted: "#98A2CC",
         // Shisha (glassmorphism): fon to'liq shaffofmas emas. Blur esa
         // CSS modullardagi `backdrop-filter: var(--tu-glass-blur)` orqali.
-        card: "rgba(12,41,73,.58)",
-        bubble: "rgba(12,41,73,.40)",
-        cardBorder: "rgba(255,255,255,.18)",
-        input: "#E2E8F0",
-        disc: "#64748B",
+        card: "rgba(21,29,63,.58)",
+        bubble: "rgba(21,29,63,.40)",
+        // Foydalanuvchi xabari — YORUG'ROQ ko'k gradient. Sahifa foni
+        // (#0A1029) dan yuqorida turadi, ya'ni bulutcha fonga "botib"
+        // ketmaydi va undan qora bo'lib ham ajralmaydi.
+        bubbleUser: "linear-gradient(176deg, rgb(0 53 117) 0%, rgb(29 58 97) 60%, rgb(54 73 121) 100%)",
+        cardBorder: "rgba(154,172,236,.18)",
+        input: "#DFE4F5",
+        disc: "#6E79A6",
         chipShadow: "none",
       }
     : {
-        bg: "#F8FAFC",
-        headBg: "rgba(248,250,252,.86)",
-        headBorder: "#E2E8F0",
+        bg: "#F6F7FC",
+        headBg: "rgba(246,247,252,.86)",
+        headBorder: "#DCE1EF",
         strong: NAVY,
-        muted: "#64748B",
+        muted: "#626D93",
         // Shisha (glassmorphism) — izoh yuqorida.
         // Chegara OQ emas, ko'kish: oq chiziq oq fonda ko'rinmasdi va
         // tugmalar "ramkasiz" bo'lib qolgandi.
         card: "rgba(255,255,255,.62)",
         bubble: "rgba(255,255,255,.42)",
-        cardBorder: "rgba(0,57,120,.16)",
+        bubbleUser: "linear-gradient(176deg, #193070 0%, #24397F 60%, #33459B 100%)",
+        cardBorder: "rgba(25,48,112,.16)",
         input: NAVY,
-        disc: "#94A3B8",
-        chipShadow: "0 1px 2px rgba(4, 33, 60, .06)",
+        disc: "#8F99BB",
+        chipShadow: "0 1px 2px rgba(14, 27, 66, .06)",
       };
 }
 
@@ -54,18 +59,22 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 // (mavzudan qat'iy nazar), faqat fon rangi ozgina o'zgaradi (dark mode'da yanada qorong'i).
 //
 // Fon TEKIS rang emas, diagonal gradient — lekin ATAYLAB jim: asosini brend
-// navy (#003978) tutadi, indigo/binafsha faqat pastki qismida sezilar-sezilmas
-// tovlanadi. (Ilgari to'liq #5A78E0 → #7B4DFF ga chiqardi — sidebar juda
-// yorqin/rang-barang bo'lib, sahifaning tinch foniga mos tushmadi.)
+// primary (#193070) tutadi, secondary (#5A78E0) va binafsha (#7B4DFF) faqat
+// pastki qismida sezilar-sezilmas tovlanadi. (Ilgari to'liq #5A78E0 → #7B4DFF
+// ga chiqardi — sidebar juda yorqin/rang-barang bo'lib, sahifaning tinch
+// foniga mos tushmadi.)
+//
+// MUHIM: bu funksiya CHAT va ADMIN sidebar'ining IKKALASIGA xizmat qiladi —
+// ikki panel bir xil ko'rinishi kerak, farq faqat ichidagi funksiyalarda.
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
     bg: isDark
-      ? `linear-gradient(176deg, #04162C 0%, #071B36 60%, #101A33 100%)`
-      : `linear-gradient(176deg, ${NAVY} 0%, #063775 58%, #16295E 100%)`,
-    fg: "#F1F5F9",
+      ? `linear-gradient(176deg, #0B1130 0%, #101740 60%, #1A1E4B 100%)`
+      : `linear-gradient(176deg, ${NAVY} 0%, #223780 58%, #2C2C6E 100%)`,
+    fg: "#F1F3FB",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.
-    sub: "rgba(203,213,225,.72)",
+    sub: "rgba(223,228,245,.72)",
     active: "rgba(255,255,255,.14)",
     border: "rgba(255,255,255,.12)",
     logo: ACCENT_ON_DARK,

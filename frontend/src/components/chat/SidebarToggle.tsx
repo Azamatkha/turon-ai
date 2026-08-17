@@ -7,7 +7,6 @@ interface SidebarToggleProps {
   left: number;
   openLabel?: string;
   closedLabel?: string;
-  isDark?: boolean;
 }
 
 // Sidebar'ni ochish/yopish tugmasi — har doim panel chegarasida "suzib" turadi.
@@ -20,7 +19,6 @@ export default function SidebarToggle({
   left,
   openLabel = "Panelni yig'ish",
   closedLabel = "Panelni ochish",
-  isDark = false,
 }: SidebarToggleProps) {
   return (
     <button
@@ -28,12 +26,10 @@ export default function SidebarToggle({
       data-tip={open ? openLabel : closedLabel}
       aria-label={open ? openLabel : closedLabel}
       className={`${styles.toggle} tip-right`}
-      style={{
-        left: `${left}px`,
-        ...(isDark
-          ? { background: "#153A62", borderColor: "rgba(255,255,255,.16)", color: "#E2E8F0" }
-          : {}),
-      }}
+      /* Faqat joylashuv inline — ranglar CSS mavzu tokenlaridan keladi
+         (SidebarToggle.module.css). Shu sababli chat va admin panelida
+         tugma bir xil ishlaydi, hech qanday `isDark` prop kerak emas. */
+      style={{ left: `${left}px` }}
     >
       <span key={open ? "collapse" : "expand"} className={styles.icon}>
         {open ? <GoSidebarCollapse size={16} /> : <GoSidebarExpand size={16} />}

@@ -70,7 +70,7 @@ export default function ProductPreviewCard({ t }: { t: LoginStrings }) {
           <div className={styles.statRow}>
             <div
               className={styles.ring}
-              style={{ background: `conic-gradient(#0B5FA5 ${pct}%, #e3e8e2 ${pct}% 100%)` }}
+              style={{ background: `conic-gradient(#4059BE ${pct}%, #e3e8e2 ${pct}% 100%)` }}
             >
               <div className={styles.ringInner}>{pct}%</div>
             </div>

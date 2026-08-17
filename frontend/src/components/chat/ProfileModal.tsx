@@ -32,8 +32,8 @@ export default function ProfileModal({
   error, saved, saving, onClose, onSave, onLogout, s, isDark,
 }: ProfileModalProps) {
   // Dark rejim uchun inline override'lar
-  const modalStyle = isDark ? { background: "#0C2949", color: "#E2E8F0", border: "1px solid rgba(255,255,255,.1)" } : {};
-  const inputStyle = isDark ? { background: "#153A62", color: "#E2E8F0", borderColor: "rgba(255,255,255,.16)" } : {};
+  const modalStyle = isDark ? { background: "#151D3F", color: "#E2E8F0", border: "1px solid rgba(255,255,255,.1)" } : {};
+  const inputStyle = isDark ? { background: "#1F2A55", color: "#E2E8F0", borderColor: "rgba(255,255,255,.16)" } : {};
   const labelStyle = isDark ? { color: "#94A3B8" } : {};
   const [pwVisible, setPwVisible] = useState(false);
   const [confirmPwVisible, setConfirmPwVisible] = useState(false);
@@ -60,7 +60,7 @@ export default function ProfileModal({
               <div className={styles.handle}>{userHandle}</div>
             </div>
           </div>
-          <HButton onClick={onClose} data-tip={s.close} aria-label={s.close} className={styles.closeBtn} baseStyle={{}} hoverStyle={{ background: "#E2E8F0", color: "#003978" }}>
+          <HButton onClick={onClose} data-tip={s.close} aria-label={s.close} className={styles.closeBtn} baseStyle={{}} hoverStyle={{ background: "#E2E8F0", color: "#193070" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
           </HButton>
         </div>
@@ -132,7 +132,7 @@ export default function ProfileModal({
           </div>
         )}
 
-        <HButton onClick={onSave} disabled={saving} aria-busy={saving} className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : styles.saveBtnIdle}`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(0, 57, 120,.28)" }}>
+        <HButton onClick={onSave} disabled={saving} aria-busy={saving} className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : styles.saveBtnIdle}`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(25, 48, 112,.28)" }}>
           {saved ? (
             <span className={styles.savedContent}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>{s.saved}

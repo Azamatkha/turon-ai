@@ -16,9 +16,9 @@
 /* =====================
    Containers
    ===================== */
-/* Asosiy fon — logotip rangidan (#003978) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
+/* Asosiy fon — logotip rangidan (#193070) boshlanib, ochiqroq ko'k bilan tugaydigan gradient */
 .panel {
-  background: linear-gradient(150deg, #003978 0%, #0B5FA5 38%, #003978 85%, #0B5FA5 100%);
+  background: linear-gradient(150deg, #193070 0%, #4059BE 38%, #193070 85%, #4059BE 100%);
   color: #F1F5F9;
 }
 
@@ -46,7 +46,7 @@
   width: 520px;
   height: 520px;
   border-radius: 50%;
-  background: radial-gradient(circle at 60% 40%, rgba(11, 95, 165, 0.42), transparent 70%);
+  background: radial-gradient(circle at 60% 40%, rgba(64, 89, 190, 0.42), transparent 70%);
   pointer-events: none;
 }
 

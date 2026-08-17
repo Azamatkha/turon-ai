@@ -1,14 +1,12 @@
 /* ============================================================================
    TURON AI — DIZAYN TIZIMI (design system)
    ----------------------------------------------------------------------------
-   SHRIFT: Onest — zamonaviy, geometrik-gumanistik, ortiqcha bezaksiz.
+   SHRIFT: Manrope — zamonaviy, geometrik-gumanistik, yumaloq va ixcham.
    Kirill alifbosini TO'LIQ qo'llab-quvvatlaydi (uz_cyrl va rus tili uchun shart)
-   va lotin diakritikasi ham to'liq (o', g', ʻ). Manrope'dan farqi: harflar
-   kengroq va "ochiq", uzun o'zbekcha so'zlar ("rasmiylashtirish",
-   "kapitalizatsiya") siqilib ketmaydi va 13-14px da ham aniq o'qiladi.
+   va lotin diakritikasi ham to'liq (o', g', ʻ).
 
-   Bank tarmog'i Google Fonts'ni bloklashi mumkin — shuning uchun fallback
-   zanjiri jiddiy: Segoe UI Variable (Win11) -> Segoe UI (Win10) -> system-ui.
+   Fallback zanjiri: system-ui (har OS'ning o'z interfeys shrifti) ->
+   -apple-system (macOS/iOS) -> Segoe UI Variable (Win11) -> Segoe UI (Win10).
    Ularning barchasi ham kirill, ham lotinni biladi, ya'ni shrift yuklanmasa
    ham interfeys buzilmaydi, faqat ko'rinishi biroz o'zgaradi.
 
@@ -18,7 +16,7 @@
    ========================================================================= */
 
 /* Shrift Google Fonts'dan EMAS, loyihaning O'ZIDAN yuklanadi — main.tsx da
-   `@fontsource-variable/onest` import qilingan.
+   `@fontsource-variable/manrope` import qilingan.
 
    Sabab: bank tarmog'idagi proksi fonts.googleapis.com ni bloklaydi. Shrift
    umuman yuklanmasdi va interfeys jimgina Segoe UI'ga tushib qolardi — ya'ni
@@ -47,33 +45,48 @@ body,
    2. DIZAYN TOKENLARI — LIGHT (standart)
    ========================================================================= */
 :root {
-  /* --- Brend ko'k shkalasi (50 = eng och, 950 = eng to'q) ---------------
-     Kuchaytirilgan palitra: oldingi ranglar "yuvilgan" ko'k edi, endi
-     to'yinganlik oshirildi — ekran proyektorda va arzon monitorlarda ham
-     ko'k ko'k bo'lib ko'rinadi, kulrangga aylanmaydi. */
-  --tu-blue-50: #EFF7FE;
-  --tu-blue-100: #D9EDFB;
-  --tu-blue-200: #B2D9F6;
-  --tu-blue-300: #7FBEEC;
-  --tu-blue-400: #439CDD;
-  --tu-blue-500: #1A7CC8;
-  --tu-blue-600: #0B5FA5;
-  --tu-blue-700: #094E8A;
-  --tu-blue-800: #04406F;
-  --tu-blue-900: #003978;
-  --tu-blue-950: #04213C;
+  /* --- BREND UCHLIGI — butun sayt shu uchtadan chiqadi -------------------
+     Ilgari interfeysda 4 xil ko'k oila aralashib yurardi (havorang, teal,
+     to'q navy, binafsha) — sahifa rang-barang bo'lib ketgan edi. Endi
+     RUXSAT ETILGAN ranglar faqat shular va ular orasidagi pog'onalar. */
+  --tu-primary: #193070;   /* asosiy — logo, sidebar, sarlavha */
+  --tu-secondary: #5A78E0; /* ikkilamchi — yorqin interaktiv ko'k */
+  --tu-violet: #7B4DFF;    /* uchinchi — FAQAT gradient/bezak uchun */
 
-  /* --- Neytral (kulrang) shkalasi -------------------------------------- */
-  --tu-gray-50: #F8FAFC;
-  --tu-gray-100: #F1F5F9;
-  --tu-gray-200: #E2E8F0;
-  --tu-gray-300: #CBD5E1;
-  --tu-gray-400: #94A3B8;
-  --tu-gray-500: #64748B;
-  --tu-gray-600: #475569;
-  --tu-gray-700: #334155;
-  --tu-gray-800: #1E293B;
-  --tu-gray-900: #0F172A;
+  /* Tayyor gradientlar — takrorlanmasin deb bitta joyda */
+  --tu-gradient-brand: linear-gradient(135deg, #193070 0%, #5A78E0 62%, #7B4DFF 100%);
+  --tu-gradient-soft: linear-gradient(135deg, #243A81 0%, #4059BE 100%);
+
+  /* --- Brend shkalasi (50 = eng och, 950 = eng to'q) ---------------------
+     900 = --tu-primary, 500 = --tu-secondary. Oradagi pog'onalar shu
+     ikkisining orasidan interpolatsiya qilingan, ya'ni hech bir pog'ona
+     boshqa rang oilasiga "sakramaydi". */
+  --tu-blue-50: #F0F3FD;
+  --tu-blue-100: #E3E9FC;
+  --tu-blue-200: #C6D0F6;
+  --tu-blue-300: #A3B3EE;
+  --tu-blue-400: #8195E6;
+  --tu-blue-500: #5A78E0;
+  --tu-blue-600: #4059BE;
+  --tu-blue-700: #30469C;
+  --tu-blue-800: #243A81;
+  --tu-blue-900: #193070;
+  --tu-blue-950: #0E1B42;
+
+  /* --- Neytral shkala — ATAYLAB SOF KULRANG EMAS ------------------------
+     Har bir pog'onaga brend rangining ozgina indigo tovlanishi qo'shilgan.
+     Sabab: sof kulrang (slate) ko'k brend yonida "iflos" ko'rinadi va
+     interfeysda ikkinchi, begona rang oilasini hosil qiladi. */
+  --tu-gray-50: #F6F7FC;
+  --tu-gray-100: #ECEFF8;
+  --tu-gray-200: #DCE1EF;
+  --tu-gray-300: #BFC7DE;
+  --tu-gray-400: #8F99BB;
+  --tu-gray-500: #626D93;
+  --tu-gray-600: #49537A;
+  --tu-gray-700: #343D60;
+  --tu-gray-800: #1F2643;
+  --tu-gray-900: #121831;
 
   /* --- Holat ranglari (kuchaytirilgan) --------------------------------- */
   --tu-success: #047857;
@@ -117,7 +130,7 @@ body,
   --tu-glass-bg-soft: rgba(255, 255, 255, 0.26);
   --tu-glass-border: rgba(255, 255, 255, 0.70);
   --tu-glass-blur: blur(18px) saturate(165%);
-  --tu-glass-shadow: 0 8px 32px rgba(4, 33, 60, 0.10);
+  --tu-glass-shadow: 0 8px 32px rgba(14, 27, 66, 0.10);
 
   --tu-text: var(--tu-gray-700);           /* asosiy matn */
   --tu-text-strong: var(--tu-blue-900);    /* sarlavha */
@@ -125,10 +138,14 @@ body,
   --tu-text-faint: var(--tu-gray-400);     /* placeholder, disclaimer */
 
   /* --- Tipografika shkalasi ------------------------------------------- */
-  /* Inter — `@fontsource-variable/inter` orqali LOKAL yuklanadi (main.tsx),
-     Google Fonts'dan emas: bank proksisi fonts.googleapis.com ni bloklaydi. */
-  --tu-font: 'Inter Variable', 'Inter', 'Segoe UI Variable Text', 'Segoe UI',
-    system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  /* Manrope — `@fontsource-variable/manrope` orqali LOKAL yuklanadi
+     (main.tsx), Google Fonts'dan emas: bank proksisi fonts.googleapis.com ni
+     bloklaydi. Kirill subseti paket ichida keladi (uz_cyrl va rus tili).
+     Fallback zanjiri: system-ui (har OS'ning o'z interfeys shrifti) ->
+     -apple-system (macOS/iOS) -> Segoe UI (Windows). Shrift yuklanmasa ham
+     interfeys buzilmaydi, faqat ko'rinishi biroz o'zgaradi. */
+  --tu-font: 'Manrope Variable', 'Manrope', system-ui, -apple-system,
+    'Segoe UI Variable Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --tu-font-mono: 'Cascadia Mono', 'Consolas', 'SF Mono', ui-monospace, monospace;
 
   --tu-text-xs: 0.75rem;    /* 12px — yorliq, meta */
@@ -163,11 +180,11 @@ body,
   --tu-radius-full: 999px;
 
   /* --- Soyalar (minimalistik: yumshoq, kam qatlamli) ------------------- */
-  --tu-shadow-xs: 0 1px 2px rgba(4, 33, 60, 0.06);
-  --tu-shadow-sm: 0 2px 6px rgba(4, 33, 60, 0.07);
-  --tu-shadow: 0 4px 16px rgba(4, 33, 60, 0.09);
-  --tu-shadow-lg: 0 12px 32px rgba(4, 33, 60, 0.13);
-  --tu-shadow-xl: 0 24px 60px rgba(4, 33, 60, 0.18);
+  --tu-shadow-xs: 0 1px 2px rgba(14, 27, 66, 0.06);
+  --tu-shadow-sm: 0 2px 6px rgba(14, 27, 66, 0.07);
+  --tu-shadow: 0 4px 16px rgba(14, 27, 66, 0.09);
+  --tu-shadow-lg: 0 12px 32px rgba(14, 27, 66, 0.13);
+  --tu-shadow-xl: 0 24px 60px rgba(14, 27, 66, 0.18);
 
   /* --- Harakat (motion) ------------------------------------------------ */
   --tu-ease: cubic-bezier(0.2, 0.8, 0.3, 1);
@@ -219,14 +236,14 @@ body,
   --adm-success: var(--tu-success);
   --adm-success-bg: var(--tu-success-bg);
   --adm-info: var(--tu-accent);
-  --adm-info-bg: rgba(11, 95, 165, 0.12);
-  --adm-accent-bg: rgba(11, 95, 165, 0.12);
-  --adm-accent-2-bg: rgba(11, 95, 165, 0.12);
+  --adm-info-bg: rgba(64, 89, 190, 0.12);
+  --adm-accent-bg: rgba(64, 89, 190, 0.12);
+  --adm-accent-2-bg: rgba(64, 89, 190, 0.12);
   /* --adm-sidebar OLIB TASHLANDI: admin sidebar foni endi chat sidebar'i
      bilan bir manbadan — `chat/theme.ts` -> getSideTokens().bg (gradient),
      u komponentga inline uzatiladi. */
   --adm-search-bg: var(--tu-gray-100);
-  --adm-search-border: rgba(0, 57, 120, 0.16);
+  --adm-search-border: rgba(25, 48, 112, 0.16);
   --adm-search-ph: var(--tu-text-faint);
 }
 
@@ -236,21 +253,38 @@ body,
    o'zgarmaydi. Shuning uchun dark rejim qo'shish 20 qator, 200 emas.
    ========================================================================= */
 html.dark {
-  --tu-bg: #061A31;
-  --tu-surface: #0C2949;
-  --tu-surface-alt: #08203A;
-  --tu-surface-hover: #153A62;
+  --tu-bg: #0A1029;
+  --tu-surface: #151D3F;
+  --tu-surface-alt: #101636;
+  --tu-surface-hover: #1F2A55;
 
   --tu-border: rgba(255, 255, 255, 0.10);
   --tu-border-strong: rgba(255, 255, 255, 0.16);
   --tu-border-subtle: rgba(255, 255, 255, 0.06);
 
-  /* Shisha qatlami — to'q mavzuda oq emas, to'q ko'k asosda */
-  --tu-glass-bg: rgba(12, 41, 73, 0.48);
-  --tu-glass-bg-strong: rgba(12, 41, 73, 0.70);
-  --tu-glass-bg-soft: rgba(255, 255, 255, 0.05);
-  --tu-glass-border: rgba(255, 255, 255, 0.12);
-  --tu-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  /* To'q mavzudagi NEYTRALLAR — bu yerda qayta e'lon qilinishining sababi:
+     sof kulrang (slate) to'q ko'k fonda "kir" bo'lib ajralib turardi —
+     ekranda ko'k emas, kulrang yamoqlar ko'rinardi. Endi har bir pog'ona
+     brend indigosiga tortilgan, ya'ni dark rejimda KULRANG umuman yo'q. */
+  --tu-gray-100: #EEF0FA;
+  --tu-gray-200: #DFE4F5;
+  --tu-gray-300: #C2CAE8;
+  --tu-gray-400: #98A2CC;
+  --tu-gray-500: #6E79A6;
+  --tu-gray-600: #4E5880;
+  --tu-gray-700: #38416A;
+  --tu-gray-800: #212949;
+  --tu-gray-900: #141A34;
+
+  /* Shisha qatlami — to'q mavzuda oq emas, brend indigosi asosida.
+     `glass-bg-soft` ILGARI rgba(255,255,255,.05) edi: oq parda to'q ko'k
+     ustida rangni yuvib, kulrang quti hosil qilardi (input, jadval
+     sarlavhasi). Endi parda ham indigo — quti fon bilan bir oilada qoladi. */
+  --tu-glass-bg: rgba(21, 29, 63, 0.48);
+  --tu-glass-bg-strong: rgba(21, 29, 63, 0.70);
+  --tu-glass-bg-soft: rgba(90, 120, 224, 0.10);
+  --tu-glass-border: rgba(154, 172, 236, 0.16);
+  --tu-glass-shadow: 0 8px 32px rgba(4, 6, 20, 0.45);
 
   --tu-text: var(--tu-gray-300);
   --tu-text-strong: var(--tu-gray-200);
@@ -258,13 +292,17 @@ html.dark {
   --tu-text-faint: var(--tu-gray-500);
 
   /* Qorong'u fonda to'q ko'k o'qilmaydi — aksent yorqinlashadi.
-     #63B3F0 qora-ko'k fonda 7:1 dan yuqori kontrast beradi (WCAG AAA). */
-  --tu-brand: #63B3F0;
-  --tu-accent: #63B3F0;
-  --tu-accent-hover: #8CC8F5;
-  --tu-accent-vivid: #8CC8F5;
-  --tu-accent-soft: rgba(99, 179, 240, 0.16);
-  --tu-on-accent: #04213C;
+     ILGARI: #63B3F0 — och HAVORANG. U brend oilasiga kirmasdi va dark
+     rejimda deyarli hamma joyda ishlatilgani uchun sayt "muzdek havorang"
+     bo'lib qolgandi. Endi aksent brend ikkilamchisining (#5A78E0) och
+     pog'onasi: fon #0A1029 da kontrast ~8:1 (WCAG AAA), lekin rang
+     baribir brend indigosi. */
+  --tu-brand: #A6B6F2;
+  --tu-accent: #A6B6F2;
+  --tu-accent-hover: #C3CEF8;
+  --tu-accent-vivid: #C3CEF8;
+  --tu-accent-soft: rgba(90, 120, 224, 0.20);
+  --tu-on-accent: #0E1B42;
 
   --tu-success: #34D399;
   --tu-success-strong: #6EE7B7;
@@ -282,7 +320,7 @@ html.dark {
   --tu-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.48);
   --tu-shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.56);
 
-  --tu-focus-ring: #8CC8F5;
+  --tu-focus-ring: #C3CEF8;
   --tu-focus-ring-offset: var(--tu-surface);
 
   /* Legacy --adm-* dark qiymatlari */
@@ -291,13 +329,13 @@ html.dark {
   --adm-accent-light: var(--tu-accent);
   --adm-text-body-2: var(--tu-gray-300);
   --adm-text-chunk: var(--tu-gray-200);
-  --adm-info: #63B3F0;
-  --adm-info-bg: rgba(99, 179, 240, 0.16);
-  --adm-accent-bg: rgba(99, 179, 240, 0.16);
-  --adm-accent-2-bg: rgba(99, 179, 240, 0.16);
+  --adm-info: var(--tu-accent);
+  --adm-info-bg: rgba(90, 120, 224, 0.20);
+  --adm-accent-bg: rgba(90, 120, 224, 0.20);
+  --adm-accent-2-bg: rgba(90, 120, 224, 0.20);
   /* --adm-sidebar — yuqoridagi izohga qarang (getSideTokens dan keladi) */
-  --adm-search-bg: #08203A;
-  --adm-search-border: rgba(99, 179, 240, 0.24);
+  --adm-search-bg: #101636;
+  --adm-search-border: rgba(90, 120, 224, 0.32);
   --adm-search-ph: var(--tu-gray-400);
 }
 
@@ -340,13 +378,13 @@ select {
   }
 }
 
-/* Tipografika qalinliklari (Inter uchun).
-   Inter'ning 400 qalinligi Onest'nikidan ingichkaroq ko'rinadi — shuning
-   uchun asosiy matn 500 ga ko'tarildi, sarlavhalar esa 800 (Inter'da 700 va
-   800 orasidagi farq seziladi, 800 "boshqaruv paneli" uslubiga mos).
+/* Tipografika qalinliklari (Manrope uchun).
+   Manrope'ning harflari Inter'nikidan yumaloqroq va "to'laroq" — Inter uchun
+   tanlangan 600 asos Manrope'da haddan ziyod qalin, matn bloklari qora
+   yamoqqa aylanardi. 500 da o'zbekcha uzun so'zlar ham tinch o'qiladi.
    Komponentlarning O'Z font-weight'i bo'lsa, u kuchliroq — bu faqat asos. */
 body {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 h1,
@@ -380,7 +418,7 @@ select {
 }
 
 /* Brauzer avtomatik to'ldirgan maydon.
-   ILGARI: fon qattiq #fff, matn #003978 — dark rejimda oq plita bo'lib qolardi.
+   ILGARI: fon qattiq #fff, matn #193070 — dark rejimda oq plita bo'lib qolardi.
    Endi mavzu tokenlariga bog'langan. */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -478,13 +516,13 @@ select:focus-visible,
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(11, 95, 165, 0.32);
+  background: rgba(64, 89, 190, 0.32);
   border-radius: var(--tu-radius-full);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(11, 95, 165, 0.6);
+  background: rgba(64, 89, 190, 0.6);
   background-clip: content-box;
 }
 html.dark *::-webkit-scrollbar-thumb {
@@ -534,7 +572,7 @@ html.dark *::-webkit-scrollbar-thumb:hover {
 html.dark [data-tip]::after {
   background: var(--tu-gray-200);
   color: var(--tu-blue-950);
-  border-color: rgba(0, 57, 120, 0.14);
+  border-color: rgba(25, 48, 112, 0.14);
 }
 
 /* Chekkaga yopishgan elementlar — tooltip o'ngga ochiladi */

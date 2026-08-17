@@ -9,17 +9,17 @@
 // literal hex EMAS, to'g'ridan-to'g'ri var(--tu-*) ishlatishi kerak.
 
 /* --- Brend ko'k shkalasi (index.css: --tu-blue-*) --- */
-export const BLUE_50 = "#EFF7FE";
-export const BLUE_100 = "#D9EDFB";
-export const BLUE_200 = "#B2D9F6";
-export const BLUE_300 = "#7FBEEC";
-export const BLUE_400 = "#439CDD";
-export const BLUE_500 = "#1A7CC8";
-export const BLUE_600 = "#0B5FA5";
-export const BLUE_700 = "#094E8A";
-export const BLUE_800 = "#04406F";
-export const BLUE_900 = "#003978";
-export const BLUE_950 = "#04213C";
+export const BLUE_50 = "#F0F3FD";
+export const BLUE_100 = "#E3E9FC";
+export const BLUE_200 = "#C6D0F6";
+export const BLUE_300 = "#A3B3EE";
+export const BLUE_400 = "#8195E6";
+export const BLUE_500 = "#5A78E0";
+export const BLUE_600 = "#4059BE";
+export const BLUE_700 = "#30469C";
+export const BLUE_800 = "#243A81";
+export const BLUE_900 = "#193070";
+export const BLUE_950 = "#0E1B42";
 
 /* --- Semantik nomlar (eski kod shu nomlarni import qiladi) --- */
 export const NAVY = BLUE_900; // logotip, sidebar — asosiy brend rangi
@@ -30,7 +30,11 @@ export const LIGHT_BLUE = BLUE_300; // dark fonda accent
 export const PALE_BLUE = BLUE_100; // juda ochiq ko'k fon/chegara
 
 /* Dark rejimdagi aksent — qora-ko'k fonda 7:1 kontrast (WCAG AAA) */
-export const ACCENT_ON_DARK = "#63B3F0";
+export const ACCENT_ON_DARK = "#A6B6F2";
+
+/* --- Brend uchligi (index.css: --tu-primary / --tu-secondary / --tu-violet) --- */
+export const PRIMARY_COLOR = "#193070";
+export const SECONDARY_COLOR = "#5A78E0";
 
 /* --- Sidebar gradienti uchun binafsha-indigo juftlik ---
    Faqat DEKORATIV: sidebar foni, hover/faol holat tovlanishi. Matn yoki

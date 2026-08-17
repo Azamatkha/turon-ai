@@ -75,7 +75,7 @@
        Markaziy tovlanish sinab ko'rilgandi: butun ekran gradient bo'lib,
        "bo'g'iq" ko'rindi. */
     radial-gradient(ellipse 78% 66% at 0% 0%, rgba(123, 77, 255, 0.30) 0%, transparent 72%),
-    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(11, 95, 165, 0.24) 0%, transparent 70%),
+    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(64, 89, 190, 0.24) 0%, transparent 70%),
     radial-gradient(ellipse 82% 70% at 100% 100%, rgba(123, 77, 255, 0.28) 0%, transparent 74%),
     radial-gradient(ellipse 78% 66% at 0% 100%, rgba(26, 124, 200, 0.24) 0%, transparent 72%),
     linear-gradient(180deg, #F6F8FD 0%, #FAFCFE 45%, #F4F6FC 100%);
@@ -84,7 +84,7 @@
 :global(html.dark) .bgLayer {
   background:
     radial-gradient(ellipse 78% 66% at 0% 0%, rgba(123, 77, 255, 0.24) 0%, transparent 68%),
-    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(11, 95, 165, 0.28) 0%, transparent 66%),
+    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(64, 89, 190, 0.28) 0%, transparent 66%),
     radial-gradient(ellipse 82% 70% at 100% 100%, rgba(123, 77, 255, 0.20) 0%, transparent 70%),
     radial-gradient(ellipse 78% 66% at 0% 100%, rgba(26, 124, 200, 0.20) 0%, transparent 68%),
     linear-gradient(180deg, #0B1730 0%, #0A1526 50%, #08122A 100%);
@@ -119,7 +119,7 @@
     z-index: 55;
     border: none;
     padding: 0;
-    background: rgba(4, 33, 60, 0.5);
+    background: rgba(14, 27, 66, 0.5);
     backdrop-filter: blur(2px);
     animation: fadeIn var(--tu-duration) var(--tu-ease) both;
     cursor: pointer;
@@ -158,12 +158,12 @@
   z-index: 0;
   pointer-events: none;
   opacity: 0.07;
-  color: #003978;
+  color: #193070;
 }
 
 :global(html.dark) .bgLogo {
   opacity: 0.1;
-  color: #5FA3D6;
+  color: #8195E6;
 }
 
 /* --- Fon qatlamlari -------------------------------------------------------
@@ -179,7 +179,7 @@
   height: 100%;
   pointer-events: none;
   fill: none;
-  stroke: rgba(0, 57, 120, 0.05);
+  stroke: rgba(25, 48, 112, 0.05);
   /* To'r deyarli butun maydonni qoplaydi, faqat chekkalarda yumshoq
      so'nadi — ai.turonbank.uz dagi kabi. */
   -webkit-mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);

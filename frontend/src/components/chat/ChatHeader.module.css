@@ -77,13 +77,37 @@
 
 .renameBtn:hover {
   opacity: 1 !important;
-  background: rgba(95, 163, 214, 0.16);
+  background: rgba(90, 120, 224, 0.16);
 }
 
-/* =====================
-   Typography
-   ===================== */
+/* Sarlavhani tahrirlash maydoni.
+   ILGARI: `background: transparent` edi — input sahifaning fon qatlami
+   (`.bgLogo` dagi katta yarim shaffof logotip) ustida turardi. Yozilgan matn
+   ham, logotip ham mavzu bilan birga rang o'zgartirgani uchun ikkalasi
+   deyarli bir xil rangga tushib, harflar logotip chiziqlariga qo'shilib
+   ketardi — dark rejimda matn umuman ko'rinmasdi.
+   Endi maydonning O'Z qattiq foni bor: orqadagi hech narsa o'tmaydi. */
+.titleInput {
+  background: var(--tu-surface);
+  border: 1px solid var(--tu-border-strong);
+  border-radius: var(--tu-radius);
+  padding: 4px 10px;
+  min-width: 220px;
+  outline: none;
+  box-shadow: var(--tu-shadow-sm);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.titleInput:focus {
+  border-color: var(--tu-accent);
+  box-shadow: 0 0 0 3px var(--tu-accent-soft);
+}
+
+/* Sarlavha matni ham fon qatlamidan ustun turishi kerak — pastdagi
+   logotip bilan qo'shilib ketmasligi uchun yengil "nafas" soyasi */
 .title {
+  position: relative;
+  z-index: 1;
   font-size: 15px;
   font-weight: 700;
   overflow: hidden;
@@ -185,11 +209,11 @@
 :global(html.dark) .adminBtn {
   background-image:
     linear-gradient(120deg,
-      rgba(16, 42, 74, 0.96) 0%,
-      rgba(22, 56, 96, 0.96) 25%,
-      rgba(28, 48, 104, 0.96) 50%,
-      rgba(18, 46, 84, 0.96) 75%,
-      rgba(16, 42, 74, 0.96) 100%);
+      rgba(19, 26, 60, 0.96) 0%,
+      rgba(28, 38, 84, 0.96) 25%,
+      rgba(35, 45, 104, 0.96) 50%,
+      rgba(24, 32, 74, 0.96) 75%,
+      rgba(19, 26, 60, 0.96) 100%);
   background-size: 300% 300%;
   animation: tuGradFlow 14s ease-in-out infinite;
 }
@@ -212,10 +236,10 @@
 :global(html.dark) .adminBtn:hover {
   background-image:
     linear-gradient(120deg,
-      #1B3A64 0%,
-      #24507F 35%,
-      #2B4A86 70%,
-      #1B3A64 100%);
+      #1E2755 0%,
+      #2E3C86 35%,
+      #38439B 70%,
+      #1E2755 100%);
 }
 
 @keyframes tuGradFlow {

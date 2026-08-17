@@ -147,7 +147,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
         className={`${headerStyles.adminBtn} tu-shiny tu-shiny-always`}
         baseStyle={{
           border: "1px solid var(--tu-glass-border)",
-          color: isDark ? "#E2E8F0" : "#003978",
+          color: isDark ? "#E2E8F0" : "#193070",
           backdropFilter: "var(--tu-glass-blur)",
           WebkitBackdropFilter: "var(--tu-glass-blur)",
           position: "relative",

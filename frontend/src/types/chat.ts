@@ -29,6 +29,10 @@ export interface ThemeTokens {
   /* Xabar bulutchasi — `card` dan SHAFFOFROQ. Alohida token, chunki menyu va
      kartochkalar shaffof bo'lsa ortidagi matn ko'rinib ketadi. */
   bubble: string;
+  /* Foydalanuvchi xabarining bulutchasi — GRADIENT, tekis rang emas.
+     Ilgari sidebar foni (`side.bg`) qayta ishlatilardi: dark rejimda u deyarli
+     qora bo'lgani uchun xabar sahifadan "o'yiq" bo'lib ajralib turardi. */
+  bubbleUser: string;
   cardBorder: string;
   input: string;
   disc: string;

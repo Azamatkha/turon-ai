@@ -4,7 +4,7 @@ import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
-import { ACCENT, PRIMARY, PRIMARY_ON_DARK, getSideTokens } from "./theme";
+import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
@@ -94,8 +94,6 @@ export default function MessageArea({
     if (t) onEditResend(id, t);
     cancelEdit();
   };
-  // Foydalanuvchi xabari foni sidebar rangi bilan bir xil (light mode uchun so'ralgan)
-  const side = getSideTokens(isDark);
 
   const copyMsg = (m: Msg) => {
     navigator.clipboard?.writeText(toPlainText(m.text)).then(() => {
@@ -135,7 +133,7 @@ export default function MessageArea({
                 baseStyle={{ border: "1px solid " + tk.cardBorder, color: tk.strong, boxShadow: tk.chipShadow }}
                 // Hover'da chegara BREND ko'kiga o'tadi (ilgari kulrang
                 // #CBD5E1 edi — shisha fonda qora ramkadek ko'rinardi)
-                hoverStyle={{ borderColor: isDark ? "rgba(95,163,214,.55)" : "rgba(11,95,165,.45)", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(0, 57, 120,.1)" }}
+                hoverStyle={{ borderColor: isDark ? "rgba(90,120,224,.55)" : "rgba(64,89,190,.45)", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(25, 48, 112,.1)" }}
               >
                 <span className={styles.suggestionIcon}>{suggIcons[idx]}</span>
                 {label}
@@ -178,7 +176,7 @@ export default function MessageArea({
                         </div>
                       </div>
                     ) : (
-                      <div className={styles.bubbleUser} style={{ background: side.bg }}>{m.text}</div>
+                      <div className={styles.bubbleUser} style={{ background: tk.bubbleUser }}>{m.text}</div>
                     )}
                     {!isEditing && (
                       <div className={styles.userMeta}>
@@ -240,7 +238,7 @@ export default function MessageArea({
               <div key={m.id} className={`${styles.messageRow} ${styles.messageRowBot}`}>
                 <div className={styles.botAvatar}><Logo size={17} /></div>
                 <div className={styles.botCol}>
-                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(0, 57, 120,.04)" }}>
+                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(25, 48, 112,.04)" }}>
                     <MessageContent text={m.text} />
                   </div>
 
@@ -301,7 +299,7 @@ export default function MessageArea({
             <div className={styles.typingRow}>
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
-                <TypingIndicator color={isDark ? "#5FA3D6" : "#0B5FA5"} />
+                <TypingIndicator color={isDark ? "#8195E6" : "#4059BE"} />
                 {/* Javob kutilayotgan vaqt (soniya) — uzoq kutishda jarayon ketayotgani bilinadi */}
                 {elapsed >= 1 && (
                   <span className={styles.tokenMeter} style={{ color: tk.muted, marginLeft: 4 }}>

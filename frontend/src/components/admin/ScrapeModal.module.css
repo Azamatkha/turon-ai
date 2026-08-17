@@ -150,7 +150,7 @@
 .progressFill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0B5FA5, #003978);
+  background: linear-gradient(135deg, #4059BE, #193070);
   transition: width 0.2s ease;
 }
 
@@ -171,11 +171,11 @@
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  background: linear-gradient(135deg, #0B5FA5, #003978);
+  background: linear-gradient(135deg, #4059BE, #193070);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
-  box-shadow: 0 6px 18px rgba(0, 57, 120, 0.2);
+  box-shadow: 0 6px 18px rgba(25, 48, 112, 0.2);
   transition: all 0.2s ease;
 }
 

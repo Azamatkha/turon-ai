@@ -134,7 +134,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             onClick={onAddClick}
             className={`${styles.addBtn} tu-shiny`}
             baseStyle={{}}
-            hoverStyle={{ transform: "translateY(-1px)", boxShadow: "0 8px 20px rgba(0, 57, 120,.28)" }}
+            hoverStyle={{ transform: "translateY(-1px)", boxShadow: "0 8px 20px rgba(25, 48, 112,.28)" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {admin.knowledgeAdd}

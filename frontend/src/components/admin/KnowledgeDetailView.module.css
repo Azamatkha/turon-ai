@@ -79,7 +79,7 @@
   border-color: var(--adm-accent-light);
 }
 .editBtn:hover {
-  background: rgba(11, 95, 165, 0.08);
+  background: rgba(64, 89, 190, 0.08);
 }
 
 .delBtn,
@@ -102,11 +102,11 @@
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  background: linear-gradient(135deg, #0B5FA5, #003978);
+  background: linear-gradient(135deg, #4059BE, #193070);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 5px 16px rgba(0, 57, 120, 0.2);
+  box-shadow: 0 5px 16px rgba(25, 48, 112, 0.2);
   transition: all 0.18s ease;
 }
 

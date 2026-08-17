@@ -159,7 +159,7 @@
 
 .markAllBtn:hover {
   opacity: 1;
-  background: rgba(95, 163, 214, 0.16);
+  background: rgba(90, 120, 224, 0.16);
 }
 
 .optIn {
@@ -174,7 +174,7 @@
 }
 
 .optIn:hover {
-  background: rgba(95, 163, 214, 0.12);
+  background: rgba(90, 120, 224, 0.12);
 }
 
 /* Ruxsat rad etilgan holat: brauzer qayta so'rashga yo'l qo'ymaydi, shuning
@@ -192,7 +192,7 @@
 }
 
 .blocked:hover {
-  background: rgba(95, 163, 214, 0.1);
+  background: rgba(90, 120, 224, 0.1);
 }
 
 .blockedRow {
@@ -253,7 +253,7 @@
 }
 
 .row:hover {
-  background: rgba(95, 163, 214, 0.1);
+  background: rgba(90, 120, 224, 0.1);
 }
 
 .row:last-child {
@@ -270,7 +270,7 @@
 }
 
 .dotUnread {
-  background: #0B5FA5;
+  background: #4059BE;
 }
 
 .dotRead {

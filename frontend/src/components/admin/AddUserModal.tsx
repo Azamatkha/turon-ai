@@ -84,7 +84,7 @@ export default function AddUserModal({
           </div>
         </div>
 
-        <HButton onClick={onSubmit} className={`${styles.submitBtn} tu-shiny`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(0, 57, 120,.28)" }}>
+        <HButton onClick={onSubmit} className={`${styles.submitBtn} tu-shiny`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)", boxShadow: "0 10px 24px rgba(25, 48, 112,.28)" }}>
           {adding ? <span className={styles.spinner} /> : <span>{admin.create}</span>}
         </HButton>
       </div>

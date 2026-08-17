@@ -171,7 +171,7 @@
   cursor: pointer;
   background: var(--tu-blue-900);
   color: #fff;
-  box-shadow: 0 6px 18px rgba(0, 57, 120, 0.24);
+  box-shadow: 0 6px 18px rgba(25, 48, 112, 0.24);
   transition: transform var(--tu-duration-fast) ease,
     box-shadow var(--tu-duration) ease,
     background var(--tu-duration) ease;
@@ -179,7 +179,7 @@
 
 .submitBtn:hover:not(:disabled) {
   background: var(--tu-blue-700);
-  box-shadow: 0 8px 24px rgba(0, 57, 120, 0.3);
+  box-shadow: 0 8px 24px rgba(25, 48, 112, 0.3);
 }
 
 .submitBtn:active:not(:disabled) {
@@ -338,7 +338,7 @@
   background: none;
   padding: 0;
   cursor: pointer;
-  border-bottom: 1px dashed rgba(11, 95, 165, 0.5);
+  border-bottom: 1px dashed rgba(64, 89, 190, 0.5);
   transition: color var(--tu-duration-fast) ease;
 }
 
@@ -358,7 +358,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--tu-space-5);
-  background: rgba(4, 33, 60, 0.5);
+  background: rgba(14, 27, 66, 0.5);
   backdrop-filter: blur(2px);
   animation: hintFade 0.16s ease both;
 }

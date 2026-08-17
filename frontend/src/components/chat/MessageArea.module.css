@@ -81,12 +81,12 @@
   height: 30px;
   flex: 0 0 auto;
   border-radius: 9px;
-  background: linear-gradient(140deg, #003978, #0B5FA5);
+  background: linear-gradient(140deg, #193070, #4059BE);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #E2E8F0;
-  box-shadow: 0 1px 3px rgba(0, 57, 120, 0.2);
+  box-shadow: 0 1px 3px rgba(25, 48, 112, 0.2);
 }
 
 .bubble {
@@ -105,7 +105,7 @@
   max-width: 76%;
   /* Yengil shaffoflik — ortidagi fon sezilib turadi, lekin oq matn
      kontrasti (WCAG AA) saqlanadi */
-  background: linear-gradient(135deg, rgba(0, 57, 120, 0.92), rgba(0, 57, 120, 0.88));
+  background: linear-gradient(135deg, rgba(25, 48, 112, 0.92), rgba(25, 48, 112, 0.88));
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
   color: #fff;
@@ -116,7 +116,7 @@
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  box-shadow: 0 1px 3px rgba(0, 57, 120, 0.18);
+  box-shadow: 0 1px 3px rgba(25, 48, 112, 0.18);
 }
 
 .bubbleBot {
@@ -144,7 +144,7 @@
   gap: 6px;
   margin: 6px 4px 0 0;
   padding: 6px 12px;
-  border: 1px solid rgba(11, 95, 165, 0.3);
+  border: 1px solid rgba(64, 89, 190, 0.3);
   border-radius: 99px;
   background: transparent;
   color: inherit;
@@ -154,7 +154,7 @@
 }
 
 .resendBtn:hover {
-  background: rgba(11, 95, 165, 0.12);
+  background: rgba(64, 89, 190, 0.12);
 }
 
 .resendBtn:active {
@@ -198,7 +198,7 @@
 
 .msgMenuBtn:hover,
 .msgMenuBtnActive {
-  background: rgba(11, 95, 165, 0.12);
+  background: rgba(64, 89, 190, 0.12);
   opacity: 1;
 }
 
@@ -211,7 +211,7 @@
   min-width: 168px;
   padding: 6px;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 57, 120, 0.16);
+  box-shadow: 0 8px 24px rgba(25, 48, 112, 0.16);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -234,7 +234,7 @@
 }
 
 .msgMenuItem:hover {
-  background: rgba(11, 95, 165, 0.1);
+  background: rgba(64, 89, 190, 0.1);
 }
 
 @keyframes msgMenuIn {
@@ -249,7 +249,7 @@
   border: 1px solid;
   border-radius: 16px;
   padding: 10px 12px;
-  box-shadow: 0 2px 8px rgba(0, 57, 120, 0.1);
+  box-shadow: 0 2px 8px rgba(25, 48, 112, 0.1);
 }
 
 .editArea {
@@ -280,7 +280,7 @@
 }
 
 .editBtnGhost:hover {
-  background: rgba(11, 95, 165, 0.1);
+  background: rgba(64, 89, 190, 0.1);
 }
 
 .editBtnPrimary {
@@ -289,7 +289,7 @@
   font-size: 12.5px;
   padding: 6px 14px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #003978, #003978);
+  background: linear-gradient(135deg, #193070, #193070);
   color: #fff;
 }
 
@@ -355,8 +355,8 @@
 }
 
 .actBtn:hover {
-  background: rgba(11, 95, 165, 0.12);
-  color: #0B5FA5;
+  background: rgba(64, 89, 190, 0.12);
+  color: #4059BE;
 }
 
 .actBtn:active {
@@ -364,7 +364,7 @@
 }
 
 .actBtn:focus-visible {
-  outline: 2px solid #5FA3D6;
+  outline: 2px solid #8195E6;
   outline-offset: 1px;
 }
 
@@ -406,7 +406,7 @@
   width: 7px;
   height: 7px;
   border-radius: 99px;
-  background: #0B5FA5;
+  background: #4059BE;
   animation: dot 1.3s infinite both;
 }
 
@@ -595,11 +595,11 @@
 :global(html.dark) .suggestionChip {
   background-image:
     linear-gradient(120deg,
-      rgba(16, 42, 74, 0.85) 0%,
-      rgba(22, 56, 96, 0.85) 25%,
-      rgba(28, 48, 104, 0.85) 50%,
-      rgba(18, 46, 84, 0.85) 75%,
-      rgba(16, 42, 74, 0.85) 100%);
+      rgba(19, 26, 60, 0.85) 0%,
+      rgba(28, 38, 84, 0.85) 25%,
+      rgba(35, 45, 104, 0.85) 50%,
+      rgba(24, 32, 74, 0.85) 75%,
+      rgba(19, 26, 60, 0.85) 100%);
   background-size: 300% 300%;
   animation: tuGradFlow 14s ease-in-out infinite;
 }

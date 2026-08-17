@@ -14,12 +14,12 @@
 
 .ring {
   fill: none;
-  stroke: rgba(0, 57, 120, 0.10);
+  stroke: rgba(25, 48, 112, 0.10);
   stroke-width: 1;
 }
 
 .dot {
-  fill: #1A7CC8;
+  fill: #5A78E0;
   opacity: 0.55;
 }
 
@@ -39,7 +39,7 @@
 }
 
 :global(html.dark) .dot {
-  fill: #63B3F0;
+  fill: #94A9F0;
   opacity: 0.7;
 }
 

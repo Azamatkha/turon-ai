@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 // Asosiy shrift — loyiha ichidan (Google Fonts bank proksisi ortida ochilmaydi).
 // Variable versiya: barcha qalinliklar bitta faylda, alohida wght so'rovi yo'q.
-import "@fontsource-variable/inter";
+import "@fontsource-variable/manrope";
 import "./index.css";
 // Butun flag-icons paketi EMAS — faqat ilovada ishlatiladigan 13 ta bayroq.
 // Sabab va yangi bayroq qo'shish tartibi: styles/flags.css boshidagi izoh.

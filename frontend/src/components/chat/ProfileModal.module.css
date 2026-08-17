@@ -76,7 +76,7 @@
   height: 52px;
   border-radius: 15px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #0B5FA5, #0B5FA5);
+  background: linear-gradient(140deg, #4059BE, #4059BE);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,7 +107,7 @@
   border-radius: 11px;
   padding: 0 14px;
   font-size: 14.5px;
-  color: #003978;
+  color: #193070;
   outline: none;
   background: #F8FAFC;
   transition: border-color 0.18s ease;
@@ -141,7 +141,7 @@
 
 .pwToggleBtn:hover {
   background: #F1F5F9;
-  color: #003978;
+  color: #193070;
 }
 
 .usernameField {
@@ -168,7 +168,7 @@
   outline: none;
   background: transparent;
   font-size: 14.5px;
-  color: #003978;
+  color: #193070;
   height: 100%;
 }
 
@@ -180,7 +180,7 @@
 }
 
 .usernameField:focus-within {
-  border-color: #0B5FA5;
+  border-color: #4059BE;
 }
 
 .saveBtn {
@@ -196,7 +196,7 @@
   color: #fff;
   font-size: 15px;
   font-weight: 600;
-  box-shadow: 0 6px 18px rgba(0, 57, 120, 0.2);
+  box-shadow: 0 6px 18px rgba(25, 48, 112, 0.2);
   transition: all 0.2s ease;
 }
 
@@ -239,7 +239,7 @@
 }
 
 .supportIcon {
-  color: #0B5FA5;
+  color: #4059BE;
   flex: 0 0 auto;
 }
 
@@ -254,14 +254,14 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #003978;
+  color: #193070;
   text-decoration: none;
   flex: 0 0 auto;
   transition: color 0.15s ease;
 }
 
 .supportNumber:hover {
-  color: #0B5FA5;
+  color: #4059BE;
 }
 
 /* =====================
@@ -270,7 +270,7 @@
 .fullName {
   font-size: 17px;
   font-weight: 700;
-  color: #003978;
+  color: #193070;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -311,7 +311,7 @@
    States
    ===================== */
 .saveBtnIdle {
-  background: linear-gradient(135deg, #0B5FA5, #003978);
+  background: linear-gradient(135deg, #4059BE, #193070);
 }
 
 .saveBtnSaved {

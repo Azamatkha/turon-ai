@@ -19,7 +19,7 @@ function relTime(iso: string, admin: AdminStrings): string {
 }
 
 // Bo'limlar progress-bar ranglari (aylanib ishlatiladi)
-const DEPT_COLORS = ["#0B5FA5", "#0B5FA5", "#0B5FA5", "#5FA3D6", "#9bc1d9", "#5FA3D6"];
+const DEPT_COLORS = ["#4059BE", "#4059BE", "#4059BE", "#8195E6", "#9bc1d9", "#8195E6"];
 
 const usersIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
 const chatIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" /></svg>;

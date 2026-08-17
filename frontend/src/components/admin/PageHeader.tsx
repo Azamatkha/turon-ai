@@ -57,7 +57,7 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
           data-tip={admin.chatNav}
           aria-label={admin.chatNav}
           className={`${headerStyles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           hoverStyle={{ transform: "translateY(-1px)" }}
         >
           <IoMdChatboxes size={20} />

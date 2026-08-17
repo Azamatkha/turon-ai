@@ -64,8 +64,8 @@ interface Particle {
 }
 
 // Yorug' mavzuda ochiq havorang deyarli ko'rinmasdi — to'plam to'qlashtirildi
-const LIGHT_COLORS = ["#003978", "#0B5FA5", "#1A7CC8", "#25507F", "#1F8F87", "#4A57C0"];
-const DARK_COLORS = ["#63B3F0", "#9ED8FF", "#5FA3D6", "#8C93E8", "#4FD1C5", "#3B82C4"];
+const LIGHT_COLORS = ["#193070", "#4059BE", "#5A78E0", "#25507F", "#1F8F87", "#4A57C0"];
+const DARK_COLORS = ["#94A9F0", "#9ED8FF", "#8195E6", "#8C93E8", "#4FD1C5", "#3B82C4"];
 
 const withAlpha = (hex: string, alpha: number) => {
   const h = hex.replace("#", "");
@@ -301,7 +301,7 @@ export default function CosmicSingularity({
     // Logotip yig'ilganda zarrachalar BITTA to'q rangda va to'liq
     // shaffofmas chiziladi — rang-barang yarim shaffof nuqtalardan shakl
     // xira ko'rinardi.
-    const formColor = isDark ? "#BFE3FF" : "#003978";
+    const formColor = isDark ? "#C6D0F6" : "#193070";
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);

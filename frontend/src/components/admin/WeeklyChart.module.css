@@ -50,11 +50,11 @@
 }
 
 .barNormal {
-  background: linear-gradient(180deg, #5FA3D6, #0B5FA5);
+  background: linear-gradient(180deg, #8195E6, #4059BE);
 }
 
 .barHighlight {
-  background: linear-gradient(180deg, #0B5FA5, #003978);
+  background: linear-gradient(180deg, #4059BE, #193070);
 }
 
 /* =====================

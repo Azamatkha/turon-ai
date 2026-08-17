@@ -64,16 +64,8 @@ export default function ChatHeader({
               if (e.key === "Enter") commit();
               if (e.key === "Escape") setEditing(false);
             }}
-            className={styles.title}
-            style={{
-              color: tk.strong,
-              background: "transparent",
-              border: "1px solid " + tk.headBorder,
-              borderRadius: 8,
-              padding: "3px 9px",
-              outline: "none",
-              minWidth: 220,
-            }}
+            className={`${styles.title} ${styles.titleInput}`}
+            style={{ color: tk.strong }}
           />
         ) : (
           <>
@@ -101,7 +93,7 @@ export default function ChatHeader({
             data-tip={s.adminPanel}
             aria-label={s.adminPanel}
             className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-            baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+            baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
             /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
           hoverStyle={{ transform: "translateY(-1px)" }}
@@ -114,7 +106,7 @@ export default function ChatHeader({
           data-tip={s.rates}
           aria-label={s.rates}
           className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
           hoverStyle={{ transform: "translateY(-1px)" }}
@@ -126,7 +118,7 @@ export default function ChatHeader({
           data-tip={s.calculator}
           aria-label={s.calculator}
           className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
           hoverStyle={{ transform: "translateY(-1px)" }}
@@ -138,7 +130,7 @@ export default function ChatHeader({
           data-tip={s.report}
           aria-label={s.report}
           className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#003978", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
           /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
              berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
           hoverStyle={{ transform: "translateY(-1px)" }}

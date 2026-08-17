@@ -99,7 +99,6 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
       className={styles.aside}
       style={{
         width: collapsed ? 72 : 282,
-        transition: "width .2s ease",
         background: side.bg,
         color: side.fg,
         borderRight: "1px solid " + side.border,
@@ -167,7 +166,7 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
             </div>
           )}
           {!collapsed && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(241,245,249,.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: menuOpen ? "rotate(180deg)" : "none", transition: "transform .18s ease" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(241,243,251,.6)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: menuOpen ? "rotate(180deg)" : "none", transition: "transform .18s ease" }}>
               <polyline points="6 9 12 15 18 9" />
             </svg>
           )}
