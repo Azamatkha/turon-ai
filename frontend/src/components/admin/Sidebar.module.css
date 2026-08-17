@@ -141,8 +141,8 @@
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 14.5px;
+  font-weight: 550;
   transition: background 0.18s ease, color 0.18s ease;
 }
 
@@ -189,7 +189,7 @@
 }
 
 .navBadge {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   padding: 1px 7px;
   border-radius: 99px;
@@ -210,7 +210,7 @@
   justify-content: center;
   color: #fff;
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 14.5px;
 }
 
 .footerMeta {
@@ -222,7 +222,7 @@
    Typography
    ===================== */
 .brandName {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.3px;
   line-height: 1.1;
@@ -230,12 +230,12 @@
 }
 
 .brandNameAi {
-  font-weight: 400;
+  font-weight: 500;
   opacity: 0.7;
 }
 
 .panelLabel {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 1.1px;
   text-transform: uppercase;
@@ -244,7 +244,7 @@
 }
 
 .footerName {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -252,7 +252,7 @@
 }
 
 .footerRole {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: rgba(223, 228, 245, 0.72);
   overflow: hidden;
   text-overflow: ellipsis;

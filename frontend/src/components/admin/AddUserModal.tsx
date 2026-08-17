@@ -43,7 +43,7 @@ export default function AddUserModal({
         <div className={styles.sub}>{admin.addUserModalSub}</div>
 
         {error && (
-          <div style={{ margin: "0 0 14px", padding: "10px 13px", borderRadius: 10, background: "var(--adm-danger-bg)", border: "1px solid var(--adm-danger-border)", color: "var(--adm-danger)", fontSize: 13 }}>{error}</div>
+          <div style={{ margin: "0 0 14px", padding: "10px 13px", borderRadius: 10, background: "var(--adm-danger-bg)", border: "1px solid var(--adm-danger-border)", color: "var(--adm-danger)", fontSize: 14 }}>{error}</div>
         )}
 
         <div className={styles.fields}>

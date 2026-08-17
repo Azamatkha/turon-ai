@@ -64,8 +64,8 @@
   background: #FEF2F2;
   border: 1px solid #FECACA;
   color: #DC2626;
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 14.5px;
+  font-weight: 550;
 }
 
 /* =====================
@@ -81,7 +81,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 700;
 }
 
@@ -106,7 +106,7 @@
   border: 1.6px solid #CBD5E1;
   border-radius: 11px;
   padding: 0 14px;
-  font-size: 14.5px;
+  font-size: 15.5px;
   color: #193070;
   outline: none;
   background: #F8FAFC;
@@ -157,7 +157,7 @@
 
 .usernamePrefix {
   color: #94A3B8;
-  font-size: 15px;
+  font-size: 16px;
   flex: 0 0 auto;
 }
 
@@ -167,7 +167,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 14.5px;
+  font-size: 15.5px;
   color: #193070;
   height: 100%;
 }
@@ -194,7 +194,7 @@
   border-radius: 12px;
   cursor: pointer;
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   box-shadow: 0 6px 18px rgba(25, 48, 112, 0.2);
   transition: all 0.2s ease;
@@ -215,7 +215,7 @@
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
   color: #DC2626;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   transition: all 0.18s ease;
 }
@@ -244,14 +244,14 @@
 }
 
 .supportHint {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: #64748B;
   flex: 1;
   min-width: 0;
 }
 
 .supportNumber {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #193070;
@@ -268,7 +268,7 @@
    Typography
    ===================== */
 .fullName {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: #193070;
   overflow: hidden;
@@ -277,13 +277,13 @@
 }
 
 .handle {
-  font-size: 13px;
+  font-size: 14px;
   color: #94A3B8;
 }
 
 .fieldLabel {
   display: block;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #334155;
   margin-bottom: 7px;
@@ -293,7 +293,7 @@
 /* Joriy parol nima uchun so'ralayotganini tushuntiruvchi kichik izoh —
    busiz maydon ortiqcha to'siqdek tuyulardi. */
 .fieldHint {
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.45;
   color: #64748B;
   margin-top: 6px;
@@ -301,7 +301,7 @@
 
 .takenLabel {
   color: #DC2626;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   flex: 0 0 auto;
   white-space: nowrap;

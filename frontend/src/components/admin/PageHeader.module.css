@@ -52,7 +52,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-strong);
   width: 170px;
 }
@@ -78,7 +78,7 @@
   border: none;
   border-radius: 11px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #fff;
   background-image: linear-gradient(120deg, #4059BE 0%, #5A78E0 28%, #193070 58%, #4059BE 100%);
@@ -119,14 +119,14 @@
    Typography
    ===================== */
 .title {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.3px;
   color: var(--adm-text-strong);
 }
 
 .subtitle {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--adm-text-muted);
   margin-top: 2px;
 }

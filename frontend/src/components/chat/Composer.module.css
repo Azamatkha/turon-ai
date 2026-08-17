@@ -113,7 +113,7 @@
      bezovta qiladi. (index.css dagi global qoida CSS modul
      specificity'si tufayli yetmaydi.) */
   .textarea {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   /* Barmoq uchun kattaroq nishon */
@@ -125,7 +125,7 @@
   /* Telefonda uzun ogohlantirish matni ikki-uch qator joy yeydi —
      shrift kichrayadi, lekin butunlay yo'qolmaydi (huquqiy matn). */
   .disclaimer {
-    font-size: 10.5px;
+    font-size: 11.5px;
     margin-top: 6px;
     line-height: 1.35;
   }

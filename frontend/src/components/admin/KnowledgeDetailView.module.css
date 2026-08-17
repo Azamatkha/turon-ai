@@ -61,8 +61,8 @@
   border: 1px solid var(--adm-border-input);
   background: var(--adm-card);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 550;
   transition: all 0.15s ease;
 }
 
@@ -104,7 +104,7 @@
   cursor: pointer;
   background: linear-gradient(135deg, #4059BE, #193070);
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   box-shadow: 0 5px 16px rgba(25, 48, 112, 0.2);
   transition: all 0.18s ease;
@@ -124,7 +124,7 @@
   border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 0 13px;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-strong);
   outline: none;
   background: var(--adm-input-bg);
@@ -135,7 +135,7 @@
   border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 11px 13px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.55;
   color: var(--adm-text-strong);
   outline: none;
@@ -173,7 +173,7 @@
 
 /* ---- typography ---- */
 .title {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   color: var(--adm-text-strong);
   margin-bottom: 16px;
@@ -181,7 +181,7 @@
 }
 
 .cardTitle {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--adm-text-strong);
   margin-bottom: 16px;
@@ -189,14 +189,14 @@
 
 .label {
   display: block;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--adm-text-body);
   margin-bottom: 7px;
 }
 
 .chunkLabel {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--adm-text-muted-2);
@@ -204,14 +204,14 @@
 }
 
 .chunkText {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-chunk);
   line-height: 1.6;
   white-space: pre-wrap;
 }
 
 .confirmText {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-body);
   line-height: 1.5;
 }
@@ -229,7 +229,7 @@
   background: var(--adm-danger-bg);
   border: 1px solid var(--adm-danger-border);
   color: var(--adm-danger);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -239,7 +239,7 @@
   border-radius: 10px;
   border: 1px solid var(--adm-danger-border);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 

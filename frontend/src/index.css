@@ -148,17 +148,23 @@ body,
     'Segoe UI Variable Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --tu-font-mono: 'Cascadia Mono', 'Consolas', 'SF Mono', ui-monospace, monospace;
 
-  --tu-text-xs: 0.75rem;    /* 12px — yorliq, meta */
-  --tu-text-sm: 0.8125rem;  /* 13px — ikkilamchi */
-  --tu-text-base: 0.875rem; /* 14px — interfeys standarti */
-  --tu-text-md: 0.9375rem;  /* 15px — chat xabari */
-  --tu-text-lg: 1.125rem;   /* 18px — kichik sarlavha */
-  --tu-text-xl: 1.375rem;   /* 22px — sahifa sarlavhasi */
-  --tu-text-2xl: 1.75rem;   /* 28px — salomlashuv */
+  /* Shkala Inter davridagidan +1px. Sabab: Manrope'ning x-balandligi
+     (kichik harflar bo'yi) Inter'nikidan pastroq — AYNAN bir xil `px` da
+     harflar ko'zga kichikroq ko'rinadi. O'lchamni oshirmasdan shrift
+     almashtirilsa, butun interfeys "ingichkalashib, kichrayib" qoladi. */
+  --tu-text-xs: 0.8125rem;   /* 13px — yorliq, meta */
+  --tu-text-sm: 0.875rem;    /* 14px — ikkilamchi */
+  --tu-text-base: 0.9375rem; /* 15px — interfeys standarti */
+  --tu-text-md: 1rem;        /* 16px — chat xabari */
+  --tu-text-lg: 1.1875rem;   /* 19px — kichik sarlavha */
+  --tu-text-xl: 1.4375rem;   /* 23px — sahifa sarlavhasi */
+  --tu-text-2xl: 1.8125rem;  /* 29px — salomlashuv */
 
-  --tu-leading-tight: 1.25;
-  --tu-leading-normal: 1.5;
-  --tu-leading-relaxed: 1.7;  /* uzun o'zbekcha matn uchun */
+  /* Manrope harflari Inter'nikidan yumaloqroq va kengroq — qatorlar orasi
+     ham shunga yarasha ochilishi kerak, aks holda matn "yopishib" ko'rinadi. */
+  --tu-leading-tight: 1.3;
+  --tu-leading-normal: 1.55;
+  --tu-leading-relaxed: 1.72;  /* uzun o'zbekcha matn uchun */
 
   /* --- Bo'shliq (spacing) — 4px asosida -------------------------------- */
   --tu-space-1: 4px;
@@ -374,27 +380,42 @@ select {
   input,
   textarea,
   select {
-    font-size: 16px;
+    font-size: 17px;
   }
 }
 
 /* Tipografika qalinliklari (Manrope uchun).
-   Manrope'ning harflari Inter'nikidan yumaloqroq va "to'laroq" — Inter uchun
-   tanlangan 600 asos Manrope'da haddan ziyod qalin, matn bloklari qora
-   yamoqqa aylanardi. 500 da o'zbekcha uzun so'zlar ham tinch o'qiladi.
+   Manrope'ning tayanch shtrixi Inter'nikidan INGICHKAROQ — bir xil 500 da
+   matn xiraroq va "ingliz kitobi" kabi yengil ko'rinadi. Interfeys matni
+   uchun 600 kerak: harflar aniq, lekin qora yamoq hosil qilmaydi.
    Komponentlarning O'Z font-weight'i bo'lsa, u kuchliroq — bu faqat asos. */
 body {
-  font-weight: 500;
+  font-weight: 600;
 }
 
+/* Manrope allaqachon ixcham tracking bilan chizilgan — sarlavhalarni yana
+   siqish (ilgari -0.015em) harflarni bir-biriga yopishtirib yuborardi.
+   Katta o'lchamda juda oz siqish yetarli. */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+}
+
+/* Mayda interfeys matni (12-14px) — Manrope bu o'lchamda biroz siqilib
+   ko'rinadi, ozgina ochiq tracking o'qishni sezilarli yaxshilaydi. */
+label,
+small,
+th,
+button,
+input,
+textarea,
+select {
+  letter-spacing: 0.005em;
 }
 
 /* Mavzu almashganda silliq o'tish.
@@ -553,7 +574,7 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.14);
   font-size: var(--tu-text-xs);
-  font-weight: 500;
+  font-weight: 550;
   letter-spacing: 0.1px;
   white-space: nowrap;
   padding: 5px 9px;

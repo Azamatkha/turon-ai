@@ -350,9 +350,9 @@ export default function AdminPage() {
 
         <div className={styles.content}>
           {onUsers && pageError && (
-            <div style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 10, background: "var(--adm-danger-bg)", border: "1px solid var(--adm-danger-border)", color: "var(--adm-danger)", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <div style={{ marginBottom: 14, padding: "10px 13px", borderRadius: 10, background: "var(--adm-danger-bg)", border: "1px solid var(--adm-danger-border)", color: "var(--adm-danger)", fontSize: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
               <span>{pageError}</span>
-              <button onClick={() => setPageError("")} aria-label={t.knowledgeCancel} style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+              <button onClick={() => setPageError("")} aria-label={t.knowledgeCancel} style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 17, lineHeight: 1 }}>×</button>
             </div>
           )}
           {onDashboard && <DashboardView mounted={mounted} t={t} />}

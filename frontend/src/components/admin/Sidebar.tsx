@@ -188,8 +188,8 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
             }}
           >
             <div style={{ padding: "6px 10px 8px", borderBottom: "1px solid var(--adm-border-3)", marginBottom: 4 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--adm-text-strong)", whiteSpace: "nowrap" }}>{meName}</div>
-              <div style={{ fontSize: 11.5, color: "var(--adm-text-muted-2)" }}>{meHandle}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--adm-text-strong)", whiteSpace: "nowrap" }}>{meName}</div>
+              <div style={{ fontSize: 12.5, color: "var(--adm-text-muted-2)" }}>{meHandle}</div>
             </div>
             <button
               onClick={doLogout}
@@ -206,7 +206,7 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
                 color: "var(--adm-danger)",
                 borderRadius: 8,
                 cursor: "pointer",
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 600,
               }}
             >

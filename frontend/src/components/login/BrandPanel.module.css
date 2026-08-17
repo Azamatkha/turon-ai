@@ -112,14 +112,14 @@
 }
 
 .logoText {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.4px;
   white-space: nowrap;
 }
 
 .logoTextAi {
-  font-weight: 400;
+  font-weight: 500;
   opacity: 0.75;
 }
 
@@ -133,7 +133,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: rgba(241, 245, 249, 0.55);
 }
 
@@ -148,7 +148,7 @@
   padding: 6px 13px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 99px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -166,7 +166,7 @@
 }
 
 .headline {
-  font-size: 22px;
+  font-size: 23px;
   line-height: 1.18;
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -177,7 +177,7 @@
 }
 
 .subtext {
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.55;
   color: rgba(241, 245, 249, 0.78);
   margin: 0 0 13px;

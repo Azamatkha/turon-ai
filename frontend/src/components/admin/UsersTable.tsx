@@ -72,18 +72,18 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin, la
       {menu && (
         <div style={{ position: "absolute", right: 12, ...(last ? { bottom: 46 } : { top: 46 }), zIndex: 20, background: "var(--adm-card)", border: "1px solid var(--adm-border)", borderRadius: 12, boxShadow: "0 16px 40px rgba(15,23,42,.18)", padding: 6, minWidth: 190 }}>
           <button onClick={() => { onEdit(u); setMenu(false); }}
-            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
             {admin.editUser}
           </button>
           <button onClick={() => { onChangeRole(u.id, nextRole); setMenu(false); }}
-            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>
             {u.role === "Admin" ? admin.makeXodim : admin.makeAdmin}
           </button>
           <div style={{ height: 1, background: "var(--adm-border-3)", margin: "6px 4px" }} />
           <button onClick={() => { onDelete(u.id); setMenu(false); }}
-            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-danger)", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-danger)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>
             {admin.delete}
           </button>

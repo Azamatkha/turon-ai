@@ -58,10 +58,10 @@ export default function NotFoundPage() {
         404
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, fontSize: 21, fontWeight: 700, marginTop: -4 }}>
+      <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: -4 }}>
         Sahifa topilmadi
       </div>
-      <div style={{ position: "relative", zIndex: 1, fontSize: 14.5, color: "#5b7180", maxWidth: 380, lineHeight: 1.5 }}>
+      <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 380, lineHeight: 1.5 }}>
         Siz qidirgan sahifa mavjud emas yoki ko‘chirilgan bo‘lishi mumkin.
       </div>
 
@@ -76,7 +76,7 @@ export default function NotFoundPage() {
           background: "linear-gradient(135deg, #4059BE, #193070)",
           color: "#fff",
           fontWeight: 600,
-          fontSize: 14.5,
+          fontSize: 15.5,
           textDecoration: "none",
           boxShadow: "0 10px 26px rgba(25, 48, 112, 0.3)",
         }}

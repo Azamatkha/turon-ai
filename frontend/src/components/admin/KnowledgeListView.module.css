@@ -39,7 +39,7 @@
   margin-bottom: 14px;
   padding: 10px 14px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--adm-text-strong);
   background: var(--adm-hover);
   border: 1px solid var(--adm-border);
@@ -53,7 +53,7 @@
   border: 1.6px solid var(--adm-border-input);
   border-radius: 10px;
   padding: 0 13px 0 38px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   color: var(--adm-text-strong);
   outline: none;
   background: var(--adm-input-bg)
@@ -88,7 +88,7 @@
   background: linear-gradient(135deg, #4059BE, #193070);
   color: #fff;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   box-shadow: 0 4px 14px rgba(25, 48, 112, 0.2);
   transition: all 0.15s ease;
@@ -149,7 +149,7 @@
   background: var(--adm-card);
   color: var(--adm-text-body);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   transition: all 0.15s ease;
 }
@@ -160,7 +160,7 @@
   border-radius: 999px;
   background: rgba(64, 89, 190, 0.1);
   color: var(--adm-accent);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -178,26 +178,26 @@
   background: var(--adm-card);
   border: 1px dashed var(--adm-border-input);
   color: var(--adm-text-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .errMsg {
   background: var(--adm-danger-bg);
   border: 1px solid var(--adm-danger-border);
   color: var(--adm-danger);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 /* Typography */
 .count {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--adm-text-muted);
   font-weight: 600;
 }
 
 .cardTitle {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--adm-text-strong);
   line-height: 1.35;
@@ -209,7 +209,7 @@
 
 .preview {
   margin-top: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--adm-text-body-2);
   line-height: 1.5;
   display: -webkit-box;
@@ -220,7 +220,7 @@
 
 .lang {
   margin-top: 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--adm-text-muted-2);

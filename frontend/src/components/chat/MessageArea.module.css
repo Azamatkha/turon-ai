@@ -92,9 +92,9 @@
 .bubble {
   padding: 13px 17px;
   border-radius: 5px 18px 18px 18px;
-  font-size: 14.5px;
+  font-size: 15.5px;
   /* `body` da asos 600 — xabar matni uchun bu og'ir, 500 tinchroq o'qiladi */
-  font-weight: 500;
+  font-weight: 550;
   line-height: 1.62;
   white-space: pre-wrap;
   overflow-wrap: break-word;
@@ -111,8 +111,8 @@
   color: #fff;
   padding: 11px 16px;
   border-radius: 18px 18px 5px 18px;
-  font-size: 14.5px;
-  font-weight: 500;
+  font-size: 15.5px;
+  font-weight: 550;
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
@@ -133,7 +133,7 @@
 }
 
 .msgTimeUser {
-  font-size: 11px;
+  font-size: 12px;
   margin: 4px 4px 0 0;
   opacity: 0.7;
 }
@@ -148,7 +148,7 @@
   border-radius: 99px;
   background: transparent;
   color: inherit;
-  font-size: 12.5px;
+  font-size: 13.5px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
@@ -229,7 +229,7 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
 }
 
@@ -259,7 +259,7 @@
   background: transparent;
   resize: none;
   font: inherit;
-  font-size: 14.5px;
+  font-size: 15.5px;
   line-height: 1.55;
 }
 
@@ -274,7 +274,7 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13.5px;
   padding: 6px 12px;
   border-radius: 8px;
 }
@@ -286,7 +286,7 @@
 .editBtnPrimary {
   border: none;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13.5px;
   padding: 6px 14px;
   border-radius: 8px;
   background: linear-gradient(135deg, #193070, #193070);
@@ -299,7 +299,7 @@
 }
 
 .msgTimeBot {
-  font-size: 11px;
+  font-size: 12px;
   margin: 0;
   opacity: 0.85;
   white-space: nowrap;
@@ -393,13 +393,13 @@
   padding: 11px 15px;
   border-radius: 13px;
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: 14.5px;
   text-align: left;
   transition: all 0.18s ease;
 }
 
 .suggestionIcon {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .typingDot {
@@ -414,7 +414,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -423,14 +423,14 @@
    Typography
    ===================== */
 .greeting {
-  font-size: 27px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.4px;
   margin-bottom: 8px;
 }
 
 .subtext {
-  font-size: 15px;
+  font-size: 16px;
   max-width: 420px;
   margin-bottom: 30px;
 }
@@ -474,7 +474,7 @@
      bo'lib qolardi, ya'ni ikki yonida 26px'dan behuda joy;
    - `.bubbleUser { max-width: 76% }` — tor ekranda qisqa savol ham
      ikki-uch qatorga bo'linib ketardi;
-   - `.greeting { font-size: 27px }` — telefonda uch qatorga tushardi.
+   - `.greeting { font-size: 28px }` — telefonda uch qatorga tushardi.
    ========================================================================= */
 
 /* Planshet / kichik noutbuk */

@@ -79,7 +79,7 @@
 
 .usernamePrefix {
   color: var(--adm-text-muted-2);
-  font-size: 15px;
+  font-size: 16px;
   flex: 0 0 auto;
 }
 
@@ -89,7 +89,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-strong);
   height: 100%;
 }
@@ -99,7 +99,7 @@
   padding: 9px 4px;
   border-radius: 9px;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   transition: all 0.15s ease;
 }
@@ -116,7 +116,7 @@
   cursor: pointer;
   background: linear-gradient(135deg, #4059BE, #193070);
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   box-shadow: 0 6px 18px rgba(25, 48, 112, 0.2);
   transition: all 0.2s ease;
@@ -148,7 +148,7 @@
   border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 0 13px;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-strong);
   outline: none;
   background: var(--adm-input-bg);
@@ -158,21 +158,21 @@
    Typography
    ===================== */
 .title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--adm-text-strong);
   white-space: nowrap;
 }
 
 .sub {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--adm-text-muted);
   margin-bottom: 22px;
 }
 
 .fieldLabel {
   display: block;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--adm-text-body);
   margin-bottom: 7px;
@@ -180,7 +180,7 @@
 
 .takenLabel {
   color: var(--adm-danger);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   flex: 0 0 auto;
 }

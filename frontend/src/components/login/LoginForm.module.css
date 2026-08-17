@@ -71,7 +71,7 @@
   border: 1px solid var(--tu-danger-border);
   color: var(--tu-danger);
   font-size: var(--tu-text-sm);
-  font-weight: 500;
+  font-weight: 550;
   animation: shake 0.4s ease both;
 }
 
@@ -309,7 +309,7 @@
   background: var(--tu-blue-900);
   color: #eaf1f6;
   font-size: var(--tu-text-xs);
-  font-weight: 500;
+  font-weight: 550;
   box-shadow: var(--tu-shadow-lg);
   animation: helpPop 0.18s ease both;
 }
@@ -471,11 +471,11 @@
 
   /* iOS Safari 16px dan KICHIK matnli maydonga fokus tushganda sahifani
      avtomatik ZUMLAB yuboradi — foydalanuvchi keyin qo'lda kichraytirishi
-     kerak bo'ladi. index.css dagi global `input { font-size: 16px }` bu
+     kerak bo'ladi. index.css dagi global `input { font-size: 17px }` bu
      yerda yetmaydi: CSS moduli `.input` ni maxsusroq (specificity) tanlaydi
      va uni bosib ketadi. Shuning uchun modul ichida qaytaramiz. */
   .input {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   /* Barmoq uchun balandroq nishonlar */

@@ -57,7 +57,7 @@
   border-radius: 9px;
   background: transparent;
   color: var(--adm-text-body-2);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
@@ -75,7 +75,7 @@
 }
 
 .okMsg {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--adm-text-strong);
   background: var(--adm-hover);
@@ -108,7 +108,7 @@
   border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 0 13px;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--adm-text-strong);
   outline: none;
   background: var(--adm-input-bg);
@@ -120,7 +120,7 @@
   border: 1.6px solid var(--adm-border-input);
   border-radius: 11px;
   padding: 11px 13px;
-  font-size: 14px;
+  font-size: 15px;
   font-family: inherit;
   color: var(--adm-text-strong);
   outline: none;
@@ -155,7 +155,7 @@
 }
 
 .progressLabel {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--adm-text-muted);
   text-align: right;
@@ -173,7 +173,7 @@
   cursor: pointer;
   background: linear-gradient(135deg, #4059BE, #193070);
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   box-shadow: 0 6px 18px rgba(25, 48, 112, 0.2);
   transition: all 0.2s ease;
@@ -199,7 +199,7 @@
 }
 
 .errMsg {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--adm-danger);
   background: var(--adm-danger-bg);
@@ -212,20 +212,20 @@
    Typography
    ===================== */
 .title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--adm-text-strong);
 }
 
 .sub {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--adm-text-muted);
   margin-bottom: 22px;
 }
 
 .fieldLabel {
   display: block;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--adm-text-body);
   margin-bottom: 7px;
