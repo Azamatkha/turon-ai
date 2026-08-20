@@ -16,7 +16,12 @@
 }
 
 /* Yumshoq yorug'lik dog'lari — gradientni "tirik" qiladi, tekis rang bo'lib
-   qolmaydi. Faqat bezak, shuning uchun bosishni to'sib qo'ymaydi. */
+   qolmaydi. Faqat bezak, shuning uchun bosishni to'sib qo'ymaydi.
+
+   UCHTA dog': yuqori chapda binafsha, pastki o'ngda ko'k, o'rtada esa juda
+   yengil oq "shu'la". O'rtadagisi ataylab qo'shildi — ikki dog' orasidagi
+   masofa uzun bo'lgani uchun panelning belbog'i o'lik zona bo'lib qolar va
+   gradient shu yerda tekis rangdek ko'rinardi. */
 .aside::before {
   content: "";
   position: absolute;
@@ -24,8 +29,9 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(130% 40% at 10% 0%, rgba(123, 77, 255, 0.09), transparent 70%),
-    radial-gradient(100% 34% at 100% 96%, rgba(90, 120, 224, 0.10), transparent 68%);
+    radial-gradient(130% 42% at 8% -4%, rgba(123, 77, 255, 0.14), transparent 72%),
+    radial-gradient(90% 26% at 50% 46%, rgba(255, 255, 255, 0.05), transparent 76%),
+    radial-gradient(110% 38% at 100% 100%, rgba(90, 120, 224, 0.16), transparent 70%);
 }
 
 /* Kontent yorug'lik dog'laridan yuqorida turishi kerak */

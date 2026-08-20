@@ -64,13 +64,21 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 // ga chiqardi — sidebar juda yorqin/rang-barang bo'lib, sahifaning tinch
 // foniga mos tushmadi.)
 //
+// GRADIENT UCH EMAS, TO'RT NUQTALI. Ilgari uchta to'xtash nuqtasi bor edi
+// (#193070 → #223780 → #2C2C6E) va oxirgi rang loyqa binafsha-kulrang edi:
+// ko'kdan unga o'tish keskin sezilib, panel pastki uchdan birida "kirlanib"
+// ko'rinardi. Endi o'tish to'rt pog'onada boradi — to'q navy, brend navy,
+// indigo, so'ng yengil binafsha-indigo — har qadam yaqin, shuning uchun
+// chegara ko'rinmaydi. Burchak ham 176° dan 165° ga o'zgardi: deyarli tik
+// gradient tekis rangdek ko'rinardi, endi yengil diagonal bor.
+//
 // MUHIM: bu funksiya CHAT va ADMIN sidebar'ining IKKALASIGA xizmat qiladi —
 // ikki panel bir xil ko'rinishi kerak, farq faqat ichidagi funksiyalarda.
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
     bg: isDark
-      ? `linear-gradient(176deg, #0B1130 0%, #101740 60%, #1A1E4B 100%)`
-      : `linear-gradient(176deg, ${NAVY} 0%, #223780 58%, #2C2C6E 100%)`,
+      ? `linear-gradient(165deg, #070B21 0%, #0D1235 36%, #131A45 68%, #1C1B4E 100%)`
+      : `linear-gradient(165deg, #101F52 0%, ${NAVY} 30%, #253180 66%, #32307C 100%)`,
     fg: "#F1F3FB",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.

@@ -386,6 +386,12 @@
   color: #DC2626;
 }
 
+/* NEGA font-weight SHU YERDA YOZILGAN: brauzerning o'z uslubida <button>
+   font-weight'i 400 (normal), va u BODY dan meros olmaydi. index.css da
+   tugmalar uchun faqat `font-family: inherit` bor, weight yo'q — shuning
+   uchun bu chiplar sahifaning qolgan matnidan (body = 600) sezilarli
+   ingichka chiqardi. Boshqa tugmalar (.newChatBtn = 600, .chatItem = 550)
+   o'z og'irligini yozgani uchun to'g'ri ko'rinardi, bular esa yozmagandi. */
 .suggestionChip {
   display: flex;
   align-items: center;
@@ -394,12 +400,21 @@
   border-radius: 13px;
   cursor: pointer;
   font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
   text-align: left;
   transition: all 0.18s ease;
 }
 
+/* Ikonkalar — shrift glifi (✦ ◷ ⊕ ⌂ ☎ ⇄), ya'ni Manrope'da yo'q va zaxira
+   shriftdan olinadi. Zaxira shriftda bu belgilarning faqat bitta (ingichka)
+   qalinligi bor, shuning uchun font-weight ularga TA'SIR QILMAYDI — matn
+   qalinlashsa ham ikonka ingichka qolaverardi. Ko'rinishini o'lcham va
+   to'liq shaffofmas rang ko'taradi. */
 .suggestionIcon {
-  font-size: 16px;
+  font-size: 17px;
+  line-height: 1;
+  opacity: 0.85;
 }
 
 .typingDot {
