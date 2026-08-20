@@ -1511,18 +1511,30 @@ class AnswerQuestionUseCase:
     # aniq yozilgan.
     #
     # Joriy hisob:
-    #   STRICT_RAG_SYSTEM  ~4 000 token   (prompts.py — o'lchash: len(s)/3.2)
+    #   STRICT_RAG_SYSTEM  ~5 000 token   (prompts.py — o'lchash: len(s)/3.2)
     #   MAX_CONTEXT_CHARS   1 250 token   (4000 belgi)
     #   MAX_CATALOG_CHARS     560 token   (1800 belgi)
     #   MAX_HISTORY_CHARS     375 token   (1200 belgi)
     #   MAX_TOKENS (javob)  1 536 token
     #   ────────────────────────────────
-    #   JAMI                ~7 720 token  -> 8192 dan ~470 token zaxira
+    #   JAMI                ~8 720 token  -> 8192 dan ~530 token OSHIB KETADI
     #
-    # DIQQAT: zaxira KAM. STRICT_RAG_SYSTEM ga yangi qoida qo'shsangiz yoki
-    # quyidagi cheklovlarni oshirsangiz, avval shu hisobni qayta chiqaring.
-    # Zaxira tugasa — config.ai.OLLAMA_NUM_CTX ni oshiring (12288), lekin
-    # bu Ollama serverida ko'proq RAM talab qiladi.
+    # DIQQAT — ZAXIRA QOLMADI, byudjet TO'LGAN. Bu hisob eng yomon holat
+    # (kontekst, katalog va tarix uch chegaraga ham to'la yetgan payt) uchun:
+    # o'shanda Ollama promptning BOSHINI kesadi va system prompt yo'qoladi.
+    # Amalda kontekst ko'pincha chegaradan kichik bo'ladi, shuning uchun har
+    # savolda emas, faqat "og'ir" savollarda yuz beradi — ya'ni xato beqaror
+    # ko'rinadi (goh ishlaydi, goh inglizcha/to'qima javob chiqadi).
+    #
+    # YECHIM (biri tanlanishi kerak):
+    #   1) config.ai.OLLAMA_NUM_CTX ni 12288 ga oshirish — Ollama serverida
+    #      ko'proq RAM talab qiladi, lekin kod o'zgarmaydi;
+    #   2) STRICT_RAG_SYSTEM ni qisqartirish (takrorlanuvchi qoidalarni
+    #      birlashtirish);
+    #   3) quyidagi CHARS chegaralarini pasaytirish — lekin bu javob
+    #      to'liqligini kamaytiradi.
+    # STRICT_RAG_SYSTEM ga yangi qoida qo'shishdan oldin shu hisobni qayta
+    # chiqaring.
     MAX_CONTEXT_CHARS = 4000
     MAX_CATALOG_CHARS = 1800
     MAX_HISTORY_CHARS = 1200
