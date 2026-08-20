@@ -1,4 +1,7 @@
-/* Bo'limlar bo'yicha foydalanish ulushini ko'rsatadigan progress-barlar kartasi */
+/* Bo'limlar bo'yicha foydalanish ulushi — halqa (donut) diagramma kartasi.
+   Ilgari progress-barlar edi: har bo'lim alohida chiziq bo'lgani uchun
+   "kim ko'proq" ni ko'rish oson, lekin "butunning qancha qismi" ko'rinmasdi
+   va bir xil ko'k rang barcha chiziqlarda takrorlanardi. */
 
 /* =====================
    Containers
@@ -11,30 +14,12 @@
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
 }
 
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 17px;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 7px;
-}
-
-.track {
-  height: 8px;
-  border-radius: 99px;
-  background: var(--adm-border-3);
-  overflow: hidden;
-}
-
-.fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+.empty {
+  padding: 26px 0;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
 }
 
 /* =====================
@@ -51,18 +36,6 @@
   font-size: 13.5px;
   color: var(--adm-text-muted);
   margin-bottom: 20px;
-}
-
-.deptName {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--adm-text-body);
-}
-
-.deptPct {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--adm-text-muted);
 }
 /* Blur ATAYLAB yoʼq: knowledge kartalari (namuna) blursiz — orqadagi
    rangli fon tiniq koʻrinadi va aynan shu "shisha" taʼmini beradi. Blur

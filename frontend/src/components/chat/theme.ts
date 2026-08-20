@@ -64,21 +64,29 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 // ga chiqardi — sidebar juda yorqin/rang-barang bo'lib, sahifaning tinch
 // foniga mos tushmadi.)
 //
-// GRADIENT UCH EMAS, TO'RT NUQTALI. Ilgari uchta to'xtash nuqtasi bor edi
+// GRADIENT UCH EMAS, BESH NUQTALI. Ilgari uchta to'xtash nuqtasi bor edi
 // (#193070 → #223780 → #2C2C6E) va oxirgi rang loyqa binafsha-kulrang edi:
 // ko'kdan unga o'tish keskin sezilib, panel pastki uchdan birida "kirlanib"
-// ko'rinardi. Endi o'tish to'rt pog'onada boradi — to'q navy, brend navy,
-// indigo, so'ng yengil binafsha-indigo — har qadam yaqin, shuning uchun
-// chegara ko'rinmaydi. Burchak ham 176° dan 165° ga o'zgardi: deyarli tik
-// gradient tekis rangdek ko'rinardi, endi yengil diagonal bor.
+// ko'rinardi, umumiy ko'rinishi esa tekis rangdan farq qilmasdi.
+//
+// Endi yo'l aniq: to'q navy -> brend navy -> indigo -> binafsha-indigo ->
+// binafsha. Pog'onalar ko'p bo'lgani uchun hech qayerda chegara ko'rinmaydi,
+// lekin yuqori va quyi uchning rangi sezilarli farq qiladi — gradient
+// "bor"ligi bilinadi. Burchak 176° dan 162° ga o'zgardi: deyarli tik gradient
+// tekis rangdek o'qilardi.
+//
+// CHEGARA: pastki uch baribir brend doirasida qoladi (#4A34A0 — binafsha
+// #7B4DFF ning to'qroq varianti). To'liq #7B4DFF gacha chiqarish sinab
+// ko'rilgan va rad etilgan: sidebar neonday yorqin bo'lib, sahifaning tinch
+// lavanda foniga mos tushmagan.
 //
 // MUHIM: bu funksiya CHAT va ADMIN sidebar'ining IKKALASIGA xizmat qiladi —
 // ikki panel bir xil ko'rinishi kerak, farq faqat ichidagi funksiyalarda.
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
     bg: isDark
-      ? `linear-gradient(165deg, #070B21 0%, #0D1235 36%, #131A45 68%, #1C1B4E 100%)`
-      : `linear-gradient(165deg, #101F52 0%, ${NAVY} 30%, #253180 66%, #32307C 100%)`,
+      ? `linear-gradient(162deg, #05081C 0%, #0C1338 30%, #141C55 58%, #1E1C6A 82%, #2A1E72 100%)`
+      : `linear-gradient(162deg, #0D1A4A 0%, ${NAVY} 26%, #27378F 52%, #3A3599 78%, #4A34A0 100%)`,
     fg: "#F1F3FB",
     // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.

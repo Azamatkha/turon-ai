@@ -1,0 +1,92 @@
+/* So'nggi faollik tarkibi — gorizontal to'plangan (stacked) ustun. */
+
+.card {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+  margin-bottom: 3px;
+}
+
+.sub {
+  font-size: 13.5px;
+  color: var(--adm-text-muted);
+  margin-bottom: 20px;
+}
+
+.empty {
+  padding: 26px 0;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+}
+
+/* Ustun. `gap: 2px` — segmentlar orasida karta foni rangida ingichka
+   tirqish qoldiradi; ikki yaqin rang yonma-yon tushganda chegara shu
+   tirqish tufayli yo'qolmaydi. */
+.track {
+  display: flex;
+  gap: 2px;
+  height: 22px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--chart-grid);
+}
+
+.seg {
+  height: 100%;
+  min-width: 0;
+  transition: width 0.85s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg {
+    transition: none;
+  }
+}
+
+/* =====================
+   Izoh (legend)
+   ===================== */
+.legend {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.legendName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-text-body);
+}
+
+.legendValue {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+}

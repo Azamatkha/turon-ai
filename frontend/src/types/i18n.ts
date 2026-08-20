@@ -211,8 +211,24 @@ export interface AdminStrings {
   noUsersFound: (q: string) => string;
   weeklyMessagesTitle: string;
   weeklyMessagesSub: string;
+  /** Haftalik grafikdagi o'rtacha chizig'ining yorlig'i */
+  weeklyAvg: string;
   deptUsageTitle: string;
   deptUsageSub: string;
+  /** Javob sifati (like/dislike) kartasi */
+  feedbackTitle: string;
+  feedbackSub: string;
+  feedbackLikes: string;
+  feedbackDislikes: string;
+  /** Halqa markazidagi yorliq — mamnunlik foizi */
+  feedbackSatisfaction: string;
+  /** So'nggi faollik tarkibi kartasi */
+  activityMixTitle: string;
+  activityMixSub: string;
+  /** Halqada ro'yxatga sig'magan bo'limlar uchun umumiy nom */
+  chartOther: string;
+  /** Grafik uchun ma'lumot bo'lmaganda */
+  chartNoData: string;
   recentActivityTitle: string;
   tableUser: string;
   tableDept: string;

@@ -1,5 +1,6 @@
 import { Ref, useEffect, useRef, useState } from "react";
-import { RiCopperCoinLine, RiMore2Fill } from "react-icons/ri";
+import { RiContactsBook2Line, RiCopperCoinLine, RiGlobalLine, RiHandCoinLine, RiMore2Fill } from "react-icons/ri";
+import { MdCurrencyExchange, MdOutlineCreditCard, MdOutlineLocationOn, MdOutlineSavings } from "react-icons/md";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import type { Msg, ThemeTokens } from "../../types/chat";
@@ -9,9 +10,28 @@ import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
 
-// Tartib locales'dagi `sugg` massivi bilan BIR XIL bo'lishi shart — ikonka
-// indeks bo'yicha olinadi. Yangi taklif qo'shilsa, bu yerga ham ikonka qo'shing.
-const suggIcons = ["✦", "✎", "◷", "⊕", "⌂", "☎", "⇄"];
+// Bo'sh holatdagi taklif chiplarining ikonkalari.
+//
+// TARTIB locales'dagi `sugg` massivi bilan BIR XIL bo'lishi shart — ikonka
+// indeks bo'yicha olinadi. Yangi taklif qo'shilsa, bu yerga ham ikonka
+// qo'shing (uchala tilda `sugg` bir xil tartibda).
+//
+// NEGA SHRIFT GLIFI EMAS: ilgari bu yerda "✦ ✎ ◷ ⊕ ⌂ ☎ ⇄" matn belgilari
+// turardi. Ular Manrope'da yo'q, shuning uchun brauzer zaxira shriftdan
+// olardi — u yerda esa bu belgilarning faqat bitta, juda ingichka qalinligi
+// bor va font-weight ularga ta'sir qilmasdi. Ustiga har OS'da boshqacha
+// ko'rinardi (Windows'da ☎ qora "emoji" bo'lib chiqardi). react-icons
+// komponentlari SVG — qalinligi bir xil, rangi currentColor, o'lchami CSS
+// bilan boshqariladi.
+const suggIcons = [
+  RiHandCoinLine,          // Kredit turlari
+  MdOutlineCreditCard,     // Bank kartalari
+  MdOutlineSavings,        // Omonatlar
+  RiGlobalLine,            // Xalqaro o'tkazmalar
+  MdOutlineLocationOn,     // Filiallar
+  RiContactsBook2Line,     // Xodimlar raqamlari
+  MdCurrencyExchange,      // Valyuta kursi (RatesModal bilan bir xil ikonka)
+];
 
 // ISO vaqtni "14:05" ko'rinishida ko'rsatadi
 function fmtTime(iso?: string): string {
@@ -125,20 +145,25 @@ export default function MessageArea({
           <div className={styles.greeting} style={{ color: tk.strong, whiteSpace: "pre-line" }}>{greeting}</div>
           <div className={styles.subtext} style={{ color: tk.muted }}>{sub}</div>
           <div className={styles.suggestions}>
-            {suggestions.map((label, idx) => (
-              <HButton
-                key={label}
-                onClick={() => onSuggestionClick(label)}
-                className={styles.suggestionChip}
-                baseStyle={{ border: "1px solid " + tk.cardBorder, color: tk.strong, boxShadow: tk.chipShadow }}
-                // Hover'da chegara BREND ko'kiga o'tadi (ilgari kulrang
-                // #CBD5E1 edi — shisha fonda qora ramkadek ko'rinardi)
-                hoverStyle={{ borderColor: isDark ? "rgba(90,120,224,.55)" : "rgba(64,89,190,.45)", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(25, 48, 112,.1)" }}
-              >
-                <span className={styles.suggestionIcon}>{suggIcons[idx]}</span>
-                {label}
-              </HButton>
-            ))}
+            {suggestions.map((label, idx) => {
+              // Taklif soni ikonka sonidan oshib ketsa ham chip chizilaveradi
+              // (ikonkasiz) — ro'yxat mos kelmagani uchun sahifa qulamasin.
+              const Icon = suggIcons[idx];
+              return (
+                <HButton
+                  key={label}
+                  onClick={() => onSuggestionClick(label)}
+                  className={styles.suggestionChip}
+                  baseStyle={{ border: "1px solid " + tk.cardBorder, color: tk.strong, boxShadow: tk.chipShadow }}
+                  // Hover'da chegara BREND ko'kiga o'tadi (ilgari kulrang
+                  // #CBD5E1 edi — shisha fonda qora ramkadek ko'rinardi)
+                  hoverStyle={{ borderColor: isDark ? "rgba(90,120,224,.55)" : "rgba(64,89,190,.45)", transform: "translateY(-2px)", boxShadow: isDark ? "0 6px 18px rgba(0,0,0,.3)" : "0 4px 14px rgba(25, 48, 112,.1)" }}
+                >
+                  {Icon && <Icon className={styles.suggestionIcon} aria-hidden />}
+                  {label}
+                </HButton>
+              );
+            })}
           </div>
         </div>
       )}

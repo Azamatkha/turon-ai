@@ -1,4 +1,5 @@
-/* Haftalik xabarlar hajmini ko'rsatadigan ustunli (bar) grafik */
+/* Haftalik xabarlar hajmi — ustunli (histogramma) grafik.
+   Shkala qismi: gorizontal to'r chiziqlari + o'rtacha chizig'i. */
 
 /* =====================
    Containers
@@ -20,41 +21,124 @@
 
 .totalRow {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
 }
 
+/* O'rtacha qiymat — jami sonning yonida, undan ancha xira: u ikkilamchi
+   ko'rsatkich, kartaning bosh soni emas. Uzuq chiziq bilan bir xil ma'noni
+   tashiydi (--chart-ref), shuning uchun ikkalasi bir-birini tushuntiradi. */
+.avgValue {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chizma maydoni. To'r, o'rtacha chizig'i va ustunlar SHU qutida ustma-ust
+   turadi — uchalasi ham bir xil balandlikni o'lchov qilib oladi, shuning
+   uchun 40% balandlikdagi ustun 40% dagi to'r chizig'iga aniq to'g'ri
+   keladi. */
+.plot {
+  position: relative;
+  height: 190px;
+  margin-top: 26px;
+  /* O'ngdagi joy — shkala raqamlari uchun (ular ustun ustiga tushmasin) */
+  padding-right: 46px;
+}
+
+/* =====================
+   Shkala
+   ===================== */
+.grid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gridLine {
+  position: relative;
+  height: 1px;
+  background: var(--chart-grid);
+}
+
+.gridLabel {
+  position: absolute;
+  right: -46px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* O'rtacha chizig'i — uzuq chiziq. To'r chiziqlaridan ATAYLAB farq qiladi:
+   to'r shunchaki o'lchov, bu esa MA'LUMOT. */
+.avgLine {
+  position: absolute;
+  left: 0;
+  right: 46px;
+  height: 0;
+  border-top: 2px dashed var(--chart-ref);
+  pointer-events: none;
+}
+
+/* =====================
+   Ustunlar
+   ===================== */
 .bars {
+  position: absolute;
+  inset: 0 46px 0 0;
   display: flex;
   align-items: flex-end;
   gap: 14px;
-  height: 180px;
-  padding-top: 22px;
 }
 
 .barCol {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 9px;
+  align-items: flex-end;
+  justify-content: center;
   height: 100%;
-  justify-content: flex-end;
 }
 
 .bar {
   width: 100%;
   max-width: 34px;
-  border-radius: 7px 7px 3px 3px;
+  /* Yuqori uchi yumaloq, pastki uchi tekis — ustun asos chizig'iga
+     "yopishib" tursin, havoda osilib qolmasin. */
+  border-radius: 6px 6px 2px 2px;
   transition: height 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
 }
 
 .barNormal {
   background: linear-gradient(180deg, #8195E6, #4059BE);
 }
 
+/* Haftaning eng baland kuni — to'qroq. Bu rang TOIFA emas, ta'kid:
+   shuning uchun --chart-* toifa ranglaridan olinmagan. */
 .barHighlight {
   background: linear-gradient(180deg, #4059BE, #193070);
+}
+
+.dayRow {
+  display: flex;
+  gap: 14px;
+  margin-top: 9px;
+  padding-right: 46px;
 }
 
 /* =====================
@@ -79,13 +163,9 @@
   letter-spacing: -0.5px;
 }
 
-.totalTrend {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--adm-success);
-}
-
 .dayLabel {
+  flex: 1;
+  text-align: center;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--adm-text-muted-2);

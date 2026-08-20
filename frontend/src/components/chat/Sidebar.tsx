@@ -159,7 +159,11 @@ export default function Sidebar({
           <div className={styles.panelHead} style={{ borderBottom: "1px solid " + side.border }}>
             <div className={styles.panelHeadBrand}>
               <div className={styles.logoIcon} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 10, color: PRIMARY, background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}><Logo size={24} /></div>
-              <div className={styles.brandText} style={{ color: side.fg }}>
+              {/* Bu yerda inline `color` YO'Q: yozuv gradient bilan bo'yaladi
+                  (Sidebar.module.css -> .brandText), buning uchun matn rangi
+                  transparent bo'lishi shart. Inline color qo'yilsa u
+                  kuchliroq bo'lib gradientni bosib qo'yadi. */}
+              <div className={styles.brandText}>
                 Turon<span className={styles.brandTextAi}> AI</span>
               </div>
             </div>

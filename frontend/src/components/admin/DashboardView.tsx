@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import StatCard, { StatDef } from "./StatCard";
 import WeeklyChart from "./WeeklyChart";
 import DepartmentBreakdown from "./DepartmentBreakdown";
+import FeedbackDonut from "./FeedbackDonut";
+import ActivityMix, { type MixSegment } from "./ActivityMix";
 import RecentActivity from "./RecentActivity";
 import { getStats, type DashboardStats } from "../../services/adminService";
 import type { AdminStrings } from "../../types/i18n";
@@ -17,9 +19,6 @@ function relTime(iso: string, admin: AdminStrings): string {
   if (h < 24) return admin.timeHourAgo(h);
   return admin.timeDayAgo(Math.round(h / 24));
 }
-
-// Bo'limlar progress-bar ranglari (aylanib ishlatiladi)
-const DEPT_COLORS = ["#4059BE", "#4059BE", "#4059BE", "#8195E6", "#9bc1d9", "#8195E6"];
 
 const usersIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
 const chatIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" /></svg>;
@@ -67,14 +66,34 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
     { icon: dislikeIcon, value: stats ? fmt(stats.total_dislikes) : "—", label: admin.statDislikes, trend: "", tint: "var(--adm-danger)", tintBg: "var(--adm-danger-bg)" },
   ];
 
-  const deptDefs = (stats?.departments ?? []).map((d, i) => ({
+  // Ranglar bu yerda BERILMAYDI — DepartmentBreakdown ularni o'zi
+  // tekshiruvdan o'tgan `--chart-*` to'plamidan taqsimlaydi va ortiqchasini
+  // "Boshqalar" ga yig'adi.
+  const deptDefs = (stats?.departments ?? []).map((d) => ({
     name: d.name,
+    count: d.count,
     pct: d.pct,
-    c: DEPT_COLORS[i % DEPT_COLORS.length],
   }));
 
   const barData = (stats?.weekly ?? []).map((w) => ({ day: w.label, value: w.count }));
   const barMax = Math.max(1, ...barData.map((b) => b.value));
+
+  // So'nggi faollik ro'yxatini amal turlari bo'yicha sanaymiz — to'plangan
+  // ustun uchun. Ro'yxat backenddan qancha kelsa, tarkib ham shuncha
+  // hodisani yoritadi (butun tarixni emas).
+  const mixCounts = (stats?.recent_activity ?? []).reduce<Record<string, number>>((acc, a) => {
+    acc[a.action] = (acc[a.action] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  // Tartib QAT'IY: amal turlari doim shu ketma-ketlikda chiziladi, shunda
+  // ma'lumot yangilanganda segmentlar joyini almashtirib "sakramaydi".
+  const MIX_ORDER = ["login", "message", "session", "logout"] as const;
+  const mixSegments: MixSegment[] = MIX_ORDER.map((key) => ({
+    label: ACTIVITY[key]?.text ?? key,
+    value: mixCounts[key] ?? 0,
+    color: ACTIVITY[key]?.c ?? "var(--chart-rest)",
+  }));
 
   const activity = (stats?.recent_activity ?? []).map((a) => {
     const info = ACTIVITY[a.action] ?? {
@@ -94,6 +113,19 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
       <div className={styles.chartRow}>
         <WeeklyChart data={barData} max={barMax} mounted={mounted} t={admin} />
         <DepartmentBreakdown departments={deptDefs} mounted={mounted} t={admin} />
+      </div>
+
+      {/* Ikkinchi qator — teng ikki ustun. Yuqoridagi qator "1.65fr 1fr"
+          bo'lgani uchun bu yerda ham shunday qilish mumkin edi, lekin ikkala
+          karta ham ixcham: mamnunlik halqasi va bitta gorizontal ustun. */}
+      <div className={styles.chartRow2}>
+        <FeedbackDonut
+          likes={stats?.total_likes ?? 0}
+          dislikes={stats?.total_dislikes ?? 0}
+          mounted={mounted}
+          t={admin}
+        />
+        <ActivityMix segments={mixSegments} mounted={mounted} t={admin} />
       </div>
 
       {activity.length > 0 && <RecentActivity items={activity} t={admin} />}

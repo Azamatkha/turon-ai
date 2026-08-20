@@ -251,6 +251,38 @@ body,
   --adm-search-bg: var(--tu-gray-100);
   --adm-search-border: rgba(25, 48, 112, 0.16);
   --adm-search-ph: var(--tu-text-faint);
+
+  /* ==========================================================================
+     DIAGRAMMA RANGLARI (--chart-*)
+     --------------------------------------------------------------------------
+     Bular BREND SHKALASIDAN OLINMAGAN va bu ataylab. Brend ko'k oilasi
+     (blue-300..900) bir xil rangning pog'onalari — pirog diagrammasida
+     yonma-yon turgan ikki bo'lakni ajratib bo'lmaydi, rangni ko'rmaydigan
+     foydalanuvchi uchun esa umuman bir xil kulrangga aylanadi.
+     Shuning uchun bu yerda OLTI XIL TUS bor: ko'k, to'q sariq, feruza,
+     binafsha, pushti, zaytun.
+
+     RANGLAR TEKSHIRUVDAN O'TGAN, taxminan tanlanmagan. Har ikki to'plam
+     quyidagi beshta shart bo'yicha o'lchandi va hammasi PASS:
+       * yorqinlik oralig'i (fonga nisbatan)   * xroma (kulrangga aylanmasin)
+       * ranggi ko'rlikda ajralish (deutan/protan/tritan)
+       * oddiy ko'rishda ajralish             * fon bilan kontrast >= 3:1
+     TARTIB O'ZGARTIRILMASIN: qo'shni juftliklar shu tartibda tekshirilgan.
+     Yangi rang qo'shish yoki almashtirishdan oldin tekshiruvni qayta
+     o'tkazing, aks holda ajralish shartlari buziladi. */
+  --chart-1: #2E4CA6;
+  --chart-2: #C2721C;
+  --chart-3: #0E9B8B;
+  --chart-4: #6D3BD1;
+  --chart-5: #E5679E;
+  --chart-6: #6F7A0F;
+  /* Ro'yxatga sig'magan qolgan bo'limlar ("Boshqalar") — ataylab kulrang:
+     u alohida toifa emas, "qolgani" degani. Yangi TUS o'ylab topilmaydi. */
+  --chart-rest: #8F99BB;
+  /* Grafik ichidagi to'r chiziqlari va o'rtacha chizig'i — matndan ancha
+     xira: ular ma'lumot emas, o'lchov yordamchisi. */
+  --chart-grid: rgba(25, 48, 112, 0.10);
+  --chart-ref: rgba(25, 48, 112, 0.38);
 }
 
 /* ============================================================================
@@ -343,6 +375,22 @@ html.dark {
   --adm-search-bg: #101636;
   --adm-search-border: rgba(90, 120, 224, 0.32);
   --adm-search-ph: var(--tu-gray-400);
+
+  /* Diagramma ranglari — dark uchun ALOHIDA tanlangan, light qiymatlarning
+     avtomatik yoritilgani EMAS. Sabab: to'q fonda light ranglar kontrastdan
+     yiqiladi, shunchaki yoritilganda esa yorqinlik oralig'idan chiqib ketadi.
+     Bu olti rang ham yuqoridagi beshta shart bo'yicha dark fonda qayta
+     o'lchandi va hammasi PASS. Tartib light bilan bir xil — bir bo'lim
+     mavzu almashganda rangini o'zgartirmaydi. */
+  --chart-1: #6F8AE0;
+  --chart-2: #C8792F;
+  --chart-3: #1E9E8D;
+  --chart-4: #9376E8;
+  --chart-5: #D6699B;
+  --chart-6: #8A9620;
+  --chart-rest: #6E79A6;
+  --chart-grid: rgba(154, 172, 236, 0.14);
+  --chart-ref: rgba(154, 172, 236, 0.42);
 }
 
 /* ============================================================================

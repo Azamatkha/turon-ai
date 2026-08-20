@@ -19,6 +19,14 @@
   gap: 16px;
 }
 
+/* Ikkinchi grafik qatori — teng ikki ustun (mamnunlik halqasi + faollik
+   tarkibi). Ikkalasi ham ixcham, shuning uchun 1.65fr nisbati kerak emas. */
+.chartRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 /* =====================
    Animations
    ===================== */
@@ -50,7 +58,8 @@
    ~200px gacha siqib, ustun yorliqlari bir-biriga yopishib ketardi.
    ========================================================================= */
 @media (max-width: 900px) {
-  .chartRow {
+  .chartRow,
+  .chartRow2 {
     /* Grafik va yon panel ustma-ust — har biriga to'liq kenglik */
     grid-template-columns: 1fr;
   }
@@ -68,7 +77,8 @@
     gap: var(--tu-space-3);
   }
 
-  .chartRow {
+  .chartRow,
+  .chartRow2 {
     gap: var(--tu-space-3);
   }
 }

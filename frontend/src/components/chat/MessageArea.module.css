@@ -406,15 +406,15 @@
   transition: all 0.18s ease;
 }
 
-/* Ikonkalar — shrift glifi (✦ ◷ ⊕ ⌂ ☎ ⇄), ya'ni Manrope'da yo'q va zaxira
-   shriftdan olinadi. Zaxira shriftda bu belgilarning faqat bitta (ingichka)
-   qalinligi bor, shuning uchun font-weight ularga TA'SIR QILMAYDI — matn
-   qalinlashsa ham ikonka ingichka qolaverardi. Ko'rinishini o'lcham va
-   to'liq shaffofmas rang ko'taradi. */
+/* Ikonkalar — react-icons SVG komponentlari (MessageArea.tsx → suggIcons).
+   react-icons o'lchamni `1em` deb oladi, ya'ni o'lchov shu font-size bilan
+   boshqariladi. Rangi currentColor — chipning matn rangiga ergashadi, alohida
+   rang berilmaydi. `opacity` matndan bir oz pastroq: ikonka yordamchi belgi,
+   sarlavha emas. */
 .suggestionIcon {
-  font-size: 17px;
-  line-height: 1;
-  opacity: 0.85;
+  font-size: 18px;
+  flex: 0 0 auto;
+  opacity: 0.8;
 }
 
 .typingDot {

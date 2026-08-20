@@ -221,17 +221,47 @@
 /* =====================
    Typography
    ===================== */
+/* "Turon AI" — chat sidebar'idagi bilan BIR XIL jonli gradient yozuv.
+   Batafsil izoh: `chat/Sidebar.module.css` -> `.brandText`. Ikki panel bir xil
+   ko'rinishi kerak bo'lgani uchun qoida shu yerda takrorlanadi (CSS modul —
+   klasslar fayllar orasida bo'linmaydi). */
 .brandName {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  line-height: 1.1;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
   white-space: nowrap;
+  background-image: linear-gradient(100deg,
+      #FFFFFF 0%,
+      #CBD8FF 18%,
+      #9DB6FF 34%,
+      #C9ACFF 50%,
+      #FFFFFF 68%,
+      #CBD8FF 86%,
+      #FFFFFF 100%);
+  background-size: 260% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brandSheen 8s linear infinite;
 }
 
 .brandNameAi {
-  font-weight: 500;
-  opacity: 0.7;
+  font-weight: 600;
+  opacity: 0.78;
+}
+
+@keyframes brandSheen {
+  to {
+    background-position: 260% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brandName {
+    animation: none;
+  }
 }
 
 .panelLabel {
