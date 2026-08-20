@@ -1511,30 +1511,26 @@ class AnswerQuestionUseCase:
     # aniq yozilgan.
     #
     # Joriy hisob:
-    #   STRICT_RAG_SYSTEM  ~5 000 token   (prompts.py — o'lchash: len(s)/3.2)
+    #   STRICT_RAG_SYSTEM  ~3 725 token   (prompts.py — o'lchash: len(s)/3.2)
     #   MAX_CONTEXT_CHARS   1 250 token   (4000 belgi)
     #   MAX_CATALOG_CHARS     560 token   (1800 belgi)
     #   MAX_HISTORY_CHARS     375 token   (1200 belgi)
     #   MAX_TOKENS (javob)  1 536 token
     #   ────────────────────────────────
-    #   JAMI                ~8 720 token  -> 8192 dan ~530 token OSHIB KETADI
+    #   JAMI                ~7 450 token  -> 8192 dan ~740 token zaxira
     #
-    # DIQQAT — ZAXIRA QOLMADI, byudjet TO'LGAN. Bu hisob eng yomon holat
-    # (kontekst, katalog va tarix uch chegaraga ham to'la yetgan payt) uchun:
-    # o'shanda Ollama promptning BOSHINI kesadi va system prompt yo'qoladi.
-    # Amalda kontekst ko'pincha chegaradan kichik bo'ladi, shuning uchun har
-    # savolda emas, faqat "og'ir" savollarda yuz beradi — ya'ni xato beqaror
-    # ko'rinadi (goh ishlaydi, goh inglizcha/to'qima javob chiqadi).
+    # TARIX: prompt bir vaqtlar 5 000 tokengacha o'sib, byudjet eng yomon
+    # holatda (kontekst, katalog va tarix uchalasi ham chegarasiga to'lgan
+    # payt) 8192 dan oshib ketgan edi. O'shanda Ollama promptning BOSHINI —
+    # ya'ni system promptni — jimgina kesib tashlaydi va model barcha
+    # qoidalarni "unutadi". Xato har savolda emas, faqat "og'ir" savolda yuz
+    # bergani uchun beqaror ko'rinardi. Prompt 3-bosqichli tuzilishga
+    # keltirilib qisqartirildi, zaxira tiklandi.
     #
-    # YECHIM (biri tanlanishi kerak):
-    #   1) config.ai.OLLAMA_NUM_CTX ni 12288 ga oshirish — Ollama serverida
-    #      ko'proq RAM talab qiladi, lekin kod o'zgarmaydi;
-    #   2) STRICT_RAG_SYSTEM ni qisqartirish (takrorlanuvchi qoidalarni
-    #      birlashtirish);
-    #   3) quyidagi CHARS chegaralarini pasaytirish — lekin bu javob
-    #      to'liqligini kamaytiradi.
-    # STRICT_RAG_SYSTEM ga yangi qoida qo'shishdan oldin shu hisobni qayta
-    # chiqaring.
+    # DIQQAT: STRICT_RAG_SYSTEM ga yangi qoida qo'shishdan yoki quyidagi
+    # CHARS chegaralarini oshirishdan OLDIN shu hisobni qayta chiqaring.
+    # Zaxira tugasa — config.ai.OLLAMA_NUM_CTX ni oshiring (12288), lekin
+    # bu Ollama serverida ko'proq RAM talab qiladi.
     MAX_CONTEXT_CHARS = 4000
     MAX_CATALOG_CHARS = 1800
     MAX_HISTORY_CHARS = 1200
