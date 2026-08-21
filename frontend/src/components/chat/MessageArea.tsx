@@ -17,7 +17,7 @@ import styles from "./MessageArea.module.css";
 // qo'shing (uchala tilda `sugg` bir xil tartibda).
 //
 // NEGA SHRIFT GLIFI EMAS: ilgari bu yerda "✦ ✎ ◷ ⊕ ⌂ ☎ ⇄" matn belgilari
-// turardi. Ular Manrope'da yo'q, shuning uchun brauzer zaxira shriftdan
+// turardi. Ular interfeys shriftida yo'q, shuning uchun brauzer zaxiradan
 // olardi — u yerda esa bu belgilarning faqat bitta, juda ingichka qalinligi
 // bor va font-weight ularga ta'sir qilmasdi. Ustiga har OS'da boshqacha
 // ko'rinardi (Windows'da ☎ qora "emoji" bo'lib chiqardi). react-icons

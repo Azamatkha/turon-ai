@@ -1,7 +1,8 @@
 /* ============================================================================
    TURON AI — DIZAYN TIZIMI (design system)
    ----------------------------------------------------------------------------
-   SHRIFT: Manrope — zamonaviy, geometrik-gumanistik, yumaloq va ixcham.
+   SHRIFT: Onest — zamonaviy geometrik-gumanistik interfeys shrifti, harflari
+   xarakterli (Manrope'dan farqli o'laroq tizim shriftiga o'xshab ketmaydi).
    Kirill alifbosini TO'LIQ qo'llab-quvvatlaydi (uz_cyrl va rus tili uchun shart)
    va lotin diakritikasi ham to'liq (o', g', ʻ).
 
@@ -138,20 +139,33 @@ body,
   --tu-text-faint: var(--tu-gray-400);     /* placeholder, disclaimer */
 
   /* --- Tipografika shkalasi ------------------------------------------- */
-  /* Manrope — `@fontsource-variable/manrope` orqali LOKAL yuklanadi
-     (main.tsx), Google Fonts'dan emas: bank proksisi fonts.googleapis.com ni
-     bloklaydi. Kirill subseti paket ichida keladi (uz_cyrl va rus tili).
+  /* Onest — `@fontsource-variable/onest` orqali LOKAL yuklanadi (main.tsx),
+     Google Fonts'dan emas: bank proksisi fonts.googleapis.com ni bloklaydi.
+     Kirill subseti paket ichida keladi (uz_cyrl va rus tili uchun shart).
+
+     NEGA MANROPE EMAS: Manrope juda betaraf chiqib, Windows'ning o'z
+     interfeys shrifti (Segoe UI / Calibri) dan deyarli farq qilmasdi — brend
+     hissi yo'qolardi. Onest harflari xarakterliroq va kirill uchun maxsus
+     chizilgan.
+
+     NOMI AYNAN 'Onest Variable' BO'LISHI SHART — @fontsource-variable
+     paketlari @font-face'ni shu nom bilan ro'yxatdan o'tkazadi. Oddiy
+     'Onest' deb yozilsa brauzer hech narsa topolmay fallback'ka tushadi.
+
      Fallback zanjiri: system-ui (har OS'ning o'z interfeys shrifti) ->
      -apple-system (macOS/iOS) -> Segoe UI (Windows). Shrift yuklanmasa ham
      interfeys buzilmaydi, faqat ko'rinishi biroz o'zgaradi. */
-  --tu-font: 'Manrope Variable', 'Manrope', system-ui, -apple-system,
+  --tu-font: 'Onest Variable', system-ui, -apple-system,
     'Segoe UI Variable Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --tu-font-mono: 'Cascadia Mono', 'Consolas', 'SF Mono', ui-monospace, monospace;
 
   /* Shkala Inter davridagidan +1px. Sabab: Manrope'ning x-balandligi
-     (kichik harflar bo'yi) Inter'nikidan pastroq — AYNAN bir xil `px` da
-     harflar ko'zga kichikroq ko'rinadi. O'lchamni oshirmasdan shrift
-     almashtirilsa, butun interfeys "ingichkalashib, kichrayib" qoladi. */
+     (kichik harflar bo'yi) Inter'nikidan pastroq edi — AYNAN bir xil `px` da
+     harflar ko'zga kichikroq ko'rinardi.
+     Onest'ning x-balandligi Manrope'nikidan bir oz KATTA, ya'ni matn shu
+     o'lchamlarda sal yirikroq ko'rinadi. Agar interfeys "shishgan" tuyulsa —
+     birinchi navbatda shu yerdagi qiymatlarni 1px pasaytiring, komponentlarga
+     tegmang. */
   --tu-text-xs: 0.8125rem;   /* 13px — yorliq, meta */
   --tu-text-sm: 0.875rem;    /* 14px — ikkilamchi */
   --tu-text-base: 0.9375rem; /* 15px — interfeys standarti */
@@ -160,8 +174,8 @@ body,
   --tu-text-xl: 1.4375rem;   /* 23px — sahifa sarlavhasi */
   --tu-text-2xl: 1.8125rem;  /* 29px — salomlashuv */
 
-  /* Manrope harflari Inter'nikidan yumaloqroq va kengroq — qatorlar orasi
-     ham shunga yarasha ochilishi kerak, aks holda matn "yopishib" ko'rinadi. */
+  /* Harflar yumaloq va kengroq (Onest ham, Manrope ham) — qatorlar orasi
+     shunga yarasha ochiq bo'lishi kerak, aks holda matn "yopishib" ko'rinadi. */
   --tu-leading-tight: 1.3;
   --tu-leading-normal: 1.55;
   --tu-leading-relaxed: 1.72;  /* uzun o'zbekcha matn uchun */
@@ -432,29 +446,31 @@ select {
   }
 }
 
-/* Tipografika qalinliklari (Manrope uchun).
-   Manrope'ning tayanch shtrixi Inter'nikidan INGICHKAROQ — bir xil 500 da
-   matn xiraroq va "ingliz kitobi" kabi yengil ko'rinadi. Interfeys matni
-   uchun 600 kerak: harflar aniq, lekin qora yamoq hosil qilmaydi.
+/* Tipografika qalinliklari (Onest uchun).
+   Manrope davrida bu yerda 600 turardi: uning tayanch shtrixi ingichka bo'lib,
+   500 da matn xira ko'rinardi. Onest'ning shtrixi to'qroq — o'sha 600 endi
+   butun interfeysni "qalin" qilib yuboradi, shuning uchun 500.
    Komponentlarning O'Z font-weight'i bo'lsa, u kuchliroq — bu faqat asos. */
 body {
-  font-weight: 600;
+  font-weight: 500;
 }
 
-/* Manrope allaqachon ixcham tracking bilan chizilgan — sarlavhalarni yana
-   siqish (ilgari -0.015em) harflarni bir-biriga yopishtirib yuborardi.
-   Katta o'lchamda juda oz siqish yetarli. */
+/* Onest ham ixcham tracking bilan chizilgan — sarlavhalarni yana siqish
+   (ilgari -0.015em) harflarni bir-biriga yopishtirib yuborardi. Katta
+   o'lchamda juda oz siqish yetarli.
+   Qalinlik 800 dan 700 ga tushdi: Onest'ning 800 i Manrope'nikidan qora,
+   sarlavhalar matndan haddan tashqari ajralib turardi. */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.005em;
 }
 
-/* Mayda interfeys matni (12-14px) — Manrope bu o'lchamda biroz siqilib
+/* Mayda interfeys matni (12-14px) — bu o'lchamda harflar biroz siqilib
    ko'rinadi, ozgina ochiq tracking o'qishni sezilarli yaxshilaydi. */
 label,
 small,

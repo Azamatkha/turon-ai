@@ -298,10 +298,21 @@ export default function CosmicSingularity({
       }
     };
 
-    // Logotip yig'ilganda zarrachalar BITTA to'q rangda va to'liq
-    // shaffofmas chiziladi — rang-barang yarim shaffof nuqtalardan shakl
-    // xira ko'rinardi.
-    const formColor = isDark ? "#C6D0F6" : "#193070";
+    // Logotip yig'ilganda zarrachalar BITTA rangda chiziladi — rang-barang
+    // yarim shaffof nuqtalardan shakl xira ko'rinardi.
+    //
+    // RANG YENGIL, TO'Q EMAS. Ilgari yorug' mavzuda `#193070` (to'q navy),
+    // ya'ni sahifa MATNI bilan bir xil to'qlikda edi. Canvas matn ostidagi
+    // fon qatlami bo'lgani uchun shakl matnni "o'chirmaydi", lekin uning
+    // ortida to'q-ko'k zich nuqtalar to'plami paydo bo'lib, kontrast yo'qolar
+    // va yozuv o'qib bo'lmas holga kelardi — kursorni matn ustida bir
+    // sekund ushlab tursangiz kifoya edi.
+    //
+    // Endi rang matndan ANCHA yengil va yarim shaffof: logotip shakli
+    // ko'rinadi, lekin ustidagi yozuv o'qilaveradi.
+    const formColor = isDark
+      ? withAlpha("#C6D0F6", 0.55)
+      : withAlpha("#7C90E4", 0.5);
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
