@@ -537,6 +537,28 @@ def _prefix_match(a: str, b: str) -> bool:
     return n >= max(4, round(0.6 * min(len(a), len(b))))
 
 
+# Ro'yxatdan tanlash javobi QISQA bo'ladi: "3", "Uzcard", "Visa Gold",
+# "Sirdaryo bank xizmatlari markazi". Undan uzun jumla — bu tanlov emas,
+# savol. Umumiy so'zlar (_LIST_MATCH_STOPWORDS) olib tashlangandan keyingi
+# so'zlar soni shundan oshsa, tanlov deb hisoblamaymiz.
+_MAX_CHOICE_WORDS = 5
+
+# Foydalanuvchi bizni TUZATAYOTGAN bo'lsa — bu ham tanlov emas. Aynan shu
+# yerda og'ir xato bo'lgan: "Uzcard tizimi haqida so'rayapman, Uzcard kartasi
+# haqida so'ramadim" degan tuzatish "Uzcard" bandini tanlash deb qabul
+# qilinib, router UMUMAN chaqirilmasdi va foydalanuvchi aynan o'zi rad etgan
+# javobni QAYTA olardi.
+_CORRECTION_MARKERS = (
+    "soramadim", "demadim", "aytmadim", "tushunmading", "tushunmadingiz",
+    " emas", "boshqa narsa",
+)
+
+# Ro'yxat tanlovi ro'yxat berilgandan keyin DARROV keladi. Butun tarixni
+# oxirigacha titish xato: suhbat boshidagi eski ro'yxat bilan hozirgi savol
+# tasodifan mos kelib qolardi.
+_LIST_LOOKBACK_TURNS = 3
+
+
 def _resolve_list_choice(
     question: str, history: list[ChatTurn] | None
 ) -> str | None:
@@ -572,10 +594,22 @@ def _resolve_list_choice(
     )
     if want_num is None and not q_words:
         return None
+    if want_num is None:
+        # Nom bilan tanlash — faqat QISQA va tuzatish bo'lmagan xabarda.
+        # Raqam bilan tanlashga ("3") bu shartlar kerak emas: u aniq tanlov.
+        if len(q_words) > _MAX_CHOICE_WORDS:
+            return None
+        flat = re.sub(r"['ʻʼ`’]", "", to_latin(question).lower())
+        if any(m in flat for m in _CORRECTION_MARKERS):
+            return None
 
+    seen_assistant = 0
     for turn in reversed(history):
         if turn.role != "assistant":
             continue
+        seen_assistant += 1
+        if seen_assistant > _LIST_LOOKBACK_TURNS:
+            break
         items = _LIST_ITEM_RE.findall(turn.content)
         if len(items) < 4:
             continue  # tanlov ro'yxati emas (masalan javobdagi qadamlar)
@@ -1569,69 +1603,76 @@ class AnswerQuestionUseCase:
 
     # Bitta mahsulotning bir necha bo'lagi bo'ladi (masalan omonatning aniq
     # shartlari alohida qisqa bo'lakda) — hammasi tushishi uchun yetarlicha keng.
-    TOP_K = 8
+    # 8 -> 10: chegara kontekst byudjeti edi, u num_ctx=16384 bilan ikki
+    # baravar bo'shadi. Ortiqcha bo'laklar baribir MAX_CONTEXT_CHARS da
+    # kesiladi, ya'ni bu "topilsa tushsin" zaxirasi.
+    TOP_K = 10
     TEMPERATURE = 0.2
-    # Javob yozish vaqti taxminan token soniga proporsional — sekin hardware'da
-    # cheklovni pasaytirsak eng yomon holatdagi kutish qisqaradi. Javoblar odatda
-    # 500 tokendan qisqa, shuning uchun 1024 yetarli.
-    # 1536 token ~ 5000 belgi o'zbekcha matn — eng batafsil mahsulot javobi ham
-    # bemalol sig'adi (odatdagi javob 500 tokendan qisqa). Bu limit num_ctx
-    # ichidan JOY BAND QILADI: 2048 bo'lganda prompt bilan birga 8192 chegarasiga
-    # tegib qolar edi va javob o'rtasidan uzilardi.
-    MAX_TOKENS = 1536
+    # 2048 token ~ 6500 belgi o'zbekcha matn. Bu limit num_ctx ichidan JOY
+    # BAND QILADI — 8192 oynada 1536 dan oshirib bo'lmasdi, 16384 da esa
+    # bemalol. Odatdagi javob 500 tokendan qisqa; limit faqat eng batafsil
+    # mahsulot javobi o'rtasidan uzilmasligi uchun kerak.
+    MAX_TOKENS = 2048
     # Xodimlar ro'yxati uchun alohida, kattaroq limit: katta bo'limda 30+ xodim
     # bo'ladi va 2048 token yetmay, javob o'rtasida kesilib qolardi.
     EMPLOYEE_MAX_TOKENS = 6000
-    # Umumiy (soha) savoli — javob 2-5 gap. Kichik limit ATAYIN: model uzoq
-    # "ma'ruza" yozib ketmasin va sekin serverda tez javob bersin.
+    # Umumiy (soha) savoli — javob 2-5 gap. Kichik limit ATAYIN: joy
+    # yetishmagani uchun emas, javob qisqa bo'lishi KERAK bo'lgani uchun —
+    # model uzoq "ma'ruza" yozib ketmasin.
     CONCEPT_MAX_TOKENS = 500
-    HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
+    # Promptga qo'shiladigan oxirgi xabarlar soni. 6 -> 8: chegara byudjet
+    # edi, u 16384 oyna bilan bo'shadi. Mavzu bir necha almashuv oldin
+    # aytilgan bo'lishi mumkin ("kompaniya" -> Visa) — kengroq oyna
+    # olmoshlarni to'g'ri yechishga bevosita yordam beradi.
+    HISTORY_LIMIT = 8
     # --- Prompt byudjeti (belgilarda) ---------------------------------- #
-    # num_ctx = 8192 token. O'zbek lotinida ~3.2 belgi = 1 token.
+    # num_ctx = 16384 token (config.ai.OLLAMA_NUM_CTX).
+    # O'zbek lotinida ~3.2 belgi = 1 token.
     #
-    # HAMMASI SHU 8192 GA SIG'ISHI KERAK — system prompt, kontekst, katalog,
+    # HAMMASI SHU OYNAGA SIG'ISHI KERAK — system prompt, kontekst, katalog,
     # suhbat tarixi VA javob. Sig'masa Ollama promptning BOSHINI jimgina
     # kesib tashlaydi, ya'ni birinchi bo'lib SYSTEM PROMPT yo'qoladi va model
     # barcha qoidalarni "unutadi" (javob inglizcha chiqadi, raqamlar to'qib
     # chiqariladi). Xato xabari berilmaydi — shuning uchun byudjet shu yerda
     # aniq yozilgan.
     #
-    # Joriy hisob:
-    #   STRICT_RAG_SYSTEM  ~3 725 token   (prompts.py — o'lchash: len(s)/3.2)
-    #   MAX_CONTEXT_CHARS   1 250 token   (4000 belgi)
-    #   MAX_CATALOG_CHARS     560 token   (1800 belgi)
-    #   MAX_HISTORY_CHARS     375 token   (1200 belgi)
-    #   MAX_TOKENS (javob)  1 536 token
+    # Joriy hisob (eng yomon holat — hamma chegara to'lgan):
+    #   STRICT_RAG_SYSTEM  ~3 885 token   (prompts.py — o'lchash: len(s)/3.2)
+    #   MAX_CONTEXT_CHARS   3 000 token   (9600 belgi)
+    #   MAX_CATALOG_CHARS     940 token   (3000 belgi)
+    #   MAX_HISTORY_CHARS     940 token   (3000 belgi)
+    #   MAX_TOKENS (javob)  2 048 token
     #   ────────────────────────────────
-    #   JAMI                ~7 450 token  -> 8192 dan ~740 token zaxira
+    #   JAMI               ~10 815 token  -> 16384 dan ~5 570 token zaxira
     #
-    # TARIX: prompt bir vaqtlar 5 000 tokengacha o'sib, byudjet eng yomon
-    # holatda (kontekst, katalog va tarix uchalasi ham chegarasiga to'lgan
-    # payt) 8192 dan oshib ketgan edi. O'shanda Ollama promptning BOSHINI —
-    # ya'ni system promptni — jimgina kesib tashlaydi va model barcha
-    # qoidalarni "unutadi". Xato har savolda emas, faqat "og'ir" savolda yuz
-    # bergani uchun beqaror ko'rinardi. Prompt 3-bosqichli tuzilishga
-    # keltirilib qisqartirildi, zaxira tiklandi.
+    # TARIX (nega bu izoh shu qadar batafsil): prompt bir vaqtlar oynadan
+    # oshib ketib, system prompt jimgina kesilardi. Xato har savolda emas,
+    # faqat "og'ir" savolda yuz bergani uchun beqaror ko'rinardi.
+    #
+    # Chegaralar avval juda tor edi (kontekst 4000, tarix 1200, xabar 300
+    # belgi) — chunki oyna 8192 edi va o'sha 8192 ga hammasi zo'rg'a
+    # sig'ardi. Oqibati: mahsulot konteksti kesilib, javobda shartlarning
+    # bir qismi yetishmasdi; suhbat tarixi kesilib, model oldingi mavzuni
+    # ("kompaniya" kim edi) yo'qotardi. Model GPU'da ishlagani aniqlangach
+    # oyna 16384 ga ko'tarildi va chegaralar shunga yarasha bo'shatildi.
     #
     # DIQQAT: STRICT_RAG_SYSTEM ga yangi qoida qo'shishdan yoki quyidagi
     # CHARS chegaralarini oshirishdan OLDIN shu hisobni qayta chiqaring.
-    # Zaxira tugasa — config.ai.OLLAMA_NUM_CTX ni oshiring (12288), lekin
-    # bu Ollama serverida ko'proq RAM talab qiladi.
-    MAX_CONTEXT_CHARS = 4000
-    MAX_CATALOG_CHARS = 1800
-    MAX_HISTORY_CHARS = 1200
-    MAX_HISTORY_MSG_CHARS = 300
+    MAX_CONTEXT_CHARS = 9600
+    MAX_CATALOG_CHARS = 3000
+    MAX_HISTORY_CHARS = 3000
+    MAX_HISTORY_MSG_CHARS = 800
     # Umumiy (soha) savolida kontekst ham, katalog ham promptga kirmaydi —
-    # ~1800 token bo'shaydi. Tarixni kengroq beramiz: mavzuni ("kompaniya" kimi)
-    # aniqlash aynan tarixdan bilinadi, 300 belgiga kesilgan javobda esa u
-    # yo'qolib ketishi mumkin.
-    CONCEPT_HISTORY_CHARS = 2400
-    CONCEPT_HISTORY_MSG_CHARS = 600
+    # ~4000 token bo'shaydi. Tarixni kengroq beramiz: mavzuni ("kompaniya" kimi)
+    # aniqlash aynan tarixdan bilinadi, kesilgan javobda esa u yo'qolib
+    # ketishi mumkin.
+    CONCEPT_HISTORY_CHARS = 4800
+    CONCEPT_HISTORY_MSG_CHARS = 1200
     # Savol suhbatning O'ZI haqida bo'lsa — javob tarixda turibdi, shuning
     # uchun tarix yana kengroq beriladi va xabar deyarli kesilmaydi.
-    HISTORY_ANSWER_MAX_TOKENS = 600
-    HISTORY_CTX_CHARS = 3200
-    HISTORY_CTX_MSG_CHARS = 1000
+    HISTORY_ANSWER_MAX_TOKENS = 700
+    HISTORY_CTX_CHARS = 6400
+    HISTORY_CTX_MSG_CHARS = 2000
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
     # chaqirmasdan tayyor "ma'lumotim yo'q" javobini qaytaramiz (tez javob uchun).

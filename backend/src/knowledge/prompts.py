@@ -203,7 +203,15 @@ STRICT_RAG_SYSTEM = (
     "(answering about omonatlar when the topic was ipoteka) is a serious error. "
     "If the context lacks their figures, say which ones you do have, give those, "
     "and name the ones you cannot cover \u2014 never substitute a different "
-    "product.\n\n"
+    "product.\n"
+    "IF THE USER CORRECTS YOU (\"men buni so'ramadim\", \"bu emas\", \"meni "
+    "tushunmadingiz\"), do NOT repeat your previous answer. Read what they say "
+    "they actually asked for and answer THAT. If it is not something you hold "
+    "bank data for \u2014 for example they ask about the payment SYSTEM itself "
+    "(Visa, Uzcard, Humo as organisations) rather than the bank's card \u2014 "
+    "explain it briefly from general knowledge and do NOT list card "
+    "conditions or a link. Repeating the rejected answer word for word is the "
+    "worst possible reply.\n\n"
     # -- YAKUNIY TAKRORLASH ------------------------------------------------
     # NEGA: modellar prompt BOSHI va OXIRIGA kuchliroq e'tibor beradi
     # ("lost in the middle"), o'rtadagi qoidalar e'tibordan chetda qolishi

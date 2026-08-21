@@ -137,7 +137,20 @@ class AIConfig(BaseModel):
     # Kontekst oynasi (token). Ollama'ning standarti atigi 2048 — RAG kontekst +
     # system prompt + suhbat tarixi shunga sig'may, oldingi qismi (system prompt!)
     # jimgina kesilib qolardi. Qwen kattaroq oynani bemalol ko'taradi.
-    OLLAMA_NUM_CTX: int = 8192
+    #
+    # 8192 -> 16384: model GPU'da (RTX 5070, 12 GB) ishlaydi, ya'ni oynani
+    # kengaytirish narxi faqat KV-kesh VRAM'i (~144 KB/token bu model uchun):
+    #   model ~5 GB + bge-m3 ~1.2 GB + KV 16k ~2.4 GB = ~8.6 GB / 12 GB.
+    # 8192 da prompt byudjeti shu qadar tor ediki, mahsulot konteksti va suhbat
+    # tarixi muntazam KESILARDI — "shartlarni to'liq bermayapti" va "oldingi
+    # mavzuni unutdi" muammolarining bir qismi aynan shundan edi
+    # (byudjet hisobi: knowledge/usecases.py, AnswerQuestionUseCase).
+    #
+    # DIQQAT: 32768 ham sig'adi (~11 GB), lekin zaxira qolmaydi — Ollama
+    # modelni qisman CPU'ga tushirib yuborishi mumkin (o'shanda javob keskin
+    # sekinlashadi). Oshirishdan oldin `ollama ps` da 100% GPU ekanini
+    # tekshiring.
+    OLLAMA_NUM_CTX: int = 16384
 
     # Embedding (matn -> vektor). Same Ollama server, different model.
     EMBEDDING_MODEL: str = "bge-m3:567m"

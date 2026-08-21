@@ -149,6 +149,37 @@ Savolning JAVOBI qayerda turishiga qara.
   bor") -> "product": bank qismi bazadan olinishi shart.
 - Soha tashqarisidagi savolni HECH QACHON "concept" qilma — u "other".
 
+TIZIM/KOMPANIYA ni KARTA/MAHSULOT dan AJRAT (bu yerda ko'p xato bo'lgan):
+Visa, Mastercard, Uzcard, Humo, UnionPay — bularning har biri IKKI xil
+narsani anglatadi:
+  (1) TASHKILOT/TIZIM ning o'zi — u qanday ishlaydi, kim tashkil qilgan,
+      milliymi yoki xalqaromi, bosh ofisi qayerda -> HAR DOIM "concept";
+  (2) Turonbankning O'SHA nomdagi KARTASI — narxi, muddati, sug'urta
+      depoziti, qanday olish mumkin -> "product".
+Savolda "tizim", "tizimi", "kompaniya", "kompaniyasi", "korporatsiya",
+"tashkilot" so'zi bo'lsa yoki "qanday ishlaydi", "qachon tashkil topgan",
+"kim tashkil qilgan", "milliymi", "xalqaromi" deb so'ralsa — bu (1),
+ya'ni "concept". Foydalanuvchi bank shartlarini so'ramayapti.
+
+ANIQ MISOLLAR — shu qolipni AYNAN takrorla:
+  "Visa kompaniyasi qanday ishlaydi"          -> concept
+  "Visa tizimi qanday ishlaydi"               -> concept
+  "Uzcard tizimichi? U milliy kompaniyami?"   -> concept
+  "Humo va Uzcard farqi nima"                 -> concept
+  "Mastercard qachon tashkil topgan"          -> concept
+  "Visa Gold shartlari qanday"                -> product
+  "Uzcard kartasi qancha turadi"              -> product
+  "qanday kartalaringiz bor"                  -> product
+
+FOYDALANUVCHI SENI TUZATSA — QAYTA O'YLA:
+"men ... haqida so'radim, ... haqida so'ramadim", "bu emas", "meni
+tushunmadingiz" degan xabar — bu YANGI savol emas, oldingi savolning
+TUZATILGAN holati. Foydalanuvchi ANIQ nimani rad etayotganiga qara va
+niyatni O'ZGARTIR: oldin "product" degan bo'lsang va u "kartasi haqida
+so'ramadim, tizimi haqida so'radim" desa -> endi "concept". Xuddi shu
+niyatni qaytarish JIDDIY XATO: foydalanuvchi bir xil javobni ikki marta
+oladi va tuzatishning hech qanday foydasi bo'lmaydi.
+
 DIQQAT — eng ko'p uchraydigan xato:
 Savolda odam ismiga O'XSHAB ketadigan oddiy so'z bo'lishi mumkin
 ("javob", "salom", "model", "hisob"). Bu xodim so'rovi EMAS.
@@ -214,10 +245,18 @@ class QuestionRouter:
     chiqardi. Yakuniy javob esa o'ylashsiz oqim bilan boradi.
     """
 
-    MAX_TOKENS = 800
+    # O'ylash (think) va JSON SHU BITTA byudjetni bo'lishadi. Byudjet tugasa
+    # chiqish o'rtasidan uziladi, JSON parse bo'lmaydi va biz JIMGINA
+    # fallback'ga (PRODUCT) tushamiz — ya'ni savol tushunilmagani "muvaffaqiyatli
+    # mahsulot savoli" ko'rinishida chiqadi. Router prompti kengaygach o'ylash
+    # ham uzayadi, shuning uchun zaxira oshirildi (800 -> 1400).
+    MAX_TOKENS = 1400
     TEMPERATURE = 0.0
-    # Kontekstga qo'shiladigan oxirgi almashuvlar soni
-    HISTORY_TURNS = 4
+    # Kontekstga qo'shiladigan oxirgi almashuvlar soni. 4 -> 6: mavzu
+    # ("kompaniya" kim edi) bir necha almashuv oldin aytilgan bo'lishi mumkin,
+    # va router aynan shu bog'lanishni topa olmay xato qilardi. num_ctx=16384
+    # bilan bunga joy bor.
+    HISTORY_TURNS = 6
 
     def __init__(self, ai_client: BaseAIClient) -> None:
         self.ai_client = ai_client
@@ -254,6 +293,19 @@ class QuestionRouter:
         except Exception:
             logger.exception("Router chaqiruvi muvaffaqiyatsiz: %r", question)
             return fallback
+
+        # Chiqish token chegarasiga tegib uzilganmi — buni bilmasak, router
+        # jimgina PRODUCT'ga tushib qolgani sezilmaydi (savol tushunilmagan
+        # bo'lsa ham javob "normal" ko'rinadi).
+        used = int((result.usage or {}).get("completion_tokens", 0) or 0)
+        if used >= self.MAX_TOKENS - 16:
+            logger.warning(
+                "Router chiqishi token chekloviga tegdi (%d/%d) — savol "
+                "tushunilmay PRODUCT'ga tushishi mumkin: %r",
+                used,
+                self.MAX_TOKENS,
+                question,
+            )
 
         data = result.data
         if not isinstance(data, dict) or "raw" in data:
