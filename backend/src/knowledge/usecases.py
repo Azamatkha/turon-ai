@@ -26,10 +26,13 @@ from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import extract_pdf_text
 from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.prompts import (
+    CONCEPT_SYSTEM,
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
     EMPLOYEE_SYSTEM,
+    HISTORY_SYSTEM,
     NO_INFO_REPLY,
+    OFF_TOPIC_REPLY,
     PDF_CLEAN_SYSTEM,
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
@@ -767,6 +770,86 @@ def _strip_stray_followup(text: str) -> str:
     return "\n".join(lines).rstrip()
 
 
+def _clean_concept_answer(text: str) -> str:
+    """Umumiy (soha) javobidan mahsulot javobiga tegishli qoldiqlarni oladi.
+
+    CONCEPT_SYSTEM havola va yopiluvchi savolni TAQIQLAYDI, lekin model
+    ba'zan baribir qo'shib yuboradi — bu javob bazadan olinmagan, ya'ni
+    havola qayerdan kelgani noma'lum (model o'ylab topgan URL bo'lishi ham
+    mumkin). Shuning uchun kod tarafida ham tozalaymiz."""
+    lines = [
+        ln
+        for ln in text.split("\n")
+        if not ln.strip().lower().startswith(("batafsil:", "manba:", "source_url:"))
+    ]
+    # Oxiridagi "Yana qaysi ... beray?" / "Shu turlardan qaysi biri..." savoli
+    while lines:
+        low = lines[-1].lower().strip()
+        if not low:
+            lines.pop()
+            continue
+        if ("qaysi biri" in low or "qaysi karta" in low or "qaysi kredit" in low) and (
+            "beray" in low or "kerak?" in low
+        ):
+            lines.pop()
+            continue
+        break
+    return "\n".join(lines).strip()
+
+
+class _ConceptLineFilter:
+    """Oqim (stream) uchun _clean_concept_answer ning ekvivalenti.
+
+    Javob token-token kelgani uchun tayyor matnni tozalab bo'lmaydi. Bu filtr
+    QATOR BOSHINI kuzatadi: qator taqiqlangan prefiksdan boshlansa, o'sha
+    qatorni oxirigacha o'tkazmaydi. Qaror qator boshidagi bir necha belgidan
+    keyin qabul qilinadi, shuning uchun oqim sezilarli kechikmaydi."""
+
+    _BAD = ("batafsil:", "manba:", "source_url:", "yana qaysi", "shu turlardan")
+
+    def __init__(self) -> None:
+        # Qator boshi — taqiqli prefiksmi yoki yo'qmi, hali aniq emas
+        self._pending = ""
+        self._at_line_start = True
+        self._dropping = False
+
+    def feed(self, chunk: str) -> str:
+        out: list[str] = []
+        for ch in chunk:
+            if self._dropping:
+                # Taqiqli qator — satr oxirigacha hammasi tashlanadi
+                if ch == "\n":
+                    self._dropping = False
+                    self._at_line_start = True
+                continue
+            if not self._at_line_start:
+                out.append(ch)
+                if ch == "\n":
+                    self._at_line_start = True
+                continue
+            self._pending += ch
+            if ch == "\n":
+                out.append(self._pending)
+                self._pending = ""
+                continue
+            low = self._pending.lstrip().lower()
+            if any(low.startswith(bad) for bad in self._BAD):
+                self._pending = ""
+                self._dropping = True
+                continue
+            if any(bad.startswith(low) for bad in self._BAD):
+                # Hali ham taqiqli prefiks bo'lishi mumkin — kutamiz
+                continue
+            out.append(self._pending)
+            self._pending = ""
+            self._at_line_start = False
+        return "".join(out)
+
+    def flush(self) -> str:
+        rest, self._pending = self._pending, ""
+        return "" if self._dropping else rest
+
+
 def _is_generic_employee_request(q_lower: str) -> bool:
     """"Xodimlar raqamlari" kabi umumiy (aniq xodim/bo'limsiz) so'rovmi —
     aniqlashtirishni so'rash uchun."""
@@ -1499,6 +1582,9 @@ class AnswerQuestionUseCase:
     # Xodimlar ro'yxati uchun alohida, kattaroq limit: katta bo'limda 30+ xodim
     # bo'ladi va 2048 token yetmay, javob o'rtasida kesilib qolardi.
     EMPLOYEE_MAX_TOKENS = 6000
+    # Umumiy (soha) savoli — javob 2-5 gap. Kichik limit ATAYIN: model uzoq
+    # "ma'ruza" yozib ketmasin va sekin serverda tez javob bersin.
+    CONCEPT_MAX_TOKENS = 500
     HISTORY_LIMIT = 6  # oxirgi shuncha xabar (promptni yengil tutish uchun)
     # --- Prompt byudjeti (belgilarda) ---------------------------------- #
     # num_ctx = 8192 token. O'zbek lotinida ~3.2 belgi = 1 token.
@@ -1535,6 +1621,17 @@ class AnswerQuestionUseCase:
     MAX_CATALOG_CHARS = 1800
     MAX_HISTORY_CHARS = 1200
     MAX_HISTORY_MSG_CHARS = 300
+    # Umumiy (soha) savolida kontekst ham, katalog ham promptga kirmaydi —
+    # ~1800 token bo'shaydi. Tarixni kengroq beramiz: mavzuni ("kompaniya" kimi)
+    # aniqlash aynan tarixdan bilinadi, 300 belgiga kesilgan javobda esa u
+    # yo'qolib ketishi mumkin.
+    CONCEPT_HISTORY_CHARS = 2400
+    CONCEPT_HISTORY_MSG_CHARS = 600
+    # Savol suhbatning O'ZI haqida bo'lsa — javob tarixda turibdi, shuning
+    # uchun tarix yana kengroq beriladi va xabar deyarli kesilmaydi.
+    HISTORY_ANSWER_MAX_TOKENS = 600
+    HISTORY_CTX_CHARS = 3200
+    HISTORY_CTX_MSG_CHARS = 1000
     # Eng yaqin bo'lakning cosine o'xshashligi shundan past bo'lsa — savol bazaga
     # aloqasiz (bema'ni yoki mavzudan tashqari) deb hisoblaymiz va LLM'ni umuman
     # chaqirmasdan tayyor "ma'lumotim yo'q" javobini qaytaramiz (tez javob uchun).
@@ -2085,6 +2182,40 @@ class AnswerQuestionUseCase:
             return question
         return cleaned
 
+    def _no_search_call(
+        self, intent: Intent, question: str, history: list[ChatTurn] | None
+    ) -> tuple[str, str, int]:
+        """QIDIRUVSIZ javob beriladigan niyatlar uchun (prompt, system, limit).
+
+        Ikkala niyatda ham bazaga borilmaydi, shuning uchun promptda kontekst
+        ham, katalog ham yo'q — ~1800 token bo'shaydi va o'sha joyni suhbat
+        tarixiga beramiz. Tarix bu yerda AYNAN eng muhim ma'lumot:
+          * CONCEPT — mavzu kim/nima ekani ("kompaniya bosh ofisi qayerda"
+            degan savolda gap Visa haqida ketayotgani faqat tarixdan bilinadi);
+          * HISTORY — javobning O'ZI tarixda turibdi.
+        Shuning uchun xabarlar MAX_HISTORY_MSG_CHARS (300) emas, kengroq
+        chegara bilan kesiladi — 300 belgida javobning kerakli qismi
+        (masalan manzil) kesilib qolardi."""
+        if intent is Intent.HISTORY:
+            system, max_toks = HISTORY_SYSTEM, self.HISTORY_ANSWER_MAX_TOKENS
+            msg_chars, total_chars = (
+                self.HISTORY_CTX_MSG_CHARS,
+                self.HISTORY_CTX_CHARS,
+            )
+        else:
+            system, max_toks = CONCEPT_SYSTEM, self.CONCEPT_MAX_TOKENS
+            msg_chars, total_chars = (
+                self.CONCEPT_HISTORY_MSG_CHARS,
+                self.CONCEPT_HISTORY_CHARS,
+            )
+        convo = _format_history(history, self.HISTORY_LIMIT, msg_chars, total_chars)
+        prompt = (
+            f"Previous conversation:\n{convo}\n\nQUESTION: {question}"
+            if convo
+            else f"QUESTION: {question}"
+        )
+        return prompt, system, max_toks
+
     def _employee_prompt(
         self,
         question: str,
@@ -2238,6 +2369,76 @@ class AnswerQuestionUseCase:
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
             }
+            return
+
+        # XAVFSIZLIK TO'RI. Quyidagi uch yo'l (other / concept / history)
+        # bazaga UMUMAN bormaydi — ya'ni router xato baholasa, bazada BOR
+        # ma'lumot foydalanuvchiga yetib bormaydi. Xodim so'rovi bunga eng
+        # sezgir: savolda aniq belgi bo'lsa ("ip", "xodim", "ichki raqam",
+        # "2206 kimniki"), routerning fikridan qat'i nazar qisqa yo'llarni
+        # ochmaymiz — xodim qidiruvini deterministik kod bajaradi va u
+        # routerdan ishonchliroq (shu sabab u yerda ham router "maslahatchi").
+        skip_shortcuts = _has_employee_intent(question.lower())
+
+        # Bank/moliyaga UMUMAN aloqasi yo'q savol (sport, siyosat, ob-havo...) —
+        # bazaga bormaymiz, modelni ham chaqirmaymiz. Ilgari bu savol RAG'ga
+        # tushib, "ma'lumot topilmadi, 1234 ga qo'ng'iroq qiling" javobini
+        # olardi — bank call-markazini sport savoliga yo'naltirish noto'g'ri.
+        if (
+            decision is not None
+            and not skip_shortcuts
+            and decision.intent is Intent.OTHER
+        ):
+            text = to_cyrillic(OFF_TOPIC_REPLY) if want_cyrillic else OFF_TOPIC_REPLY
+            yield {"type": "delta", "text": text}
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
+        # Bank/moliya sohasining UMUMIY savoli — javob model bilimidan, bank
+        # bazasidan EMAS. Qidiruv umuman bajarilmaydi: kontekst promptga
+        # kirmasa, model unga tortilib "ASOSIY SHARTLAR" va "Batafsil: <url>"
+        # qo'shib yubormaydi. Manba ham ko'rsatilmaydi — bazadan olinmagan.
+        if (
+            decision is not None
+            and not skip_shortcuts
+            and decision.intent in (Intent.CONCEPT, Intent.HISTORY)
+        ):
+            prompt, system, max_toks = self._no_search_call(
+                decision.intent, question, history
+            )
+            tr = StreamingTransliterator() if want_cyrillic else None
+            lf = _ConceptLineFilter()
+            async for ev in self.ai_client.stream_generate(
+                prompt,
+                system_prompt=system,
+                temperature=self.TEMPERATURE,
+                max_tokens=max_toks,
+            ):
+                if ev.get("type") == "delta":
+                    text = lf.feed(ev["text"])
+                    if tr is not None:
+                        text = tr.feed(text)
+                    if not text:
+                        continue
+                    ev = {**ev, "text": text}
+                if ev.get("type") == "done":
+                    # Filtrda qolgan qoldiqni chiqaramiz, so'ng transliterator
+                    # buferini bo'shatamiz (tartib muhim: filtr lotincha matn
+                    # ustida ishlaydi).
+                    rest = lf.flush()
+                    if tr is not None:
+                        rest = tr.feed(rest) + tr.flush()
+                    if rest:
+                        yield {"type": "delta", "text": rest}
+                    ev["max_tokens"] = max_toks
+                    ev["sources"] = []
+                yield ev
             return
 
         # Valyuta kursi — javobni kod tuzadi, model chaqirilmaydi (_rates_answer)
@@ -2482,6 +2683,51 @@ class AnswerQuestionUseCase:
             return AnswerResult(
                 answer=to_cyrillic(reply) if want_cyrillic else reply,
                 sources=[],
+            )
+
+        # Xavfsizlik to'ri — stream yo'li bilan bir xil: savolda aniq xodim
+        # belgisi bo'lsa, bazaga bormaydigan qisqa yo'llar ochilmaydi.
+        skip_shortcuts = _has_employee_intent(question.lower())
+
+        # Soha tashqarisidagi savol — stream yo'li bilan bir xil: tayyor matn.
+        if (
+            decision is not None
+            and not skip_shortcuts
+            and decision.intent is Intent.OTHER
+        ):
+            return AnswerResult(
+                answer=(
+                    to_cyrillic(OFF_TOPIC_REPLY) if want_cyrillic else OFF_TOPIC_REPLY
+                ),
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
+            )
+
+        # Qidiruvsiz javob beriladigan niyatlar: soha umumiy savoli (model
+        # bilimidan) va suhbatning o'zi haqidagi savol (javob tarixda).
+        if (
+            decision is not None
+            and not skip_shortcuts
+            and decision.intent in (Intent.CONCEPT, Intent.HISTORY)
+        ):
+            prompt, system, max_toks = self._no_search_call(
+                decision.intent, question, history
+            )
+            gen = await self.ai_client.generate_text_with_usage(
+                prompt,
+                system_prompt=system,
+                temperature=self.TEMPERATURE,
+                max_tokens=max_toks,
+            )
+            text = _clean_concept_answer(gen.text)
+            return AnswerResult(
+                answer=to_cyrillic(text) if want_cyrillic else text,
+                sources=[],
+                finish_reason=gen.finish_reason,
+                completion_tokens=gen.completion_tokens,
+                max_tokens=gen.max_tokens,
             )
 
         # Valyuta kursi — javobni kod tuzadi, model chaqirilmaydi (_rates_answer)

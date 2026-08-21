@@ -29,6 +29,9 @@ class Intent(StrEnum):
     EMPLOYEE = "employee"
     # Bank mahsulotlari va qoidalari: kredit, karta, omonat, o'tkazma...
     PRODUCT = "product"
+    # Bank/moliya sohasining UMUMIY bilimi — Turonbank fakti EMAS: to'lov
+    # tizimlari, moliyaviy atamalar, tashkilotlar tarixi, iqtisodiy tushunchalar
+    CONCEPT = "concept"
     # Valyuta kurslari
     RATES = "rates"
     # Filial / BXM / manzil / ish vaqti
@@ -37,6 +40,9 @@ class Intent(StrEnum):
     SMALLTALK = "smalltalk"
     # Botning o'zi haqida: kimsan, qaysi model, nima qila olasan
     ABOUT_BOT = "about_bot"
+    # Savol SUHBATNING O'ZIGA tegishli: "sen bergan manzil qanday",
+    # "yuqorida nima dedingiz", "oldingi javobingni tushuntir"
+    HISTORY = "history"
     # Bankka aloqasi yo'q yoki tushunarsiz
     OTHER = "other"
 
@@ -100,14 +106,48 @@ Niyat (intent) turlari:
                 ichki raqam (IP) bo'yicha, telefon yoki bo'lim tarkibi.
                 MISOL: "Azamat Xamdamovning raqami", "1036 kimniki",
                 "HR bo'limi xodimlari".
-- "product"   — bank mahsuloti yoki qoidasi: kredit, karta, omonat, o'tkazma,
-                komissiya, shartlar, hujjatlar.
+- "product"   — TURONBANKNING mahsuloti yoki qoidasi: kredit, karta, omonat,
+                o'tkazma, komissiya, shartlar, hujjatlar. Ya'ni javob bank
+                bazasidan olinishi kerak bo'lgan ANIQ FAKT.
+                MISOL: "Visa Gold shartlari", "ta'lim krediti foizi qancha",
+                "qanday kartalar bor".
+- "concept"   — bank/moliya/iqtisodiyot sohasiga oid UMUMIY savol; javobi
+                Turonbank bazasida emas, umumiy bilimda.
+                MISOL: "Mastercard qanday kompaniya", "Visa qachon tashkil
+                topgan", "Visa bosh ofisi qayerda", "annuitet nima",
+                "ekvayring qanday ishlaydi", "inflatsiya nima", "Humo va
+                Uzcard farqi nima", "SWIFT nima uchun kerak".
 - "rates"     — valyuta kurslari.
 - "branch"    — filial / bank xizmatlari markazi (BXM) / manzil / ish vaqti.
 - "smalltalk" — salomlashish, rahmat, xayrlashuv, bo'sh gap.
 - "about_bot" — SENING o'zing haqingda: kimsan, qanday ishlaysan, qaysi model,
                 nima qila olasan, kim yaratgan.
-- "other"     — bankka aloqasi yo'q yoki umuman tushunarsiz.
+- "history"   — savol SUHBATNING O'ZI haqida: sen oldin nima deganing,
+                qayerdan olganing, javobingni takrorlash yoki tushuntirish.
+                MISOL: "sen bergan manzil qanday", "buni qayerdan olding",
+                "yuqorida nima dedingiz", "oldingi javobingni takrorla",
+                "shu javobingdagi ikkinchi bandni tushuntir".
+                DIQQAT — chegara: "foizlari qanday", "muddati qancha" kabi
+                savol suhbatdagi MAVZU haqida (bazadan qidirish kerak), sening
+                javobing haqida emas -> bu "history" EMAS, "product".
+                "history" ni faqat gap SENING javobing haqida ketganda tanla.
+- "other"     — bank/moliya/iqtisodiyot sohasiga UMUMAN aloqasi yo'q
+                (sport, siyosat, ob-havo, dasturlash, tibbiyot, ko'ngilochar)
+                yoki savol butunlay tushunarsiz.
+                MISOL: "Ronaldo qaysi jamoada o'ynaydi", "ertaga havo qanday".
+
+"product" MI YOKI "concept" MI — SHU CHEGARANI ANIQ TUT:
+Savolning JAVOBI qayerda turishiga qara.
+- Javob Turonbankning o'z hujjatida bo'lishi kerakmi (bankdagi stavka,
+  muddat, summa, komissiya, mahsulot sharti, filial, xodim)? -> "product".
+- Javob umumiy bilimdami (tashkilot nima bilan shug'ullanadi, qachon
+  tashkil topgan, bosh ofisi qayerda, atama nimani anglatadi, ikki narsa
+  nima bilan farq qiladi)? -> "concept". Savolda "Visa", "Mastercard",
+  "Humo" kabi nom uchragani uni "product" qilmaydi — Turonbankning O'SHA
+  nomdagi mahsuloti shartlari so'ralgandagina "product" bo'ladi.
+- Ikkalasi ham so'ralgan bo'lsa ("Visa nima va sizda qanday Visa kartalar
+  bor") -> "product": bank qismi bazadan olinishi shart.
+- Soha tashqarisidagi savolni HECH QACHON "concept" qilma — u "other".
 
 DIQQAT — eng ko'p uchraydigan xato:
 Savolda odam ismiga O'XSHAB ketadigan oddiy so'z bo'lishi mumkin
@@ -130,6 +170,13 @@ ODATDA hozirgina gaplashilgan mavzu haqida bo'ladi. Niyatni ham,
   boshqa mavzuni (masalan omonatlarni) topib keladi — bu jiddiy xato.
 - Mavzu o'zgarganini faqat foydalanuvchi ANIQ boshqa narsa so'raganda qabul
   qil; qisqalik mavzu o'zgardi degani EMAS.
+- SUHBATNING MAVZUSI KIM/NIMA EKANINI YO'QOTMA. Foydalanuvchi "kompaniya",
+  "u", "bu tashkilot" desa — bu HOZIRGINA gaplashilgan tashkilot, avtomatik
+  ravishda "Turonbank" EMAS.
+  MISOL: suhbat Visa haqida ketayotgan edi, foydalanuvchi "kompaniya bosh
+  ofisi qayerda" dedi -> bu VISA ning bosh ofisi, intent "concept".
+  Buni Turonbank haqida deb tushunish JIDDIY XATO: foydalanuvchi Visa
+  so'raganda unga bankning manzili berilardi.
 
 Maydonlar:
 - "intent"       — yuqoridagilardan bittasi.
@@ -139,7 +186,8 @@ Maydonlar:
 - "search_query" — bazadan qidirish uchun tozalangan, O'ZI YETARLI so'rov:
                    ortiqcha so'zlarsiz, olmoshlar yechilgan, kerak bo'lsa
                    rasmiy atama bilan to'ldirilgan.
-                   smalltalk/about_bot uchun bo'sh satr qoldir.
+                   smalltalk/about_bot/concept/other/history uchun bo'sh satr
+                   qoldir — bu niyatlarda bazadan qidirilmaydi.
 - "reply"        — FAQAT "smalltalk" va "about_bot" uchun: qisqa, xushmuomala
                    javob (1-2 gap), foydalanuvchi tilida. Boshqa hollarda "".
 
