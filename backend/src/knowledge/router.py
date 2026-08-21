@@ -234,6 +234,12 @@ Sen Turonbank uchun ishlaysan. "about_bot" da: sen Turonbankning ichki AI
 yordamchisisan, bank hujjatlari va xodimlar ma'lumotlari asosida javob berasan.
 Qaysi model ekaningni aytma — buning o'rniga nima qila olishingni ayt.
 
+QISQA O'YLA. Bu — yo'naltirish qarori, tadqiqot emas. Bir-ikki jumlada
+"bu odam nima bilmoqchi?" degan savolga javob ber va DARROV JSON yoz.
+Variantlarni sanab chiqma, o'zing bilan bahslashma, javob matnini
+tayyorlama. Uzoq o'ylasang chiqish uchun joy qolmaydi va qaror UMUMAN
+yetib bormaydi.
+
 Faqat JSON qaytar."""
 
 
@@ -249,14 +255,23 @@ class QuestionRouter:
     # chiqish o'rtasidan uziladi, JSON parse bo'lmaydi va biz JIMGINA
     # fallback'ga (PRODUCT) tushamiz — ya'ni savol tushunilmagani "muvaffaqiyatli
     # mahsulot savoli" ko'rinishida chiqadi. Router prompti kengaygach o'ylash
-    # ham uzayadi, shuning uchun zaxira oshirildi (800 -> 1400).
-    MAX_TOKENS = 1400
+    # ham uzayadi, shuning uchun zaxira oshirildi (800 -> 1400 -> 3000).
+    #
+    # 3000 sababi — o'lchangan fakt, taxmin emas: 1400 bilan serverda
+    # 'tijorat banklari qanday foyda qiladi' savoli 1400/1400 tokenni
+    # BUTUNLAY o'ylashga sarflab, chiqishni bo'sh qoldirgan ({"raw": ""})
+    # va jimgina PRODUCT'ga tushgan. Model GPU'da ishlagani uchun bu
+    # zaxiraning narxi kichik: o'ylash odatda ancha qisqa tugaydi,
+    # cheklov faqat eng og'ir holat uchun.
+    MAX_TOKENS = 3000
     TEMPERATURE = 0.0
     # Kontekstga qo'shiladigan oxirgi almashuvlar soni. 4 -> 6: mavzu
     # ("kompaniya" kim edi) bir necha almashuv oldin aytilgan bo'lishi mumkin,
     # va router aynan shu bog'lanishni topa olmay xato qilardi. num_ctx=16384
     # bilan bunga joy bor.
     HISTORY_TURNS = 6
+    # Har bir xabardan promptga tushadigan maksimal belgi (qara: _build_prompt)
+    HISTORY_MSG_CHARS = 600
 
     def __init__(self, ai_client: BaseAIClient) -> None:
         self.ai_client = ai_client
@@ -265,11 +280,64 @@ class QuestionRouter:
         parts: list[str] = []
         if history:
             recent = history[-self.HISTORY_TURNS :]
-            lines = [f"{t.role}: {t.content}" for t in recent if t.content.strip()]
+            lines: list[str] = []
+            for t in recent:
+                text = " ".join(t.content.split())
+                if not text:
+                    continue
+                # Xabar QISQARTIRILADI. Routerga xabarning MAVZUSI kerak,
+                # to'liq matni emas: "kompaniya" kim ekanini aniqlash uchun
+                # javobning boshi yetarli. 20 bandli mahsulot ro'yxati esa
+                # (~3000 belgi) promptni shishirib, o'ylashni cho'zib
+                # yuboradi — aynan shu chiqish uchun joy qoldirmasdi.
+                if len(text) > self.HISTORY_MSG_CHARS:
+                    text = text[: self.HISTORY_MSG_CHARS].rstrip() + "..."
+                lines.append(f"{t.role}: {text}")
             if lines:
                 parts.append("Oldingi suhbat:\n" + "\n".join(lines))
         parts.append(f"Foydalanuvchi savoli:\n{question}")
         return "\n\n".join(parts)
+
+    async def _ask(
+        self, prompt: str, question: str, *, think: bool
+    ) -> dict[str, Any] | None:
+        """Modelga bir marta murojaat qiladi. JSON kelmasa None qaytaradi.
+
+        Chiqish token chegarasiga tegib uzilganini ALOHIDA logga yozamiz —
+        busiz router jimgina PRODUCT'ga tushib qolgani umuman sezilmaydi
+        (savol tushunilmagan bo'lsa ham javob "normal" ko'rinadi)."""
+        try:
+            result = await self.ai_client.generate_json(
+                prompt,
+                schema=ROUTER_SCHEMA,
+                temperature=self.TEMPERATURE,
+                max_tokens=self.MAX_TOKENS,
+                system_prompt=ROUTER_SYSTEM,
+                think=think,
+            )
+        except Exception:
+            logger.exception("Router chaqiruvi muvaffaqiyatsiz: %r", question)
+            return None
+
+        used = int((result.usage or {}).get("completion_tokens", 0) or 0)
+        if used >= self.MAX_TOKENS - 16:
+            logger.warning(
+                "Router chiqishi token chekloviga tegdi (%d/%d, think=%s): %r",
+                used,
+                self.MAX_TOKENS,
+                think,
+                question,
+            )
+
+        data = result.data
+        if not isinstance(data, dict) or "raw" in data or not data.get("intent"):
+            logger.warning(
+                "Router JSON qaytarmadi (think=%s): %s",
+                think,
+                json.dumps(data)[:300],
+            )
+            return None
+        return data
 
     async def classify(
         self, question: str, history: list[ChatTurn] | None = None
@@ -280,36 +348,21 @@ class QuestionRouter:
         zararsiz zaxira, chunki u oddiy RAG qidiruvi (xodim ro'yxatini
         tasodifan chiqarib yubormaydi).
         """
+        prompt = self._build_prompt(question, history)
         fallback = Route(intent=Intent.PRODUCT, search_query=question)
-        try:
-            result = await self.ai_client.generate_json(
-                self._build_prompt(question, history),
-                schema=ROUTER_SCHEMA,
-                temperature=self.TEMPERATURE,
-                max_tokens=self.MAX_TOKENS,
-                system_prompt=ROUTER_SYSTEM,
-                think=True,
-            )
-        except Exception:
-            logger.exception("Router chaqiruvi muvaffaqiyatsiz: %r", question)
-            return fallback
 
-        # Chiqish token chegarasiga tegib uzilganmi — buni bilmasak, router
-        # jimgina PRODUCT'ga tushib qolgani sezilmaydi (savol tushunilmagan
-        # bo'lsa ham javob "normal" ko'rinadi).
-        used = int((result.usage or {}).get("completion_tokens", 0) or 0)
-        if used >= self.MAX_TOKENS - 16:
-            logger.warning(
-                "Router chiqishi token chekloviga tegdi (%d/%d) — savol "
-                "tushunilmay PRODUCT'ga tushishi mumkin: %r",
-                used,
-                self.MAX_TOKENS,
-                question,
-            )
-
-        data = result.data
-        if not isinstance(data, dict) or "raw" in data:
-            logger.warning("Router JSON qaytarmadi: %s", json.dumps(data)[:300])
+        data = await self._ask(prompt, question, think=True)
+        if data is None:
+            # O'YLASHSIZ QAYTA URINISH. Nega kerak: o'ylash butun byudjetni
+            # yeb qo'yganda chiqish bo'sh qoladi ({"raw": ""}) va biz jimgina
+            # PRODUCT'ga tushamiz — ya'ni savol UMUMAN tushunilmagani
+            # "normal mahsulot savoli" ko'rinishida chiqadi (serverda aynan
+            # shunday bo'lgan). O'ylashsiz chiqish qisqa va deyarli har doim
+            # JSON beradi: o'ylab topilgan qaror emas, lekin ko'r-ko'rona
+            # PRODUCT zaxirasidan ancha yaxshi.
+            logger.info("Router o'ylashsiz qayta urinilmoqda: %r", question)
+            data = await self._ask(prompt, question, think=False)
+        if data is None:
             return fallback
 
         raw_intent = str(data.get("intent", "")).strip().lower()

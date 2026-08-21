@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import UTC, datetime
 import uuid
 from uuid import UUID as PY_UUID
 
-from sqlalchemy import DateTime, Integer, func
+from sqlalchemy import DateTime, Integer
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 import uuid6
@@ -17,11 +17,34 @@ class TimestampMixin:
 
     __abstract__ = True
 
+    # QIYMAT PYTHON TARAFIDA HISOBLANADI, `func.now()` (SQL ifodasi) EMAS.
+    #
+    # NEGA: `onupdate=func.now()` da yangi qiymatni PostgreSQL hisoblaydi va
+    # SQLAlchemy uni BILMAYDI — shuning uchun UPDATE dan keyin `updated_at`
+    # atributini "eskirgan" deb belgilab, keyingi murojaatda bazadan qayta
+    # o'qimoqchi bo'ladi. Usecase'lar esa odatda shunday yozilgan:
+    #     s.title = title
+    #     await uow.commit()
+    #     return SessionView.model_validate(s)   # <-- shu yerda portlardi
+    # `commit()` dan keyin tranzaksiya yopiq, qayta o'qish esa SQL talab
+    # qiladi -> "Can't operate on closed transaction inside context manager"
+    # va endpoint 500 qaytarardi (suhbat nomini o'zgartirish shundan
+    # ishlamasdi, garchi nom bazaga YOZILGAN bo'lsa ham).
+    #
+    # Python tarafidagi qiymatni SQLAlchemy o'zi biladi — atribut eskirmaydi,
+    # qayta o'qish kerak bo'lmaydi. Bu butun loyihadagi HAR BIR jadval uchun
+    # muammoni bir joyda yopadi. Migratsiya kerak emas: `default=` DDL'ga
+    # yozilmaydi, u faqat INSERT/UPDATE paytida qo'shiladi.
+    #
+    # Farqi: vaqt DB soati o'rniga ilova soatidan olinadi (bitta serverda
+    # ahamiyatsiz). Qiymat baribir timezone-aware UTC.
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now()
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=func.now(), onupdate=func.now()
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
