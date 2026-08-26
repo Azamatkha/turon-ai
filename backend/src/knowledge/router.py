@@ -43,6 +43,9 @@ class Intent(StrEnum):
     # Savol SUHBATNING O'ZIGA tegishli: "sen bergan manzil qanday",
     # "yuqorida nima dedingiz", "oldingi javobingni tushuntir"
     HISTORY = "history"
+    # Savol BOSHQA bank haqida: raqobatchi bank mahsuloti, banklar ro'yxati,
+    # reytingi yoki taqqoslash. Bot bunga javob bermaydi — faqat Turonbank
+    OTHER_BANK = "other_bank"
     # Bankka aloqasi yo'q yoki tushunarsiz
     OTHER = "other"
 
@@ -131,6 +134,12 @@ Niyat (intent) turlari:
                 savol suhbatdagi MAVZU haqida (bazadan qidirish kerak), sening
                 javobing haqida emas -> bu "history" EMAS, "product".
                 "history" ni faqat gap SENING javobing haqida ketganda tanla.
+- "other_bank" — savol BOSHQA bank (Turonbank EMAS) haqida: raqobatchi
+                bankning mahsuloti, foizi, filiali; banklarning ro'yxati,
+                reytingi, soni; "qaysi bank yaxshi" turidagi taqqoslash.
+                MISOL: "Kapitalbank kartasi qancha turadi", "Ipoteka bankda
+                foiz qancha", "O'zbekistondagi top banklar ro'yxati",
+                "eng ishonchli bank qaysi", "O'zbekistonda nechta bank bor".
 - "other"     — bank/moliya/iqtisodiyot sohasiga UMUMAN aloqasi yo'q
                 (sport, siyosat, ob-havo, dasturlash, tibbiyot, ko'ngilochar)
                 yoki savol butunlay tushunarsiz.
@@ -148,6 +157,31 @@ Savolning JAVOBI qayerda turishiga qara.
 - Ikkalasi ham so'ralgan bo'lsa ("Visa nima va sizda qanday Visa kartalar
   bor") -> "product": bank qismi bazadan olinishi shart.
 - Soha tashqarisidagi savolni HECH QACHON "concept" qilma — u "other".
+
+"other_bank" MI YOKI "concept" MI — SHU CHEGARANI EHTIYOT BILAN TUT:
+Savolda "bank" so'zi borligi O'ZI HECH NARSANI anglatmaydi. Yagona savol shu:
+javob MUAYYAN boshqa bank(lar) haqida bo'lishi kerakmi, yoki bank ishining
+UMUMIY qoidasi haqidami?
+- Boshqa bank nomi aytilgan bo'lsa ("Kapitalbank", "Ipoteka bank",
+  "Aloqabank", "Xalq banki", "Sberbank", "Anorbank") YOKI nom aytilmasa ham
+  javob banklarni sanab chiqish, reyting, "qaysisi yaxshi" bo'lsa
+  -> "other_bank".
+- Bank ishi, moliya, iqtisodiyot UMUMIY tarzda so'ralgan bo'lsa -> "concept".
+UMUMIY SAVOLNI "other_bank" QILISH JIDDIY XATO: "bank tizimi qanday ishlaydi"
+deb so'ragan odam boshqa bank haqida so'ramayapti, unga bemalol javob
+beriladi. Shubhalansang — "concept" tanla.
+
+ANIQ MISOLLAR — chegara aynan shu yerdan o'tadi:
+  "bank tizimi qanday ishlaydi"              -> concept
+  "tijorat banklari qanday foyda qiladi"     -> concept
+  "Markaziy bank nima bilan shug'ullanadi"   -> concept
+  "kredit foizi qanday hisoblanadi"          -> concept
+  "banklar depozitni nima uchun oladi"       -> concept
+  "O'zbekistondagi top banklar ro'yxati"     -> other_bank
+  "eng yaxshi bank qaysi"                    -> other_bank
+  "O'zbekistonda nechta bank bor"            -> other_bank
+  "Kapitalbank kartasi qancha turadi"        -> other_bank
+  "Ipoteka bankda foiz sizdagidan arzonmi"   -> other_bank
 
 TIZIM/KOMPANIYA ni KARTA/MAHSULOT dan AJRAT (bu yerda ko'p xato bo'lgan):
 Visa, Mastercard, Uzcard, Humo, UnionPay — bularning har biri IKKI xil
@@ -217,7 +251,8 @@ Maydonlar:
 - "search_query" — bazadan qidirish uchun tozalangan, O'ZI YETARLI so'rov:
                    ortiqcha so'zlarsiz, olmoshlar yechilgan, kerak bo'lsa
                    rasmiy atama bilan to'ldirilgan.
-                   smalltalk/about_bot/concept/other/history uchun bo'sh satr
+                   smalltalk/about_bot/concept/other/other_bank/history uchun
+                   bo'sh satr
                    qoldir — bu niyatlarda bazadan qidirilmaydi.
 - "reply"        — FAQAT "smalltalk" va "about_bot" uchun: qisqa, xushmuomala
                    javob (1-2 gap), foydalanuvchi tilida. Boshqa hollarda "".

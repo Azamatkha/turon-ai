@@ -157,6 +157,69 @@ def is_cyrillic_text(text: str) -> bool:
     return cyr > 0 and cyr >= lat
 
 
+# --- Aralash alifboli so'zni tuzatish --- #
+#
+# Model javobni LOTINCHA yozishi kerak (system promptlarda qat'iy talab), lekin
+# u ba'zan BITTA SO'Z ichida ikkala alifboni aralashtirib yuboradi:
+#   "boshqa молияiy operatsiyalar", "sumмага", "то'g'risida"
+# Prompt qoidasi bunga to'liq to'sqinlik qila olmaydi — modelning ichki
+# vakillanishida kirill va lotin o'zbekcha bir-biriga juda yaqin. Buni
+# aniqlash esa MEXANIK: so'zda ikkala alifbo ham bo'lsa, u xato. Shuning
+# uchun tuzatishni promptga emas, kodga topshiramiz.
+#
+# FAQAT ARALASH so'z tegiladi: butunlay kirillcha so'z (masalan foydalanuvchi
+# kirill rejimida ishlayotgan bo'lsa) va butunlay lotincha so'z o'zgarmaydi.
+_ANY_WORD_RE = re.compile(r"[A-Za-zЀ-ӿ][A-Za-zЀ-ӿ'‘’ʻʼ`]*")
+
+
+def _fix_mixed_word(m: re.Match[str]) -> str:
+    word = m.group(0)
+    if _CYRILLIC_RE.search(word) and _LATIN_RE.search(word):
+        return to_latin(word)
+    return word
+
+
+def fix_mixed_script(text: str) -> str:
+    """Bitta so'z ichida aralashgan kirill harflarini lotinga keltiradi.
+
+    URL'lar chetlab o'tiladi (havolada harf o'zgarsa manzil buziladi)."""
+    parts = _URL_RE.split(text)
+    urls = _URL_RE.findall(text)
+    out = [_ANY_WORD_RE.sub(_fix_mixed_word, parts[0])]
+    for url, rest in zip(urls, parts[1:]):
+        out.append(url)
+        out.append(_ANY_WORD_RE.sub(_fix_mixed_word, rest))
+    return "".join(out)
+
+
+class StreamingScriptFixer:
+    """`fix_mixed_script` ning oqim (streaming) uchun varianti.
+
+    StreamingTransliterator bilan bir xil sababga ko'ra SO'Z CHEGARASI
+    bo'yicha buferlaydi: so'z ikki bo'lak orasida bo'linib qolsa, uning
+    yarmida aralashuv ko'rinmaydi va xato o'tib ketardi. Kechikish bir
+    so'zdan oshmaydi.
+
+    Javob kirillga o'girilayotganda bu KERAK EMAS: u yerda butun matn
+    baribir bir alifboga keltiriladi."""
+
+    def __init__(self) -> None:
+        self._pending = ""
+
+    def feed(self, delta: str) -> str:
+        buf = self._pending + delta
+        m = re.search(r"\S+\Z", buf)
+        if m is None:
+            complete, self._pending = buf, ""
+        else:
+            complete, self._pending = buf[: m.start()], buf[m.start() :]
+        return fix_mixed_script(complete) if complete else ""
+
+    def flush(self) -> str:
+        rest, self._pending = self._pending, ""
+        return fix_mixed_script(rest) if rest else ""
+
+
 class StreamingTransliterator:
     """Oqim (streaming) bo'laklarini kirillga XAVFSIZ o'giradi.
 

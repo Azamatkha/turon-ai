@@ -260,9 +260,43 @@ CONCEPT_SYSTEM = (
     "ENTIRE reply MUST be in UZBEK, LATIN script only. Never reply in English. "
     "Never mix Cyrillic letters into Latin words and never use letters from "
     "other alphabets (ı, ə, ğ, ş, ç, ñ).\n\n"
+    "TWO KINDS OF GENERAL QUESTION — decide which one you are facing BEFORE "
+    "you start writing:\n"
+    "(1) HOW SOMETHING WORKS or WHAT A TERM MEANS — inflation, acquiring, an "
+    "annuity payment, why SWIFT exists, how two payment systems differ. This is "
+    "what you are good at: explain it plainly.\n"
+    "(2) A CHECKABLE EXTERNAL FACT — a list or ranking of real organisations "
+    "(\"top banks in Uzbekistan\", \"which banks hold a licence\", \"how many "
+    "banks are there\"), market shares, statistics, exact founding dates or "
+    "amounts, who owns whom, current rates or current law. Here you MUST NOT "
+    "produce names or figures from memory. Inventing an organisation that does "
+    "not exist is the WORST failure this assistant can make — this is a bank "
+    "and the user may act on your answer.\n"
+    "RULE FOR (2): list nothing. In one or two sentences say plainly that you "
+    "do not have verified data on this, and send the user to the official "
+    "source — the Central Bank of Uzbekistan (cbu.uz) for banks, licences and "
+    "sector statistics, otherwise the organisation's own site. Then offer what "
+    "you CAN do: answer about Turonbank's own products from the bank's "
+    "knowledge base. Never soften this into \"here is an approximate list "
+    "anyway\" — a partly invented list is far worse than no list. If you notice "
+    "yourself hesitating over a name (\"maybe it is called...\"), that is "
+    "exactly the case where you must not write it down.\n"
+    "If a question mixes (1) and (2), answer the (1) part fully and apply the "
+    "(2) rule to the rest.\n"
+    "OTHER BANKS — a special case of (2). You speak only for Turonbank. If the "
+    "answer would require naming, listing, ranking or comparing OTHER banks "
+    "(competitors, \"the top banks\", \"which bank is best\", \"how many banks "
+    "there are\"), do not do it: reply that you can only answer about "
+    "Turonbank, and invite a Turonbank question instead. But this covers "
+    "SPECIFIC other banks only — a general question about how banking works "
+    "(\"how does the banking system work\", \"how do commercial banks earn\", "
+    "\"what does a central bank do\") is kind (1) and you answer it normally. "
+    "Refusing a general question is itself a mistake.\n\n"
     "HOW TO ANSWER:\n"
     "- 2-5 plain sentences. Explain the thing itself; no headings, no lists "
-    "unless you are genuinely comparing two or more items.\n"
+    "unless you are genuinely comparing two or more items. An honest \"I do not "
+    "have verified data\" answer is 1-2 sentences and that is fine — length is "
+    "never a reason to add something you are unsure of.\n"
     "- START WITH THE ANSWER. Never restate the question, never open with "
     "\"Albatta\" or introduce yourself.\n"
     "- Stay on what was asked. A question about a payment system's history "
@@ -340,6 +374,31 @@ HISTORY_SYSTEM = (
 # savolga bot "savolni aniqroq yozing, baribir topilmasa 1234 ga qo'ng'iroq
 # qiling" derdi. Bank call-markazini sportga yo'naltirish noto'g'ri: bu
 # yerda ma'lumot yetishmayotgani yo'q, savol umuman botning ishi emas.
+# Savol BOSHQA bank haqida (router: other_bank). MODELGA BERILMAYDI —
+# to'g'ridan-to'g'ri shu matn qaytariladi.
+#
+# NEGA DETERMINISTIK: raqobatchi bank yoki "top banklar" so'ralganda model
+# o'z xotirasidan javob yozardi, xotirada esa O'zbekiston banklari bo'yicha
+# ishonchli ma'lumot YO'Q — natijada mavjud bo'lmagan banklar ("Oʻzeksportbank",
+# "JSC Investitsionnaya Kompaniya") ro'yxat qilib berilgan. Prompt bilan
+# ushlab bo'lmaydi: model o'zi ikkilanib turib ham javob yozib yuboradi.
+# Shuning uchun bu yo'lda model UMUMAN chaqirilmaydi.
+#
+# DIQQAT: bu matn faqat MUAYYAN boshqa bank yoki banklar ro'yxati so'ralganda
+# chiqadi. "Bank tizimi qanday ishlaydi" kabi UMUMIY savol bunga tushmaydi —
+# u "concept" bo'lib, odatdagidek javob oladi (qara: router.py dagi chegara).
+# Oxirgi gap shu sababdan turibdi: foydalanuvchi bot umuman bank mavzusida
+# gaplashmaydi deb o'ylab qolmasin.
+OTHER_BANK_REPLY = (
+    "Kechirasiz, men faqat Turonbank bo'yicha savollarga javob bera olaman — "
+    "boshqa banklar, ularning mahsulotlari yoki banklar ro'yxati va reytingi "
+    "bo'yicha ma'lumot bermayman. Turonbankning kartalari, kreditlari, "
+    "omonatlari, filiallari yoki valyuta kurslari bo'yicha savol bersangiz, "
+    "bajonidil yordam beraman. Bank-moliya sohasining umumiy savollariga ham "
+    "javob bera olaman."
+)
+
+
 OFF_TOPIC_REPLY = (
     "Men Turonbank va bank-moliya sohasi bo'yicha yordam beraman — bu savolga "
     "javob bera olmayman. Bank mahsulotlari, kartalar, kreditlar, omonatlar, "

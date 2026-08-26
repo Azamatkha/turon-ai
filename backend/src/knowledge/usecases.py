@@ -9,7 +9,9 @@ from loggers import get_logger
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.uzbek_script import (
+    StreamingScriptFixer,
     StreamingTransliterator,
+    fix_mixed_script,
     is_cyrillic_text,
     to_cyrillic,
     to_latin,
@@ -33,6 +35,7 @@ from src.knowledge.prompts import (
     HISTORY_SYSTEM,
     NO_INFO_REPLY,
     OFF_TOPIC_REPLY,
+    OTHER_BANK_REPLY,
     PDF_CLEAN_SYSTEM,
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
@@ -2425,12 +2428,21 @@ class AnswerQuestionUseCase:
         # bazaga bormaymiz, modelni ham chaqirmaymiz. Ilgari bu savol RAG'ga
         # tushib, "ma'lumot topilmadi, 1234 ga qo'ng'iroq qiling" javobini
         # olardi — bank call-markazini sport savoliga yo'naltirish noto'g'ri.
+        #
+        # BOSHQA BANK haqidagi savol ham shu yerda kesiladi: bot faqat
+        # Turonbank bo'yicha gapiradi, raqobatchi bank yoki banklar ro'yxati
+        # so'ralganda model umuman chaqirilmaydi (qara: OTHER_BANK_REPLY).
         if (
             decision is not None
             and not skip_shortcuts
-            and decision.intent is Intent.OTHER
+            and decision.intent in (Intent.OTHER, Intent.OTHER_BANK)
         ):
-            text = to_cyrillic(OFF_TOPIC_REPLY) if want_cyrillic else OFF_TOPIC_REPLY
+            reply = (
+                OTHER_BANK_REPLY
+                if decision.intent is Intent.OTHER_BANK
+                else OFF_TOPIC_REPLY
+            )
+            text = to_cyrillic(reply) if want_cyrillic else reply
             yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
@@ -2453,7 +2465,11 @@ class AnswerQuestionUseCase:
             prompt, system, max_toks = self._no_search_call(
                 decision.intent, question, history
             )
+            # Kirillga o'girilmaydigan javobda aralash alifboli so'zni
+            # ("молияiy") tuzatamiz. Kirillga o'girilganda kerak emas —
+            # u yerda matn baribir bir alifboga keltiriladi.
             tr = StreamingTransliterator() if want_cyrillic else None
+            sf = None if want_cyrillic else StreamingScriptFixer()
             lf = _ConceptLineFilter()
             async for ev in self.ai_client.stream_generate(
                 prompt,
@@ -2465,16 +2481,20 @@ class AnswerQuestionUseCase:
                     text = lf.feed(ev["text"])
                     if tr is not None:
                         text = tr.feed(text)
+                    elif sf is not None:
+                        text = sf.feed(text)
                     if not text:
                         continue
                     ev = {**ev, "text": text}
                 if ev.get("type") == "done":
                     # Filtrda qolgan qoldiqni chiqaramiz, so'ng transliterator
-                    # buferini bo'shatamiz (tartib muhim: filtr lotincha matn
-                    # ustida ishlaydi).
+                    # (yoki alifbo tuzatuvchi) buferini bo'shatamiz — tartib
+                    # muhim: filtr lotincha matn ustida ishlaydi.
                     rest = lf.flush()
                     if tr is not None:
                         rest = tr.feed(rest) + tr.flush()
+                    elif sf is not None:
+                        rest = sf.feed(rest) + sf.flush()
                     if rest:
                         yield {"type": "delta", "text": rest}
                     ev["max_tokens"] = max_toks
@@ -2676,17 +2696,25 @@ class AnswerQuestionUseCase:
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
         src_dump = [{"title": s.title, "score": s.score} for s in sources]
+        # Aralash alifboli so'zni tuzatish — concept yo'lidagi bilan bir xil
+        # sabab: model bitta so'z ichida kirill va lotinni aralashtirib
+        # yuboradi va promptdagi taqiq buni to'xtata olmaydi.
         tr = StreamingTransliterator() if want_cyrillic else None
+        sf = None if want_cyrillic else StreamingScriptFixer()
         async for ev in self.ai_client.stream_generate(
             prompt,
             system_prompt=system,
             temperature=self.TEMPERATURE,
             max_tokens=max_toks,
         ):
-            if tr is not None and ev.get("type") == "delta":
-                ev = {**ev, "text": tr.feed(ev["text"])}
+            if ev.get("type") == "delta":
+                if tr is not None:
+                    ev = {**ev, "text": tr.feed(ev["text"])}
+                elif sf is not None:
+                    ev = {**ev, "text": sf.feed(ev["text"])}
             if ev.get("type") == "done":
-                if tr is not None and (rest := tr.flush()):
+                rest = tr.flush() if tr is not None else sf.flush()
+                if rest:
                     yield {"type": "delta", "text": rest}
                 ev["max_tokens"] = self.MAX_TOKENS
                 ev["sources"] = src_dump
@@ -2730,16 +2758,20 @@ class AnswerQuestionUseCase:
         # belgisi bo'lsa, bazaga bormaydigan qisqa yo'llar ochilmaydi.
         skip_shortcuts = _has_employee_intent(question.lower())
 
-        # Soha tashqarisidagi savol — stream yo'li bilan bir xil: tayyor matn.
+        # Soha tashqarisidagi va BOSHQA BANK haqidagi savol — stream yo'li
+        # bilan bir xil: tayyor matn, model chaqirilmaydi.
         if (
             decision is not None
             and not skip_shortcuts
-            and decision.intent is Intent.OTHER
+            and decision.intent in (Intent.OTHER, Intent.OTHER_BANK)
         ):
+            reply = (
+                OTHER_BANK_REPLY
+                if decision.intent is Intent.OTHER_BANK
+                else OFF_TOPIC_REPLY
+            )
             return AnswerResult(
-                answer=(
-                    to_cyrillic(OFF_TOPIC_REPLY) if want_cyrillic else OFF_TOPIC_REPLY
-                ),
+                answer=(to_cyrillic(reply) if want_cyrillic else reply),
                 sources=[],
                 finish_reason="stop",
                 completion_tokens=0,
@@ -2764,7 +2796,7 @@ class AnswerQuestionUseCase:
             )
             text = _clean_concept_answer(gen.text)
             return AnswerResult(
-                answer=to_cyrillic(text) if want_cyrillic else text,
+                answer=to_cyrillic(text) if want_cyrillic else fix_mixed_script(text),
                 sources=[],
                 finish_reason=gen.finish_reason,
                 completion_tokens=gen.completion_tokens,
@@ -2929,6 +2961,8 @@ class AnswerQuestionUseCase:
         answer = _dedupe_source_links(_strip_stray_followup(gen.text.strip()))
         if want_cyrillic:
             answer = _translit_preserving_titles(answer, [s.title for s in sources])
+        else:
+            answer = fix_mixed_script(answer)
         return AnswerResult(
             answer=answer,
             sources=sources,
