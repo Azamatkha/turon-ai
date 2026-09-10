@@ -5,7 +5,7 @@ import { useLang } from "../hooks/useLang";
 import { adminDict } from "../locales";
 import type { AdminRole, AdminUser, AdminView } from "../types/admin";
 import {
-  listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole,
+  listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole, type AdminUserUpdate,
 } from "../services/adminService";
 import { scrapeUrl, uploadText } from "../services/knowledgeService";
 import { listReports } from "../services/reportService";
@@ -58,6 +58,13 @@ const mapUser = (u: ApiUser): AdminUser => ({
   role: toAdminRole(u.role),
   status: u.is_online ? "Online" : "Offline",
   verified: u.is_verified ?? true,
+  pnfl: u.pnfl ?? "",
+  patronym: u.patronym ?? "",
+  docSeria: u.doc_seria ?? "",
+  docNumber: u.doc_number ?? "",
+  birthDate: u.birth_date ?? "",
+  position: u.position ?? "",
+  branch: u.branch ?? "",
 });
 
 export default function AdminPage() {
@@ -231,10 +238,7 @@ export default function AdminPage() {
     }
   };
 
-  const onUpdateUser = async (
-    id: string,
-    input: { username?: string; full_name?: string; department?: string; password?: string }
-  ) => {
+  const onUpdateUser = async (id: string, input: AdminUserUpdate) => {
     await updateUser(id, input);
     await load();
   };

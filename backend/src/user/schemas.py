@@ -54,6 +54,12 @@ class UserAdminListItem(Base):
     is_verified: bool = True
     position: str | None = None
     branch: str | None = None
+    # Admin tahrirlash oynasi uchun (Face-ID'dan o'tolmagan xodimni qo'lda to'ldirish)
+    pnfl: str | None = None
+    patronym: str | None = None
+    doc_seria: str | None = None
+    doc_number: str | None = None
+    birth_date: date | None = None
     # Oxirgi 5 daqiqada faol bo'lganmi (onlayn/oflayn ko'rsatish uchun).
     # last_seen_at login/so'rov paytida yangilanadi.
     is_online: bool = False
@@ -107,6 +113,25 @@ class AdminUpdateUserModel(Base):
     role: UserRole | None = None
     # Admin userni qo'lda tasdiqlashi (yoki tasdiqni bekor qilishi) mumkin
     is_verified: bool | None = None
+    # Face-ID'dan o'tolmagan xodim ma'lumotlarini admin qo'lda kiritadi.
+    # None = maydonga tegma; bo'sh satr = maydonni tozalash (NULL).
+    pnfl: str | None = None
+    patronym: str | None = Field(default=None, max_length=50)
+    doc_seria: str | None = Field(default=None, max_length=10)
+    doc_number: str | None = Field(default=None, max_length=20)
+    birth_date: date | None = None
+    position: str | None = Field(default=None, max_length=150)
+    branch: str | None = Field(default=None, max_length=150)
+
+    @field_validator("pnfl")
+    @classmethod
+    def validate_pnfl(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if value and (len(value) != 14 or not value.isdigit()):
+            raise ValueError("PNFL 14 ta raqamdan iborat bo'lishi kerak")
+        return value
 
     @field_validator("username")
     @classmethod

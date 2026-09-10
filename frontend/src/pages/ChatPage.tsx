@@ -5,14 +5,13 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { fetchMe, logout, changePassword, updateProfile, type Me } from "../services/authService";
+import { fetchMe } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
-import ProfileModal from "../components/chat/ProfileModal";
 import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
 import CosmicSingularity from "../components/CosmicSingularity";
@@ -36,19 +35,9 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(() => !window.matchMedia("(max-width: 900px)").matches);
   const [search, setSearch] = useState("");
   const { theme, toggleTheme } = useTheme();
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("user");
-  const [pFullName, setPFullName] = useState("");
-  const [pUsername, setPUsername] = useState("");
-  // To'liq profil (lavozim, filial, PNFL...) — profil oynasining o'ng ustuni uchun
-  const [profile, setProfile] = useState<Me | null>(null);
-  const [pPassword, setPPassword] = useState("");
-  const [pConfirmPassword, setPConfirmPassword] = useState("");
-  const [pError, setPError] = useState("");
-  const [pSaving, setPSaving] = useState(false);
 
   // Haqiqiy foydalanuvchini backenddan olamiz (login token bilan)
   useEffect(() => {
@@ -57,7 +46,6 @@ export default function ChatPage() {
         setFullName(me.full_name);
         setUsername(me.username);
         setRole(me.role);
-        setProfile(me);
       })
       .catch(() => navigate("/login"));
   }, [navigate]);
@@ -79,11 +67,6 @@ export default function ChatPage() {
   const userName = fullName || "Foydalanuvchi";
   const userHandle = "@" + (username || "user");
   const initial = userName.charAt(0).toUpperCase();
-
-  const doLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
 
   // Ekran torayganda drawer'ni yopamiz, kengayganda qaytaramiz — foydalanuvchi
   // oynani cho'zganda sidebar "osilib" qolmasligi uchun.
@@ -134,81 +117,8 @@ export default function ChatPage() {
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [chats, thinking]);
 
-  const openProfile = () => {
-    setPFullName(fullName);
-    setPUsername(username);
-    setPPassword("");
-    setPConfirmPassword("");
-    setPError("");
-    setSaved(false);
-    setProfileOpen(true);
-  };
-
-  // Profilni saqlash: ism/login (PATCH /v1/users/me) va parol
-  // (PATCH /v1/users/me/password) — ikkitasi ALOHIDA endpoint.
-  //
-  // Tartib muhim: avval ism/login, keyin parol. Sababi parol o'zgarganda
-  // backend BARCHA sessiyalarni bekor qiladi — undan keyingi har qanday
-  // so'rov 401 bo'lardi. Ya'ni teskari tartibda ism saqlanmay qolardi.
-  const saveProfile = async () => {
-    setPError("");
-    const nameChanged = pFullName.trim() !== fullName;
-    const usernameChanged = pUsername.trim().toLowerCase() !== username;
-    const wantsPasswordChange = !!pPassword;
-
-    // Hech narsa o'zgarmagan bo'lsa — saqlaydigan narsa yo'q, oynani yopamiz
-    if (!nameChanged && !usernameChanged && !wantsPasswordChange) {
-      setProfileOpen(false);
-      return;
-    }
-
-    if (wantsPasswordChange) {
-      // O'zi to'g'ri terganini tekshirish uchun tasdiqlash bilan solishtiramiz
-      if (pPassword !== pConfirmPassword) {
-        setPError(S.passwordMismatch);
-        return;
-      }
-    }
-
-    setPSaving(true);
-    try {
-      if (nameChanged || usernameChanged) {
-        const me = await updateProfile({
-          ...(nameChanged ? { full_name: pFullName.trim() } : {}),
-          ...(usernameChanged ? { username: pUsername.trim().toLowerCase() } : {}),
-        });
-        // Ekrandagi qiymatlarni backend QAYTARGANI bilan almashtiramiz —
-        // u normalizatsiya qilingan bo'lishi mumkin (login kichik harfga
-        // tushadi, ismdagi ortiqcha bo'shliqlar olib tashlanadi).
-        setFullName(me.full_name);
-        setUsername(me.username);
-        setProfile(me);
-        setPFullName(me.full_name);
-        setPUsername(me.username);
-      }
-
-      if (wantsPasswordChange) {
-        await changePassword(pPassword);
-        // Parol o'zgardi -> backend hamma sessiyani o'chirdi -> hozirgi token
-        // ham yaroqsiz. Foydalanuvchini yangi parol bilan qayta kirishga
-        // yuboramiz, aks holda u har bir so'rovda 401 olib, sababini
-        // tushunmasdi.
-        await logout();
-        navigate("/login");
-        return;
-      }
-    } catch (e) {
-      setPError(e instanceof Error ? e.message : "Saqlashda xatolik");
-      return;
-    } finally {
-      setPSaving(false);
-    }
-
-    setPPassword("");
-    setPConfirmPassword("");
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
-  };
+  // Profil — alohida sahifa (/profile); saqlash mantig'i ProfilePage.tsx da
+  const openProfile = () => navigate("/profile");
 
   const tk = getThemeTokens(isDark);
   const side = getSideTokens(isDark);
@@ -361,30 +271,6 @@ export default function ChatPage() {
           isDark={isDark}
           s={S}
         />
-
-        {profileOpen && (
-          <ProfileModal
-            initial={initial}
-            userHandle={userHandle}
-            pFullName={pFullName}
-            setPFullName={setPFullName}
-            pUsername={pUsername}
-            setPUsername={setPUsername}
-            pPassword={pPassword}
-            setPPassword={setPPassword}
-            pConfirmPassword={pConfirmPassword}
-            setPConfirmPassword={setPConfirmPassword}
-            profile={profile}
-            error={pError}
-            saved={saved}
-            saving={pSaving}
-            onClose={() => setProfileOpen(false)}
-            onSave={saveProfile}
-            onLogout={doLogout}
-            s={S}
-            isDark={isDark}
-          />
-        )}
       </main>
     </div>
   );

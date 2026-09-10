@@ -15,6 +15,31 @@ export interface ApiUser {
   is_online: boolean;
   // Face-ID verifikatsiyasidan o'tganmi
   is_verified: boolean;
+  // Verifikatsiya ma'lumotlari (tasdiqlanmagan/eski userlarda null)
+  position?: string | null;
+  branch?: string | null;
+  pnfl?: string | null;
+  patronym?: string | null;
+  doc_seria?: string | null;
+  doc_number?: string | null;
+  birth_date?: string | null;
+}
+
+// Admin tomonidan tahrirlash — barcha maydonlar ixtiyoriy (faqat yuborilgani o'zgaradi).
+// Verifikatsiya maydonlarida bo'sh satr = tozalash.
+export interface AdminUserUpdate {
+  username?: string;
+  full_name?: string;
+  department?: string;
+  password?: string;
+  is_verified?: boolean;
+  pnfl?: string;
+  patronym?: string;
+  doc_seria?: string;
+  doc_number?: string;
+  birth_date?: string;
+  position?: string;
+  branch?: string;
 }
 
 async function readError(res: Response, fallback: string): Promise<string> {
@@ -68,13 +93,7 @@ export async function changeRole(id: string, role: BackendRole): Promise<ApiUser
 
 export async function updateUser(
   id: string,
-  input: {
-    username?: string;
-    full_name?: string;
-    department?: string;
-    password?: string;
-    is_verified?: boolean;
-  }
+  input: AdminUserUpdate
 ): Promise<ApiUser> {
   const res = await apiFetch(`/v1/users/${id}`, {
     method: "PATCH",

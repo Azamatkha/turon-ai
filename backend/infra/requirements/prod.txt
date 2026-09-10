@@ -140,8 +140,10 @@ python-dotenv==1.2.2
     #   pydantic-settings
 python-multipart==0.0.26
     # via -r base.in
-qdrant-client
-    # via -r base.in  (qo'lda qo'shildi; versiya build vaqtida tanlanadi)
+qdrant-client>=1.12,<1.13
+    # via -r base.in  (server qdrant/qdrant:v1.12.4 bilan mos bo'lishi shart —
+    #   versiyasiz qolganda 1.19 o'rnatilib, "incompatible" ogohlantirishi chiqardi.
+    #   Serverni ko'tarsangiz, shu diapazonni ham birga ko'taring.)
 trafilatura
     # via -r base.in  (qo'lda qo'shildi; HTML sahifadan asosiy matnni ajratish)
 redis==7.4.0

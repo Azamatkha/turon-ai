@@ -189,9 +189,14 @@ services:
     container_name: template-qdrant
     image: qdrant/qdrant:v1.12.4
     restart: unless-stopped
+    # Faqat serverning o'ziga (127.0.0.1) ochiq: Qdrant'da API kaliti yo'q,
+    # barcha interfeyslarga ochiq bo'lsa bank tarmog'idagi har kim bilim
+    # bazasini o'qiy/o'chira olardi. App ichki tarmoq orqali `qdrant:6333`
+    # ga ulanadi (QDRANT_HOST), dashboard kerak bo'lsa — SSH tunnel:
+    #   ssh -L 6333:127.0.0.1:6333 <server>  ->  http://localhost:6333/dashboard
     ports:
-      - "6333:6333"   # REST API + web dashboard
-      - "6334:6334"   # gRPC
+      - "127.0.0.1:6333:6333"   # REST API + web dashboard
+      - "127.0.0.1:6334:6334"   # gRPC
     volumes:
       - qdrant-data:/qdrant/storage
     networks:

@@ -46,6 +46,26 @@ class AdminUpdateUserUseCase:
             if data.is_verified is not None:
                 # Mobil ilovasiz xodimni admin qo'lda tasdiqlaydi
                 update_data["is_verified"] = data.is_verified
+
+            # Verifikatsiya ma'lumotlari (Face-ID'dan o'tolmagan xodim uchun).
+            # Bitta PNFL — bitta faol akkaunt (mobil oqimdagi kabi).
+            if data.pnfl:
+                owner = await uow.users.get_single(
+                    uow.session, pnfl=data.pnfl, is_deleted=False
+                )
+                if owner and owner.id != user_id:
+                    raise InstanceAlreadyExistsException(
+                        "Bu PNFL bilan akkaunt allaqachon mavjud"
+                    )
+            for field in (
+                "pnfl", "patronym", "doc_seria", "doc_number", "position", "branch"
+            ):
+                value = getattr(data, field)
+                if value is not None:
+                    # Bo'sh satr — maydonni tozalash
+                    update_data[field] = value.strip() or None
+            if data.birth_date is not None:
+                update_data["birth_date"] = data.birth_date
             if data.password is not None:
                 update_data["password_hash"] = hash_password(data.password)
             if data.full_name is not None:

@@ -191,6 +191,10 @@ export interface ChatStaticStrings {
   infoPnfl: string;
   infoBirthDate: string;
   infoDocument: string;
+  // Alohida profil sahifasi (/profile)
+  profileTitle: string;
+  backToChat: string;
+  accountSettings: string;
   saved: string;
   saveChanges: string;
   logOut: string;
@@ -271,6 +275,17 @@ export interface AdminStrings {
   verifyUser: string;
   unverifyUser: string;
   unverifiedBadge: string;
+  // Tahrirlash oynasidagi verifikatsiya bo'limi (Face-ID o'rniga qo'lda kiritish)
+  verificationSection: string;
+  verifiedLabel: string;
+  pnflLabel: string;
+  patronymLabel: string;
+  docSeriaLabel: string;
+  docNumberLabel: string;
+  birthDateLabel: string;
+  positionLabel: string;
+  branchLabel: string;
+  pnflInvalid: string;
   logout: string;
   uploadNav: string;
   uploadTitle: string;

@@ -12,4 +12,12 @@ export interface AdminUser {
   status: AdminStatus;
   // Mobil ilovada Face-ID verifikatsiyasidan o'tganmi (admin qo'lda ham tasdiqlay oladi)
   verified: boolean;
+  // Verifikatsiya ma'lumotlari — admin tahrirlash oynasi uchun
+  pnfl?: string;
+  patronym?: string;
+  docSeria?: string;
+  docNumber?: string;
+  birthDate?: string;
+  position?: string;
+  branch?: string;
 }

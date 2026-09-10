@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AdminUser, AdminRole, AdminStatus } from "../../types/admin";
+import type { AdminUserUpdate } from "../../services/adminService";
 import type { AdminStrings } from "../../types/i18n";
 import type { Lang } from "../../types/lang";
 import { DEPARTMENTS, deptLabel } from "../../services/departments";
@@ -31,7 +32,7 @@ interface Props {
   onChangeRole: (id: string, role: AdminRole) => void;
   onToggleVerified: (id: string, verified: boolean) => void;
   onDelete: (id: string) => void;
-  onUpdate: (id: string, input: { username?: string; full_name?: string; department?: string; password?: string }) => Promise<void>;
+  onUpdate: (id: string, input: AdminUserUpdate) => Promise<void>;
   t: AdminStrings;
   lang: Lang;
 }

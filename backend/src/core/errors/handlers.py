@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+import logging
 from typing import Any
 
 from fastapi import Request
@@ -25,6 +26,10 @@ from src.core.errors.exceptions import (
 )
 
 response_logger = get_logger("app.request.error_response", plain_format=True)
+# 4xx handler'lari DEBUG'da yozadi, sababi esa so'rov logi qatoriga qo'shiladi
+# (middleware.py). LOG_LEVEL=DEBUG bo'lsa ham ular alohida "[Forbidden] ..."
+# qatori bo'lib takrorlanmasin — bu logger kamida INFO. 5xx (error) baribir yoziladi.
+response_logger.setLevel(max(response_logger.level, logging.INFO))
 
 # Type for exception handler
 HandlerCallable = Callable[[Request, Exception], Awaitable[Response]]
