@@ -229,6 +229,9 @@
   /* Uzun sarlavha gorizontal scroll chiqarmasin */
   overflow-x: hidden;
   padding: 6px 0 8px;
+  /* Tor panel — nozik scrollbar (qara: index.css §7) */
+  --tu-sb-size: 6px;
+  --tu-sb-pad: 1px;
 }
 
 .empty {

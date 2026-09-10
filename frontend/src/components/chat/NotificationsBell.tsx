@@ -33,8 +33,16 @@ function titleFor(n: ApiNotification, s: ChatStaticStrings): string {
   }
 }
 
-function bodyFor(n: ApiNotification): string {
-  return n.params?.title ?? "";
+// Matn tanasi — sarlavha, birlashgan xabarda esa "sarlavha + yana N ta".
+// `count` backendda qo'shiladi: bir necha yuklash 10 daqiqa ichida bo'lsa,
+// ular alohida bildirishnoma emas, BITTA qatorga birlashadi (qara:
+// backend/src/notifications/usecases.py -> COALESCE_WINDOWS).
+function bodyFor(n: ApiNotification, s: ChatStaticStrings): string {
+  const title = n.params?.title ?? "";
+  const count = Number(n.params?.count ?? 1);
+  if (!Number.isFinite(count) || count < 2) return title;
+  const more = s.notifMoreCount(count - 1);
+  return title ? `${title} ${more}` : more;
 }
 
 /** Bildirishnoma bosilganda ochiladigan sahifa (bo'lmasa — null).
@@ -68,7 +76,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   const navigate = useNavigate();
 
   const format = useCallback(
-    (n: ApiNotification) => ({ title: titleFor(n, s), body: bodyFor(n) }),
+    (n: ApiNotification) => ({ title: titleFor(n, s), body: bodyFor(n, s) }),
     [s]
   );
   const {
@@ -270,9 +278,9 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                           {relTime(n.created_at, s)}
                         </span>
                       </span>
-                      {bodyFor(n) && (
+                      {bodyFor(n, s) && (
                         <span className={styles.rowText} style={{ color: tk.muted }}>
-                          {bodyFor(n)}
+                          {bodyFor(n, s)}
                         </span>
                       )}
                     </span>

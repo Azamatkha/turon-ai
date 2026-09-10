@@ -46,6 +46,8 @@ export const chatStatic: ChatStaticStrings = {
   notifMinAgo: (m: number) => `${m} daq oldin`,
   notifHourAgo: (h: number) => `${h} soat oldin`,
   notifDayAgo: (d: number) => `${d} kun oldin`,
+  // Birlashgan bildirishnoma: "Kredit siyosati va yana 12 ta"
+  notifMoreCount: (n: number) => `va yana ${n} ta`,
   report: "Muammo yoki taklif",
   reportHeading: "Muammo yoki taklif yuborish",
   reportTabProblem: "Muammo",

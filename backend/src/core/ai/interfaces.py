@@ -59,7 +59,11 @@ class BaseAIClient(ABC):
         max_tokens: int,
         system_prompt: str | None = None,
         think: bool = False,
+        timeout: float | None = None,
     ) -> CallResult:
+        """`timeout` — shu BITTA chaqiruv uchun soniya. Berilmasa, klientning
+        umumiy TIMEOUT_SECONDS'i ishlatiladi. Router kabi TEZ bo'lishi shart
+        bo'lgan bosqichlar uzun umumiy timeout'ni kutib o'tirmasligi uchun."""
         raise NotImplementedError
 
     @abstractmethod

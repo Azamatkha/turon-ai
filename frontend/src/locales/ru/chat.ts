@@ -43,6 +43,8 @@ export const chatStatic: ChatStaticStrings = {
   notifMinAgo: (m: number) => `${m} мин назад`,
   notifHourAgo: (h: number) => `${h} ч назад`,
   notifDayAgo: (d: number) => `${d} дн назад`,
+  // Объединённое уведомление: "Кредитная политика и ещё 12"
+  notifMoreCount: (n: number) => `и ещё ${n}`,
   report: "Проблема или предложение",
   reportHeading: "Отправить проблему или предложение",
   reportTabProblem: "Проблема",

@@ -184,6 +184,9 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px 10px 12px;
+  /* Tor ustun — sahifadagi 10px bu yerda qo'pol ko'rinadi (qara: index.css §7) */
+  --tu-sb-size: 6px;
+  --tu-sb-pad: 1px;
 }
 
 .chatGroupItems {

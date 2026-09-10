@@ -281,24 +281,33 @@ Faqat JSON qaytar."""
 class QuestionRouter:
     """Savolni modelga o'qitib, qaror oladi.
 
-    O'ylash (think) SHU YERDA yoqilgan: chiqish qisqa, shuning uchun kechikish
-    kam, foyda esa katta — asosiy xato aynan savolni tushunmaslikdan kelib
-    chiqardi. Yakuniy javob esa o'ylashsiz oqim bilan boradi.
+    AVVAL O'YLASHSIZ so'raymiz, o'ylash esa faqat ZAXIRA. Ilgari teskari edi
+    va serverda bu har bir savolni 2 daqiqaga cho'zib yuborardi (pastdagi
+    izohga qara). Yakuniy javob esa o'ylashsiz oqim bilan boradi.
     """
 
-    # O'ylash (think) va JSON SHU BITTA byudjetni bo'lishadi. Byudjet tugasa
-    # chiqish o'rtasidan uziladi, JSON parse bo'lmaydi va biz JIMGINA
-    # fallback'ga (PRODUCT) tushamiz — ya'ni savol tushunilmagani "muvaffaqiyatli
-    # mahsulot savoli" ko'rinishida chiqadi. Router prompti kengaygach o'ylash
-    # ham uzayadi, shuning uchun zaxira oshirildi (800 -> 1400 -> 3000).
+    # NEGA O'YLASH ZAXIRAGA TUSHIRILDI — o'lchangan fakt, taxmin emas.
+    # 2026-09-10 server loglarida QOLIP shunday edi:
+    #   think=True  -> HAR SAFAR aynan 120 s da httpx.ReadTimeout
+    #   think=False -> o'sha zahoti 3-21 s da to'g'ri JSON
+    # Model issiq turganda ham shunday bo'lgan (sarlavha 2.7 s da tayyor
+    # bo'lgan, uch soniyadan keyingi router chaqiruvi baribir 120 s yegan).
+    # Sababi: o'ylash tokenlari ham num_predict byudjetidan yeyiladi, ya'ni
+    # model 3000 tokenni to'liq mulohazaga sarflaydi va JSON yozishga
+    # ulgurmaydi. Natijada foydalanuvchi 2 daqiqa kutardi-yu, javobni baribir
+    # o'ylashsiz urinish berardi.
     #
-    # 3000 sababi — o'lchangan fakt, taxmin emas: 1400 bilan serverda
-    # 'tijorat banklari qanday foyda qiladi' savoli 1400/1400 tokenni
-    # BUTUNLAY o'ylashga sarflab, chiqishni bo'sh qoldirgan ({"raw": ""})
-    # va jimgina PRODUCT'ga tushgan. Model GPU'da ishlagani uchun bu
-    # zaxiraning narxi kichik: o'ylash odatda ancha qisqa tugaydi,
-    # cheklov faqat eng og'ir holat uchun.
-    MAX_TOKENS = 3000
+    # O'ylashsiz chiqish — faqat qaror JSON'i, ~100 token. 512 keng zaxira.
+    MAX_TOKENS = 512
+    # Zaxira (o'ylash) urinishi uchun byudjet. 3000 emas: byudjet qancha katta
+    # bo'lsa, model shuncha uzoq o'ylaydi va aynan shu timeout'ga olib kelardi.
+    MAX_TOKENS_THINK = 1024
+    # Router uchun ALOHIDA timeout — config.ai.TIMEOUT_SECONDS (120 s) yakuniy
+    # javob uchun mo'ljallangan, savolni TUSHUNISH esa sekundlar ichida
+    # bo'lishi kerak. Ikkala urinish ham yiqilsa, foydalanuvchi 120 s emas,
+    # ~55 s dan keyin PRODUCT zaxirasi bilan javob oladi.
+    TIMEOUT_FAST = 20.0
+    TIMEOUT_THINK = 35.0
     TEMPERATURE = 0.0
     # Kontekstga qo'shiladigan oxirgi almashuvlar soni. 4 -> 6: mavzu
     # ("kompaniya" kim edi) bir necha almashuv oldin aytilgan bo'lishi mumkin,
@@ -334,7 +343,13 @@ class QuestionRouter:
         return "\n\n".join(parts)
 
     async def _ask(
-        self, prompt: str, question: str, *, think: bool
+        self,
+        prompt: str,
+        question: str,
+        *,
+        think: bool,
+        max_tokens: int,
+        timeout: float,
     ) -> dict[str, Any] | None:
         """Modelga bir marta murojaat qiladi. JSON kelmasa None qaytaradi.
 
@@ -346,20 +361,21 @@ class QuestionRouter:
                 prompt,
                 schema=ROUTER_SCHEMA,
                 temperature=self.TEMPERATURE,
-                max_tokens=self.MAX_TOKENS,
+                max_tokens=max_tokens,
                 system_prompt=ROUTER_SYSTEM,
                 think=think,
+                timeout=timeout,
             )
         except Exception:
             logger.exception("Router chaqiruvi muvaffaqiyatsiz: %r", question)
             return None
 
         used = int((result.usage or {}).get("completion_tokens", 0) or 0)
-        if used >= self.MAX_TOKENS - 16:
+        if used >= max_tokens - 16:
             logger.warning(
                 "Router chiqishi token chekloviga tegdi (%d/%d, think=%s): %r",
                 used,
-                self.MAX_TOKENS,
+                max_tokens,
                 think,
                 question,
             )
@@ -386,17 +402,27 @@ class QuestionRouter:
         prompt = self._build_prompt(question, history)
         fallback = Route(intent=Intent.PRODUCT, search_query=question)
 
-        data = await self._ask(prompt, question, think=True)
+        # ASOSIY URINISH — O'YLASHSIZ. Chiqish qisqa, sxema bo'yicha majburlangan
+        # va amalda deyarli har doim to'g'ri JSON beradi (serverda 3-21 s).
+        data = await self._ask(
+            prompt,
+            question,
+            think=False,
+            max_tokens=self.MAX_TOKENS,
+            timeout=self.TIMEOUT_FAST,
+        )
         if data is None:
-            # O'YLASHSIZ QAYTA URINISH. Nega kerak: o'ylash butun byudjetni
-            # yeb qo'yganda chiqish bo'sh qoladi ({"raw": ""}) va biz jimgina
-            # PRODUCT'ga tushamiz — ya'ni savol UMUMAN tushunilmagani
-            # "normal mahsulot savoli" ko'rinishida chiqadi (serverda aynan
-            # shunday bo'lgan). O'ylashsiz chiqish qisqa va deyarli har doim
-            # JSON beradi: o'ylab topilgan qaror emas, lekin ko'r-ko'rona
-            # PRODUCT zaxirasidan ancha yaxshi.
-            logger.info("Router o'ylashsiz qayta urinilmoqda: %r", question)
-            data = await self._ask(prompt, question, think=False)
+            # ZAXIRA — O'YLASH BILAN. Bu yerga faqat o'ylashsiz urinish JSON
+            # bermagan (yoki timeout bo'lgan) holatda tushamiz. Ko'r-ko'rona
+            # PRODUCT zaxirasiga tushishdan oldingi oxirgi imkoniyat.
+            logger.info("Router o'ylash bilan qayta urinilmoqda: %r", question)
+            data = await self._ask(
+                prompt,
+                question,
+                think=True,
+                max_tokens=self.MAX_TOKENS_THINK,
+                timeout=self.TIMEOUT_THINK,
+            )
         if data is None:
             return fallback
 

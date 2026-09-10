@@ -16,6 +16,12 @@ const POLL_MS = 60_000;
 // Oqim uzilganda qayta ulanishgacha kutish
 const RECONNECT_MS = 5_000;
 
+// Panelda ko'rsatiladigan bildirishnomalar soni. 30 -> 10: panel qisqa,
+// undan uzun ro'yxatni hech kim oxirigacha o'qimaydi va eskilari faqat
+// aralashtiradi. Badge'dagi son bunga bog'liq emas — u serverdan alohida
+// keladi va o'qilmaganlarning HAMMASINI sanaydi.
+const PANEL_LIMIT = 10;
+
 // Brauzer (OS) bildirishnomasi ikki marta chiqmasligi uchun ko'rsatilganlar
 // id'si saqlanadi. Ro'yxat cheksiz o'smasin — oxirgi SEEN_MAX tasi qoladi.
 const SEEN_KEY = "turon_notif_seen";
@@ -167,7 +173,7 @@ export function useNotifications(format: (n: ApiNotification) => DesktopText) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listNotifications({ limit: 30 });
+      const data = await listNotifications({ limit: PANEL_LIMIT });
       setItems(data.items);
       setUnread(data.unread_count);
       lastCountRef.current = data.unread_count;

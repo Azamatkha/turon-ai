@@ -78,6 +78,8 @@ export interface ChatStaticStrings {
   notifMinAgo: (m: number) => string;
   notifHourAgo: (h: number) => string;
   notifDayAgo: (d: number) => string;
+  // Birlashgan bildirishnoma qo'shimchasi: "... va yana 12 ta"
+  notifMoreCount: (n: number) => string;
   // Murojaat (muammo haqida xabar / taklif) formasi
   report: string;
   reportHeading: string;

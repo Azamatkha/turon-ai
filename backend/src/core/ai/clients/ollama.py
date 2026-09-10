@@ -50,6 +50,7 @@ class OllamaClient(BaseAIClient):
         max_tokens: int,
         think: bool = False,
         fmt: dict[str, Any] | None = None,
+        timeout: float | None = None,
     ) -> dict[str, Any]:
         # Ollama'ning o'ziga xos (native) /api/chat endpointi — OpenAI-uyg'un
         # /v1/chat/completions'dan farqli, "think" bayrog'ini ishonchli
@@ -86,7 +87,7 @@ class OllamaClient(BaseAIClient):
             resp = await self.http.post(
                 f"{self.base_url}/api/chat",
                 json=payload,
-                timeout=self.timeout,
+                timeout=timeout if timeout is not None else self.timeout,
             )
         except httpx.HTTPError as exc:
             raise InfrastructureException(f"Ollama connection error: {exc}") from exc
@@ -208,6 +209,7 @@ class OllamaClient(BaseAIClient):
         max_tokens: int,
         system_prompt: str | None = None,
         think: bool = False,
+        timeout: float | None = None,
     ) -> CallResult:
         if isinstance(prompt, list):
             messages: list[dict[str, Any]] = list(prompt)
@@ -217,7 +219,12 @@ class OllamaClient(BaseAIClient):
             messages = self._build_messages(prompt, system_prompt)
 
         data = await self._chat(
-            messages, temperature, max_tokens, think=think, fmt=schema
+            messages,
+            temperature,
+            max_tokens,
+            think=think,
+            fmt=schema,
+            timeout=timeout,
         )
         text = self._first_text(data)
         try:

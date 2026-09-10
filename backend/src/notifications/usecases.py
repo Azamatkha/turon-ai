@@ -1,3 +1,4 @@
+from datetime import timedelta
 from uuid import UUID
 
 from fastapi import Depends
@@ -8,6 +9,7 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.schemas import SuccessResponse
 from src.core.utils.datetime_utils import get_utc_now
+from src.notifications.enums import NotificationType
 from src.notifications.events import publish_new
 from src.notifications.schemas import (
     NotificationListView,
@@ -19,6 +21,23 @@ from src.user.enums import UserRole
 logger = get_logger(__name__)
 
 NOTIFICATION_NOT_FOUND = "Bildirishnoma topilmadi"
+
+# BIRLASHTIRISH OYNASI — qaysi tur uchun necha vaqt ichida kelgan xabarlar
+# BITTA bildirishnomaga qo'shiladi.
+#
+# NEGA: bilim bazasiga ma'lumot qo'shish bitta emas, ko'p amal bo'ladi —
+# admin ScrapeModal'ga bir necha o'nlab havolani birdan tashlaydi va frontend
+# ularni ketma-ket, HAR BIRI uchun alohida so'rov qilib yuboradi. Har so'rov
+# esa broadcast qilardi: 100 havola -> har bir xodimga 100 ta bildirishnoma.
+# So'rovlarni serverda birlashtirib bo'lmaydi (ular alohida keladi), shuning
+# uchun birlashtirish bildirishnoma yozish bosqichida qilinadi.
+#
+# Ro'yxatda YO'Q turlar birlashtirilmaydi:
+#   RATES_UPDATED — kuniga bir marta, birlashtiradigan narsa yo'q;
+#   REPORT_NEW    — har murojaat alohida voqea, qo'shib yuborish noto'g'ri.
+COALESCE_WINDOWS: dict[str, timedelta] = {
+    NotificationType.KNOWLEDGE_UPDATED.value: timedelta(minutes=10),
+}
 
 
 class ListNotificationsUseCase:
@@ -113,6 +132,8 @@ class BroadcastNotificationUseCase:
         entity_id: UUID | None = None,
         role: UserRole | None = None,
     ) -> int:
+        window = COALESCE_WINDOWS.get(notification_type)
+        coalesce_after = get_utc_now() - window if window else None
         try:
             async with self.uow as uow:
                 recipients = await uow.notifications.fan_out(
@@ -121,6 +142,7 @@ class BroadcastNotificationUseCase:
                     params=params,
                     entity_id=entity_id,
                     role=role,
+                    coalesce_after=coalesce_after,
                 )
                 await uow.commit()
             # Signal commit'dan KEYIN — klient so'raganda qator ko'rinadigan bo'lsin

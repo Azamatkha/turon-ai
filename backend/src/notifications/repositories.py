@@ -76,6 +76,7 @@ class NotificationRepository(BaseRepository[Notification]):
         params: dict[str, str] | None = None,
         entity_id: UUID | None = None,
         role: UserRole | None = None,
+        coalesce_after: datetime | None = None,
     ) -> list[UUID]:
         """Bitta xabarni bir nechta foydalanuvchiga tarqatadi.
 
@@ -83,6 +84,15 @@ class NotificationRepository(BaseRepository[Notification]):
         foydalanuvchilar oladi. Har bir qabul qiluvchiga alohida qator
         yoziladi — shunda o'qilmaganlar soni oddiy partial-indeks bo'yicha
         COUNT bo'lib qoladi (poll so'rovi eng issiq so'rov).
+
+        `coalesce_after` berilsa — YANGI QATOR HAR DOIM HAM YOZILMAYDI: agar
+        foydalanuvchida shu turdagi O'QILMAGAN va `coalesce_after` dan keyin
+        yaratilgan qator bo'lsa, o'sha qator yangilanadi (`params["count"]`
+        bittaga oshadi, sarlavha oxirgisiga almashadi, vaqti yangilanadi).
+        NEGA KERAK: admin bir necha havolani birdan qo'shganda frontend har
+        havola uchun alohida so'rov yuboradi va har biri alohida broadcast
+        qiladi — 100 havola har bir xodimga 100 ta bildirishnoma bo'lib
+        tushardi. Endi bu bitta "Ma'lumotlar yangilandi (100 ta)" bo'ladi.
 
         Commit qilmaydi — chaqiruvchi UoW commit qiladi.
         Qaytaradi: qabul qiluvchilar id'lari (commit'dan keyin ularga
@@ -98,20 +108,86 @@ class NotificationRepository(BaseRepository[Notification]):
         if not user_ids:
             return []
 
-        # id/created_at/updated_at ni ataylab o'zimiz to'ldiramiz: executemany
-        # rejimida ustun default'lariga tayanmaslik ancha ishonchli.
         now = get_utc_now()
-        rows: list[dict[str, Any]] = [
-            {
-                "id": uuid4(),
-                "created_at": now,
-                "updated_at": now,
-                "user_id": user_id,
-                "type": notification_type,
-                "params": params or {},
-                "entity_id": entity_id,
-            }
-            for user_id in user_ids
-        ]
-        await session.execute(insert(self.model), rows)
+        targets = set(user_ids)
+
+        if coalesce_after is not None:
+            merged = await self._merge_into_recent(
+                session,
+                user_ids=user_ids,
+                notification_type=notification_type,
+                params=params,
+                entity_id=entity_id,
+                coalesce_after=coalesce_after,
+                now=now,
+            )
+            targets -= merged
+
+        if targets:
+            # id/created_at/updated_at ni ataylab o'zimiz to'ldiramiz:
+            # executemany rejimida ustun default'lariga tayanmaslik ishonchliroq.
+            rows: list[dict[str, Any]] = [
+                {
+                    "id": uuid4(),
+                    "created_at": now,
+                    "updated_at": now,
+                    "user_id": user_id,
+                    "type": notification_type,
+                    "params": params or {},
+                    "entity_id": entity_id,
+                }
+                for user_id in targets
+            ]
+            await session.execute(insert(self.model), rows)
         return user_ids
+
+    async def _merge_into_recent(
+        self,
+        session: AsyncSession,
+        user_ids: list[UUID],
+        notification_type: str,
+        params: dict[str, str] | None,
+        entity_id: UUID | None,
+        coalesce_after: datetime,
+        now: datetime,
+    ) -> set[UUID]:
+        """Yaqinda kelgan o'qilmagan xabarga qo'shib yuboradi.
+
+        Qaytaradi: qatori YANGILANGAN foydalanuvchilar to'plami — ularga
+        yangi qator yozilmaydi.
+        """
+        query = select(self.model).where(
+            self.model.user_id.in_(user_ids),
+            self.model.type == notification_type,
+            self.model.is_read.is_(False),
+            self.model.created_at >= coalesce_after,
+            # Bog'liq obyekt boshqa bo'lsa — bu boshqa voqea, birlashtirilmaydi
+            (
+                self.model.entity_id.is_(None)
+                if entity_id is None
+                else self.model.entity_id == entity_id
+            ),
+        )
+        result = await session.execute(query)
+
+        merged: set[UUID] = set()
+        for row in result.scalars().all():
+            # Bir foydalanuvchida bir nechta mos qator bo'lsa, faqat
+            # birinchisiga qo'shamiz — qolganlari o'z holicha qoladi.
+            if row.user_id in merged:
+                continue
+            old = row.params or {}
+            try:
+                count = int(old.get("count") or 1) + 1
+            except (TypeError, ValueError):
+                count = 2
+            # `count` MATN sifatida saqlanadi: NotificationView.params —
+            # dict[str, str], son qo'yilsa javob validatsiyada yiqiladi.
+            # YANGI dict: JSONB ustunini joyida o'zgartirsak SQLAlchemy
+            # o'zgarishni sezmaydi va UPDATE umuman yuborilmaydi.
+            row.params = {**old, **(params or {}), "count": str(count)}
+            # Vaqt yangilanadi — birlashgan xabar ro'yxat boshida tursin
+            row.created_at = now
+            row.updated_at = now
+            merged.add(row.user_id)
+        return merged

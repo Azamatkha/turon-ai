@@ -92,6 +92,8 @@
   flex: 1 1 auto;
   overflow: auto;
   padding: 0 20px 20px;
+  /* Modal — sahifadan ingichkaroq scrollbar (qara: index.css §7) */
+  --tu-sb-size: 8px;
 }
 
 .table {

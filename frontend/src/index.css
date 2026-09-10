@@ -588,35 +588,63 @@ select:focus-visible,
 
 /* ============================================================================
    7. SCROLLBAR — bitta joyda (ilgari ikkita zid qoida bor edi)
+
+   RANG: thumb endi brend gradientidan (--tu-gradient-* bilan bir xil ranglar).
+   Ilgari u qo'lda yozilgan rgba(64,89,190,.32) edi — shaffofligi tufayli
+   kulrang bo'lib ko'rinar va sahifadagi hech narsa bilan bog'lanmasdi.
+
+   O'LCHAM: `--tu-sb-size` — MEROS BO'LADIGAN o'zgaruvchi. Ya'ni kichik panel
+   (sidebar, modal, dropdown) o'z konteynerida uni kichraytirib qo'ysa kifoya,
+   quyidagi qoidalarga tegilmaydi. Sahifa darajasi 10px, o'rta panel 8px,
+   tor ro'yxat 6px.
+   `--tu-sb-pad` — thumb atrofidagi "havo" (shaffof border + background-clip
+   orqali). Kichik o'lchamda 2px thumb'ni ipdek qoldiradi, shuning uchun u
+   ham alohida o'zgaruvchi.
    ========================================================================= */
+:root {
+  --tu-sb-size: 10px;
+  --tu-sb-pad: 2px;
+  --tu-sb-thumb: linear-gradient(180deg, #4059be 0%, #6a5be8 55%, #7b4dff 100%);
+  --tu-sb-thumb-hover: linear-gradient(180deg, #193070 0%, #5a78e0 60%, #7b4dff 100%);
+  /* Firefox `scrollbar-color` gradient qabul qilmaydi — unga bitta rang */
+  --tu-sb-flat: #5061c9;
+}
+html.dark {
+  --tu-sb-thumb: linear-gradient(
+    180deg,
+    rgba(166, 182, 242, 0.5) 0%,
+    rgba(123, 77, 255, 0.55) 100%
+  );
+  --tu-sb-thumb-hover: linear-gradient(
+    180deg,
+    rgba(166, 182, 242, 0.85) 0%,
+    rgba(123, 77, 255, 0.85) 100%
+  );
+  --tu-sb-flat: rgba(166, 182, 242, 0.5);
+}
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--tu-border-strong) transparent;
+  scrollbar-color: var(--tu-sb-flat) transparent;
 }
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: var(--tu-sb-size);
+  height: var(--tu-sb-size);
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(64, 89, 190, 0.32);
+  background-image: var(--tu-sb-thumb);
   border-radius: var(--tu-radius-full);
-  border: 2px solid transparent;
+  border: var(--tu-sb-pad) solid transparent;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(64, 89, 190, 0.6);
-  background-clip: content-box;
+  background-image: var(--tu-sb-thumb-hover);
 }
-html.dark *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
-  background-clip: content-box;
-}
-html.dark *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.32);
-  background-clip: content-box;
+/* Ikki yo'nalish kesishgan burchak — track bilan bir xil, "quti" ko'rinmasin */
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* ============================================================================

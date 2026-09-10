@@ -67,6 +67,9 @@
   flex-direction: column;
   gap: 2px;
   overflow-y: auto;
+  /* Tor ustun — nozik scrollbar (qara: index.css §7) */
+  --tu-sb-size: 6px;
+  --tu-sb-pad: 1px;
 }
 
 .footer {

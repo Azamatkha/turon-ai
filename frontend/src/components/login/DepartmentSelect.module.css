@@ -69,6 +69,9 @@
   max-height: 260px;
   overflow-y: auto;
   animation: menuIn 0.14s ease both;
+  /* Ochiluvchi ro'yxat — eng tor scrollbar (qara: index.css §7) */
+  --tu-sb-size: 6px;
+  --tu-sb-pad: 1px;
 }
 
 .menuItem {
@@ -109,19 +112,9 @@
   flex: 0 0 auto;
 }
 
-/* Ro'yxat scrollbari — nozik */
-.menu::-webkit-scrollbar {
-  width: 8px;
-}
-
-.menu::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 99px;
-}
-
-.menu::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* Ro'yxat scrollbari — o'zining qoidalari OLIB TASHLANDI: u kulrang #CBD5E1
+   berib, index.css §7 dagi brend gradientini bekor qilardi. Endi o'lcham
+   yuqorida `--tu-sb-size` orqali beriladi, rang esa umumiy qoidadan keladi. */
 
 @keyframes menuIn {
   from {

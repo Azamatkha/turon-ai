@@ -17,6 +17,9 @@
   gap: 2px;
   max-height: 280px;
   overflow-y: auto;
+  /* Kartochka ichidagi ro'yxat — nozik scrollbar (qara: index.css §7) */
+  --tu-sb-size: 6px;
+  --tu-sb-pad: 1px;
 }
 
 .row {
