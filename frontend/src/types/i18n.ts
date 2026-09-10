@@ -29,6 +29,10 @@ export interface LoginStrings {
   noAccount: string;
   registerMobileOnly: string;
   gotIt: string;
+  // Mobil ilovada verifikatsiyadan o'tmagan user saytga kirganda
+  unverifiedTitle: string;
+  unverifiedText: string;
+  unverifiedLogout: string;
 }
 
 export interface ChatStrings {
@@ -259,6 +263,9 @@ export interface AdminStrings {
   changeRole: string;
   makeAdmin: string;
   makeXodim: string;
+  verifyUser: string;
+  unverifyUser: string;
+  unverifiedBadge: string;
   logout: string;
   uploadNav: string;
   uploadTitle: string;

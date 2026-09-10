@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database.session import get_session
-from src.core.errors.exceptions import UnauthorizedException
+from src.core.errors.exceptions import AccessForbiddenException, UnauthorizedException
 from src.core.redis.dependencies import get_redis_client
 from src.core.utils.datetime_utils import get_utc_now
 from src.main.config import config
@@ -25,6 +25,11 @@ refresh_token_header = APIKeyHeader(name="Authorization", scheme_name="refresh-t
 # Har so'rovda yozmaslik uchun: last_seen_at shuncha soniyadan kamida bir marta
 # yangilanadi (admin dashboard "onlayn" hisoblagichi shunga tayanadi).
 _LAST_SEEN_THROTTLE_SECONDS = 60
+
+UNVERIFIED_USER_MESSAGE = (
+    "Foydalanish uchun mobil ilova orqali verifikatsiyadan o'ting "
+    "yoki adminga murojaat qiling"
+)
 
 
 async def _touch_last_seen(user: User, session: AsyncSession) -> None:
@@ -65,6 +70,32 @@ async def get_current_user(
     Raises:
         UnauthorizedException: If the token is invalid, is not an access token,
             or the user cannot be loaded.
+        AccessForbiddenException: Agar user Face-ID verifikatsiyasidan o'tmagan bo'lsa.
+    """
+    authenticated = await get_current_user_with_session(
+        token=token,
+        session=session,
+        redis_client=redis_client,
+        user_repository=user_repository,
+    )
+    # Chat, kalkulyator, bildirishnoma va h.k. shu dependency'ga tayanadi —
+    # tasdiqlanmagan user ulardan foydalana olmasligi shu yerda kafolatlanadi.
+    if not authenticated.user.is_verified:
+        raise AccessForbiddenException(UNVERIFIED_USER_MESSAGE)
+    return authenticated.user
+
+
+async def get_current_user_allow_unverified(
+    token: str = Security(access_token_header),
+    session: AsyncSession = Depends(get_session),
+    redis_client: Redis = Depends(get_redis_client),
+    user_repository: UserRepository = Depends(get_user_repository),
+) -> User:
+    """`get_current_user` bilan bir xil, lekin tasdiqlanmagan userni ham o'tkazadi.
+
+    FAQAT `GET /me` va `/me/verification/*` uchun: mobil shu orqali
+    verifikatsiyadan o'tadi, web esa `is_verified` ni ko'rib ogohlantirish
+    sahifasini ochadi.
     """
     authenticated = await get_current_user_with_session(
         token=token,

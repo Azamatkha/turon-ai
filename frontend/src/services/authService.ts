@@ -13,6 +13,8 @@ export interface Me {
   full_name: string;
   department: string | null;
   role: string;
+  // Mobil ilovada Face-ID verifikatsiyasidan o'tganmi
+  is_verified: boolean;
 }
 
 export function getToken(): string | null {
@@ -29,6 +31,18 @@ export function getRole(): string | null {
 
 export function isAuthenticated(): boolean {
   return !!getToken();
+}
+
+// Tasdiqlanmagan user saytda faqat ogohlantirish sahifasini ko'radi.
+// Profil hali saqlanmagan (yoki eski formatda) bo'lsa — to'smaymiz: backend
+// baribir tasdiqlanmagan userga chat va boshqa API'larni 403 bilan yopadi.
+export function isVerified(): boolean {
+  try {
+    const me = JSON.parse(localStorage.getItem(ME_KEY) || "null");
+    return me?.is_verified !== false;
+  } catch {
+    return true;
+  }
 }
 
 export function authHeaders(): Record<string, string> {
@@ -153,6 +167,7 @@ export async function fetchMe(): Promise<Me> {
     full_name: u.full_name,
     department: u.department ?? null,
     role: u.role,
+    is_verified: u.is_verified ?? true,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));
@@ -189,6 +204,7 @@ export async function updateProfile(input: {
     full_name: u.full_name,
     department: u.department ?? null,
     role: u.role,
+    is_verified: u.is_verified ?? true,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));

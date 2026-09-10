@@ -57,6 +57,9 @@ export const admin: AdminStrings = {
   changeRole: "Rolni o‘zgartirish",
   makeAdmin: "Admin qilish",
   makeXodim: "Xodim qilish",
+  verifyUser: "Tasdiqlash",
+  unverifyUser: "Tasdiqni bekor qilish",
+  unverifiedBadge: "Tasdiqlanmagan",
   logout: "Chiqish",
   // Ma'lumot qo'shish sahifasi
   uploadNav: "Ma’lumot qo‘shish",

@@ -13,6 +13,8 @@ export interface ApiUser {
   is_active: boolean;
   // Oxirgi 5 daqiqada faol bo'lganmi
   is_online: boolean;
+  // Face-ID verifikatsiyasidan o'tganmi
+  is_verified: boolean;
 }
 
 async function readError(res: Response, fallback: string): Promise<string> {
@@ -66,7 +68,13 @@ export async function changeRole(id: string, role: BackendRole): Promise<ApiUser
 
 export async function updateUser(
   id: string,
-  input: { username?: string; full_name?: string; department?: string; password?: string }
+  input: {
+    username?: string;
+    full_name?: string;
+    department?: string;
+    password?: string;
+    is_verified?: boolean;
+  }
 ): Promise<ApiUser> {
   const res = await apiFetch(`/v1/users/${id}`, {
     method: "PATCH",

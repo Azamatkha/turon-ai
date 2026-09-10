@@ -29,4 +29,8 @@ export const login: LoginStrings = {
     "Telefoningizga Turon AI ilovasini o‘rnating va u yerda ro‘yxatdan o‘ting — " +
     "so‘ngra shu hisob bilan saytga ham kira olasiz.",
   gotIt: "Tushunarli",
+  unverifiedTitle: "Hisobingiz tasdiqlanmagan",
+  unverifiedText:
+    "Foydalanish uchun mobil ilova orqali verifikatsiyadan o‘ting yoki adminga murojaat qiling.",
+  unverifiedLogout: "Chiqish",
 };

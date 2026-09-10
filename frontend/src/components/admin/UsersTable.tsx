@@ -29,6 +29,7 @@ interface Props {
   users: AdminUser[];
   search: string;
   onChangeRole: (id: string, role: AdminRole) => void;
+  onToggleVerified: (id: string, verified: boolean) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, input: { username?: string; full_name?: string; department?: string; password?: string }) => Promise<void>;
   t: AdminStrings;
@@ -36,9 +37,10 @@ interface Props {
 }
 
 // Hoverlanadigan jadval qatori + amallar menyusi (tahrirlash / rol / o'chirish)
-function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin, lang }: {
+function HoverRow({ user, last, index, onChangeRole, onToggleVerified, onDelete, onEdit, admin, lang }: {
   user: AdminUser; last: boolean; index: number;
   onChangeRole: (id: string, role: AdminRole) => void;
+  onToggleVerified: (id: string, verified: boolean) => void;
   onDelete: (id: string) => void;
   onEdit: (u: AdminUser) => void;
   admin: AdminStrings;
@@ -58,7 +60,14 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin, la
       <div className={styles.userCell}>
         <div className={styles.avatar}>{u.name.charAt(0).toUpperCase()}</div>
         <div>
-          <div className={styles.userName}>{u.name}</div>
+          <div className={styles.userName}>
+            {u.name || u.handle}
+            {!u.verified && (
+              <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: "var(--adm-danger)", background: "var(--adm-hover)", verticalAlign: "middle" }}>
+                {admin.unverifiedBadge}
+              </span>
+            )}
+          </div>
           <div className={styles.userHandle}>{u.handle}</div>
         </div>
       </div>
@@ -81,6 +90,11 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin, la
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>
             {u.role === "Admin" ? admin.makeXodim : admin.makeAdmin}
           </button>
+          <button onClick={() => { onToggleVerified(u.id, !u.verified); setMenu(false); }}
+            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></svg>
+            {u.verified ? admin.unverifyUser : admin.verifyUser}
+          </button>
           <div style={{ height: 1, background: "var(--adm-border-3)", margin: "6px 4px" }} />
           <button onClick={() => { onDelete(u.id); setMenu(false); }}
             style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-danger)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
@@ -93,7 +107,7 @@ function HoverRow({ user, last, index, onChangeRole, onDelete, onEdit, admin, la
   );
 }
 
-export default function UsersTable({ users, search, onChangeRole, onDelete, onUpdate, t: admin, lang }: Props) {
+export default function UsersTable({ users, search, onChangeRole, onToggleVerified, onDelete, onUpdate, t: admin, lang }: Props) {
   const [editing, setEditing] = useState<AdminUser | null>(null);
   return (
     <div className={styles.table}>
@@ -101,7 +115,7 @@ export default function UsersTable({ users, search, onChangeRole, onDelete, onUp
         <span>{admin.tableUser}</span><span>{admin.tableDept}</span><span>{admin.tableRole}</span><span>{admin.tableStatus}</span><span />
       </div>
       {users.map((u, i) => (
-        <HoverRow key={u.id} user={u} last={i === users.length - 1} index={i} onChangeRole={onChangeRole} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />
+        <HoverRow key={u.id} user={u} last={i === users.length - 1} index={i} onChangeRole={onChangeRole} onToggleVerified={onToggleVerified} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />
       ))}
       {users.length === 0 && <div className={styles.empty}>{admin.noUsersFound(search)}</div>}
 

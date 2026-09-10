@@ -1,4 +1,6 @@
 from datetime import timedelta
+import hashlib
+import hmac
 from typing import Any
 from uuid import uuid4
 
@@ -17,6 +19,18 @@ from src.user.auth.token_helpers import (
 )
 
 
+def build_verification_id(user_id: str) -> str:
+    """user_id ning sirli kalit bilan olingan hash'i (HMAC-SHA256).
+
+    Oddiy sha256 emas: id'ni bilgan har kim uni hisoblay olmasligi uchun.
+    """
+    return hmac.new(
+        config.jwt.JWT_USER_SECRET_KEY.encode(),
+        str(user_id).encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
 async def create_access_token(
     data: dict[str, Any], redis_client: Redis, session_id: str | None = None
 ) -> str:
@@ -32,10 +46,13 @@ async def create_access_token(
     jti = str(uuid4())
     if session_id is None:
         session_id = str(uuid4())
-    expire = get_utc_now() + timedelta(minutes=config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES)
+    now = get_utc_now()
+    expire = now + timedelta(minutes=config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     payload: JWTPayload = {
         "sub": data["sub"],
+        "verificationId": build_verification_id(data["sub"]),
+        "iat": int(now.timestamp()),
         "exp": int(expire.timestamp()),
         "mode": "access_token",
         "jti": jti,

@@ -10,4 +10,6 @@ export interface AdminUser {
   dept: string;
   role: AdminRole;
   status: AdminStatus;
+  // Mobil ilovada Face-ID verifikatsiyasidan o'tganmi (admin qo'lda ham tasdiqlay oladi)
+  verified: boolean;
 }

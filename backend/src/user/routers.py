@@ -9,6 +9,7 @@ from src.core.limiter.depends import RateLimiter
 from src.core.schemas import SuccessResponse
 from src.user.auth.dependencies import (
     get_current_user,
+    get_current_user_allow_unverified,
     get_user_id_from_token,
 )
 from src.user.auth.permissions.checker import require_permission
@@ -24,6 +25,8 @@ from src.user.schemas import (
     UserAdminListItem,
     UserProfileViewModel,
     UserSummaryViewModel,
+    VerificationEmploymentModel,
+    VerificationIdentityModel,
 )
 from src.user.services import UserService
 from src.user.usecases.admin_create_user import (
@@ -47,6 +50,12 @@ from src.user.usecases.admin_delete_user import (
     AdminDeleteUserUseCase,
     get_admin_delete_user_use_case
 )
+from src.user.usecases.verification import (
+    SaveEmploymentUseCase,
+    SaveIdentityUseCase,
+    get_save_employment_use_case,
+    get_save_identity_use_case,
+)
 
 router = APIRouter()
 
@@ -58,10 +67,12 @@ router.include_router(auth_router, prefix="/auth")
     response_model=UserProfileViewModel,
 )
 async def get_user_profile(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user_allow_unverified)],
 ) -> UserProfileViewModel:
     """
     Returns the current user's information.
+
+    Tasdiqlanmagan userga ham ochiq — web/mobil `is_verified` ni shu yerdan bilib oladi.
     """
     return UserProfileViewModel.model_validate(current_user)
 
@@ -90,6 +101,45 @@ async def update_own_profile(
     boshqa foydalanuvchining profiliga tegib bo'lmaydi.
     """
     return await use_case.execute(user_id=current_user.id, data=user_form_data)
+
+
+# Verifikatsiya endpointlari `get_current_user` bilan (require_permission EMAS):
+# ularni aynan tasdiqlanmagan user chaqiradi.
+@router.post(
+    "/me/verification/identity",
+    response_model=UserProfileViewModel,
+    dependencies=[
+        Depends(RateLimiter(times=10, minutes=60, identifier=get_user_id_from_token))
+    ],
+)
+async def save_verification_identity(
+    form_data: VerificationIdentityModel,
+    current_user: Annotated[User, Depends(get_current_user_allow_unverified)],
+    use_case: Annotated[SaveIdentityUseCase, Depends(get_save_identity_use_case)],
+) -> UserProfileViewModel:
+    """
+    Mobil: Face-ID tasdiqlagan shaxs ma'lumotlarini saqlash (1-save).
+    """
+    return await use_case.execute(user_id=current_user.id, data=form_data)
+
+
+@router.post(
+    "/me/verification/employment",
+    response_model=UserProfileViewModel,
+    dependencies=[
+        Depends(RateLimiter(times=10, minutes=60, identifier=get_user_id_from_token))
+    ],
+)
+async def save_verification_employment(
+    form_data: VerificationEmploymentModel,
+    current_user: Annotated[User, Depends(get_current_user_allow_unverified)],
+    use_case: Annotated[SaveEmploymentUseCase, Depends(get_save_employment_use_case)],
+) -> UserProfileViewModel:
+    """
+    Mobil: xodimlar bazasidan kelgan lavozim/bo'lim/filialni saqlash (2-save).
+    Muvaffaqiyatli bo'lsa user `is_verified=true` bo'ladi.
+    """
+    return await use_case.execute(user_id=current_user.id, data=form_data)
 
 
 @router.get("/{user_id}", response_model=UserSummaryViewModel)

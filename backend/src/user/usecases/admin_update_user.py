@@ -43,6 +43,9 @@ class AdminUpdateUserUseCase:
                 update_data["department"] = data.department
             if data.role is not None:
                 update_data["role"] = data.role
+            if data.is_verified is not None:
+                # Mobil ilovasiz xodimni admin qo'lda tasdiqlaydi
+                update_data["is_verified"] = data.is_verified
             if data.password is not None:
                 update_data["password_hash"] = hash_password(data.password)
             if data.full_name is not None:

@@ -57,6 +57,7 @@ const mapUser = (u: ApiUser): AdminUser => ({
   dept: u.department || "—",
   role: toAdminRole(u.role),
   status: u.is_online ? "Online" : "Offline",
+  verified: u.is_verified ?? true,
 });
 
 export default function AdminPage() {
@@ -205,6 +206,16 @@ export default function AdminPage() {
   const onChangeRoleUser = async (id: string, role: AdminRole) => {
     try {
       await changeRole(id, toBackendRole(role));
+      await load();
+    } catch (e) {
+      setPageError(e instanceof Error ? e.message : t.saveFailed);
+    }
+  };
+
+  // Mobil ilovasiz xodimni qo'lda tasdiqlash (yoki tasdiqni bekor qilish)
+  const onToggleVerifiedUser = async (id: string, verified: boolean) => {
+    try {
+      await updateUser(id, { is_verified: verified });
       await load();
     } catch (e) {
       setPageError(e instanceof Error ? e.message : t.saveFailed);
@@ -376,7 +387,7 @@ export default function AdminPage() {
                   ]}
                 />
               </div>
-              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
+              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
             </>
           )}
         </div>

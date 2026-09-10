@@ -38,6 +38,25 @@ class CreateUserModel(StrongPasswordValidationMixin, Base):
         return value
 
 
+class RegisterUserModel(StrongPasswordValidationMixin, Base):
+    """Mobil ilovadan ro'yxatdan o'tish: faqat login + parol.
+
+    Ism, bo'lim va boshqa ma'lumotlar keyin Face-ID va xodimlar bazasidan
+    keladi (`/users/me/verification/*`).
+    """
+
+    username: str
+    password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        value = value.strip().lower()
+        if not USERNAME_VALIDATOR.match(value):
+            raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")
+        return value
+
+
 class LoginUserModel(Base):
     username: str
     password: str

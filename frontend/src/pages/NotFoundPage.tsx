@@ -2,8 +2,41 @@ import { Link } from "react-router-dom";
 import DotField from "../components/DotField";
 import Logo from "../components/common/Logo";
 
-// 404 — mavjud bo'lmagan sahifa (dot-field fon bilan)
-export default function NotFoundPage() {
+const ACTION_STYLE = {
+  position: "relative",
+  zIndex: 1,
+  marginTop: 20,
+  padding: "12px 26px",
+  borderRadius: 14,
+  border: "none",
+  background: "linear-gradient(135deg, #4059BE, #193070)",
+  color: "#fff",
+  fontWeight: 600,
+  fontSize: 15.5,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textDecoration: "none",
+  boxShadow: "0 10px 26px rgba(25, 48, 112, 0.3)",
+} as const;
+
+interface Props {
+  code?: string;
+  title?: string;
+  message?: string;
+  // Berilsa — "Bosh sahifaga" havolasi o'rniga shu tugma chiqadi
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+// 404 — mavjud bo'lmagan sahifa (dot-field fon bilan).
+// Xuddi shu dizayn tasdiqlanmagan user sahifasida ham ishlatiladi (UnverifiedPage).
+export default function NotFoundPage({
+  code = "404",
+  title = "Sahifa topilmadi",
+  message = "Siz qidirgan sahifa mavjud emas yoki ko‘chirilgan bo‘lishi mumkin.",
+  actionLabel,
+  onAction,
+}: Props) {
   return (
     <div
       style={{
@@ -55,34 +88,25 @@ export default function NotFoundPage() {
           textShadow: "0 24px 60px rgba(25,48,112,.2)",
         }}
       >
-        404
+        {code}
       </div>
 
       <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: -4 }}>
-        Sahifa topilmadi
+        {title}
       </div>
       <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 380, lineHeight: 1.5 }}>
-        Siz qidirgan sahifa mavjud emas yoki ko‘chirilgan bo‘lishi mumkin.
+        {message}
       </div>
 
-      <Link
-        to="/"
-        style={{
-          position: "relative",
-          zIndex: 1,
-          marginTop: 20,
-          padding: "12px 26px",
-          borderRadius: 14,
-          background: "linear-gradient(135deg, #4059BE, #193070)",
-          color: "#fff",
-          fontWeight: 600,
-          fontSize: 15.5,
-          textDecoration: "none",
-          boxShadow: "0 10px 26px rgba(25, 48, 112, 0.3)",
-        }}
-      >
-        Bosh sahifaga qaytish
-      </Link>
+      {onAction ? (
+        <button type="button" onClick={onAction} style={ACTION_STYLE}>
+          {actionLabel}
+        </button>
+      ) : (
+        <Link to="/" style={ACTION_STYLE}>
+          Bosh sahifaga qaytish
+        </Link>
+      )}
     </div>
   );
 }

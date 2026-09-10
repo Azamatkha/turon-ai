@@ -12,9 +12,9 @@ from src.user.auth.dependencies import (
 )
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
-    CreateUserModel,
     LoginUserModel,
     LogoutRequestModel,
+    RegisterUserModel,
 )
 from src.user.auth.usecases.get_access_by_refresh import (
     GetTokensByRefreshUserUseCase,
@@ -24,9 +24,6 @@ from src.user.auth.usecases.login import LoginUserUseCase, get_login_user_use_ca
 from src.user.auth.usecases.logout import LogoutUseCase, get_logout_use_case
 from src.user.auth.usecases.register import RegisterUseCase, get_register_use_case
 from src.user.models import User
-from src.user.schemas import (
-    UserProfileViewModel,
-)
 
 router = APIRouter()
 
@@ -34,15 +31,18 @@ router = APIRouter()
 @router.post(
     "/register",
     status_code=201,
-    response_model=UserProfileViewModel,
+    response_model=TokenModel,
     dependencies=[Depends(RateLimiter(times=10, minutes=10))],
 )
 async def signup_user(
-    user_form_data: CreateUserModel,
+    user_form_data: RegisterUserModel,
     use_case: Annotated[RegisterUseCase, Depends(get_register_use_case)],
-) -> UserProfileViewModel:
+) -> TokenModel:
     """
-    Create a new user account.
+    Mobil ilova: login + parol bilan ro'yxatdan o'tish.
+
+    User tasdiqlanmagan (`is_verified=false`) holda yaratiladi va darhol
+    access/refresh token qaytadi — keyingi qadam Face-ID verifikatsiyasi.
     """
     return await use_case.execute(data=user_form_data)
 

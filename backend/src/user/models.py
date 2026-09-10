@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Enum as SQLEnum,
     ForeignKey,
@@ -38,6 +39,13 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
+        # Bitta xodim (PNFL) — bitta faol akkaunt
+        Index(
+            "uq_users_pnfl_not_deleted",
+            "pnfl",
+            unique=True,
+            postgresql_where=text("is_deleted = false AND pnfl IS NOT NULL"),
+        ),
     )
 
     first_name: Mapped[str] = mapped_column(String(50))
@@ -56,6 +64,15 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     last_seen_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
     )
+    # --- Face-ID verifikatsiyasidan keladigan shaxsiy ma'lumotlar ---
+    pnfl: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    patronym: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    doc_seria: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    doc_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # --- Xodimlar bazasidan (PNFL bo'yicha) keladigan ma'lumotlar ---
+    position: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    branch: Mapped[str | None] = mapped_column(String(150), nullable=True)
 
     """relationships"""
     # Add relationships here
@@ -84,7 +101,8 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
 
     @property
     def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
+        # Tasdiqlanmagan userda ism/familiya bo'sh bo'ladi — ortiqcha bo'shliq qolmasin
+        return f"{self.first_name} {self.last_name}".strip()
 
     def __repr__(self) -> str:
         return (
