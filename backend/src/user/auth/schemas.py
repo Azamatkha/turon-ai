@@ -57,6 +57,16 @@ class RegisterUserModel(StrongPasswordValidationMixin, Base):
         return value
 
 
+class RegisterTokenModel(Base):
+    """Register javobi: FAQAT access token.
+
+    Refresh token ataylab berilmaydi — tasdiqlanmagan user baribir refresh
+    qila olmaydi; token tugasa (30 daqiqa) mobil qayta login qiladi.
+    """
+
+    access_token: str
+
+
 class LoginUserModel(Base):
     username: str
     password: str
@@ -67,18 +77,10 @@ class LogoutRequestModel(Base):
 
 
 class UserNewPassword(StrongPasswordValidationMixin, Base):
-    """Parolni o'zgartirish so'rovi.
+    """Parolni o'zgartirish so'rovi — faqat yangi parol.
 
-    `current_password` MAJBURIY. Sababi: access token o'g'irlansa (masalan
-    xodim kompyuterini qulflamay ketsa yoki XSS orqali), token egasi eski
-    parolni bilmasa ham yangi parol qo'yib, HAQIQIY egasini o'z hisobidan
-    butunlay chiqarib yubora olardi. Joriy parolni so'rash bu yo'lni yopadi.
-
-    `StrongPasswordValidationMixin` faqat `password` maydonini tekshiradi
-    (`check_fields=False` bilan nom bo'yicha), `current_password` esa xohlagan
-    ko'rinishda bo'lishi mumkin — u eskisi, uni qayta validatsiya qilish
-    noto'g'ri bo'lardi (talablar o'zgargan bo'lishi mumkin).
+    Joriy parol ataylab SO'RALMAYDI (foydalanuvchi talabi, 2026-09-10).
+    Parol o'zgargach barcha sessiyalar bekor qilinadi (update_password.py).
     """
 
-    current_password: str
     password: str

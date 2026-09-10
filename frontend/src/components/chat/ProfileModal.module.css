@@ -18,7 +18,10 @@
 
 .modal {
   width: 100%;
-  max-width: 420px;
+  /* 420 -> 760: xodim ma'lumotlari (lavozim, filial, PNFL...) uchun o'ng ustun */
+  max-width: 760px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   /* Shisha fon: oynaning ortidagi sahifa xira ko'rinib turadi */
   background: var(--tu-glass-bg-strong);
   border: 1px solid var(--tu-glass-border);
@@ -48,10 +51,71 @@
   margin: 20px 0;
 }
 
+/* Ikki ustun: chapda tahrirlanadigan maydonlar, o'ngda xodim ma'lumotlari */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .fields {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.infoCard {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+}
+
+.infoTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #193070;
+  margin-bottom: 10px;
+}
+
+.infoList {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #E2E8F0;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  font-size: 13.5px;
+  color: #64748B;
+  flex: 0 0 auto;
+}
+
+.infoValue {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #193070;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .errorBox {

@@ -7,6 +7,7 @@ import {
   streamNotifications,
   type ApiNotification,
 } from "../services/notificationService";
+import { ApiError } from "../services/authService";
 
 // Asosiy yetkazish — SSE oqimi (kechikish deyarli nolga teng). Polling faqat
 // zaxira: oqim uzilsa yoki proxy uni o'tkazmasa badge baribir yangilanadi.
@@ -136,7 +137,10 @@ export function useNotifications(format: (n: ApiNotification) => DesktopText) {
       controller = new AbortController();
       try {
         await streamNotifications(() => void syncCount(), controller.signal);
-      } catch {
+      } catch (e) {
+        // 401/403 — ruxsat yo'q (masalan tasdiqlanmagan user). Qayta urinish
+        // hech narsa bermaydi, faqat har 5 soniyada serverga 403 yog'diradi.
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) return;
         // Ulanish uzildi yoki ochilmadi — pastda qayta urinamiz
       }
       if (!alive) return;

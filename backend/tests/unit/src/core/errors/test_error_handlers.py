@@ -104,7 +104,8 @@ def test_format_log_message_truncates_long_text() -> None:
 @pytest.mark.asyncio
 async def test_core_exception_handler(caplog: pytest.LogCaptureFixture) -> None:
     request = _build_request()
-    caplog.set_level(logging.INFO, logger="response_logger_test")
+    # 4xx handler'lari DEBUG'da yozadi — asosiy qator so'rov logida (middleware)
+    caplog.set_level(logging.DEBUG, logger="response_logger_test")
 
     response = await handlers.handle_core_exception(
         request,
@@ -120,11 +121,11 @@ async def test_core_exception_handler(caplog: pytest.LogCaptureFixture) -> None:
 
 
 @pytest.mark.asyncio
-async def test_filtering_error_handler_logs_warning(
+async def test_filtering_error_handler_logs_debug(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     request = _build_request()
-    caplog.set_level(logging.WARNING, logger="response_logger_test")
+    caplog.set_level(logging.DEBUG, logger="response_logger_test")
 
     response = await handlers.handle_filtering_error(
         request,
@@ -137,7 +138,7 @@ async def test_filtering_error_handler_logs_warning(
         "message": "invalid filter",
     }
     assert any(
-        record.levelno == logging.WARNING and "Filtering error" in record.message
+        record.levelno == logging.DEBUG and "Filtering error" in record.message
         for record in caplog.records
     )
 
@@ -151,7 +152,7 @@ async def test_filtering_error_handler_logs_warning(
             InstanceNotFoundException,
             404,
             "Instance not found",
-            logging.INFO,
+            logging.DEBUG,
             False,
         ),
         (
@@ -159,7 +160,7 @@ async def test_filtering_error_handler_logs_warning(
             InstanceAlreadyExistsException,
             409,
             "Instance already exists",
-            logging.INFO,
+            logging.DEBUG,
             False,
         ),
         (
@@ -167,7 +168,7 @@ async def test_filtering_error_handler_logs_warning(
             InstanceProcessingException,
             400,
             "Instance processing error",
-            logging.INFO,
+            logging.DEBUG,
             False,
         ),
         (
@@ -175,7 +176,7 @@ async def test_filtering_error_handler_logs_warning(
             UnauthorizedException,
             401,
             "Unauthorized",
-            logging.WARNING,
+            logging.DEBUG,
             True,
         ),
         (
@@ -183,7 +184,7 @@ async def test_filtering_error_handler_logs_warning(
             AccessForbiddenException,
             403,
             "Forbidden",
-            logging.WARNING,
+            logging.DEBUG,
             True,
         ),
         (
@@ -191,7 +192,7 @@ async def test_filtering_error_handler_logs_warning(
             NotAcceptableException,
             406,
             "Not Acceptable",
-            logging.INFO,
+            logging.DEBUG,
             False,
         ),
         (
@@ -199,7 +200,7 @@ async def test_filtering_error_handler_logs_warning(
             PermissionDeniedException,
             403,
             "Permission Denied",
-            logging.WARNING,
+            logging.DEBUG,
             True,
         ),
     ],

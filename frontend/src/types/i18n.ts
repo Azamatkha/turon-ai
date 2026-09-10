@@ -181,11 +181,16 @@ export interface ChatStaticStrings {
   newPasswordPh: string;
   confirmNewPassword: string;
   passwordMismatch: string;
-  // Parolni o'zgartirish uchun JORIY parol ham kerak (o'g'irlangan tokendan himoya)
-  currentPassword: string;
-  currentPasswordPh: string;
-  currentPasswordRequired: string;
-  currentPasswordHint: string;
+  // Profil oynasidagi "Xodim ma'lumotlari" kartasi (mobil verifikatsiyadan)
+  employeeInfo: string;
+  employeeInfoHint: string;
+  infoPatronym: string;
+  infoPosition: string;
+  infoDepartment: string;
+  infoBranch: string;
+  infoPnfl: string;
+  infoBirthDate: string;
+  infoDocument: string;
   saved: string;
   saveChanges: string;
   logOut: string;

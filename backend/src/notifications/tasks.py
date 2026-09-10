@@ -18,9 +18,8 @@ from src.core.utils.datetime_utils import get_utc_now
 
 logger = get_logger(__name__)
 
-# O'qilganlari 30 kundan keyin, o'qilmaganlari 90 kundan keyin o'chadi
-READ_RETENTION_DAYS = 30
-MAX_RETENTION_DAYS = 90
+# Bildirishnomalar 5 kun saqlanadi — o'qilgan-o'qilmaganidan qat'i nazar
+RETENTION_DAYS = 5
 
 
 @typed_shared_task(name="cleanup_old_notifications")
@@ -30,15 +29,15 @@ def cleanup_old_notifications() -> str:
 
 
 async def _cleanup_old_notifications() -> int:
-    now = get_utc_now()
+    cutoff = get_utc_now() - timedelta(days=RETENTION_DAYS)
     async with local_async_session() as session:
         uow: ApplicationUnitOfWork[RepositoryProtocol] = ApplicationUnitOfWork(session)
         try:
             async with uow:
                 deleted = await uow.notifications.delete_older_than(
                     uow.session,
-                    read_before=now - timedelta(days=READ_RETENTION_DAYS),
-                    any_before=now - timedelta(days=MAX_RETENTION_DAYS),
+                    read_before=cutoff,
+                    any_before=cutoff,
                 )
                 await uow.commit()
                 return deleted

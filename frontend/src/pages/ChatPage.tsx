@@ -5,7 +5,7 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { fetchMe, logout, changePassword, updateProfile } from "../services/authService";
+import { fetchMe, logout, changePassword, updateProfile, type Me } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -43,7 +43,8 @@ export default function ChatPage() {
   const [role, setRole] = useState("user");
   const [pFullName, setPFullName] = useState("");
   const [pUsername, setPUsername] = useState("");
-  const [pCurrentPassword, setPCurrentPassword] = useState("");
+  // To'liq profil (lavozim, filial, PNFL...) — profil oynasining o'ng ustuni uchun
+  const [profile, setProfile] = useState<Me | null>(null);
   const [pPassword, setPPassword] = useState("");
   const [pConfirmPassword, setPConfirmPassword] = useState("");
   const [pError, setPError] = useState("");
@@ -56,6 +57,7 @@ export default function ChatPage() {
         setFullName(me.full_name);
         setUsername(me.username);
         setRole(me.role);
+        setProfile(me);
       })
       .catch(() => navigate("/login"));
   }, [navigate]);
@@ -135,7 +137,6 @@ export default function ChatPage() {
   const openProfile = () => {
     setPFullName(fullName);
     setPUsername(username);
-    setPCurrentPassword("");
     setPPassword("");
     setPConfirmPassword("");
     setPError("");
@@ -162,10 +163,6 @@ export default function ChatPage() {
     }
 
     if (wantsPasswordChange) {
-      if (!pCurrentPassword) {
-        setPError(S.currentPasswordRequired);
-        return;
-      }
       // O'zi to'g'ri terganini tekshirish uchun tasdiqlash bilan solishtiramiz
       if (pPassword !== pConfirmPassword) {
         setPError(S.passwordMismatch);
@@ -185,12 +182,13 @@ export default function ChatPage() {
         // tushadi, ismdagi ortiqcha bo'shliqlar olib tashlanadi).
         setFullName(me.full_name);
         setUsername(me.username);
+        setProfile(me);
         setPFullName(me.full_name);
         setPUsername(me.username);
       }
 
       if (wantsPasswordChange) {
-        await changePassword(pCurrentPassword, pPassword);
+        await changePassword(pPassword);
         // Parol o'zgardi -> backend hamma sessiyani o'chirdi -> hozirgi token
         // ham yaroqsiz. Foydalanuvchini yangi parol bilan qayta kirishga
         // yuboramiz, aks holda u har bir so'rovda 401 olib, sababini
@@ -206,7 +204,6 @@ export default function ChatPage() {
       setPSaving(false);
     }
 
-    setPCurrentPassword("");
     setPPassword("");
     setPConfirmPassword("");
     setSaved(true);
@@ -373,12 +370,11 @@ export default function ChatPage() {
             setPFullName={setPFullName}
             pUsername={pUsername}
             setPUsername={setPUsername}
-            pCurrentPassword={pCurrentPassword}
-            setPCurrentPassword={setPCurrentPassword}
             pPassword={pPassword}
             setPPassword={setPPassword}
             pConfirmPassword={pConfirmPassword}
             setPConfirmPassword={setPConfirmPassword}
+            profile={profile}
             error={pError}
             saved={saved}
             saving={pSaving}

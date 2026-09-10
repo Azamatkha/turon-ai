@@ -1,6 +1,6 @@
 // Bildirishnomalar xizmati — backendga ulangan (/v1/notifications).
 
-import { apiFetch } from "./authService";
+import { apiFetch, ApiError } from "./authService";
 
 export interface ApiNotification {
   id: string;
@@ -59,7 +59,8 @@ export async function streamNotifications(
   signal: AbortSignal
 ): Promise<void> {
   const res = await apiFetch("/v1/notifications/stream", { signal });
-  if (!res.ok || !res.body) throw new Error("Bildirishnoma oqimi ochilmadi");
+  // Status saqlanadi — 401/403 da chaqiruvchi qayta ulanishni to'xtatadi
+  if (!res.ok || !res.body) throw new ApiError("Bildirishnoma oqimi ochilmadi", res.status);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

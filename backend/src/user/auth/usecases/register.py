@@ -8,10 +8,13 @@ from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceAlreadyExistsException
 from src.core.redis.dependencies import get_redis_client
-from src.core.schemas import TokenModel
 from src.core.utils.security import hash_password
-from src.user.auth.schemas import DEFAULT_DEPARTMENT, RegisterUserModel
-from src.user.auth.security import create_access_token, create_refresh_token
+from src.user.auth.schemas import (
+    DEFAULT_DEPARTMENT,
+    RegisterTokenModel,
+    RegisterUserModel,
+)
+from src.user.auth.security import create_access_token
 from src.user.constants import build_email
 
 logger = get_logger(__name__)
@@ -21,8 +24,8 @@ class RegisterUseCase:
     """Mobil ilova orqali ro'yxatdan o'tish (1-qadam).
 
     Faqat login + parol olinadi. User `is_verified=False` bilan yoziladi va
-    darhol token qaytadi — mobil shu token bilan Face-ID verifikatsiyasiga
-    o'tadi (`/users/me/verification/identity` va `/employment`).
+    darhol FAQAT access token qaytadi — mobil shu token bilan Face-ID
+    verifikatsiyasiga o'tadi (`/users/me/verification/identity` va `/employment`).
 
     Tasdiqlanmagan user chat va boshqa API'lardan foydalana olmaydi
     (`require_permission` 403 qaytaradi). 3 kun ichida tasdiqlanmasa
@@ -37,7 +40,7 @@ class RegisterUseCase:
         self.uow = uow
         self.redis_client = redis_client
 
-    async def execute(self, data: RegisterUserModel) -> TokenModel:
+    async def execute(self, data: RegisterUserModel) -> RegisterTokenModel:
         async with self.uow as uow:
             existing = await uow.users.get_single(
                 uow.session, username=data.username, is_deleted=False
@@ -61,14 +64,11 @@ class RegisterUseCase:
             await uow.commit()
             logger.info("[Register] '%s' ro'yxatdan o'tdi (tasdiqlanmagan).", data.username)
 
-        session_id = str(uuid4())
-        token_data = {"sub": str(user.id)}
-        return TokenModel(
+        return RegisterTokenModel(
             access_token=await create_access_token(
-                token_data, redis_client=self.redis_client, session_id=session_id
-            ),
-            refresh_token=await create_refresh_token(
-                token_data, redis_client=self.redis_client, session_id=session_id
+                {"sub": str(user.id)},
+                redis_client=self.redis_client,
+                session_id=str(uuid4()),
             ),
         )
 

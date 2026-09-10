@@ -6,10 +6,9 @@ from redis.asyncio import Redis
 from loggers import get_logger
 from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
-from src.core.errors.exceptions import InstanceProcessingException
 from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import SuccessResponse
-from src.core.utils.security import hash_password, mask_email, verify_password
+from src.core.utils.security import hash_password, mask_email
 from src.user.auth.schemas import UserNewPassword
 from src.user.auth.token_helpers import invalidate_all_user_sessions
 
@@ -21,17 +20,15 @@ class UpdateUserPasswordUseCase:
     Update a user's password and invalidate all their active sessions.
 
     Inputs:
-    - data: UserNewPassword containing the current and the new password.
+    - data: UserNewPassword containing the new password.
     - user_id: UUID of the user updating their password.
 
     Validations:
     - User must exist in the database.
-    - `current_password` must match the stored hash. Sababi `UserNewPassword`
-      docstring'ida: o'g'irlangan token bilan hisobni egallab olishning oldini
-      oladi.
+    - Joriy parol so'ralmaydi (`UserNewPassword` docstring'iga qarang).
 
     Workflow:
-    1) Load the user and verify the current password.
+    1) Load the user.
     2) Hash and update user password in the database.
     3) Flush pending DB changes.
     4) Invalidate all active Redis sessions for the user.
@@ -63,16 +60,6 @@ class UpdateUserPasswordUseCase:
             if not user:
                 logger.info("[UpdateUserPassword] User not found.")
                 return SuccessResponse(success=False)
-
-            if not await verify_password(data.current_password, user.password_hash):
-                # Log'da qaysi foydalanuvchi ekani ko'rinadi (brute-force'ni
-                # payqash uchun), lekin urinilgan parolning O'ZI hech qachon
-                # yozilmaydi.
-                logger.warning(
-                    "[UpdateUserPassword] %s uchun joriy parol noto'g'ri.",
-                    mask_email(user.email),
-                )
-                raise InstanceProcessingException("Joriy parol noto'g'ri")
 
             # Mavjudligi yuqorida tekshirilgani uchun bu yerda qaytadan
             # `if not updated_user` shart emas — bir xil tranzaksiya ichidamiz.

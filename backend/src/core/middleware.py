@@ -34,6 +34,8 @@ BASE_SECURITY_HEADERS = {
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 }
 DOCS_PATHS = frozenset({"/openapi.json", "/redoc"})
+# Docker healthcheck har 10 soniyada uradi — logni to'ldirib yubormasin
+QUIET_PATH_PREFIXES = ("/health",)
 
 
 def _is_docs_route(path: str) -> bool:
@@ -73,26 +75,38 @@ def register_middlewares(app: FastAPI) -> None:
     async def request_timing_middleware(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
+        path = request.url.path
+        if path.startswith(QUIET_PATH_PREFIXES):
+            return await call_next(request)
+
         start_time = time.perf_counter()
         response = await call_next(request)
         process_time = time.perf_counter() - start_time
-
-        if process_time < 0.5:
-            level = timing_logger.info
-            category = "[FAST]"
-        elif process_time < 2:
-            level = timing_logger.warning
-            category = "[MODERATE]"
-        else:
-            level = timing_logger.warning
-            category = "[SLOW]"
-
-        method = request.method
-        path = request.url.path
         status_code = response.status_code
-        duration = f"{process_time:.3f}s"
 
-        level(f"{category} {method} {path} |{duration}|{status_code}")
+        # Har so'rov — BITTA qator:  GET    403     9ms  /v1/chat/sessions | sabab
+        # 4xx sababini exception handler `request.state.error_reason` ga yozadi
+        # (handlers.py), shuning uchun u alohida qator bo'lib chiqmaydi.
+        if status_code >= 500:
+            level = timing_logger.error
+        elif process_time >= 0.5:
+            level = timing_logger.warning
+        else:
+            level = timing_logger.info
+
+        tag = ""
+        if process_time >= 2:
+            tag = " [SLOW]"
+        elif process_time >= 0.5:
+            tag = " [MODERATE]"
+
+        reason = getattr(request.state, "error_reason", None)
+        suffix = f" | {reason}" if reason else ""
+        duration_ms = int(process_time * 1000)
+
+        level(
+            f"{request.method:<6} {status_code} {duration_ms:>6}ms  {path}{tag}{suffix}"
+        )
 
         return response
 

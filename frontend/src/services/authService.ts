@@ -15,6 +15,14 @@ export interface Me {
   role: string;
   // Mobil ilovada Face-ID verifikatsiyasidan o'tganmi
   is_verified: boolean;
+  // Verifikatsiyadan kelgan ma'lumotlar (eski userlarda bo'sh)
+  patronym: string | null;
+  pnfl: string | null;
+  doc_seria: string | null;
+  doc_number: string | null;
+  birth_date: string | null;
+  position: string | null;
+  branch: string | null;
 }
 
 export function getToken(): string | null {
@@ -105,7 +113,26 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     if (ok) res = await doFetch();
     else clearStorage();
   }
+  if (res.status === 403 && path !== "/v1/users/me") void recheckVerification();
   return res;
+}
+
+// Admin userning tasdiqini olib tashlasa, brauzerdagi saqlangan profil hali
+// "tasdiqlangan" deb turadi va chat sahifasi 403 olib turaveradi. 403 kelganda
+// profil qayta o'qiladi; user tasdiqlanmagan bo'lsa sahifa yangilanib,
+// ogohlantirish oynasi (UnverifiedPage) chiqadi.
+let recheckingVerification = false;
+async function recheckVerification(): Promise<void> {
+  if (recheckingVerification || !isVerified()) return;
+  recheckingVerification = true;
+  try {
+    const me = await fetchMe();
+    if (!me.is_verified) window.location.reload();
+  } catch {
+    // tarmoq xatosi — keyingi 403 da qayta tekshiriladi
+  } finally {
+    recheckingVerification = false;
+  }
 }
 
 async function tryRefresh(): Promise<boolean> {
@@ -168,6 +195,13 @@ export async function fetchMe(): Promise<Me> {
     department: u.department ?? null,
     role: u.role,
     is_verified: u.is_verified ?? true,
+    patronym: u.patronym ?? null,
+    pnfl: u.pnfl ?? null,
+    doc_seria: u.doc_seria ?? null,
+    doc_number: u.doc_number ?? null,
+    birth_date: u.birth_date ?? null,
+    position: u.position ?? null,
+    branch: u.branch ?? null,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));
@@ -205,28 +239,28 @@ export async function updateProfile(input: {
     department: u.department ?? null,
     role: u.role,
     is_verified: u.is_verified ?? true,
+    patronym: u.patronym ?? null,
+    pnfl: u.pnfl ?? null,
+    doc_seria: u.doc_seria ?? null,
+    doc_number: u.doc_number ?? null,
+    birth_date: u.birth_date ?? null,
+    position: u.position ?? null,
+    branch: u.branch ?? null,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));
   return me;
 }
 
-// Foydalanuvchi o'z parolini o'zgartiradi.
-// JORIY parol majburiy: o'g'irlangan token bilan hisobni egallab olishning
-// oldini oladi (backend `UserNewPassword` docstring'iga qarang).
+// Foydalanuvchi o'z parolini o'zgartiradi — faqat yangi parol (joriy parol
+// so'ralmaydi, backend `UserNewPassword` docstring'iga qarang).
 // Muvaffaqiyatli o'zgarishdan keyin backend BARCHA sessiyalarni bekor qiladi,
 // shuning uchun chaqiruvchi tomon foydalanuvchini qayta login qilishga
 // yuborishi kerak.
-export async function changePassword(
-  currentPassword: string,
-  newPassword: string,
-): Promise<void> {
+export async function changePassword(newPassword: string): Promise<void> {
   const res = await apiFetch("/v1/users/me/password", {
     method: "PATCH",
-    body: JSON.stringify({
-      current_password: currentPassword,
-      password: newPassword,
-    }),
+    body: JSON.stringify({ password: newPassword }),
   });
   if (!res.ok) {
     throw new ApiError(

@@ -107,6 +107,13 @@ def format_log_message(
         )
         log_msg = f"{log_msg} | Additional info: {additional_str}"
 
+    # So'rov logi (middleware.py) shu sababni o'z qatoriga qo'shadi — 4xx uchun
+    # alohida qator yozilmaydi, log toza qoladi.
+    try:
+        request.state.error_reason = msg
+    except Exception:
+        pass
+
     return log_msg
 
 
@@ -161,7 +168,7 @@ async def handle_core_exception(
 ) -> JSONResponse:
     error_type = "Bad request"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=400,
         content=format_error_response(error_type, exc.message),
@@ -174,7 +181,7 @@ async def handle_instance_not_found_exception(
 ) -> JSONResponse:
     error_type = "Instance not found"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=404,
         content=format_error_response(error_type, exc.message),
@@ -187,7 +194,7 @@ async def handle_instance_already_exists_exception(
 ) -> JSONResponse:
     error_type = "Instance already exists"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=409,
         content=format_error_response(error_type, exc.message),
@@ -200,7 +207,7 @@ async def handle_instance_processing_exception(
 ) -> JSONResponse:
     error_type = "Instance processing error"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=400,
         content=format_error_response(error_type, exc.message),
@@ -213,7 +220,7 @@ async def handle_payload_too_large_exception(
 ) -> JSONResponse:
     error_type = "Payload too large"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=413,
         content=format_error_response(error_type, exc.message),
@@ -226,7 +233,7 @@ async def handle_filtering_error(
 ) -> JSONResponse:
     error_type = "Filtering error"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.warning(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=400,
         content=format_error_response(error_type, exc.message),
@@ -239,7 +246,7 @@ async def handle_unauthorized_exception(
 ) -> JSONResponse:
     error_type = "Unauthorized"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.warning(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=401,
         content=format_error_response(error_type, exc.message),
@@ -252,7 +259,7 @@ async def handle_access_forbidden_exception(
 ) -> JSONResponse:
     error_type = "Forbidden"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.warning(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=403,
         content=format_error_response(error_type, exc.message),
@@ -265,7 +272,7 @@ async def handle_not_acceptable_exception(
 ) -> JSONResponse:
     error_type = "Not Acceptable"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=406,
         content=format_error_response(error_type, exc.message),
@@ -278,7 +285,7 @@ async def handle_permission_denied_exception(
 ) -> JSONResponse:
     error_type = "Permission Denied"
     log_msg = format_log_message(request, error_type, exc.message, exc.additional_info)
-    response_logger.warning(log_msg)
+    response_logger.debug(log_msg)
     return JSONResponse(
         status_code=403,
         content=format_error_response(error_type, exc.message),
@@ -291,7 +298,7 @@ async def handle_too_many_requests_exception(
 ) -> JSONResponse:
     error_type = "Too Many Requests"
     log_msg = format_log_message(request, error_type, exc.message)
-    response_logger.info(log_msg)
+    response_logger.debug(log_msg)
 
     headers = {}
     if exc.retry_after:

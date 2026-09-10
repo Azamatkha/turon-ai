@@ -1,6 +1,7 @@
 import { ChangeEvent, useState } from "react";
 import HButton from "../common/HButton";
 import type { ChatStaticStrings } from "../../types/i18n";
+import type { Me } from "../../services/authService";
 import styles from "./ProfileModal.module.css";
 
 interface ProfileModalProps {
@@ -10,12 +11,12 @@ interface ProfileModalProps {
   setPFullName: (v: string) => void;
   pUsername: string;
   setPUsername: (v: string) => void;
-  pCurrentPassword: string;
-  setPCurrentPassword: (v: string) => void;
   pPassword: string;
   setPPassword: (v: string) => void;
   pConfirmPassword: string;
   setPConfirmPassword: (v: string) => void;
+  // Mobil verifikatsiyadan kelgan ma'lumotlar (faqat o'qish uchun)
+  profile: Me | null;
   error: string;
   saved: boolean;
   saving?: boolean;
@@ -26,18 +27,26 @@ interface ProfileModalProps {
   isDark?: boolean;
 }
 
+// "2001-05-14" -> "14.05.2001"
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${d}.${m}.${y}` : iso;
+}
+
 export default function ProfileModal({
   initial, userHandle, pFullName, setPFullName, pUsername, setPUsername,
-  pCurrentPassword, setPCurrentPassword, pPassword, setPPassword, pConfirmPassword, setPConfirmPassword,
+  pPassword, setPPassword, pConfirmPassword, setPConfirmPassword, profile,
   error, saved, saving, onClose, onSave, onLogout, s, isDark,
 }: ProfileModalProps) {
   // Dark rejim uchun inline override'lar
   const modalStyle = isDark ? { background: "#151D3F", color: "#E2E8F0", border: "1px solid rgba(255,255,255,.1)" } : {};
   const inputStyle = isDark ? { background: "#1F2A55", color: "#E2E8F0", borderColor: "rgba(255,255,255,.16)" } : {};
   const labelStyle = isDark ? { color: "#94A3B8" } : {};
+  const infoCardStyle = isDark ? { background: "#1F2A55", borderColor: "rgba(255,255,255,.12)" } : {};
+  const infoValueStyle = isDark ? { color: "#E2E8F0" } : {};
   const [pwVisible, setPwVisible] = useState(false);
   const [confirmPwVisible, setConfirmPwVisible] = useState(false);
-  const [currentPwVisible, setCurrentPwVisible] = useState(false);
   const eyeIcon = (visible: boolean) => visible ? (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-2.16 3.19M6.6 6.6A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.4-1.1" />
@@ -48,6 +57,17 @@ export default function ProfileModal({
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
     </svg>
   );
+
+  const document = [profile?.doc_seria, profile?.doc_number].filter(Boolean).join(" ");
+  const infoRows: [string, string][] = [
+    [s.infoPatronym, profile?.patronym ?? ""],
+    [s.infoPosition, profile?.position ?? ""],
+    [s.infoDepartment, profile?.department ?? ""],
+    [s.infoBranch, profile?.branch ?? ""],
+    [s.infoPnfl, profile?.pnfl ?? ""],
+    [s.infoBirthDate, formatDate(profile?.birth_date ?? null)],
+    [s.infoDocument, document],
+  ];
 
   return (
     <div onClick={onClose} className={styles.overlay}>
@@ -67,62 +87,60 @@ export default function ProfileModal({
 
         <div className={styles.divider} />
 
-        <div className={styles.fields}>
-          {/* Ism va login endi TAHRIRLANADI — backendda PATCH /v1/users/me bor.
-              Login band-emasligi backendda tekshiriladi: band bo'lsa 409
-              qaytadi va xabar quyidagi xato maydonida chiqadi. */}
-          <div>
-            <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-fullname">{s.fullName}</label>
-            <input id="profile-fullname" className={styles.input} style={inputStyle} value={pFullName} onChange={(e: ChangeEvent<HTMLInputElement>) => setPFullName(e.target.value)} placeholder={s.fullNamePh} autoComplete="name" />
-          </div>
-          <div>
-            <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-username">{s.username}</label>
-            <div className={styles.usernameField} style={inputStyle}>
-              <span className={styles.usernamePrefix} aria-hidden="true">@</span>
-              <input id="profile-username" className={styles.usernameInput} style={isDark ? { background: "transparent", color: "#E2E8F0" } : {}} value={pUsername} onChange={(e: ChangeEvent<HTMLInputElement>) => setPUsername(e.target.value)} placeholder={s.usernamePh} autoCapitalize="none" autoComplete="username" spellCheck={false} />
-            </div>
-          </div>
-          {/* JORIY parol — yangi parol kiritilgandagina ko'rinadi.
-              U bo'lmasa o'g'irlangan token bilan parolni almashtirib,
-              hisob egasini butunlay bloklab qo'yish mumkin bo'lardi. */}
-          {pPassword && (
+        <div className={styles.body}>
+          {/* Chap ustun: tahrirlanadigan maydonlar */}
+          <div className={styles.fields}>
+            {/* Ism va login TAHRIRLANADI — backendda PATCH /v1/users/me bor.
+                Login band bo'lsa 409 qaytadi va xabar pastdagi xato maydonida chiqadi. */}
             <div>
-              <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-current-password">{s.currentPassword}</label>
-              <div className={styles.pwField}>
-                <input id="profile-current-password" className={styles.input} style={inputStyle} value={pCurrentPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPCurrentPassword(e.target.value)} type={currentPwVisible ? "text" : "password"} placeholder={s.currentPasswordPh} autoComplete="current-password" />
-                <button type="button" onClick={() => setCurrentPwVisible((v) => !v)} data-tip={currentPwVisible ? s.hidePassword : s.showPassword} aria-label={currentPwVisible ? s.hidePassword : s.showPassword} aria-pressed={currentPwVisible} className={styles.pwToggleBtn}>
-                  {eyeIcon(currentPwVisible)}
-                </button>
+              <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-fullname">{s.fullName}</label>
+              <input id="profile-fullname" className={styles.input} style={inputStyle} value={pFullName} onChange={(e: ChangeEvent<HTMLInputElement>) => setPFullName(e.target.value)} placeholder={s.fullNamePh} autoComplete="name" />
+            </div>
+            <div>
+              <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-username">{s.username}</label>
+              <div className={styles.usernameField} style={inputStyle}>
+                <span className={styles.usernamePrefix} aria-hidden="true">@</span>
+                <input id="profile-username" className={styles.usernameInput} style={isDark ? { background: "transparent", color: "#E2E8F0" } : {}} value={pUsername} onChange={(e: ChangeEvent<HTMLInputElement>) => setPUsername(e.target.value)} placeholder={s.usernamePh} autoCapitalize="none" autoComplete="username" spellCheck={false} />
               </div>
-              <div className={styles.fieldHint}>{s.currentPasswordHint}</div>
             </div>
-          )}
-          <div>
-            <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-password">{s.newPassword}</label>
-            <div className={styles.pwField}>
-              <input id="profile-password" className={styles.input} style={inputStyle} value={pPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPPassword(e.target.value)} type={pwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
-              {/* tabIndex={-1} olib tashlandi — klaviatura bilan yetib bo'lmasdi */}
-              <button type="button" onClick={() => setPwVisible((v) => !v)} data-tip={pwVisible ? s.hidePassword : s.showPassword} aria-label={pwVisible ? s.hidePassword : s.showPassword} aria-pressed={pwVisible} className={styles.pwToggleBtn}>
-                {eyeIcon(pwVisible)}
-              </button>
-            </div>
-          </div>
-          {pPassword && (
             <div>
-              <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-confirm-password">{s.confirmNewPassword}</label>
+              <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-password">{s.newPassword}</label>
               <div className={styles.pwField}>
-                <input id="profile-confirm-password" className={styles.input} style={inputStyle} value={pConfirmPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPConfirmPassword(e.target.value)} type={confirmPwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
-                <button type="button" onClick={() => setConfirmPwVisible((v) => !v)} data-tip={confirmPwVisible ? s.hidePassword : s.showPassword} aria-label={confirmPwVisible ? s.hidePassword : s.showPassword} aria-pressed={confirmPwVisible} className={styles.pwToggleBtn}>
-                  {eyeIcon(confirmPwVisible)}
+                <input id="profile-password" className={styles.input} style={inputStyle} value={pPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPPassword(e.target.value)} type={pwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
+                <button type="button" onClick={() => setPwVisible((v) => !v)} data-tip={pwVisible ? s.hidePassword : s.showPassword} aria-label={pwVisible ? s.hidePassword : s.showPassword} aria-pressed={pwVisible} className={styles.pwToggleBtn}>
+                  {eyeIcon(pwVisible)}
                 </button>
               </div>
             </div>
-          )}
+            {pPassword && (
+              <div>
+                <label className={styles.fieldLabel} style={labelStyle} htmlFor="profile-confirm-password">{s.confirmNewPassword}</label>
+                <div className={styles.pwField}>
+                  <input id="profile-confirm-password" className={styles.input} style={inputStyle} value={pConfirmPassword} onChange={(e: ChangeEvent<HTMLInputElement>) => setPConfirmPassword(e.target.value)} type={confirmPwVisible ? "text" : "password"} placeholder={s.newPasswordPh} autoComplete="new-password" />
+                  <button type="button" onClick={() => setConfirmPwVisible((v) => !v)} data-tip={confirmPwVisible ? s.hidePassword : s.showPassword} aria-label={confirmPwVisible ? s.hidePassword : s.showPassword} aria-pressed={confirmPwVisible} className={styles.pwToggleBtn}>
+                    {eyeIcon(confirmPwVisible)}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* O'ng ustun: mobil verifikatsiyadan kelgan ma'lumotlar (faqat o'qish) */}
+          <section className={styles.infoCard} style={infoCardStyle} aria-label={s.employeeInfo}>
+            <div className={styles.infoTitle} style={infoValueStyle}>{s.employeeInfo}</div>
+            <dl className={styles.infoList}>
+              {infoRows.map(([label, value]) => (
+                <div key={label} className={styles.infoRow}>
+                  <dt className={styles.infoLabel} style={labelStyle}>{label}</dt>
+                  <dd className={styles.infoValue} style={infoValueStyle}>{value || "—"}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className={styles.fieldHint}>{s.employeeInfoHint}</div>
+          </section>
         </div>
 
-        {/* role="alert" — ekran o'quvchisi xatoni O'ZI e'lon qiladi.
-            Ilgari ko'zi ojiz foydalanuvchi "Saqlash" ni bosib, nega hech narsa
-            bo'lmayotganini bilmasdi. */}
+        {/* role="alert" — ekran o'quvchisi xatoni O'ZI e'lon qiladi */}
         {error && (
           <div className={styles.errorBox} role="alert">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
