@@ -58,12 +58,15 @@ class RegisterUserModel(StrongPasswordValidationMixin, Base):
 
 
 class RegisterTokenModel(Base):
-    """Register javobi: FAQAT access token.
+    """Register javobi: muvaffaqiyat bayrog'i + access token.
 
     Refresh token ataylab berilmaydi — tasdiqlanmagan user baribir refresh
     qila olmaydi; token tugasa (30 daqiqa) mobil qayta login qiladi.
     """
 
+    # Bu model faqat muvaffaqiyatli register'da qaytadi — xatolar (login band,
+    # validatsiya) exception handler orqali boshqa formatda ketadi.
+    success: bool = True
     access_token: str
 
 
