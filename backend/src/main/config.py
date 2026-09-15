@@ -179,6 +179,14 @@ class ScrapingConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class EmployeeApiConfig(BaseModel):
+    # Xodimlar bazasi (EDO): PINFL bo'yicha xodimni tekshiradi
+    EMPLOYEE_API_URL: str = "https://edo.turonbank.uz/api/is-user"
+    EMPLOYEE_API_TIMEOUT_SECONDS: float = 10.0
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class QdrantConfig(BaseModel):
     QDRANT_HOST: str = "qdrant"
     QDRANT_PORT: int = 6333
@@ -274,6 +282,7 @@ class Config(BaseModel):
     ai: AIConfig
     qdrant: QdrantConfig
     scraping: ScrapingConfig
+    employee_api: EmployeeApiConfig = EmployeeApiConfig()
 
     model_config = ConfigDict(extra="ignore")
 
@@ -308,6 +317,7 @@ def get_settings() -> Config:
         ai=AIConfig(**merged_env),
         qdrant=QdrantConfig(**merged_env),
         scraping=ScrapingConfig(**merged_env),
+        employee_api=EmployeeApiConfig(**merged_env),
     )
 
 
