@@ -1,0 +1,225 @@
+/* Profil oynasi — faqat o'qish. Chat foni bilan qo'shilib ketmasligi uchun
+   overlay xiralashtiriladi va karta to'liq (shaffof emas) fonga ega. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.16s ease both;
+}
+
+.modal {
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: 18px;
+  background: #FFFFFF;
+  color: #193070;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  animation: popIn 0.18s ease both;
+}
+
+.dark .modal {
+  background: #151D3F;
+  color: #E2E8F0;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.dark .head {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: linear-gradient(140deg, #4059BE, #193070);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 19px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  margin-top: 2px;
+  font-size: 14px;
+  color: #64748B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .meta {
+  color: #94A3B8;
+}
+
+.closeBtn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: #F1F5F9;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: #E2E8F0;
+}
+
+.dark .closeBtn {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .closeBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid #A78BFF;
+  outline-offset: 2px;
+}
+
+.sectionTitle {
+  margin: 18px 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.list {
+  margin: 0;
+}
+
+/* Yorliq chapda, qiymat o'ngda; uzun qiymat (bo'lim nomi) keyingi qatorga
+   o'raladi — qisilib, kesilib qolmaydi */
+.row {
+  display: grid;
+  grid-template-columns: minmax(120px, 38%) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 11px 0;
+  border-bottom: 1px dashed #E2E8F0;
+}
+
+.dark .row {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-size: 14px;
+  color: #64748B;
+}
+
+.dark .label {
+  color: #94A3B8;
+}
+
+.value {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin-top: 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.dark .hint {
+  color: #94A3B8;
+}
+
+.error {
+  margin: 10px 0;
+  padding: 11px 14px;
+  border-radius: 11px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  font-size: 14.5px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 520px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    padding: 18px;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .value {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+}

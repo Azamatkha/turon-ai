@@ -36,6 +36,11 @@ interface SidebarProps {
   userHandle: string;
   initial: string;
   openProfile: () => void;
+  onLogout: () => void;
+  profileLabel: string;
+  supportHint: string;
+  supportNumber: string;
+  logoutLabel: string;
 }
 
 // Oxirgi xabar vaqtini menyu uchun formatlaydi: bugun bo'lsa "Bugun · soat:daqiqa",
@@ -56,6 +61,7 @@ export default function Sidebar({
   removeChatLabel, pinChatLabel, unpinChatLabel, moreOptionsLabel, pinnedSectionLabel, recentsSectionLabel, todayLabel,
   search, setSearch, searchPlaceholder, noResultsLabel,
   side, userName, userHandle, initial, openProfile,
+  onLogout, profileLabel, supportHint, supportNumber, logoutLabel,
 }: SidebarProps) {
   const sideHover: CSSProperties = { background: "rgba(255,255,255,.08)" };
   const btnHover: CSSProperties = { background: "rgba(255,255,255,.13)" };
@@ -101,6 +107,64 @@ export default function Sidebar({
     };
   }, [menu]);
 
+  // Profil menyusi (Profil / yordam raqami / Chiqish): user tugmasi ustiga
+  // kursor kelganda ochiladi. Sensorli ekranda hover yo'q — bosilganda ham
+  // ochiladi. Menyu ham <body>ga portal qilinadi (sidebar overflow'i kesmasin).
+  const [profileMenu, setProfileMenu] = useState<{ bottom: number; left: number; width: number } | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const profileAnchorRef = useRef<HTMLDivElement | null>(null);
+  const profileCloseTimer = useRef<number | undefined>(undefined);
+
+  const showProfileMenu = (focusFirst = false) => {
+    window.clearTimeout(profileCloseTimer.current);
+    const el = profileAnchorRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setProfileMenu(
+      open
+        ? // ochiq panel: tugmaning tepasida, kengligi bo'yicha
+          { bottom: window.innerHeight - r.top + 6, left: r.left + 10, width: r.width - 20 }
+        : // yig'ilgan rail: avatarning o'ng tomonida, pastki cheti bo'yicha
+          { bottom: window.innerHeight - r.bottom, left: r.right + 8, width: 250 },
+    );
+    if (focusFirst) {
+      setTimeout(() => profileMenuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus(), 0);
+    }
+  };
+  // Kursor tugmadan menyuga o'tayotganda yopilib qolmasligi uchun kichik kechikish
+  const hideProfileMenuSoon = () => {
+    window.clearTimeout(profileCloseTimer.current);
+    profileCloseTimer.current = window.setTimeout(() => setProfileMenu(null), 180);
+  };
+
+  useEffect(() => {
+    if (!profileMenu) return;
+    const onDocMouseDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (profileMenuRef.current?.contains(t) || profileAnchorRef.current?.contains(t)) return;
+      setProfileMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setProfileMenu(null);
+    };
+    const onResize = () => setProfileMenu(null);
+    document.addEventListener("mousedown", onDocMouseDown);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("mousedown", onDocMouseDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [profileMenu]);
+
+  // Panel ochilib/yopilganda tugma joyi o'zgaradi — menyuni yopamiz
+  useEffect(() => {
+    setProfileMenu(null);
+  }, [open]);
+
+  useEffect(() => () => window.clearTimeout(profileCloseTimer.current), []);
+
   // Qidiruv ikonkasi bosilganda: panelni ochib, qidiruv maydoniga fokus beramiz
   const openAndSearch = () => {
     setOpen(true);
@@ -142,16 +206,25 @@ export default function Sidebar({
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><line x1="8" y1="7" x2="20" y2="7" /><line x1="8" y1="12" x2="20" y2="12" /><line x1="8" y1="17" x2="20" y2="17" /><circle cx="4" cy="7" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="17" r="1" /></svg>
           </HButton>
           <div className={styles.railSpacer} />
-          <HButton
-            onClick={openProfile}
-            data-tip={userName}
-            aria-label={userName}
-            className={`${styles.railBtn} tip-right`}
-            baseStyle={{ opacity: 0.95, color: side.fg }}
-            hoverStyle={sideHover}
+          <div
+            ref={profileAnchorRef}
+            className={styles.profileAnchor}
+            onMouseEnter={() => showProfileMenu()}
+            onMouseLeave={hideProfileMenuSoon}
           >
-          <div className={styles.avatarSm}>{initial}</div>
-          </HButton>
+            <HButton
+              onClick={() => showProfileMenu(true)}
+              aria-label={userName}
+              aria-haspopup="menu"
+              aria-expanded={!!profileMenu}
+              className={styles.railBtn}
+              baseStyle={{ opacity: 0.95, color: side.fg }}
+              hoverStyle={sideHover}
+            >
+              <div className={styles.avatarSm}>{initial}</div>
+            </HButton>
+          </div>
+          {renderProfileMenu()}
         </div>
       ) : (
         // ochiq panel
@@ -213,18 +286,78 @@ export default function Sidebar({
             </div>
           </div>
 
-          <HButton onClick={openProfile} className={styles.profileTrigger} baseStyle={{ borderTop: "1px solid " + side.border, color: side.fg }} hoverStyle={{ background: "rgba(255,255,255,.07)" }}>
-            <div className={styles.avatarSm}>{initial}</div>
-            <div className={styles.profileMeta}>
-              <div className={styles.profileName}>{userName}</div>
-              <div className={styles.profileHandle} style={{ color: side.sub }}>{userHandle}</div>
-            </div>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={styles.chevron}><polyline points="9 18 15 12 9 6" /></svg>
-          </HButton>
+          <div
+            ref={profileAnchorRef}
+            className={styles.profileAnchor}
+            onMouseEnter={() => showProfileMenu()}
+            onMouseLeave={hideProfileMenuSoon}
+          >
+            <HButton
+              onClick={() => showProfileMenu(true)}
+              aria-haspopup="menu"
+              aria-expanded={!!profileMenu}
+              className={styles.profileTrigger}
+              baseStyle={{ borderTop: "1px solid " + side.border, color: side.fg, background: profileMenu ? "rgba(255,255,255,.07)" : undefined }}
+              hoverStyle={{ background: "rgba(255,255,255,.07)" }}
+            >
+              <div className={styles.avatarSm}>{initial}</div>
+              <div className={styles.profileMeta}>
+                <div className={styles.profileName}>{userName}</div>
+                <div className={styles.profileHandle} style={{ color: side.sub }}>{userHandle}</div>
+              </div>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={styles.chevron} style={{ transform: profileMenu ? "rotate(-90deg)" : undefined }}><polyline points="9 18 15 12 9 6" /></svg>
+            </HButton>
+          </div>
+          {renderProfileMenu()}
         </div>
       )}
     </aside>
   );
+
+  function renderProfileMenu() {
+    if (!profileMenu) return null;
+    return createPortal(
+      <div
+        ref={profileMenuRef}
+        role="menu"
+        aria-label={userName}
+        className={`${styles.moreMenu} ${styles.profileMenu}`}
+        style={{ bottom: profileMenu.bottom, left: profileMenu.left, width: profileMenu.width }}
+        onMouseEnter={() => window.clearTimeout(profileCloseTimer.current)}
+        onMouseLeave={hideProfileMenuSoon}
+      >
+        <button
+          role="menuitem"
+          className={styles.moreMenuItem}
+          onClick={() => {
+            setProfileMenu(null);
+            openProfile();
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+          <span>{profileLabel}</span>
+        </button>
+        <div className={styles.profileMenuSupport}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
+          <span className={styles.profileMenuSupportHint}>{supportHint}</span>
+          <span className={styles.profileMenuSupportNumber}>{supportNumber}</span>
+        </div>
+        <div className={styles.profileMenuDivider} />
+        <button
+          role="menuitem"
+          className={`${styles.moreMenuItem} ${styles.moreMenuItemDanger}`}
+          onClick={() => {
+            setProfileMenu(null);
+            onLogout();
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+          <span>{logoutLabel}</span>
+        </button>
+      </div>,
+      document.body,
+    );
+  }
 
   function renderRow(c: Chat) {
     const act = c.id === activeId;

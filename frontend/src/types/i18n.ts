@@ -184,6 +184,11 @@ export interface ChatStaticStrings {
   // Profil oynasidagi "Xodim ma'lumotlari" kartasi (mobil verifikatsiyadan)
   employeeInfo: string;
   employeeInfoHint: string;
+  infoFirstName: string;
+  infoLastName: string;
+  profileLoadError: string;
+  // Sidebar'dagi profil menyusi (hover)
+  profileMenu: string;
   infoPatronym: string;
   infoPosition: string;
   infoDepartment: string;

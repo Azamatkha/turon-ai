@@ -5,10 +5,11 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { fetchMe } from "../services/authService";
+import { fetchMe, logout } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
+import ProfileModal from "../components/chat/ProfileModal";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
@@ -117,8 +118,15 @@ export default function ChatPage() {
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [chats, thinking]);
 
-  // Profil — alohida sahifa (/profile); saqlash mantig'i ProfilePage.tsx da
-  const openProfile = () => navigate("/profile");
+  // Profil — faqat o'qish uchun oyna (ProfileModal); ma'lumotni faqat admin o'zgartiradi
+  const [profileOpen, setProfileOpen] = useState(false);
+  const openProfile = () => setProfileOpen(true);
+  const closeProfile = useCallback(() => setProfileOpen(false), []);
+
+  const doLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   const tk = getThemeTokens(isDark);
   const side = getSideTokens(isDark);
@@ -207,7 +215,14 @@ export default function ChatPage() {
         userHandle={userHandle}
         initial={initial}
         openProfile={openProfile}
+        onLogout={doLogout}
+        profileLabel={S.profileMenu}
+        supportHint={S.supportHint}
+        supportNumber={S.supportNumber}
+        logoutLabel={S.logOut}
       />
+
+      {profileOpen && <ProfileModal S={S} isDark={isDark} onClose={closeProfile} />}
 
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} />
 

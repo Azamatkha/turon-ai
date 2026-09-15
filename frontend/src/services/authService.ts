@@ -11,6 +11,8 @@ export interface Me {
   username: string;
   email: string;
   full_name: string;
+  first_name: string;
+  last_name: string;
   department: string | null;
   role: string;
   // Mobil ilovada Face-ID verifikatsiyasidan o'tganmi
@@ -192,6 +194,8 @@ export async function fetchMe(): Promise<Me> {
     username: u.username,
     email: u.email,
     full_name: u.full_name,
+    first_name: u.first_name ?? "",
+    last_name: u.last_name ?? "",
     department: u.department ?? null,
     role: u.role,
     is_verified: u.is_verified ?? true,
@@ -236,6 +240,8 @@ export async function updateProfile(input: {
     username: u.username,
     email: u.email,
     full_name: u.full_name,
+    first_name: u.first_name ?? "",
+    last_name: u.last_name ?? "",
     department: u.department ?? null,
     role: u.role,
     is_verified: u.is_verified ?? true,

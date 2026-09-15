@@ -14,14 +14,14 @@ import LoginPage from "./pages/LoginPage";
 import ChatPage from "./pages/ChatPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import ProfilePage from "./pages/ProfilePage";
 import { RequireAuth, RequireAdmin } from "./components/RouteGuards";
 
 // Marshrutlar: "/" = chat (login bo'lsa), aks holda login sahifasiga yo'naltiradi
 const router = createBrowserRouter([
   { path: "/", element: <RequireAuth><ChatPage /></RequireAuth> },
   { path: "/c/:sessionId", element: <RequireAuth><ChatPage /></RequireAuth> },
-  { path: "/profile", element: <RequireAuth><ProfilePage /></RequireAuth> },
+  // Profil endi chat ichidagi oyna (sidebar -> profil menyusi); eski manzil chatga qaytadi
+  { path: "/profile", element: <Navigate to="/" replace /> },
   { path: "/login", element: <LoginPage /> },
   // Saytdan ro'yxatdan o'tish YOPILDI — ro'yxatdan o'tish faqat mobil ilovada
   // (yuzni tasdiqlash kamera va FaceID SDK talab qiladi). Manzilni qo'lda
