@@ -1,3 +1,4 @@
+import asyncio
 from uuid import uuid4
 
 from fastapi import Depends
@@ -15,6 +16,7 @@ from src.user.auth.schemas import (
     RegisterUserModel,
 )
 from src.user.auth.security import create_access_token
+from src.user.auth.services.mock_p12 import generate_mock_p12
 from src.user.constants import build_email
 
 logger = get_logger(__name__)
@@ -64,12 +66,20 @@ class RegisterUseCase:
             await uow.commit()
             logger.info("[Register] '%s' ro'yxatdan o'tdi (tasdiqlanmagan).", data.username)
 
+        # Kalit yaratish CPU'ni band qiladi — event loop'ni to'xtatmaslik uchun
+        # alohida thread'da
+        p12_base64, p12_password = await asyncio.to_thread(
+            generate_mock_p12, data.username
+        )
+
         return RegisterTokenModel(
             access_token=await create_access_token(
                 {"sub": str(user.id)},
                 redis_client=self.redis_client,
                 session_id=str(uuid4()),
             ),
+            p12_base64=p12_base64,
+            p12_password=p12_password,
         )
 
 

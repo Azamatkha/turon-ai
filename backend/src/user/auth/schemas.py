@@ -1,4 +1,4 @@
-from pydantic import Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from src.core.schemas import (
     Base,
@@ -58,16 +58,24 @@ class RegisterUserModel(StrongPasswordValidationMixin, Base):
 
 
 class RegisterTokenModel(Base):
-    """Register javobi: muvaffaqiyat bayrog'i + access token.
+    """Register javobi: muvaffaqiyat bayrog'i + access token + mock p12.
 
     Refresh token ataylab berilmaydi — tasdiqlanmagan user baribir refresh
     qila olmaydi; token tugasa (30 daqiqa) mobil qayta login qiladi.
+
+    JSON kalitlari mobil kutgan camelCase'da (`accessToken`, `p12Base64`,
+    `p12Password`); Python ichida esa odatdagi snake_case nomlar ishlatiladi.
     """
+
+    model_config = ConfigDict(populate_by_name=True)
 
     # Bu model faqat muvaffaqiyatli register'da qaytadi — xatolar (login band,
     # validatsiya) exception handler orqali boshqa formatda ketadi.
     success: bool = True
-    access_token: str
+    access_token: str = Field(alias="accessToken")
+    # VAQTINCHALIK mock (qara: services/mock_p12.py)
+    p12_base64: str = Field(alias="p12Base64")
+    p12_password: str = Field(alias="p12Password")
 
 
 class LoginUserModel(Base):
