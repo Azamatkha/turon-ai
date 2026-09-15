@@ -88,6 +88,11 @@ class JWTConfig(BaseModel):
     VERIFICATION_TOKEN_EXPIRE_MINUTES: int = Field(gt=0)
     RESET_PASSWORD_TOKEN_EXPIRE_MINUTES: int = Field(gt=0)
 
+    # GSI Face-ID natijasini imzolaydigan HMAC (HS256) kaliti — bankka USB'da
+    # beriladi. Bo'sh bo'lsa `/auth/save` imzoni TEKSHIRMAYDI, faqat o'qiydi:
+    # bu faqat test uchun, productionda kalit albatta qo'yilishi shart.
+    GSI_HMAC_KEY: str = ""
+
     model_config = ConfigDict(extra="ignore")
 
 

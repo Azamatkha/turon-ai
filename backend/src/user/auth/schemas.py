@@ -78,6 +78,12 @@ class RegisterTokenModel(Base):
     p12_password: str = Field(alias="p12Password")
 
 
+class SaveSignatureModel(Base):
+    """`/auth/save` so'rovi: faqat GSI imzolagan Face-ID natijasi (JWT)."""
+
+    signature: str = Field(min_length=1, max_length=100_000)
+
+
 class LoginUserModel(Base):
     username: str
     password: str

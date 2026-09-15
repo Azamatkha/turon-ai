@@ -16,6 +16,7 @@ from src.user.auth.schemas import (
     LogoutRequestModel,
     RegisterTokenModel,
     RegisterUserModel,
+    SaveSignatureModel,
 )
 from src.user.auth.usecases.get_access_by_refresh import (
     GetTokensByRefreshUserUseCase,
@@ -24,6 +25,10 @@ from src.user.auth.usecases.get_access_by_refresh import (
 from src.user.auth.usecases.login import LoginUserUseCase, get_login_user_use_case
 from src.user.auth.usecases.logout import LogoutUseCase, get_logout_use_case
 from src.user.auth.usecases.register import RegisterUseCase, get_register_use_case
+from src.user.auth.usecases.save import (
+    SaveSignatureUseCase,
+    get_save_signature_use_case,
+)
 from src.user.models import User
 
 router = APIRouter()
@@ -46,6 +51,24 @@ async def signup_user(
     faqat access token qaytadi — keyingi qadam Face-ID verifikatsiyasi.
     """
     return await use_case.execute(data=user_form_data)
+
+
+@router.post(
+    "/save",
+    response_model=SuccessResponse,
+    dependencies=[Depends(RateLimiter(times=10, minutes=10))],
+)
+async def save_face_id_result(
+    form_data: SaveSignatureModel,
+    use_case: Annotated[SaveSignatureUseCase, Depends(get_save_signature_use_case)],
+) -> SuccessResponse:
+    """
+    Mobil: Face-ID natijasini (GSI imzosi) saqlab, ro'yxatdan o'tishni yakunlash.
+
+    Authorization header kerak emas — user imzo ichidagi accessToken'dan olinadi.
+    `{"success": true}` — akkaunt tasdiqlandi; `{"success": false}` — xodim emas.
+    """
+    return await use_case.execute(data=form_data)
 
 
 @router.post(
