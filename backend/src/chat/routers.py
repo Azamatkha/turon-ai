@@ -32,7 +32,12 @@ from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.rates_scraper import RATES_TITLE
-from src.knowledge.schemas import AnswerResult, QuestionRequest, RatesResult
+from src.knowledge.schemas import (
+    AnswerResult,
+    ChatTurn,
+    QuestionRequest,
+    RatesResult,
+)
 from src.knowledge.usecases import AnswerQuestionUseCase
 from src.user.auth.dependencies import get_current_user, get_user_id_from_token
 from src.user.models import User
@@ -50,6 +55,7 @@ from src.chat.schemas import (
 )
 from src.chat.usecases import (
     AddMessageUseCase,
+    LoadHistoryUseCase,
     CreateSessionUseCase,
     DeleteMessageUseCase,
     DeleteSessionUseCase,
@@ -66,6 +72,7 @@ from src.chat.usecases import (
     get_generate_title_use_case,
     get_get_session_use_case,
     get_list_sessions_use_case,
+    get_load_history_use_case,
     get_pin_session_use_case,
     get_rename_session_use_case,
     get_vote_message_use_case,
@@ -224,6 +231,26 @@ async def vote_message(
     )
 
 
+async def _resolve_history(
+    data: QuestionRequest,
+    current_user: User,
+    history_use_case: LoadHistoryUseCase,
+) -> list[ChatTurn]:
+    """Savol uchun suhbat tarixini beradi.
+
+    `session_id` berilgan bo'lsa — tarix BAZADAN o'qiladi (mobil ilova shu
+    yo'lni ishlatadi). Aks holda mijoz yuborgan `history` ishlatiladi (web).
+    Tarixsiz "19" kabi qisqa savol mavzuga bog'lanmay, noto'g'ri yo'naltirilardi.
+    """
+    if data.session_id is None:
+        return data.history
+    return await history_use_case.execute(
+        user_id=current_user.id,
+        session_id=data.session_id,
+        question=data.question,
+    )
+
+
 @router.post(
     "/ask",
     response_model=AnswerResult,
@@ -235,12 +262,16 @@ async def ask(
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
     ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+    history_use_case: Annotated[
+        LoadHistoryUseCase, Depends(get_load_history_use_case)
+    ],
 ) -> AnswerResult:
     """Xodim savoli -> Qdrant qidiruv -> Qwen javob (RAG)."""
     use_case = AnswerQuestionUseCase(
         embedder=embedder, store=store, ai_client=ai_client
     )
-    return await use_case.execute(question=data.question, history=data.history)
+    history = await _resolve_history(data, current_user, history_use_case)
+    return await use_case.execute(question=data.question, history=history)
 
 
 @router.post("/ask/stream", dependencies=[Depends(ASK_RATE_LIMIT)])
@@ -250,17 +281,23 @@ async def ask_stream(
     embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
     ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
+    history_use_case: Annotated[
+        LoadHistoryUseCase, Depends(get_load_history_use_case)
+    ],
 ) -> StreamingResponse:
     """Xuddi /ask kabi, lekin javobni token-token (SSE oqim) qaytaradi —
     frontend real vaqtda matn va token sonini ko'rsatishi uchun."""
     use_case = AnswerQuestionUseCase(
         embedder=embedder, store=store, ai_client=ai_client
     )
+    # Tarix oqim BOSHLANISHIDAN oldin olinadi: oqim ichida xato chiqsa,
+    # klient allaqachon 200 olgan bo'lardi va sababini bilmasdi.
+    history = await _resolve_history(data, current_user, history_use_case)
 
     async def event_stream() -> AsyncIterator[str]:
         try:
             async for ev in use_case.execute_stream(
-                question=data.question, history=data.history
+                question=data.question, history=history
             ):
                 yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
         except Exception:  # noqa: BLE001 - oqim uzilsa, klientga xabar beramiz

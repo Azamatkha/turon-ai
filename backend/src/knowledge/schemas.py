@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import Field
 
 from src.core.schemas import Base
@@ -70,7 +72,13 @@ class ChatTurn(Base):
 
 class QuestionRequest(Base):
     question: str = Field(min_length=1)
-    history: list[ChatTurn] = []   # oldingi suhbat (mavzu davomiyligi uchun)
+    # Oldingi suhbat (mavzu davomiyligi uchun). IKKI XIL berish mumkin:
+    #  - `session_id` — backend tarixni O'ZI bazadan o'qiydi (mobil shu yo'lni
+    #    ishlatadi: tarixni yig'ib yurish shart emas);
+    #  - `history` — mijoz o'zi yuboradi (web shunday ishlaydi).
+    # Ikkalasi birga kelsa `session_id` ustun: baza — yagona haqiqat manbai.
+    history: list[ChatTurn] = []
+    session_id: UUID | None = None
 
 
 class RateRow(Base):

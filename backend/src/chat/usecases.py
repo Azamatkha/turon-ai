@@ -12,6 +12,7 @@ from src.core.schemas import SuccessResponse
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.uzbek_script import is_cyrillic_text, to_cyrillic
 from src.chat.prompts import TITLE_SYSTEM
+from src.knowledge.schemas import ChatTurn
 from src.chat.schemas import (
     AddMessageModel,
     GenerateTitleResult,
@@ -72,6 +73,49 @@ class GetSessionUseCase:
                 updated_at=s.updated_at,
                 messages=[MessageView.model_validate(m) for m in messages],
             )
+
+
+class LoadHistoryUseCase:
+    """Savol uchun suhbat tarixini BAZADAN o'qiydi.
+
+    Ilgari tarixni faqat mijoz yuborardi. Mobil ilova uni yubormagani uchun
+    "19" kabi qisqa savol kontekstsiz qolib, router uni "bankka aloqasi yo'q"
+    deb rad etardi. Endi mijoz `session_id` bersa, tarixni backend o'zi yig'adi.
+    """
+
+    # Nechta oxirgi xabar olinadi. Router baribir oxirgi 6 almashuvni ishlatadi
+    # (`QuestionRouter.HISTORY_TURNS`), bu esa zaxira bilan.
+    MESSAGE_LIMIT = 20
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(
+        self, user_id: UUID, session_id: UUID, question: str
+    ) -> list[ChatTurn]:
+        async with self.uow as uow:
+            # Egalik tekshiruvi: birovning suhbati tarixi olinmasin
+            s = await uow.chat_sessions.get_single(
+                uow.session, id=session_id, user_id=user_id
+            )
+            if not s:
+                raise InstanceNotFoundException(SESSION_NOT_FOUND)
+            messages = await uow.chat_messages.list_by_session(uow.session, session_id)
+
+        turns = [
+            ChatTurn(role=m.role, content=m.content)
+            for m in messages
+            if m.content and m.content.strip()
+        ]
+        # Mijoz odatda savolni AVVAL saqlaydi, keyin /ask ga yuboradi — o'sha
+        # savol tarixda ham turmasin (modelga ikki marta borardi).
+        if (
+            turns
+            and turns[-1].role == "user"
+            and turns[-1].content.strip() == question.strip()
+        ):
+            turns.pop()
+        return turns[-self.MESSAGE_LIMIT :]
 
 
 class RenameSessionUseCase:
@@ -281,6 +325,12 @@ def get_delete_message_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> DeleteMessageUseCase:
     return DeleteMessageUseCase(uow=uow)
+
+
+def get_load_history_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> LoadHistoryUseCase:
+    return LoadHistoryUseCase(uow=uow)
 
 
 def get_generate_title_use_case(
