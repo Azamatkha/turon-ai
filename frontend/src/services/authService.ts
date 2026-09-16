@@ -24,7 +24,6 @@ export interface Me {
   doc_number: string | null;
   birth_date: string | null;
   position: string | null;
-  branch: string | null;
 }
 
 export function getToken(): string | null {
@@ -205,7 +204,6 @@ export async function fetchMe(): Promise<Me> {
     doc_number: u.doc_number ?? null,
     birth_date: u.birth_date ?? null,
     position: u.position ?? null,
-    branch: u.branch ?? null,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));
@@ -251,7 +249,6 @@ export async function updateProfile(input: {
     doc_number: u.doc_number ?? null,
     birth_date: u.birth_date ?? null,
     position: u.position ?? null,
-    branch: u.branch ?? null,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));

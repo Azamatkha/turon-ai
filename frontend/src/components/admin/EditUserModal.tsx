@@ -1,11 +1,9 @@
 import { useState } from "react";
 import HButton from "../common/HButton";
-import FilterSelect from "./FilterSelect";
-import { DEPARTMENTS, DEFAULT_DEPARTMENT, deptLabel } from "../../services/departments";
+import { DEFAULT_DEPARTMENT } from "../../services/departments";
 import type { AdminUserUpdate } from "../../services/adminService";
 import type { AdminUser } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
-import type { Lang } from "../../types/lang";
 import styles from "./AddUserModal.module.css";
 
 interface Props {
@@ -13,19 +11,18 @@ interface Props {
   onClose: () => void;
   onSubmit: (input: AdminUserUpdate) => Promise<void>;
   t: AdminStrings;
-  lang: Lang;
 }
 
 // Foydalanuvchini tahrirlash: ism, login, departament, (ixtiyoriy) yangi parol
 // va verifikatsiya ma'lumotlari — xodim Face-ID'dan o'tolmasa admin ularni
 // qo'lda to'ldirib, userni tasdiqlaydi.
-export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang }: Props) {
+export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Props) {
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.handle.replace(/^@/, ""));
-  // Bo'lim bo'sh qolmasin — eski yozuvlarda "—" bo'lsa ham "Boshqa" tanlanadi.
-  const [dept, setDept] = useState(
-    user.dept === "—" || !user.dept ? DEFAULT_DEPARTMENT : user.dept,
-  );
+  // Bo'lim/filial — ERKIN MATN: xodimlar bazasi (EDO) goh departament
+  // ("Axborot texnologiyalari departamenti"), goh filial ("Navoiy BXM")
+  // qaytaradi, ya'ni tayyor ro'yxatga sig'maydi.
+  const [dept, setDept] = useState(user.dept === "—" || !user.dept ? "" : user.dept);
   const [pass, setPass] = useState("");
   const [verified, setVerified] = useState(user.verified);
   const [pnfl, setPnfl] = useState(user.pnfl ?? "");
@@ -34,15 +31,8 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang 
   const [docNumber, setDocNumber] = useState(user.docNumber ?? "");
   const [birthDate, setBirthDate] = useState(user.birthDate ?? "");
   const [position, setPosition] = useState(user.position ?? "");
-  const [branch, setBranch] = useState(user.branch ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-
-  // Xodimlar bazasidan kelgan bo'lim ro'yxatda bo'lmasligi mumkin — uni ham ko'rsatamiz
-  const deptOptions = DEPARTMENTS.map((d) => ({ value: d.uz, label: deptLabel(d, lang) }));
-  if (dept && !deptOptions.some((o) => o.value === dept)) {
-    deptOptions.unshift({ value: dept, label: dept });
-  }
 
   const submit = async () => {
     if (!name.trim() || !username.trim()) {
@@ -72,7 +62,6 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang 
         doc_number: docNumber.trim(),
         birth_date: birthDate || undefined,
         position: position.trim(),
-        branch: branch.trim(),
       });
       onClose();
     } catch (e) {
@@ -121,7 +110,7 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang 
             </div>
             <div>
               <label className={styles.fieldLabel}>{admin.dept}</label>
-              <FilterSelect value={dept} onChange={setDept} fullWidth placeholder={admin.deptPh} options={deptOptions} />
+              <input value={dept} onChange={(e) => setDept(e.target.value)} className={styles.input} placeholder={admin.deptPh} />
             </div>
           </div>
 
@@ -155,13 +144,9 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin, lang 
               <input value={patronym} onChange={(e) => setPatronym(e.target.value)} className={styles.input} />
             </div>
             <div>
-              <label className={styles.fieldLabel}>{admin.branchLabel}</label>
-              <input value={branch} onChange={(e) => setBranch(e.target.value)} className={styles.input} />
+              <label className={styles.fieldLabel}>{admin.positionLabel}</label>
+              <input value={position} onChange={(e) => setPosition(e.target.value)} className={styles.input} />
             </div>
-          </div>
-          <div>
-            <label className={styles.fieldLabel}>{admin.positionLabel}</label>
-            <input value={position} onChange={(e) => setPosition(e.target.value)} className={styles.input} />
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, fontWeight: 600, color: "var(--adm-text-strong)", cursor: "pointer" }}>
             <input type="checkbox" checked={verified} onChange={(e) => setVerified(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#4059BE" }} />

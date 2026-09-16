@@ -192,7 +192,6 @@ export interface ChatStaticStrings {
   infoPatronym: string;
   infoPosition: string;
   infoDepartment: string;
-  infoBranch: string;
   infoPnfl: string;
   infoBirthDate: string;
   infoDocument: string;
@@ -289,7 +288,6 @@ export interface AdminStrings {
   docNumberLabel: string;
   birthDateLabel: string;
   positionLabel: string;
-  branchLabel: string;
   pnflInvalid: string;
   logout: string;
   uploadNav: string;

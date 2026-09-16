@@ -4,7 +4,7 @@ export const chat: ChatStrings = {
   newChat: "Новый чат",
   sub: "Задайте вопрос по банковским продуктам — отвечу на основе доступной информации.",
   placeholder: "Напишите Turon AI…",
-  disclaimer: "Shift+Enter — новая строка · ответы могут приходить с задержкой.",
+  disclaimer: "Система в режиме тестирования — ответы могут задерживаться или быть неверными.",
   sugg: ["Виды кредитов", "Банковские карты", "Вклады", "Международные переводы", "Филиалы", "Номера сотрудников", "Курс валют"],
   greeting: (n: string) => `Здравствуйте, ${n}!\nЧем могу помочь?`,
 };
@@ -144,8 +144,7 @@ export const chatStatic: ChatStaticStrings = {
   profileMenu: "Профиль",
   infoPatronym: "Отчество",
   infoPosition: "Должность",
-  infoDepartment: "Отдел",
-  infoBranch: "Филиал",
+  infoDepartment: "Отдел / Филиал",
   infoPnfl: "ПИНФЛ",
   infoBirthDate: "Дата рождения",
   infoDocument: "Паспорт",

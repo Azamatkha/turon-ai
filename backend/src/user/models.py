@@ -71,8 +71,10 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     doc_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     # --- Xodimlar bazasidan (PNFL bo'yicha) keladigan ma'lumotlar ---
+    # Filial uchun alohida ustun YO'Q: EDO bitta `depart` qaytaradi va unda
+    # goh departament, goh filial ("Navoiy BXM") keladi — ikkalasi ham
+    # `department` ga yoziladi.
     position: Mapped[str | None] = mapped_column(String(150), nullable=True)
-    branch: Mapped[str | None] = mapped_column(String(150), nullable=True)
 
     """relationships"""
     # Add relationships here

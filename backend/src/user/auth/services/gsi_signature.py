@@ -124,6 +124,21 @@ def _text(value: Any, max_length: int) -> str | None:
     return text[:max_length] or None
 
 
+def _person_name(value: Any, max_length: int) -> str | None:
+    """Ism/familiyani o'qiladigan ko'rinishga keltiradi.
+
+    GSI hammasini BOSH HARFDA qaytaradi ("AZAMAT XAMDAMOV") — profil va
+    xabarlarda shu holicha chiqsa qo'pol ko'rinadi. Har bir so'zning faqat
+    birinchi harfi katta bo'ladi; defis bilan yozilgan qo'sh ismlar ham
+    ("ABDU-RAHIM") to'g'ri bo'linadi.
+    """
+    text = _text(value, max_length)
+    if not text:
+        return None
+    parts = re.split(r"([ \-])", text.lower())
+    return "".join(p[:1].upper() + p[1:] if p not in (" ", "-") else p for p in parts)
+
+
 def _parse_date(value: Any) -> date | None:
     if not value:
         return None
@@ -171,13 +186,15 @@ def extract_person(body: Any) -> GsiPerson:
 
     return GsiPerson(
         pnfl=pnfl,
-        first_name=_text(_find(body, "namelat", "name_lat", "first_name", "namecyr"), 50)
+        first_name=_person_name(
+            _find(body, "namelat", "name_lat", "first_name", "namecyr"), 50
+        )
         or "",
-        last_name=_text(
+        last_name=_person_name(
             _find(body, "surnamelat", "surname_lat", "last_name", "surnamecyr"), 50
         )
         or "",
-        patronym=_text(
+        patronym=_person_name(
             _find(body, "patronymlat", "patronym_lat", "patronym", "patronymcyr"), 50
         ),
         doc_seria=doc_seria.upper() if doc_seria else None,

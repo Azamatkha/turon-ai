@@ -19,5 +19,4 @@ export interface AdminUser {
   docNumber?: string;
   birthDate?: string;
   position?: string;
-  branch?: string;
 }

@@ -68,11 +68,18 @@ class SaveSignatureUseCase:
             if user.is_verified:
                 raise InstanceProcessingException("Foydalanuvchi allaqachon tasdiqlangan")
 
-            # Bitta xodim — bitta akkaunt
+            # BITTA XODIM — BITTA AKKAUNT. Shu PNFL boshqa akkauntga
+            # biriktirilgan bo'lsa, yangisi ochilmaydi: aks holda bir odam
+            # istalgancha login yaratib olardi. Yangi (tasdiqlanmagan) akkaunt
+            # o'zi 24 soatdan keyin `cleanup_unverified_users` bilan o'chadi.
             owner = await uow.users.get_single(uow.session, pnfl=person.pnfl)
             if owner and owner.id != user.id:
+                logger.info(
+                    "[FaceID] PNFL band — '%s' uchun yangi akkaunt rad etildi.",
+                    owner.username,
+                )
                 raise InstanceAlreadyExistsException(
-                    "Bu PNFL bilan akkaunt allaqachon mavjud"
+                    "Bu shaxs uchun akkaunt allaqachon mavjud"
                 )
 
             await uow.users.update(
@@ -86,6 +93,8 @@ class SaveSignatureUseCase:
                     "doc_number": person.doc_number,
                     "birth_date": person.birth_date,
                     "position": employee.position,
+                    # EDO `depart` — goh departament, goh filial ("Navoiy BXM").
+                    # Ikkalasi ham shu bitta maydonga tushadi.
                     "department": employee.department,
                     "is_verified": True,
                 },

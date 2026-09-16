@@ -39,8 +39,8 @@ export const admin: AdminStrings = {
   fullNamePh: "masalan, Dilnoza Saidova",
   username: "Foydalanuvchi nomi",
   usernamePh: "d.saidova",
-  dept: "Departament",
-  deptPh: "Departament nomi",
+  dept: "Departament / Filial",
+  deptPh: "Departament yoki filial nomi",
   role: "Rol",
   taken: "Band",
   create: "Yaratish",
@@ -68,7 +68,6 @@ export const admin: AdminStrings = {
   docNumberLabel: "Pasport raqami",
   birthDateLabel: "Tug‘ilgan sana",
   positionLabel: "Lavozim",
-  branchLabel: "Filial",
   pnflInvalid: "PNFL 14 ta raqamdan iborat bo‘lishi kerak",
   logout: "Chiqish",
   // Ma'lumot qo'shish sahifasi

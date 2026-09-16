@@ -64,7 +64,6 @@ const mapUser = (u: ApiUser): AdminUser => ({
   docNumber: u.doc_number ?? "",
   birthDate: u.birth_date ?? "",
   position: u.position ?? "",
-  branch: u.branch ?? "",
 });
 
 export default function AdminPage() {

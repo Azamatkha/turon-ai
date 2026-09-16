@@ -27,7 +27,6 @@ class UserProfileViewModel(Base):
     doc_number: str | None = None
     birth_date: date | None = None
     position: str | None = None
-    branch: str | None = None
 
 class UserSummaryViewModel(Base):
     id: UUID
@@ -53,7 +52,6 @@ class UserAdminListItem(Base):
     # Face-ID verifikatsiyasidan o'tganmi (admin qo'lda ham o'zgartira oladi)
     is_verified: bool = True
     position: str | None = None
-    branch: str | None = None
     # Admin tahrirlash oynasi uchun (Face-ID'dan o'tolmagan xodimni qo'lda to'ldirish)
     pnfl: str | None = None
     patronym: str | None = None
@@ -121,7 +119,6 @@ class AdminUpdateUserModel(Base):
     doc_number: str | None = Field(default=None, max_length=20)
     birth_date: date | None = None
     position: str | None = Field(default=None, max_length=150)
-    branch: str | None = Field(default=None, max_length=150)
 
     @field_validator("pnfl")
     @classmethod
@@ -183,8 +180,7 @@ class VerificationIdentityModel(Base):
 
 
 class VerificationEmploymentModel(Base):
-    """Xodimlar bazasi PNFL bo'yicha qaytargan ma'lumot (lavozim, bo'lim, filial)."""
+    """Xodimlar bazasi PNFL bo'yicha qaytargan ma'lumot (lavozim, bo'lim/filial)."""
 
     position: str = Field(min_length=1, max_length=150)
     department: str = Field(min_length=1, max_length=100)
-    branch: str = Field(min_length=1, max_length=150)

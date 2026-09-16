@@ -39,9 +39,10 @@ celery_app.conf.update(
 )
 
 celery_app.conf.beat_schedule = {
-    "cleanup_unverified_users_every_10_hours": {
+    # Tasdiqlanmagan akkaunt 24 soatdan ortiq turmasin — har soatda tekshiramiz
+    "cleanup_unverified_users_hourly": {
         "task": "cleanup_unverified_users",
-        "schedule": crontab(minute=0, hour="*/10"),
+        "schedule": crontab(minute=5),
     },
     # Valyuta kurslarini har kuni yangilab turamiz.
     # Celery timezone = UTC, Toshkent = UTC+5 => 11:00 Toshkent = 06:00 UTC.

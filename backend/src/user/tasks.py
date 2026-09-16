@@ -23,7 +23,9 @@ def cleanup_unverified_users() -> str:
 
 
 async def _soft_delete_unverified_users() -> int:
-    cutoff = get_utc_now() - timedelta(days=3)
+    # 24 soat: shu vaqt ichida tasdiqlanmagan (Face-ID'dan o'tmagan) akkaunt
+    # o'chiriladi — login band bo'lib qolmasin. Task har soatda ishlaydi.
+    cutoff = get_utc_now() - timedelta(hours=24)
 
     async with local_async_session() as session:
         uow: ApplicationUnitOfWork[RepositoryProtocol] = ApplicationUnitOfWork(session)

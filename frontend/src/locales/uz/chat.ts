@@ -5,7 +5,7 @@ export const chat: ChatStrings = {
   newChat: "Yangi suhbat",
   sub: "Bank mahsulotlari bo‘yicha savolingizni yozing — mavjud ma’lumotlar asosida javob beraman.",
   placeholder: "Turon AI’ga yozing…",
-  disclaimer: "Yangi qatorga o‘tish uchun Shift+Enter · javoblar biroz kechikishi mumkin.",
+  disclaimer: "Tizim sinov jarayonida — javoblar kechikishi yoki xato javoblar bo‘lishi mumkin.",
   sugg: ["Kredit turlari", "Bank kartalari", "Omonatlar", "Xalqaro o‘tkazmalar", "Filiallar", "Xodimlar raqamlari", "Valyuta kursi"],
   greeting: (n: string) => `Assalom aleykum, ${n}!\nSizga qanday yordam beraman?`,
 };
@@ -147,8 +147,7 @@ export const chatStatic: ChatStaticStrings = {
   profileMenu: "Profil",
   infoPatronym: "Otasining ismi",
   infoPosition: "Lavozim",
-  infoDepartment: "Bo‘lim",
-  infoBranch: "Filial",
+  infoDepartment: "Bo‘lim / Filial",
   infoPnfl: "JShShIR (PNFL)",
   infoBirthDate: "Tug‘ilgan sana",
   infoDocument: "Pasport",

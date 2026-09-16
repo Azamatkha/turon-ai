@@ -126,7 +126,6 @@ export default function UsersTable({ users, search, onChangeRole, onToggleVerifi
           onClose={() => setEditing(null)}
           onSubmit={(input) => onUpdate(editing.id, input)}
           t={admin}
-          lang={lang}
         />
       )}
     </div>

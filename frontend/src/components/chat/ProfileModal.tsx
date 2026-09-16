@@ -49,7 +49,6 @@ export default function ProfileModal({ S, isDark, onClose }: Props) {
     [S.infoBirthDate, formatDate(me?.birth_date)],
     [S.infoDepartment, me?.department ?? ""],
     [S.infoPosition, me?.position ?? ""],
-    [S.infoBranch, me?.branch ?? ""],
   ];
 
   return (
