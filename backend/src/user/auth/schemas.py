@@ -32,8 +32,10 @@ class CreateUserModel(StrongPasswordValidationMixin, Base):
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str) -> str:
-        # Registr SAQLANADI ("turonAI" -> "turonAI"). Bandlik tekshiruvi va
-        # login esa registrsiz ishlaydi (`UserRepository.get_by_username`).
+        # Registr SAQLANADI ("turonAI" -> "turonAI") va login AYNAN shu
+        # ko'rinishda kiritilishi kerak. Faqat BANDLIK tekshiruvi registrsiz
+        # (`UserRepository.get_by_username`): "turonai" bilan ikkinchi akkaunt
+        # ochilmaydi.
         value = value.strip()
         if not USERNAME_VALIDATOR.match(value):
             raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")

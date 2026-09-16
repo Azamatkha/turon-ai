@@ -18,11 +18,13 @@ class UserRepository(SoftDeleteRepository[User]):
     async def get_by_username(
         self, session: AsyncSession, username: str
     ) -> User | None:
-        """Login bo'yicha topadi — KATTA/kichik harf farqsiz.
+        """Login BAND yoki yo'qligini tekshiradi — KATTA/kichik harf farqsiz.
 
-        Login bazada foydalanuvchi qanday yozgan bo'lsa shunday saqlanadi
-        ("turonAI"), lekin u ISHLATILGANDA registr ahamiyatsiz: "turonai" bilan
-        ham kiriladi va shu nom ikkinchi marta band qilinmaydi.
+        Login bazada foydalanuvchi yozganidek saqlanadi ("turonAI") va kirishda
+        ham aynan shunday kiritiladi (`LoginUserUseCase` aniq moslikni
+        qidiradi). Bu metod esa faqat BANDLIK uchun: "turonAI" bor bo'lsa,
+        "turonai" bilan ikkinchi akkaunt ochilmasin — aks holda deyarli bir xil
+        ikkita login paydo bo'lardi.
         """
         query = select(self.model).where(
             func.lower(self.model.username) == username.strip().lower(),

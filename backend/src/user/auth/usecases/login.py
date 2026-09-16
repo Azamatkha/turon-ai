@@ -74,7 +74,11 @@ class LoginUserUseCase:
         data: LoginUserModel,
     ) -> TokenModel:
         async with self.uow as uow:
-            user = await uow.users.get_by_username(uow.session, data.username)
+            # Login AYNAN mos kelishi kerak: "turonAI" bilan ro'yxatdan o'tgan
+            # odam "turonai" deb kira olmaydi (foydalanuvchi talabi).
+            # Bandlik tekshiruvi esa registrsiz — bir-biriga o'xshash ikkita
+            # login (turonAI / turonai) umuman yaratilmaydi.
+            user = await uow.users.get_single(uow.session, username=data.username)
             if not user:
                 logger.debug(
                     "[LoginUser] User '%s' not found.",
