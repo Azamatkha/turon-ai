@@ -15,6 +15,22 @@ class UserRepository(SoftDeleteRepository[User]):
 
     model = User
 
+    async def get_by_username(
+        self, session: AsyncSession, username: str
+    ) -> User | None:
+        """Login bo'yicha topadi — KATTA/kichik harf farqsiz.
+
+        Login bazada foydalanuvchi qanday yozgan bo'lsa shunday saqlanadi
+        ("turonAI"), lekin u ISHLATILGANDA registr ahamiyatsiz: "turonai" bilan
+        ham kiriladi va shu nom ikkinchi marta band qilinmaydi.
+        """
+        query = select(self.model).where(
+            func.lower(self.model.username) == username.strip().lower(),
+            self.model.is_deleted.is_(False),
+        )
+        result = await session.execute(query)
+        return result.scalars().first()
+
     async def search_list(
         self,
         session: AsyncSession,

@@ -56,9 +56,7 @@ class UpdateOwnProfileUseCase:
                 # `is_deleted=False` — unique indeks ham qisman (partial) va faqat
                 # o'chirilmagan qatorlarni qamrab oladi. Buni qo'shmasak, allaqachon
                 # o'chirilgan xodimning logini abadiy "band" bo'lib qolardi.
-                existing = await uow.users.get_single(
-                    uow.session, username=data.username, is_deleted=False
-                )
+                existing = await uow.users.get_by_username(uow.session, data.username)
                 if existing and existing.id != user_id:
                     raise InstanceAlreadyExistsException("Bu login allaqachon band")
                 update_data["username"] = data.username

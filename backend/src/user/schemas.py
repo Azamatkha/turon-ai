@@ -84,7 +84,7 @@ class UpdateOwnProfileModel(Base):
     def validate_username(cls, value: str | None) -> str | None:
         if value is None:
             return value
-        value = value.strip().lower()
+        value = value.strip()
         if not USERNAME_VALIDATOR.match(value):
             raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")
         return value
@@ -135,7 +135,7 @@ class AdminUpdateUserModel(Base):
     def validate_username(cls, value: str | None) -> str | None:
         if value is None:
             return value
-        value = value.strip().lower()
+        value = value.strip()
         if not USERNAME_VALIDATOR.match(value):
             raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")
         return value

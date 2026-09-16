@@ -30,8 +30,8 @@ class AdminUpdateUserUseCase:
                 # Ilgari bu tekshiruv yo'q edi: band login yuborilsa Postgres
                 # unique indeksni buzardi va admin tushunarsiz xato ko'rardi.
                 # Endi toza 409 + o'zbekcha xabar qaytadi.
-                existing = await uow.users.get_single(
-                    uow.session, username=data.username, is_deleted=False
+                existing = await uow.users.get_by_username(
+                    uow.session, data.username
                 )
                 if existing and existing.id != user_id:
                     raise InstanceAlreadyExistsException("Bu login allaqachon band")

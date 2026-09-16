@@ -104,7 +104,7 @@ export default function RegisterForm(p: Props) {
         <div className={styles.fieldGroupTight}>
           <label className={styles.fieldLabel}>{t.username}</label>
           <div className={styles.field}>
-            <input className={styles.input} value={p.username} onChange={(e) => p.setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))} onKeyDown={p.onKey} placeholder={t.usernamePh} autoCapitalize="none" autoComplete="username" />
+            <input className={styles.input} value={p.username} onChange={(e) => p.setUsername(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))} onKeyDown={p.onKey} placeholder={t.usernamePh} autoCapitalize="none" autoComplete="username" />
           </div>
         </div>
 

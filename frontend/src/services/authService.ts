@@ -156,7 +156,7 @@ export async function login(loginValue: string, password: string): Promise<strin
   const res = await fetch(`${API_URL}/v1/users/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: loginValue.trim().toLowerCase(), password }),
+    body: JSON.stringify({ username: loginValue.trim(), password }),
   });
   if (!res.ok) throw new ApiError(await readError(res, "Login yoki parol noto'g'ri"), res.status);
   storeTokens(await res.json());

@@ -17,9 +17,7 @@ class AdminCreateUserUseCase:
 
     async def execute(self, data: AdminCreateUserModel) -> UserAdminListItem:
         async with self.uow as uow:
-            existing = await uow.users.get_single(
-                uow.session, username=data.username, is_deleted=False
-            )
+            existing = await uow.users.get_by_username(uow.session, data.username)
             if existing:
                 raise InstanceAlreadyExistsException("Bu login allaqachon band")
 

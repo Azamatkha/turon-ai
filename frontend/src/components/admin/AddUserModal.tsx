@@ -55,7 +55,7 @@ export default function AddUserModal({
             <label className={styles.fieldLabel}>{admin.username}</label>
             <div className={styles.usernameField}>
               <span className={styles.usernamePrefix}>@</span>
-              <input value={fUser} onChange={(e) => setFUser(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))} placeholder={admin.usernamePh} autoCapitalize="none" className={styles.usernameInput} />
+              <input value={fUser} onChange={(e) => setFUser(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ""))} placeholder={admin.usernamePh} autoCapitalize="none" className={styles.usernameInput} />
               {userTaken && <span className={styles.takenLabel}>{admin.taken}</span>}
             </div>
           </div>

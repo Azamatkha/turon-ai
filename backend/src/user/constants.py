@@ -14,8 +14,13 @@ EMAIL_DOMAIN = "turonbank.uz"
 
 
 def build_email(username: str) -> str:
-    """Login'dan ichki email hosil qiladi."""
-    return f"{username}@{EMAIL_DOMAIN}"
+    """Login'dan ichki email hosil qiladi.
+
+    Login registri saqlanadi ("turonAI"), email esa DOIM kichik harfda:
+    pochta manzillari registrga sezgir emas va `users.email` unikal indeksi
+    "turonAI@..." bilan "turonai@..." ni ikki xil manzil deb hisoblardi.
+    """
+    return f"{username.strip().lower()}@{EMAIL_DOMAIN}"
 
 
 def split_full_name(full_name: str) -> tuple[str, str]:

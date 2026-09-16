@@ -33,9 +33,11 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
+        # Login foydalanuvchi yozganidek saqlanadi ("turonAI"), lekin unikallik
+        # REGISTRSIZ: "turonai" bilan ikkinchi akkaunt ochilmaydi.
         Index(
             "uq_users_username_not_deleted",
-            "username",
+            text("lower(username)"),
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),

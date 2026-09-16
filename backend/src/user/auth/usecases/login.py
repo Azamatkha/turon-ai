@@ -74,7 +74,7 @@ class LoginUserUseCase:
         data: LoginUserModel,
     ) -> TokenModel:
         async with self.uow as uow:
-            user = await uow.users.get_single(uow.session, username=data.username)
+            user = await uow.users.get_by_username(uow.session, data.username)
             if not user:
                 logger.debug(
                     "[LoginUser] User '%s' not found.",

@@ -32,7 +32,9 @@ class CreateUserModel(StrongPasswordValidationMixin, Base):
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str) -> str:
-        value = value.strip().lower()
+        # Registr SAQLANADI ("turonAI" -> "turonAI"). Bandlik tekshiruvi va
+        # login esa registrsiz ishlaydi (`UserRepository.get_by_username`).
+        value = value.strip()
         if not USERNAME_VALIDATOR.match(value):
             raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")
         return value
@@ -51,7 +53,7 @@ class RegisterUserModel(StrongPasswordValidationMixin, Base):
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str) -> str:
-        value = value.strip().lower()
+        value = value.strip()
         if not USERNAME_VALIDATOR.match(value):
             raise ValueError("Login 4-60 belgi: harf, raqam, _ - . bo'lsin")
         return value
