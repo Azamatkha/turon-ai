@@ -1218,7 +1218,7 @@ class ScrapeUrlUseCase:
         havola oxiridan ajratma qo'shib farqlaymiz."""
         if not await self.store.exists():
             return title
-        payloads = await self.store.scroll_all()
+        payloads = await self.store.scroll_all_pages()
         collides = any(
             p.get("title") == title
             and p.get("source_url")
@@ -1240,7 +1240,7 @@ class ListKnowledgeUseCase:
         if not await self.store.exists():
             return []
 
-        payloads = await self.store.scroll_all()
+        payloads = await self.store.scroll_all_pages()
 
         # Sarlavha bo'yicha guruhlaymiz: har sarlavha ostida nechta bo'lak bor
         grouped: dict[str, dict[str, Any]] = {}
@@ -1284,7 +1284,7 @@ class GetKnowledgeDetailUseCase:
         if not await self.store.exists():
             raise InstanceNotFoundException("Ma'lumot topilmadi")
 
-        payloads = await self.store.scroll_all()
+        payloads = await self.store.scroll_all_pages()
         matching = [p for p in payloads if str(p.get("title", "")) == title]
         if not matching:
             raise InstanceNotFoundException("Ma'lumot topilmadi")
@@ -1847,7 +1847,12 @@ class AnswerQuestionUseCase:
         Matn kerak, chunki foydalanuvchi turkum ichida QO'SHIMCHA shart bilan
         so'rashi mumkin ("Toshkentdagi filiallar") — manzil/hudud faqat
         mahsulot matnida bo'ladi, nomida emas."""
-        payloads = await self.store.scroll_all(limit=2000)
+        # BUTUN baza sahifalab o'qiladi. Ilgari `scroll_all(limit=2000)` edi —
+        # ya'ni katalog faqat BIRINCHI 2000 bo'lakdan yig'ilardi. Baza o'sgach
+        # (xodimlar bo'laklari ham shu 2000 tani yeydi) ayrim mahsulotlar
+        # ro'yxatdan tushib qolardi: "Omonatlar" so'ralganda «Meros omonati»
+        # chiqmay qo'ygan edi, garchi bazada tursa ham.
+        payloads = await self._scroll_points()
         # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan).
         # Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
         urls: dict[str, str] = {}
@@ -2172,7 +2177,7 @@ class AnswerQuestionUseCase:
         # sinamaymiz: aks holda "Yunusobod" kabi joy nomi xodim ismining
         # boshiga tasodifan mos kelib, butunlay boshqa javob qaytarardi.
         if not _has_employee_intent(q_lower):
-            catalog = await self.store.scroll_all(limit=5000)
+            catalog = await self._scroll_points()
             titles = {
                 str(p.get("title", ""))
                 for p in catalog
