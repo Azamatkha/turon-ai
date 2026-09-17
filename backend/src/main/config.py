@@ -159,6 +159,11 @@ class AIConfig(BaseModel):
 
     # Embedding (matn -> vektor). Same Ollama server, different model.
     EMBEDDING_MODEL: str = "bge-m3:567m"
+    # RAG: eng yaqin bo'lakning cosine balli shundan past bo'lsa, savol
+    # bazaga aloqasiz deb hisoblanadi. Loglardagi "Qidiruv ballari"
+    # qatoriga qarab sozlanadi: ko'tarilsa javob aniqroq, lekin "ma'lumot
+    # topilmadi" ko'proq chiqadi.
+    RAG_MIN_SCORE: float = 0.15
     EMBEDDING_DIM: int = 1024
 
     TIMEOUT_SECONDS: int

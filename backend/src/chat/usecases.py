@@ -25,6 +25,25 @@ logger = get_logger(__name__)
 
 SESSION_NOT_FOUND = "Suhbat topilmadi"
 
+# Unli harflar — lotin va kirill. O'zbekcha va ruscha har bir so'zda kamida
+# bitta unli bor, shuning uchun unlisiz "so'z" ("yyt", "qwrt") tasodifan
+# bosilgan tugmalar deb qaraladi.
+_VOWELS = frozenset("aeiouAEIOU" "аеёиоуўэюяыАЕЁИОУЎЭЮЯЫ")
+
+
+def _looks_meaningless(text: str) -> bool:
+    """Xabar ma'noli so'zdan iboratmi yoki tasodifiy belgilarmi.
+
+    Ma'noli deb sanaladi: kamida ikki harfli va ichida unlisi bor bitta so'z
+    ("uy", "meros", "кредит"). Raqamlar ("19") va unlisiz bo'laklar ("yyt")
+    ma'noli so'z hisoblanmaydi.
+    """
+    for word in text.split():
+        letters = [ch for ch in word if ch.isalpha()]
+        if len(letters) >= 2 and any(ch in _VOWELS for ch in letters):
+            return False
+    return True
+
 
 class ListSessionsUseCase:
     def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
@@ -203,11 +222,22 @@ class GenerateTitleUseCase:
 
     MAX_TOKENS = 32
     MAX_LEN = 60
+    # Ma'nosiz xabardan yasalgan sarlavha ham qisqa bo'lsin
+    RAW_TITLE_LEN = 42
 
     def __init__(self, ai_client: BaseAIClient) -> None:
         self.ai_client = ai_client
 
     async def execute(self, text: str) -> GenerateTitleResult:
+        # MA'NOSIZ XABARGA MODEL CHAQIRILMAYDI. Model bo'sh joyni har doim
+        # "to'ldirib" beradi: "yyt" uchun "Yaponiyadagi yaponcha til haqida"
+        # degan sarlavha yasab qo'ygan edi — foydalanuvchi yon panelda umuman
+        # boshqa suhbatni ko'rgandek bo'ladi. Bunday xabarning O'ZI sarlavha
+        # bo'lgani rost: u hech bo'lmasa yozilgan narsani ko'rsatadi.
+        # Yon foyda: ortiqcha LLM chaqiruvi (~3 s) ham ketmaydi.
+        if _looks_meaningless(text):
+            return GenerateTitleResult(title=text.strip()[: self.RAW_TITLE_LEN])
+
         raw = await self.ai_client.generate_text(
             text,
             system_prompt=TITLE_SYSTEM,

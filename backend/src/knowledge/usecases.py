@@ -43,6 +43,7 @@ from src.knowledge.prompts import (
     STRICT_RAG_SYSTEM,
 )
 from src.knowledge.router import Intent, QuestionRouter
+from src.main.config import config
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
     AnswerResult,
@@ -1470,6 +1471,108 @@ _CATEGORY_GENERIC: dict[str, tuple[str, ...]] = {
 }
 
 
+# --- ANIQLASHTIRISH (savol berib olish) --------------------------------- #
+# Savolda bazadagi mahsulot nomining faqat BIR QISMI aytilgan bo'lishi mumkin
+# ("meros" -> «Meros omonati»). Ilgari bunday savol router tomonidan "umumiy
+# tushuncha" deb baholanib, bazaga UMUMAN borilmasdi va bot "bank tizimida
+# bunday mahsulot yo'q" deb javob berardi — bazada esa u bor edi. Endi bunday
+# holatda javob to'qilmaydi, foydalanuvchidan aniqlashtirib so'raladi.
+_CLARIFY_MAX_OPTIONS = 3
+# Aniqlashtirish savolimizni keyinchalik tanib olish uchun belgi (foydalanuvchi
+# "ha" deb javob berganda). Oddiy mahsulot javobida ham «...» uchraydi
+# («Sayohat» mikroqarzi), shuning uchun faqat tirnoqqa tayanib bo'lmaydi.
+_CLARIFY_MARKER = "Aniqlashtirib olay"
+_CLARIFY_TITLE_RE = re.compile(r"«([^«»\n]{2,120})»")
+_AFFIRMATIVE_WORDS = frozenset(
+    {"ha", "xa", "aha", "shu", "shuni", "shunisi", "aynan", "togri", "yes", "da"}
+)
+# Turkum so'zi ("kredit", "omonat", "karta") o'ziga xos belgi EMAS: u o'nlab
+# mahsulot nomida bor. Faqat shu so'z mos kelgani uchun aniqlashtirish
+# so'ralsa, "kredit foizi qanday hisoblanadi" kabi umumiy savolga ham
+# keraksiz qayta savol berilardi.
+_GENERIC_TITLE_WORDS = frozenset(
+    w for words in _CATEGORY_KEYWORDS.values() for w in words
+) | {
+    "krediti",
+    "kreditlari",
+    "kartasi",
+    "kartalari",
+    "omonati",
+    "omonatlar",
+    "bank",
+    "banki",
+    "turonbank",
+}
+
+
+def _clarify_reply(titles: list[str], want_cyrillic: bool) -> str:
+    """Aniqlashtiruvchi savol matni. Mahsulot NOMI lotincha qoladi (katalog
+    ro'yxatidagi kabi) — faqat atrofidagi matn kirillga o'giriladi."""
+
+    def t(text: str) -> str:
+        return to_cyrillic(text) if want_cyrillic else text
+
+    if len(titles) == 1:
+        return (
+            f"{t(_CLARIFY_MARKER)}: "
+            + t("Turonbankning ")
+            + f"«{titles[0]}» "
+            + t(
+                "mahsuloti haqida so'rayapsizmi? Shunday bo'lsa \"ha\" deb yozing. "
+                "Umumiy tushuncha haqida bo'lsa, savolingizni to'liqroq yozing."
+            )
+        )
+    numbered = "\n".join(f"{i}. «{title}»" for i, title in enumerate(titles, 1))
+    return (
+        f"{t(_CLARIFY_MARKER)}, "
+        + t("qaysi biri haqida so'rayapsiz?")
+        + f"\n{numbered}\n"
+        + t(
+            "Raqamini yoki nomini yozing. Umumiy tushuncha haqida bo'lsa, "
+            "savolingizni to'liqroq yozing."
+        )
+    )
+
+
+def _resolve_clarification(
+    question: str, history: list[ChatTurn] | None
+) -> str | None:
+    """Aniqlashtiruvchi savolimizga berilgan javobni mahsulot NOMIga aylantiradi.
+
+    Shu tufayli foydalanuvchi "ha" deb yozganda bot salomlashib ketmaydi
+    (router "ha" ni o'zicha salomlashish deb biladi), balki o'sha mahsulot
+    haqida javob beradi.
+    """
+    if not history:
+        return None
+    last = next((t for t in reversed(history) if t.role == "assistant"), None)
+    if last is None:
+        return None
+    content_latin = to_latin(last.content)
+    if _CLARIFY_MARKER.lower() not in content_latin.lower():
+        return None
+    titles = _CLARIFY_TITLE_RE.findall(last.content)
+    if not titles or len(titles) > _CLARIFY_MAX_OPTIONS:
+        return None
+
+    words = _words(_norm_for_match(_norm_apostrophes(to_latin(question))))
+    # Uzun javob — bu tanlov emas, yangi savol
+    if not words or len(words) > 6:
+        return None
+    if words[0].isdigit():
+        index = int(words[0])
+        return titles[index - 1] if 1 <= index <= len(titles) else None
+    # Nomi bilan javob bergan ("meros omonati")
+    for title in titles:
+        toks = [w for w in _words(_norm_for_match(title)) if len(w) >= 3]
+        if toks and all(w in words for w in toks):
+            return title
+    # "ha" — faqat bitta variant taklif qilingan bo'lsa tushunarli
+    if len(titles) == 1 and all(w in _AFFIRMATIVE_WORDS for w in words):
+        return titles[0]
+    return None
+
+
 def _word_match(a: str, b: str) -> bool:
     """Ikki so'z o'zbekcha qo'shimcha farqi bilan bir xilmi: "bank" ~
     "banklari", "avtokreditlar" ~ "avtokrediti", "tashkil" ~ "tashkil".
@@ -1685,7 +1788,10 @@ class AnswerQuestionUseCase:
     # foydalanuvchi "faqat tugmalar ishlayapti" deb shikoyat qilgan sabab shu.
     # Endi faqat CHINDAN aloqasiz (bema'ni) savol kesiladi; qolganida
     # kontekst LLM'ga beriladi va u yetarli ma'lumot yo'qligini o'zi aytadi.
-    MIN_SCORE = 0.15
+    # Chegara `.env` dan boshqariladi (RAG_MIN_SCORE): real ballarni loglardan
+    # ko'rib, javoblarni qattiqroq yoki yumshoqroq qilish mumkin — kodni qayta
+    # qurmasdan.
+    MIN_SCORE = config.ai.RAG_MIN_SCORE
 
     def __init__(
         self,
@@ -1798,6 +1904,50 @@ class AnswerQuestionUseCase:
             blocks.append(block)
             used += len(block)
         return "\n\n".join(blocks)
+
+    async def _catalog_title_match(
+        self, question: str
+    ) -> tuple[str | None, list[str]]:
+        """Savolda bazadagi mahsulot NOMI aytilganmi.
+
+        Qaytaradi: (aniq_nom, qisman_mos_nomlar).
+          * aniq_nom — nomning BARCHA so'zi savolda bor ("meros omonati" ->
+            «Meros omonati»): javob bazadan beriladi;
+          * qisman — nomning o'ziga xos so'zi bor, lekin nom to'liq aytilmagan
+            ("meros"): javob to'qilmaydi, aniqlashtirib so'raladi.
+
+        Turkum so'zigina mos kelgan nomlar (`_GENERIC_TITLE_WORDS`) qisman
+        moslikka KIRMAYDI — aks holda "kredit" so'zi bor har qanday umumiy
+        savolga qayta savol berilardi.
+        """
+        groups = await self._catalog_groups_detailed()
+        if not groups:
+            return None, []
+        qwords = set(
+            _words(_norm_for_match(_norm_apostrophes(to_latin(question).lower())))
+        )
+        if not qwords:
+            return None, []
+
+        exact, exact_len = None, 0
+        partial: list[str] = []
+        for items in groups.values():
+            for title, _ in items:
+                toks = [t for t in _words(_norm_for_match(title)) if len(t) >= 3]
+                if not toks:
+                    continue
+                common = [t for t in toks if t in qwords]
+                if not common:
+                    continue
+                if len(common) == len(toks):
+                    # To'liqroq nom ustun ("Tez pul mikroqarz" > "Mikroqarz")
+                    if len(title) > exact_len:
+                        exact, exact_len = title, len(title)
+                elif any(t not in _GENERIC_TITLE_WORDS for t in common):
+                    partial.append(title)
+        # Bittadan ko'p bo'lsa ham chegaradan ortig'i kerak emas: chaqiruvchi
+        # faqat "nechta" ekanini biladi va ko'p bo'lsa aniqlashtirmaydi.
+        return exact, partial[: _CLARIFY_MAX_OPTIONS + 1]
 
     async def _broad_category_reply(
         self, question: str, want_cyrillic: bool
@@ -2387,7 +2537,12 @@ class AnswerQuestionUseCase:
         # Bu MAHSULOT ro'yxatidan tanlov ekani ANIQ — shuning uchun xodim
         # yo'nalishini SINAMAYMIZ ham (aks holda "Humo" kabi mahsulot nomi
         # "Humoyun" degan xodimga tasodifan mos kelib, noto'g'ri yo'nalardi).
-        resolved = _resolve_list_choice(question, history)
+        # Ro'yxatdan tanlov ('19') yoki aniqlashtiruvchi savolimizga javob
+        # ('ha', 'meros omonati') — ikkalasi ham savolni MAHSULOT NOMIga
+        # aylantiradi va routerni chetlab o'tadi.
+        resolved = _resolve_list_choice(question, history) or _resolve_clarification(
+            question, history
+        )
         question = resolved or question
 
         # Savolni TUSHUNISH: nima so'ralayotganini model aniqlaydi. Ilgari bu
@@ -2457,9 +2612,45 @@ class AnswerQuestionUseCase:
         # bazasidan EMAS. Qidiruv umuman bajarilmaydi: kontekst promptga
         # kirmasa, model unga tortilib "ASOSIY SHARTLAR" va "Batafsil: <url>"
         # qo'shib yubormaydi. Manba ham ko'rsatilmaydi — bazadan olinmagan.
+        # UMUMIY SAVOL BO'LSA HAM AVVAL BAZAGA QARAYMIZ. Router "umumiy
+        # tushuncha" desa, ilgari qidiruv umuman bajarilmasdi: "meros omonati"
+        # savoliga bot "bank tizimida bunday mahsulot yo'q" degan, holbuki
+        # bazada «Meros omonati» bor edi. Endi katalog nomlari tekshiriladi.
+        catalog_title: str | None = None
         if (
             decision is not None
             and not skip_shortcuts
+            and decision.intent is Intent.CONCEPT
+        ):
+            catalog_title, partial_titles = await self._catalog_title_match(question)
+            if catalog_title is not None:
+                logger.info(
+                    "Umumiy savol bazadagi mahsulotga bog'landi: %r -> %r",
+                    question,
+                    catalog_title,
+                )
+            elif 1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS:
+                # Nom to'liq aytilmagan — javob TO'QILMAYDI, so'raymiz
+                logger.info(
+                    "Aniqlashtirish so'raldi: %r -> %s", question, partial_titles
+                )
+                yield {
+                    "type": "delta",
+                    "text": _clarify_reply(partial_titles, want_cyrillic),
+                }
+                yield {
+                    "type": "done",
+                    "completion_tokens": 0,
+                    "finish_reason": "stop",
+                    "max_tokens": self.MAX_TOKENS,
+                    "sources": [],
+                }
+                return
+
+        if (
+            decision is not None
+            and not skip_shortcuts
+            and catalog_title is None
             and decision.intent in (Intent.CONCEPT, Intent.HISTORY)
         ):
             prompt, system, max_toks = self._no_search_call(
@@ -2612,7 +2803,7 @@ class AnswerQuestionUseCase:
         # qidirilardi va "Valyuta kursi" savoliga kurs bo'laklari o'rniga
         # kanallar nomi yozilgan bo'lak tushib, javob "...shoxobchasida,
         # ilovada va bankomatda" + "ma'lumot topilmadi" bo'lib chiqardi.
-        exact_title = resolved or only_title
+        exact_title = resolved or only_title or catalog_title
         if not exact_title and decision is not None and decision.intent is Intent.RATES:
             exact_title = RATES_TITLE
         results: list[tuple[dict[str, Any], float]] = []
@@ -2652,6 +2843,15 @@ class AnswerQuestionUseCase:
                 ]
 
         top_score = results[0][1] if results else 0.0
+        # Ballar logda: chegarani (RAG_MIN_SCORE) taxmin bilan emas, real
+        # raqamlarga qarab sozlash uchun.
+        logger.info(
+            "Qidiruv ballari: %s",
+            " | ".join(
+                f"{str(p.get('title', '?'))[:40]} {s:.3f}" for p, s in results[:3]
+            )
+            or "natija yo'q",
+        )
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
@@ -2738,7 +2938,12 @@ class AnswerQuestionUseCase:
         # Bu MAHSULOT ro'yxatidan tanlov ekani ANIQ bo'lsa, xodim yo'nalishini
         # sinamaymiz ham (aks holda "Humo" kabi mahsulot nomi "Humoyun" degan
         # xodimga tasodifan mos kelib, noto'g'ri yo'nalardi).
-        resolved = _resolve_list_choice(question, history)
+        # Ro'yxatdan tanlov ('19') yoki aniqlashtiruvchi savolimizga javob
+        # ('ha', 'meros omonati') — ikkalasi ham savolni MAHSULOT NOMIga
+        # aylantiradi va routerni chetlab o'tadi.
+        resolved = _resolve_list_choice(question, history) or _resolve_clarification(
+            question, history
+        )
         question = resolved or question
 
         # Savolni TUSHUNISH — stream yo'li bilan bir xil mantiq
@@ -2780,9 +2985,37 @@ class AnswerQuestionUseCase:
 
         # Qidiruvsiz javob beriladigan niyatlar: soha umumiy savoli (model
         # bilimidan) va suhbatning o'zi haqidagi savol (javob tarixda).
+        # Stream yo'lidagi bilan bir xil: umumiy savol bo'lsa ham avval
+        # katalog nomlari tekshiriladi (mobil aynan shu yo'ldan keladi).
+        catalog_title: str | None = None
         if (
             decision is not None
             and not skip_shortcuts
+            and decision.intent is Intent.CONCEPT
+        ):
+            catalog_title, partial_titles = await self._catalog_title_match(question)
+            if catalog_title is not None:
+                logger.info(
+                    "Umumiy savol bazadagi mahsulotga bog'landi: %r -> %r",
+                    question,
+                    catalog_title,
+                )
+            elif 1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS:
+                logger.info(
+                    "Aniqlashtirish so'raldi: %r -> %s", question, partial_titles
+                )
+                return AnswerResult(
+                    answer=_clarify_reply(partial_titles, want_cyrillic),
+                    sources=[],
+                    finish_reason="stop",
+                    completion_tokens=0,
+                    max_tokens=self.MAX_TOKENS,
+                )
+
+        if (
+            decision is not None
+            and not skip_shortcuts
+            and catalog_title is None
             and decision.intent in (Intent.CONCEPT, Intent.HISTORY)
         ):
             prompt, system, max_toks = self._no_search_call(
@@ -2889,7 +3122,7 @@ class AnswerQuestionUseCase:
         # qidirilardi va "Valyuta kursi" savoliga kurs bo'laklari o'rniga
         # kanallar nomi yozilgan bo'lak tushib, javob "...shoxobchasida,
         # ilovada va bankomatda" + "ma'lumot topilmadi" bo'lib chiqardi.
-        exact_title = resolved or only_title
+        exact_title = resolved or only_title or catalog_title
         if not exact_title and decision is not None and decision.intent is Intent.RATES:
             exact_title = RATES_TITLE
         results: list[tuple[dict[str, Any], float]] = []
@@ -2921,6 +3154,15 @@ class AnswerQuestionUseCase:
         # darrov "ma'lumotim yo'q" deb qaytaramiz. Bu bema'ni/aloqasiz savolga
         # modelning uzoq (bir necha daqiqa) "o'ylab" javob berishini oldini oladi.
         top_score = results[0][1] if results else 0.0
+        # Ballar logda: chegarani (RAG_MIN_SCORE) taxmin bilan emas, real
+        # raqamlarga qarab sozlash uchun.
+        logger.info(
+            "Qidiruv ballari: %s",
+            " | ".join(
+                f"{str(p.get('title', '?'))[:40]} {s:.3f}" for p, s in results[:3]
+            )
+            or "natija yo'q",
+        )
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
