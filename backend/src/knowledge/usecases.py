@@ -1319,10 +1319,26 @@ class UpdateKnowledgeUseCase:
     async def execute(
         self, old_title: str, title: str, text: str
     ) -> UploadResult:
+        # HAVOLA SAQLANADI. Ilgari tahrirlangan yozuv `source_url`siz qayta
+        # yozilardi va bu ikki narsani buzardi:
+        #  1) turkum aynan havoladan aniqlanadi (`_category_label`) — havolasiz
+        #     yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" ro'yxatidan
+        #     yo'qolardi (sarlavhasi tahrirlangan «Meros» shunday yo'qolgan);
+        #  2) javob oxiridagi "Batafsil: <havola>" qatori ham chiqmay qolardi.
+        source_url = await self._existing_source_url(old_title)
         await self.store.delete_by_title(old_title)
         return await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
-        ).execute(title=title, text=text)
+        ).execute(title=title, text=text, source_url=source_url)
+
+    async def _existing_source_url(self, old_title: str) -> str:
+        """Tahrirlanayotgan yozuvning havolasi (bo'lmasa — bo'sh satr)."""
+        if not await self.store.exists():
+            return ""
+        for payload in await self.store.scroll_all_pages():
+            if str(payload.get("title", "")) == old_title and payload.get("source_url"):
+                return str(payload["source_url"])
+        return ""
 
 
 # Keng savolda TURKUMNI emas, savolning o'zini bildiruvchi so'zlar — turkum
@@ -1573,6 +1589,28 @@ def _resolve_clarification(
     return None
 
 
+def _category_from_text(title: str, text: str) -> str:
+    """Havolasiz yozuv uchun turkumni sarlavha va matndan taxmin qiladi.
+
+    Sarlavhadagi so'z MATNDAGIDAN kuchliroq: mahsulot matnida boshqa turkum
+    so'zi ham uchraydi (omonat tavsifida "kredit olish imkoniyati" kabi),
+    lekin nomda odatda faqat o'zining turkumi bo'ladi. Shu sabab nomdagi
+    moslik 10 barobar og'irroq baholanadi."""
+    title_words = _text_words(title)
+    body = _norm_apostrophes(to_latin(text)).replace("'", "").lower()
+    best_label, best_score = "Boshqa xizmatlar", 0
+    for label, keywords in _CATEGORY_KEYWORDS.items():
+        score = 0
+        for kw in keywords:
+            kw_flat = kw.replace("'", "")
+            if any(_word_match(w, kw_flat) for w in title_words):
+                score += 10
+            score += body.count(kw_flat)
+        if score > best_score:
+            best_label, best_score = label, score
+    return best_label if best_score else "Boshqa xizmatlar"
+
+
 def _word_match(a: str, b: str) -> bool:
     """Ikki so'z o'zbekcha qo'shimcha farqi bilan bir xilmi: "bank" ~
     "banklari", "avtokreditlar" ~ "avtokrediti", "tashkil" ~ "tashkil".
@@ -1808,9 +1846,14 @@ class AnswerQuestionUseCase:
         self._points: list[dict[str, Any]] | None = None
 
     @staticmethod
-    def _category_label(source_url: str, title: str = "") -> str:
+    def _category_label(source_url: str, title: str = "", text: str = "") -> str:
         """Mahsulot turkumini aniqlaydi — katalogni guruhlash uchun
-        (kartalar / kreditlar / omonatlar / filiallar ...)."""
+        (kartalar / kreditlar / omonatlar / filiallar ...).
+
+        Asosiy belgi — HAVOLA. Havola bo'lmasa (qo'lda kiritilgan yoki eski
+        tahrirdan keyin havolasi yo'qolgan yozuv) turkum MATNDAN aniqlanadi:
+        aks holda yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" kabi
+        ro'yxatlarda umuman ko'rinmasdi."""
         # Filiallar saytda "filial" deb emas, "bank xizmatlari markazi/ofisi"
         # deb nomlangan — turkumni SARLAVHA bo'yicha aniqlaymiz.
         t = title.lower()
@@ -1830,6 +1873,8 @@ class AnswerQuestionUseCase:
             return "Omonatlar"
         if "transfer" in url or "otkazma" in url or "o-tkazma" in url:
             return "Pul o'tkazmalari"
+        if not url:
+            return _category_from_text(title, text)
         return "Boshqa xizmatlar"
 
     async def _catalog_groups(self) -> dict[str, list[str]]:
@@ -1870,8 +1915,9 @@ class AnswerQuestionUseCase:
 
         groups: dict[str, list[tuple[str, str]]] = {}
         for title, url in urls.items():
-            label = self._category_label(url, title)
-            groups.setdefault(label, []).append((title, " ".join(texts[title])))
+            body = " ".join(texts[title])
+            label = self._category_label(url, title, body)
+            groups.setdefault(label, []).append((title, body))
         return groups
 
     async def _build_catalog(self, question: str = "") -> str:
