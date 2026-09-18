@@ -9,6 +9,7 @@ from src.core.schemas import SuccessResponse, TokenModel
 from src.user.auth.dependencies import get_access_by_refresh_token, get_current_user
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
+    LoginTokenModel,
     LoginUserModel,
     ResetPasswordModel,
     SendResetPasswordRequestModel,
@@ -48,11 +49,13 @@ class LoginUseCaseFake:
         self._access_token = access_token
         self._refresh_token = refresh_token
 
-    async def execute(self, data: LoginUserModel) -> TokenModel:
+    async def execute(self, data: LoginUserModel) -> LoginTokenModel:
         self._state.access_token = self._access_token
         self._state.refresh_token = self._refresh_token
-        return TokenModel(
-            access_token=self._access_token, refresh_token=self._refresh_token
+        return LoginTokenModel(
+            access_token=self._access_token,
+            refresh_token=self._refresh_token,
+            is_verified=True,
         )
 
 

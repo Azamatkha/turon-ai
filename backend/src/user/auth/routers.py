@@ -12,6 +12,7 @@ from src.user.auth.dependencies import (
 )
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
+    LoginTokenModel,
     LoginUserModel,
     LogoutRequestModel,
     RegisterTokenModel,
@@ -73,15 +74,18 @@ async def save_face_id_result(
 
 @router.post(
     "/login",
-    response_model=TokenModel,
+    response_model=LoginTokenModel,
     dependencies=[Depends(RateLimiter(times=5, seconds=60))],
 )
 async def login_user(
     login_form_data: LoginUserModel,
     use_case: Annotated[LoginUserUseCase, Depends(get_login_user_use_case)],
-) -> TokenModel:
+) -> LoginTokenModel:
     """
     Authenticate user and return tokens.
+
+    Javobda `is_verified` ham bor — mobil ilova login'dan keyin darhol
+    chatga yoki Face-ID verifikatsiyasiga yo'naltirishi uchun.
     """
     return await use_case.execute(data=login_form_data)
 

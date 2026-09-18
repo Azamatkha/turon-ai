@@ -14,6 +14,7 @@ from src.user.auth.dependencies import (
 )
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.routers import router
+from src.user.auth.schemas import LoginTokenModel
 from src.user.auth.usecases.get_access_by_refresh import (
     get_tokens_by_refresh_user_use_case,
 )
@@ -97,7 +98,7 @@ async def test_login_endpoint(
     async_client,
     dependency_overrides: DependencyOverrides,
 ) -> None:
-    tokens = TokenModel(access_token="a", refresh_token="r")
+    tokens = LoginTokenModel(access_token="a", refresh_token="r", is_verified=True)
     dependency_overrides.set(get_login_user_use_case, ProvideValue(FakeUseCase(tokens)))
 
     response = await async_client.post(
@@ -106,7 +107,13 @@ async def test_login_endpoint(
     )
 
     assert response.status_code == 200
-    assert response.json() == {"access_token": "a", "refresh_token": "r"}
+    # Login javobida `is_verified` ham bor — mobil shu bayroqqa qarab
+    # chatga yoki Face-ID verifikatsiyasiga yo'naltiradi
+    assert response.json() == {
+        "access_token": "a",
+        "refresh_token": "r",
+        "is_verified": True,
+    }
 
 
 @pytest.mark.asyncio

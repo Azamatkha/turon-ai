@@ -8,14 +8,13 @@ from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceProcessingException
 from src.core.redis.dependencies import get_redis_client
-from src.core.schemas import TokenModel
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.security import (
     hash_password,
     needs_password_rehash,
     verify_password,
 )
-from src.user.auth.schemas import LoginUserModel
+from src.user.auth.schemas import LoginTokenModel, LoginUserModel
 from src.user.auth.security import create_access_token, create_refresh_token
 from src.user.models import User
 
@@ -58,7 +57,7 @@ class LoginUserUseCase:
       verified, or the user is blocked.
 
     Returns:
-    - TokenModel with access and refresh tokens.
+    - LoginTokenModel: access va refresh tokenlar + `is_verified`.
     """
 
     def __init__(
@@ -72,7 +71,7 @@ class LoginUserUseCase:
     async def execute(
         self,
         data: LoginUserModel,
-    ) -> TokenModel:
+    ) -> LoginTokenModel:
         async with self.uow as uow:
             # Login AYNAN mos kelishi kerak: "turonAI" bilan ro'yxatdan o'tgan
             # odam "turonai" deb kira olmaydi (foydalanuvchi talabi).
@@ -111,7 +110,7 @@ class LoginUserUseCase:
             session_id = str(uuid4())
             token_data = {"sub": str(user.id)}
             await uow.commit()
-            return TokenModel(
+            return LoginTokenModel(
                 access_token=await create_access_token(
                     token_data, redis_client=self.redis_client, session_id=session_id
                 ),
@@ -120,6 +119,9 @@ class LoginUserUseCase:
                     redis_client=self.redis_client,
                     session_id=session_id,
                 ),
+                # Mobil shu bayroqqa qarab chatga yoki Face-ID verifikatsiyasiga
+                # yo'naltiradi
+                is_verified=user.is_verified,
             )
 
     async def _rehash_password_if_needed(

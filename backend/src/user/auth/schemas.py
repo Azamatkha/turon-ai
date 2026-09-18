@@ -3,6 +3,7 @@ from pydantic import ConfigDict, Field, field_validator
 from src.core.schemas import (
     Base,
     StrongPasswordValidationMixin,
+    TokenModel,
 )
 from src.core.validations import USERNAME_VALIDATOR
 
@@ -86,6 +87,18 @@ class SaveSignatureModel(Base):
     """`/auth/save` so'rovi: faqat GSI imzolagan Face-ID natijasi (JWT)."""
 
     signature: str = Field(min_length=1, max_length=100_000)
+
+
+class LoginTokenModel(TokenModel):
+    """Login javobi: tokenlar + tasdiqlangan holati.
+
+    `is_verified` shu yerda qaytadi, chunki mobil ilova login'dan so'ng DARHOL
+    qayerga o'tishni bilishi kerak: tasdiqlanmagan user chatga kira olmaydi
+    (backend 403 qaytaradi) va u Face-ID verifikatsiyasiga yo'naltiriladi.
+    Busiz ilova qo'shimcha `GET /v1/users/me` so'rovini yuborishi kerak edi.
+    """
+
+    is_verified: bool
 
 
 class LoginUserModel(Base):
