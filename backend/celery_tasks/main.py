@@ -39,10 +39,18 @@ celery_app.conf.update(
 )
 
 celery_app.conf.beat_schedule = {
-    # Tasdiqlanmagan akkaunt 24 soatdan ortiq turmasin — har soatda tekshiramiz
-    "cleanup_unverified_users_hourly": {
+    # Tasdiqlanmagan akkaunt ro'yxatdan o'tganiga 24 soat to'lishi bilan
+    # o'chsin — HAR DAQIQADA tekshiramiz (kechikish eng ko'pi 1 daqiqa).
+    # Har soatlik tekshiruvda user 1 soatgacha ortiqcha turib qolardi.
+    #
+    # Nega har bir user uchun "24 soatdan keyin o'chir" (ETA/countdown) taski
+    # EMAS: Celery bunday taskni 24 soat davomida tasdiqlanmagan RabbitMQ
+    # xabari sifatida ushlab turadi, RabbitMQ esa sukut bo'yicha 30 daqiqadan
+    # uzoq kutgan xabarda ulanishni uzadi (consumer_timeout). Daqiqalik
+    # tekshiruvda bu muammo yo'q, narxi esa daqiqasiga bitta kichik SQL.
+    "cleanup_unverified_users_every_minute": {
         "task": "cleanup_unverified_users",
-        "schedule": crontab(minute=5),
+        "schedule": crontab(),
     },
     # Valyuta kurslarini har kuni yangilab turamiz.
     # Celery timezone = UTC, Toshkent = UTC+5 => 11:00 Toshkent = 06:00 UTC.

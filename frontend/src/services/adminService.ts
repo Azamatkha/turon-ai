@@ -17,6 +17,8 @@ export interface ApiUser {
   is_verified: boolean;
   // Verifikatsiya ma'lumotlari (tasdiqlanmagan/eski userlarda null)
   position?: string | null;
+  phone_number?: string | null;
+  ip_number?: string | null;
   pnfl?: string | null;
   patronym?: string | null;
   doc_seria?: string | null;
@@ -38,6 +40,9 @@ export interface AdminUserUpdate {
   doc_number?: string;
   birth_date?: string;
   position?: string;
+  // Kontaktlar: bo'sh satr — o'chirish
+  phone_number?: string;
+  ip_number?: string;
 }
 
 async function readError(res: Response, fallback: string): Promise<string> {

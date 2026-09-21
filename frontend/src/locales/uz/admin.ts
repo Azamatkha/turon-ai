@@ -69,6 +69,10 @@ export const admin: AdminStrings = {
   birthDateLabel: "Tug‘ilgan sana",
   positionLabel: "Lavozim",
   pnflInvalid: "PNFL 14 ta raqamdan iborat bo‘lishi kerak",
+  phoneLabel: "Telefon raqami",
+  ipNumberLabel: "IP (ichki) raqam",
+  phoneInvalid: "Telefon raqami +998 dan keyin 9 ta raqamdan iborat bo‘lsin",
+  ipNumberInvalid: "IP raqam 1–4 xonali son bo‘lsin",
   logout: "Chiqish",
   // Ma'lumot qo'shish sahifasi
   uploadNav: "Ma’lumot qo‘shish",

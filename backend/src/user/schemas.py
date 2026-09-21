@@ -6,7 +6,50 @@ from pydantic import EmailStr, Field, field_validator
 from src.core.schemas import Base
 from src.user.enums import UserRole
 from src.user.auth.schemas import CreateUserModel, normalize_department
-from src.core.validations import USERNAME_VALIDATOR
+from src.core.validations import (
+    IP_NUMBER_VALIDATOR,
+    USERNAME_VALIDATOR,
+    UZ_PHONE_VALIDATOR,
+)
+
+
+PHONE_ERROR = "Telefon raqami +998 va 9 ta raqamdan iborat bo'lsin (masalan +998 99 123 45 67)"
+IP_NUMBER_ERROR = "IP raqam 1-4 xonali son bo'lsin (masalan 1036)"
+
+
+def normalize_phone(value: str | None) -> str | None:
+    """Telefon raqamini bazaga yoziladigan ko'rinishga keltiradi.
+
+    None — maydonga tegilmaydi; bo'sh satr — raqam o'chiriladi.
+    Foydalanuvchi "+998 99 123-45-67" yoki "(99) 123 45 67" deb yozishi
+    mumkin — bo'shliq, defis va qavslar olib tashlanadi. "998..." bilan
+    boshlanib "+" tushib qolsa ham qabul qilinadi, 9 ta raqam yozilsa
+    +998 o'zi qo'shiladi.
+    """
+    if value is None:
+        return None
+    digits = "".join(ch for ch in value if ch.isdigit() or ch == "+")
+    if not digits:
+        return ""
+    if digits.startswith("998") and len(digits) == 12:
+        digits = "+" + digits
+    elif digits.isdigit() and len(digits) == 9:
+        digits = "+998" + digits
+    if not UZ_PHONE_VALIDATOR.match(digits):
+        raise ValueError(PHONE_ERROR)
+    return digits
+
+
+def normalize_ip_number(value: str | None) -> str | None:
+    """IP (ichki) raqamni tekshiradi. None — tegilmaydi, bo'sh satr — o'chiriladi."""
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return ""
+    if not IP_NUMBER_VALIDATOR.match(value):
+        raise ValueError(IP_NUMBER_ERROR)
+    return value
 
 
 class UserProfileViewModel(Base):
@@ -19,6 +62,7 @@ class UserProfileViewModel(Base):
     role: UserRole
     email: EmailStr
     phone_number: str | None = None
+    ip_number: str | None = None
     is_verified: bool
     # Face-ID va xodimlar bazasidan keladigan ma'lumotlar (tasdiqlangunga qadar bo'sh)
     pnfl: str | None = None
@@ -52,6 +96,8 @@ class UserAdminListItem(Base):
     # Face-ID verifikatsiyasidan o'tganmi (admin qo'lda ham o'zgartira oladi)
     is_verified: bool = True
     position: str | None = None
+    phone_number: str | None = None
+    ip_number: str | None = None
     # Admin tahrirlash oynasi uchun (Face-ID'dan o'tolmagan xodimni qo'lda to'ldirish)
     pnfl: str | None = None
     patronym: str | None = None
@@ -100,6 +146,28 @@ class UpdateOwnProfileModel(Base):
         return value
 
 
+class UpdateContactsModel(Base):
+    """Foydalanuvchi O'ZI kiritadigan kontaktlar (`PATCH /me/contacts`).
+
+    Ikkalasi ham ixtiyoriy:
+      * maydon yuborilmasa (None) — o'zgarmaydi;
+      * bo'sh satr ("") — raqam o'chiriladi.
+    """
+
+    phone_number: str | None = None
+    ip_number: str | None = None
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return normalize_phone(value)
+
+    @field_validator("ip_number")
+    @classmethod
+    def validate_ip_number(cls, value: str | None) -> str | None:
+        return normalize_ip_number(value)
+
+
 class AdminCreateUserModel(CreateUserModel):
     role: UserRole = UserRole.USER
 
@@ -119,6 +187,19 @@ class AdminUpdateUserModel(Base):
     doc_number: str | None = Field(default=None, max_length=20)
     birth_date: date | None = None
     position: str | None = Field(default=None, max_length=150)
+    # Kontaktlar: None = tegma, bo'sh satr = o'chirish
+    phone_number: str | None = None
+    ip_number: str | None = None
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return normalize_phone(value)
+
+    @field_validator("ip_number")
+    @classmethod
+    def validate_ip_number(cls, value: str | None) -> str | None:
+        return normalize_ip_number(value)
 
     @field_validator("pnfl")
     @classmethod

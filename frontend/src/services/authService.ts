@@ -24,6 +24,10 @@ export interface Me {
   doc_number: string | null;
   birth_date: string | null;
   position: string | null;
+  // Kontaktlar — ixtiyoriy, foydalanuvchi o'zi kiritadi (PATCH /me/contacts).
+  // phone_number: "+998991234567"; ip_number: 1-4 xonali ichki raqam.
+  phone_number: string | null;
+  ip_number: string | null;
 }
 
 export function getToken(): string | null {
@@ -73,6 +77,9 @@ function clearStorage() {
 
 // HTTP status kodini saqlab qoladi — chaqiruvchi tomon (masalan LoginPage) xato turini
 // (429 — juda ko'p urinish, 409 — allaqachon mavjud) matndan emas, kod orqali aniqlay oladi.
+// Login javobidagi is_verified=false — LoginPage buni alohida ko'rsatadi
+export const UNVERIFIED_STATUS = 403;
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -159,7 +166,14 @@ export async function login(loginValue: string, password: string): Promise<strin
     body: JSON.stringify({ username: loginValue.trim(), password }),
   });
   if (!res.ok) throw new ApiError(await readError(res, "Login yoki parol noto'g'ri"), res.status);
-  storeTokens(await res.json());
+  const data = await res.json();
+  // Tasdiqlanmagan userga backend access/refresh bermaydi (faqat mobil
+  // Face-ID uchun token + p12). Web'da u baribir chatga kira olmaydi —
+  // login sahifasining o'zida "tasdiqlanmagan" xabari ko'rsatiladi.
+  if (data.is_verified === false) {
+    throw new ApiError("unverified", UNVERIFIED_STATUS);
+  }
+  storeTokens(data);
   await fetchMe();
   return getToken()!;
 }
@@ -184,10 +198,11 @@ export async function register(input: {
   return login(input.username, input.password);
 }
 
-export async function fetchMe(): Promise<Me> {
-  const res = await apiFetch("/v1/users/me");
-  if (!res.ok) throw new Error(await readError(res, "Profilni olishda xatolik"));
-  const u = await res.json();
+// Backend profil javobini `Me` ga o'giradi va brauzerda saqlaydi. Ilgari bu
+// uch joyda qo'lda takrorlanardi — yangi maydon qo'shilganda biri eskirib
+// qolish xavfi bor edi.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function storeMe(u: any): Me {
   const me: Me = {
     id: u.id,
     username: u.username,
@@ -204,10 +219,19 @@ export async function fetchMe(): Promise<Me> {
     doc_number: u.doc_number ?? null,
     birth_date: u.birth_date ?? null,
     position: u.position ?? null,
+    phone_number: u.phone_number ?? null,
+    ip_number: u.ip_number ?? null,
   };
   localStorage.setItem(ROLE_KEY, me.role);
   localStorage.setItem(ME_KEY, JSON.stringify(me));
   return me;
+}
+
+export async function fetchMe(): Promise<Me> {
+  const res = await apiFetch("/v1/users/me");
+  if (!res.ok) throw new Error(await readError(res, "Profilni olishda xatolik"));
+  const u = await res.json();
+  return storeMe(u);
 }
 
 export async function logout(): Promise<void> {
@@ -233,26 +257,25 @@ export async function updateProfile(input: {
     throw new ApiError(await readError(res, "Profilni saqlashda xatolik"), res.status);
   }
   const u = await res.json();
-  const me: Me = {
-    id: u.id,
-    username: u.username,
-    email: u.email,
-    full_name: u.full_name,
-    first_name: u.first_name ?? "",
-    last_name: u.last_name ?? "",
-    department: u.department ?? null,
-    role: u.role,
-    is_verified: u.is_verified ?? true,
-    patronym: u.patronym ?? null,
-    pnfl: u.pnfl ?? null,
-    doc_seria: u.doc_seria ?? null,
-    doc_number: u.doc_number ?? null,
-    birth_date: u.birth_date ?? null,
-    position: u.position ?? null,
-  };
-  localStorage.setItem(ROLE_KEY, me.role);
-  localStorage.setItem(ME_KEY, JSON.stringify(me));
-  return me;
+  return storeMe(u);
+}
+
+
+// Foydalanuvchi o'z telefon va IP (ichki) raqamini kiritadi/o'zgartiradi.
+// Yuborilmagan maydon o'zgarmaydi; bo'sh satr ("") raqamni o'chiradi.
+// Backend raqamni tekshirib, "+998991234567" ko'rinishida saqlaydi.
+export async function updateContacts(input: {
+  phone_number?: string;
+  ip_number?: string;
+}): Promise<Me> {
+  const res = await apiFetch("/v1/users/me/contacts", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    throw new ApiError(await readError(res, "Raqamlarni saqlashda xatolik"), res.status);
+  }
+  return storeMe(await res.json());
 }
 
 // Foydalanuvchi o'z parolini o'zgartiradi — faqat yangi parol (joriy parol

@@ -55,7 +55,10 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     email: Mapped[str] = mapped_column(String(255))
     username: Mapped[str] = mapped_column(String(60))
     department: Mapped[str] = mapped_column(String(100),nullable=True)
+    # Kontaktlar — ixtiyoriy, foydalanuvchi o'zi yoki admin kiritadi.
+    # phone_number: "+998991234567" (bo'shliqsiz); ip_number: 1-4 xonali ichki raqam.
     phone_number: Mapped[str] = mapped_column(String(20),nullable=True)
+    ip_number: Mapped[str | None] = mapped_column(String(4), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[UserRole] = mapped_column(
         SQLEnum(UserRole), nullable=False, default=UserRole.USER

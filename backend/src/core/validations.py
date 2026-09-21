@@ -37,6 +37,13 @@ PHONE_CODE_VALIDATOR = re.compile(r"^\+\d{1,5}$")
 # Example: "+12025550179" or "12025550179"
 PHONE_NUMBER_REGEX = re.compile(r"^\+?\d{5,20}$")
 
+# O'zbekiston mobil raqami: +998 va undan keyin aniq 9 ta raqam.
+# Bazada bo'shliqsiz saqlanadi: "+998991234567" (ko'rsatishda formatlanadi).
+UZ_PHONE_VALIDATOR = re.compile(r"^\+998\d{9}$")
+
+# Bank ichki (IP) telefon raqami: 1-4 xonali son, masalan "1036"
+IP_NUMBER_VALIDATOR = re.compile(r"^\d{1,4}$")
+
 # Text content
 # Validates text containing only Latin alphabet, numbers, spaces, and basic punctuation
 # Example: "Hello, world! This is a sample text."

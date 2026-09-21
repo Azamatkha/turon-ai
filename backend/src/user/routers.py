@@ -21,6 +21,7 @@ from src.user.models import User
 from src.user.schemas import (
     AdminCreateUserModel,
     AdminUpdateUserModel,
+    UpdateContactsModel,
     UpdateOwnProfileModel,
     UserAdminListItem,
     UserProfileViewModel,
@@ -34,6 +35,10 @@ from src.user.usecases.admin_create_user import (
     get_admin_create_user_use_case
 )
 from src.user.usecases.list_users import ListUsersUseCase, get_list_users_use_case
+from src.user.usecases.update_contacts import (
+    UpdateOwnContactsUseCase,
+    get_update_own_contacts_use_case,
+)
 from src.user.usecases.update_own_profile import (
     UpdateOwnProfileUseCase,
     get_update_own_profile_use_case
@@ -101,6 +106,31 @@ async def update_own_profile(
     boshqa foydalanuvchining profiliga tegib bo'lmaydi.
     """
     return await use_case.execute(user_id=current_user.id, data=user_form_data)
+
+
+# DIQQAT: bu ham `PATCH /{user_id}` DAN OLDIN turishi shart (yuqoridagi izohga qarang).
+@router.patch(
+    "/me/contacts",
+    response_model=UserProfileViewModel,
+    dependencies=[
+        Depends(RateLimiter(times=20, minutes=60, identifier=get_user_id_from_token))
+    ],
+)
+async def update_own_contacts(
+    form_data: UpdateContactsModel,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[
+        UpdateOwnContactsUseCase, Depends(get_update_own_contacts_use_case)
+    ],
+) -> UserProfileViewModel:
+    """
+    Foydalanuvchi o'z telefon va IP (ichki) raqamini kiritadi yoki o'zgartiradi.
+
+    Ikkalasi ham ixtiyoriy: yuborilmagan maydon o'zgarmaydi, bo'sh satr ("")
+    raqamni o'chiradi. phone_number — +998 va 9 ta raqam (bo'shliq/defis
+    bilan yozsa ham bo'ladi); ip_number — 1-4 xonali son.
+    """
+    return await use_case.execute(user_id=current_user.id, data=form_data)
 
 
 # Verifikatsiya endpointlari `get_current_user` bilan (require_permission EMAS):

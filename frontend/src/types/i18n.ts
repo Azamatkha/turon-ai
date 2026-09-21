@@ -189,6 +189,15 @@ export interface ChatStaticStrings {
   profileLoadError: string;
   // Sidebar'dagi profil menyusi (hover)
   profileMenu: string;
+  // Profil: foydalanuvchi o'zi kiritadigan kontaktlar (telefon, IP raqam)
+  contactsTitle: string;
+  infoPhone: string;
+  infoIpNumber: string;
+  contactsEdit: string;
+  contactsHint: string;
+  contactsSaveError: string;
+  phoneInvalid: string;
+  ipNumberInvalid: string;
   infoPatronym: string;
   infoPosition: string;
   infoDepartment: string;
@@ -289,6 +298,10 @@ export interface AdminStrings {
   birthDateLabel: string;
   positionLabel: string;
   pnflInvalid: string;
+  phoneLabel: string;
+  ipNumberLabel: string;
+  phoneInvalid: string;
+  ipNumberInvalid: string;
   logout: string;
   uploadNav: string;
   uploadTitle: string;

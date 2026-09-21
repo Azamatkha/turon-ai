@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useForceLightTheme } from "../hooks/useForceLightTheme";
 import { loginDict } from "../locales";
-import { login as loginRequest, isAuthenticated, ApiError } from "../services/authService";
+import { login as loginRequest, isAuthenticated, ApiError, UNVERIFIED_STATUS } from "../services/authService";
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
 import LoginForm from "../components/login/LoginForm";
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [pwVisible, setPwVisible] = useState(false);
   const [focus, setFocus] = useState<"login" | "pw" | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<"" | "invalid" | "rateLimited">("");
+  const [error, setError] = useState<"" | "invalid" | "rateLimited" | "unverified">("");
   const { lang, setLang, t } = useLang(loginDict);
   // Chatdagi tungi rejim bu sahifaga o'tib ketmasin (yozuvlar ko'rinmay qolardi)
   useForceLightTheme();
@@ -45,7 +45,8 @@ export default function LoginPage() {
       await loginRequest(login, password);
       navigate("/");
     } catch (e) {
-      setError(e instanceof ApiError && e.status === 429 ? "rateLimited" : "invalid");
+      if (e instanceof ApiError && e.status === UNVERIFIED_STATUS) setError("unverified");
+      else setError(e instanceof ApiError && e.status === 429 ? "rateLimited" : "invalid");
       setLoading(false);
     }
   };

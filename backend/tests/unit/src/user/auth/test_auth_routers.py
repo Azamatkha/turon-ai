@@ -109,10 +109,15 @@ async def test_login_endpoint(
     assert response.status_code == 200
     # Login javobida `is_verified` ham bor — mobil shu bayroqqa qarab
     # chatga yoki Face-ID verifikatsiyasiga yo'naltiradi
+    # Tasdiqlangan user: tokenlar to'la, Face-ID maydonlari bo'sh
     assert response.json() == {
         "access_token": "a",
         "refresh_token": "r",
         "is_verified": True,
+        "success": True,
+        "token": "",
+        "p12Base64": "",
+        "p12Password": "",
     }
 
 

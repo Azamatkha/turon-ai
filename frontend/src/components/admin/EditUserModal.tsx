@@ -4,6 +4,15 @@ import { DEFAULT_DEPARTMENT } from "../../services/departments";
 import type { AdminUserUpdate } from "../../services/adminService";
 import type { AdminUser } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
+import {
+  IP_NUMBER_MAX_DIGITS,
+  UZ_PHONE_PREFIX,
+  groupLocalDigits,
+  isValidIpNumber,
+  isValidLocalPhone,
+  phoneLocalDigits,
+  toApiPhone,
+} from "../../utils/phone";
 import styles from "./AddUserModal.module.css";
 
 interface Props {
@@ -31,6 +40,9 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
   const [docNumber, setDocNumber] = useState(user.docNumber ?? "");
   const [birthDate, setBirthDate] = useState(user.birthDate ?? "");
   const [position, setPosition] = useState(user.position ?? "");
+  // Kontaktlar: telefon maydonida faqat +998 dan keyingi 9 ta raqam turadi
+  const [phone, setPhone] = useState(phoneLocalDigits(user.phone));
+  const [ipNumber, setIpNumber] = useState(user.ipNumber ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -45,6 +57,14 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
     }
     if (pnfl.trim() && !/^\d{14}$/.test(pnfl.trim())) {
       setErr(admin.pnflInvalid);
+      return;
+    }
+    if (!isValidLocalPhone(phone)) {
+      setErr(admin.phoneInvalid);
+      return;
+    }
+    if (!isValidIpNumber(ipNumber)) {
+      setErr(admin.ipNumberInvalid);
       return;
     }
     setSaving(true);
@@ -62,6 +82,9 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
         doc_number: docNumber.trim(),
         birth_date: birthDate || undefined,
         position: position.trim(),
+        // Bo'sh bo'lsa backend raqamni o'chiradi
+        phone_number: toApiPhone(phone),
+        ip_number: ipNumber.trim(),
       });
       onClose();
     } catch (e) {
@@ -146,6 +169,19 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
             <div>
               <label className={styles.fieldLabel}>{admin.positionLabel}</label>
               <input value={position} onChange={(e) => setPosition(e.target.value)} className={styles.input} />
+            </div>
+          </div>
+          <div className={styles.gridTwo}>
+            <div>
+              <label className={styles.fieldLabel}>{admin.phoneLabel}</label>
+              <div className={styles.usernameField}>
+                <span className={styles.usernamePrefix}>{UZ_PHONE_PREFIX}</span>
+                <input value={groupLocalDigits(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="99 123 45 67" inputMode="numeric" className={styles.usernameInput} />
+              </div>
+            </div>
+            <div>
+              <label className={styles.fieldLabel}>{admin.ipNumberLabel}</label>
+              <input value={ipNumber} onChange={(e) => setIpNumber(e.target.value.replace(/\D/g, "").slice(0, IP_NUMBER_MAX_DIGITS))} placeholder="1036" inputMode="numeric" className={styles.input} />
             </div>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, fontWeight: 600, color: "var(--adm-text-strong)", cursor: "pointer" }}>

@@ -1,3 +1,4 @@
+import asyncio
 from uuid import uuid4
 
 from fastapi import Depends
@@ -16,6 +17,7 @@ from src.core.utils.security import (
 )
 from src.user.auth.schemas import LoginTokenModel, LoginUserModel
 from src.user.auth.security import create_access_token, create_refresh_token
+from src.user.auth.services.mock_p12 import generate_mock_p12
 from src.user.models import User
 
 INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password."
@@ -57,7 +59,8 @@ class LoginUserUseCase:
       verified, or the user is blocked.
 
     Returns:
-    - LoginTokenModel: access va refresh tokenlar + `is_verified`.
+    - LoginTokenModel: tasdiqlangan userga access/refresh tokenlar;
+      tasdiqlanmaganga — register'dagidek Face-ID uchun token + p12.
     """
 
     def __init__(
@@ -110,19 +113,49 @@ class LoginUserUseCase:
             session_id = str(uuid4())
             token_data = {"sub": str(user.id)}
             await uow.commit()
-            return LoginTokenModel(
-                access_token=await create_access_token(
-                    token_data, redis_client=self.redis_client, session_id=session_id
-                ),
-                refresh_token=await create_refresh_token(
-                    token_data,
-                    redis_client=self.redis_client,
-                    session_id=session_id,
-                ),
-                # Mobil shu bayroqqa qarab chatga yoki Face-ID verifikatsiyasiga
-                # yo'naltiradi
-                is_verified=user.is_verified,
+
+        if not user.is_verified:
+            return await self._unverified_response(
+                token_data, session_id, user.username
             )
+
+        return LoginTokenModel(
+            access_token=await create_access_token(
+                token_data, redis_client=self.redis_client, session_id=session_id
+            ),
+            refresh_token=await create_refresh_token(
+                token_data,
+                redis_client=self.redis_client,
+                session_id=session_id,
+            ),
+            is_verified=True,
+        )
+
+    async def _unverified_response(
+        self, token_data: dict[str, str], session_id: str, username: str
+    ) -> LoginTokenModel:
+        """Tasdiqlanmagan user — xuddi register'dagidek Face-ID credential'lari.
+
+        User register qilib, verifikatsiyani tugatmay chiqib ketgan bo'lishi
+        mumkin; register'da berilgan token va p12 esa allaqachon eskirgan.
+        Login ularni YANGIDAN beradi, shunda verifikatsiyani qayta boshlasa
+        bo'ladi. access/refresh esa bo'sh: chat va boshqa API'lar baribir
+        unga yopiq (403), refresh ham ishlamaydi.
+        """
+        # Kalit yaratish CPU'ni band qiladi — event loop'ni to'xtatmaslik uchun
+        p12_base64, p12_password = await asyncio.to_thread(
+            generate_mock_p12, username
+        )
+        return LoginTokenModel(
+            access_token="",
+            refresh_token="",
+            is_verified=False,
+            token=await create_access_token(
+                token_data, redis_client=self.redis_client, session_id=session_id
+            ),
+            p12_base64=p12_base64,
+            p12_password=p12_password,
+        )
 
     async def _rehash_password_if_needed(
         self,

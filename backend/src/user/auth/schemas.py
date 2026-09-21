@@ -90,15 +90,30 @@ class SaveSignatureModel(Base):
 
 
 class LoginTokenModel(TokenModel):
-    """Login javobi: tokenlar + tasdiqlangan holati.
+    """Login javobi — ikki holatdan biri, maydonlar to'plami doim bir xil.
 
-    `is_verified` shu yerda qaytadi, chunki mobil ilova login'dan so'ng DARHOL
-    qayerga o'tishni bilishi kerak: tasdiqlanmagan user chatga kira olmaydi
-    (backend 403 qaytaradi) va u Face-ID verifikatsiyasiga yo'naltiriladi.
-    Busiz ilova qo'shimcha `GET /v1/users/me` so'rovini yuborishi kerak edi.
+    TASDIQLANGAN user (is_verified=true):
+        access_token, refresh_token — to'ldirilgan;
+        token, p12Base64, p12Password — bo'sh satr.
+    TASDIQLANMAGAN user (is_verified=false) — xuddi register'dagi kabi:
+        access_token, refresh_token — bo'sh satr (chat va boshqa API'lar
+        baribir yopiq, ular unga kerak emas);
+        token — Face-ID SDK'ga beriladigan access token (register'dagi
+        accessToken bilan bir xil turdagi), p12Base64 + p12Password — mTLS
+        proxy uchun sertifikat. Shu bilan user verifikatsiyani login'dan
+        qayta boshlay oladi (register'dagi credential'lar allaqachon eskirgan).
+
+    Kalit nomlari aralash — mobil jamoa bergan formatda: tokenlar snake_case,
+    p12 maydonlari register'dagidek camelCase.
     """
 
+    model_config = ConfigDict(populate_by_name=True)
+
     is_verified: bool
+    success: bool = True
+    token: str = ""
+    p12_base64: str = Field(default="", alias="p12Base64")
+    p12_password: str = Field(default="", alias="p12Password")
 
 
 class LoginUserModel(Base):

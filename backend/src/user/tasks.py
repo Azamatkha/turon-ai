@@ -24,7 +24,9 @@ def cleanup_unverified_users() -> str:
 
 async def _soft_delete_unverified_users() -> int:
     # 24 soat: shu vaqt ichida tasdiqlanmagan (Face-ID'dan o'tmagan) akkaunt
-    # o'chiriladi — login band bo'lib qolmasin. Task har soatda ishlaydi.
+    # o'chiriladi — login band bo'lib qolmasin. Task har daqiqada ishlaydi
+    # (celery_tasks/main.py), ya'ni har bir user 24 soati to'lgach eng ko'pi
+    # 1 daqiqada o'chadi.
     cutoff = get_utc_now() - timedelta(hours=24)
 
     async with local_async_session() as session:

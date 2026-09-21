@@ -57,7 +57,16 @@ class AdminUpdateUserUseCase:
                     raise InstanceAlreadyExistsException(
                         "Bu PNFL bilan akkaunt allaqachon mavjud"
                     )
-            for field in ("pnfl", "patronym", "doc_seria", "doc_number", "position"):
+            for field in (
+                "pnfl",
+                "patronym",
+                "doc_seria",
+                "doc_number",
+                "position",
+                # Kontaktlar — schema'da allaqachon normallashtirilgan
+                "phone_number",
+                "ip_number",
+            ):
                 value = getattr(data, field)
                 if value is not None:
                     # Bo'sh satr — maydonni tozalash

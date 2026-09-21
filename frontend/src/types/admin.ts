@@ -19,4 +19,7 @@ export interface AdminUser {
   docNumber?: string;
   birthDate?: string;
   position?: string;
+  // Kontaktlar: phone "+998991234567" ko'rinishida, ipNumber 1-4 xonali
+  phone?: string;
+  ipNumber?: string;
 }
