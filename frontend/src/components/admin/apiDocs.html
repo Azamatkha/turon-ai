@@ -338,6 +338,14 @@
         respRaw:"Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\nContent-Disposition: attachment; filename=\"tolov_jadvali_09_34_14_08_2026.xlsx\"\n\n<.xlsx fayl baytlari>",
         note:"JSON emas — FAYL qaytadi: mobil ilova javobni baytlar sifatida o'qib, Content-Disposition dagi nom bilan saqlaydi/ulashadi. Fayl vebdagi bilan bir xil: sarlavha, 7 ustun (№, sana, qoldiq, asosiy qarz, foiz, jami, kunlar), 'Jami' qatori, sug'urta va to'liq qiymat. 422 — body noto'g'ri yoki lang uz/uz_cyrl/ru dan boshqa." }
     ]},
+    { tag: "Tools", eps: [
+      { m:"post", p:"/v1/tools/convert/to-pdf", auth:"user", sum:"Convert to PDF — Word/Excel/PowerPoint hujjati yoki rasmlarni PDF'ga o'giradi.",
+        body:null,
+        bodyNote:"multipart/form-data, maydon nomi: files (bir necha marta takrorlanadi). Ikki xil yuborish mumkin: (1) BITTA hujjat — .doc .docx .odt .rtf .xls .xlsx .ods .ppt .pptx .odp; (2) 1..20 ta RASM — .jpg .jpeg .png .webp .bmp .tif .tiff, yuborilgan tartibda bitta PDF'ga yig'iladi (har rasm alohida A4 sahifa, keng rasm — albom sahifa, telefon rasmining burilishi to'g'rilanadi). Hujjat bilan rasmni yoki ikki hujjatni birga yuborib bo'lmaydi. Jami hajm — 9 MB.",
+        params:[], st:"200",
+        respRaw:"Content-Type: application/pdf\nContent-Disposition: attachment; filename=\"Hisobot.pdf\"; filename*=UTF-8''Hisobot.pdf\n\n<PDF fayl baytlari>",
+        note:"JSON emas — PDF FAYL qaytadi; nom birinchi faylning nomidan (.pdf bilan). curl: curl -X POST -H 'Authorization: Bearer <token>' -F 'files=@hisobot.docx' .../v1/tools/convert/to-pdf -o hisobot.pdf. Fayllar serverda SAQLANMAYDI — konvertatsiyadan keyin darhol o'chiriladi. Xatolar: 400 — format qo'llab-quvvatlanmaydi / aralash yuborilgan / fayl buzilgan yoki parol bilan himoyalangan / 20 tadan ko'p rasm / o'girish 120 soniyadan oshdi; 413 — jami hajm 9 MB dan katta. Hujjat LibreOffice'da o'giriladi: Excel'da keng varaq bir necha sahifaga bo'linishi mumkin. Rate limit: 60 daqiqada 30 marta." }
+    ]},
     { tag: "Admin", eps: [
       { m:"get", p:"/v1/admin/stats", auth:"admin", sum:"Dashboard Stats — userlar, suhbatlar, xabarlar, bo'limlar.", body:null, params:[], st:"200",
         resp:{ total_users:42, total_sessions:310, total_messages:1580, total_departments:6, online:3, total_likes:120, total_dislikes:8,

@@ -248,6 +248,12 @@ class AppConfig(BaseModel):
     # `client_max_body_size` da edi. U esa INFRATUZILMA sozlamasi: nginx'siz
     # ishga tushirilgan dev/test muhitida himoya butunlay yo'qolardi.
     KNOWLEDGE_MAX_BYTES: int = 20 * 1024 * 1024
+    # PDF konvertor (Word/Excel/PowerPoint/rasm -> PDF): bitta so'rovdagi
+    # BARCHA fayllar yig'indisi. nginx client_max_body_size = 10m — multipart
+    # ustamasiga joy qolishi uchun 9 MB.
+    CONVERT_MAX_BYTES: int = 9 * 1024 * 1024
+    # LibreOffice bitta hujjatni shuncha soniyadan ko'p o'girsa — to'xtatiladi
+    CONVERT_TIMEOUT_SECONDS: int = 120
 
     model_config = ConfigDict(extra="ignore")
 

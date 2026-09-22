@@ -3,6 +3,7 @@ import {
   MdCurrencyExchange,
   MdDialpad,
   MdOutlineAdminPanelSettings,
+  MdPictureAsPdf,
   MdReportGmailerrorred,
 } from "react-icons/md";
 import { FaCalculator } from "react-icons/fa6";
@@ -14,6 +15,7 @@ import NotificationsBell from "./NotificationsBell";
 import ReportModal from "./ReportModal";
 import MiniAppsMenu, { type MiniApp } from "./MiniAppsMenu";
 import DirectoryModal from "./DirectoryModal";
+import ConverterModal from "./ConverterModal";
 import HButton from "../common/HButton";
 import type { Lang } from "../../types/lang";
 import type { ThemeTokens } from "../../types/chat";
@@ -43,11 +45,13 @@ export default function ChatHeader({
   const [reportOpen, setReportOpen] = useState(false);
   const [ratesOpen, setRatesOpen] = useState(false);
   const [dirOpen, setDirOpen] = useState(false);
+  const [convOpen, setConvOpen] = useState(false);
 
   // Yangi mini-ilova qo'shish uchun shu ro'yxatga bitta yozuv qo'shiladi
   const miniApps: MiniApp[] = [
     { id: "rates", label: s.rates, icon: <MdCurrencyExchange size={22} />, onOpen: () => setRatesOpen(true) },
     { id: "calculator", label: s.calculator, icon: <FaCalculator size={19} />, onOpen: () => setCalcOpen(true) },
+    { id: "converter", label: s.convTitle, icon: <MdPictureAsPdf size={22} />, onOpen: () => setConvOpen(true) },
     { id: "directory", label: s.dirTitle, icon: <MdDialpad size={22} />, onOpen: () => setDirOpen(true) },
     { id: "report", label: s.report, icon: <MdReportGmailerrorred size={23} />, onOpen: () => setReportOpen(true) },
   ];
@@ -127,6 +131,10 @@ export default function ChatHeader({
 
       {reportOpen && (
         <ReportModal tk={tk} isDark={isDark} s={s} onClose={() => setReportOpen(false)} />
+      )}
+
+      {convOpen && (
+        <ConverterModal tk={tk} isDark={isDark} s={s} onClose={() => setConvOpen(false)} />
       )}
 
       {dirOpen && (

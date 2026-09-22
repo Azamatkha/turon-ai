@@ -106,6 +106,22 @@ export interface ChatStaticStrings {
   reportRequired: string;
   // "Yordamchi dasturlar" menyusi (kurs, kalkulyator, murojaat va h.k.)
   miniApps: string;
+  // PDF konvertor (Word/Excel/PowerPoint/rasm -> PDF)
+  convTitle: string;
+  convDrop: string;
+  convHint: string;
+  convSubmit: string;
+  convConverting: string;
+  convDone: string;
+  convDownloadAgain: string;
+  convNew: string;
+  convAddMore: string;
+  convRemove: string;
+  convErrMixed: string;
+  convErrType: string;
+  convErrTooMany: string;
+  convErrTooLarge: string;
+  convError: string;
   // Ichki raqamlar ma'lumotnomasi (bo'lim -> xodim -> IP raqam)
   dirTitle: string;
   dirDepartment: string;

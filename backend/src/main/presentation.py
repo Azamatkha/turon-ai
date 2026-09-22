@@ -43,6 +43,7 @@ from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers
 from src.reports import routers as report_routers
 from src.system import routers as system_routers
+from src.tools import routers as tools_routers
 from src.user import routers as user_routers
 
 EXCEPTION_HANDLERS: tuple[tuple[type[Exception], HandlerCallable], ...] = (
@@ -137,6 +138,7 @@ def include_routers(app: FastAPI) -> None:
         notification_routers.router, prefix="/notifications", tags=["Notifications"]
     )
     v1_router.include_router(report_routers.router, prefix="/reports", tags=["Reports"])
+    v1_router.include_router(tools_routers.router, prefix="/tools", tags=["Tools"])
     v1_router.include_router(
         report_routers.admin_router, prefix="/admin/reports", tags=["Reports"]
     )

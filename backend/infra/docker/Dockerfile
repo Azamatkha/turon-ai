@@ -58,6 +58,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr-uzb \
     tesseract-ocr-uzb-cyrl \
     tesseract-ocr-rus \
+    # PDF konvertor (src/tools): Word/Excel/PowerPoint -> PDF. Faqat kerakli
+    # modullar, GUI'siz (--no-install-recommends). Carlito/Caladea — Calibri
+    # va Cambria shriftlarining o'lchamdosh o'rinbosarlari: ularsiz Word
+    # hujjatida qatorlar siljib, sahifa chegaralari buzilardi.
+    libreoffice-writer-nogui \
+    libreoffice-calc-nogui \
+    libreoffice-impress-nogui \
+    fonts-crosextra-carlito \
+    fonts-crosextra-caladea \
+    fonts-dejavu-core \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && groupadd --system appuser \
     && useradd --system --gid appuser --create-home --home-dir /home/appuser appuser \
