@@ -21,6 +21,7 @@ from src.user.models import User
 from src.user.schemas import (
     AdminCreateUserModel,
     AdminUpdateUserModel,
+    DirectoryEntryModel,
     UpdateContactsModel,
     UpdateOwnProfileModel,
     UserAdminListItem,
@@ -34,6 +35,7 @@ from src.user.usecases.admin_create_user import (
     AdminCreateUserUseCase,
     get_admin_create_user_use_case
 )
+from src.user.usecases.directory import DirectoryUseCase, get_directory_use_case
 from src.user.usecases.list_users import ListUsersUseCase, get_list_users_use_case
 from src.user.usecases.update_contacts import (
     UpdateOwnContactsUseCase,
@@ -170,6 +172,50 @@ async def save_verification_employment(
     Muvaffaqiyatli bo'lsa user `is_verified=true` bo'ladi.
     """
     return await use_case.execute(user_id=current_user.id, data=form_data)
+
+
+# --- Xodimlar ma'lumotnomasi (IP raqam qidiruvi) ---------------------------
+# DIQQAT: `GET /{user_id}` DAN OLDIN turishi shart — aks holda "directory"
+# satri UUID sifatida o'qilib 422 qaytarardi.
+@router.get(
+    "/directory/departments",
+    response_model=list[str],
+    dependencies=[
+        Depends(RateLimiter(times=120, minutes=1, identifier=get_user_id_from_token))
+    ],
+)
+async def directory_departments(
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[DirectoryUseCase, Depends(get_directory_use_case)],
+    session: AsyncSession = Depends(get_session),
+) -> list[str]:
+    """
+    Ma'lumotnomadagi bo'limlar ro'yxati (alifbo tartibida) — birinchi qadam:
+    foydalanuvchi shundan bo'limni tanlaydi.
+    """
+    return await use_case.departments(session)
+
+
+@router.get(
+    "/directory",
+    response_model=list[DirectoryEntryModel],
+    dependencies=[
+        Depends(RateLimiter(times=120, minutes=1, identifier=get_user_id_from_token))
+    ],
+)
+async def directory_search(
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[DirectoryUseCase, Depends(get_directory_use_case)],
+    session: AsyncSession = Depends(get_session),
+    department: str | None = None,
+    q: str | None = None,
+) -> list[DirectoryEntryModel]:
+    """
+    Tanlangan bo'lim xodimlari va/yoki ism/familiya/IP raqam bo'yicha qidiruv.
+    Har qatorda faqat: F.I.Sh., lavozim, bo'lim, ichki IP raqam.
+    `department` yoki kamida 2 belgili `q` shart (aks holda 400).
+    """
+    return await use_case.search(session, department=department, q=q)
 
 
 @router.get("/{user_id}", response_model=UserSummaryViewModel)

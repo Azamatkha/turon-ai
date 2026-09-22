@@ -27,6 +27,8 @@ export const admin: AdminStrings = {
   feedbackLikes: "Ёқди",
   feedbackDislikes: "Ёқмади",
   feedbackSatisfaction: "Мамнунлик",
+  feedbackTotal: "Жами баҳолар",
+  feedbackCoverage: "Жавоблар баҳоланган",
   topUsersTitle: "Энг фаол ходимлар",
   topUsersSub: "Сўнгги 30 кундаги саволлар сони бўйича",
   topUsersCount: (n: number) => `${n.toLocaleString()} та сўров`,

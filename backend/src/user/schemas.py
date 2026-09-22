@@ -109,6 +109,21 @@ class UserAdminListItem(Base):
     is_online: bool = False
 
 
+class DirectoryEntryModel(Base):
+    """Xodimlar ma'lumotnomasidagi bitta qator (IP raqam qidiruvi).
+
+    ATAYLAB ixcham: faqat ism, lavozim, bo'lim va ichki IP raqam. Telefon,
+    PNFL, pasport, login kabi maydonlar bu yerga QO'SHILMAYDI — ma'lumotnoma
+    barcha xodimlarga ochiq.
+    """
+
+    id: UUID
+    full_name: str
+    position: str | None = None
+    department: str | None = None
+    ip_number: str | None = None
+
+
 class UpdateOwnProfileModel(Base):
     """Foydalanuvchi O'ZI o'zgartira oladigan maydonlar.
 

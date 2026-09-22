@@ -106,6 +106,19 @@ export interface ChatStaticStrings {
   reportRequired: string;
   // "Yordamchi dasturlar" menyusi (kurs, kalkulyator, murojaat va h.k.)
   miniApps: string;
+  // Ichki raqamlar ma'lumotnomasi (bo'lim -> xodim -> IP raqam)
+  dirTitle: string;
+  dirDepartment: string;
+  dirPickDepartment: string;
+  dirSearchPh: string;
+  dirHint: string;
+  dirEmpty: string;
+  dirError: string;
+  dirLoading: string;
+  dirPosition: string;
+  dirIp: string;
+  dirNoIp: string;
+  dirBack: string;
   // Valyuta kurslari oynasi
   rates: string;
   ratesHeading: string;
@@ -257,6 +270,9 @@ export interface AdminStrings {
   /** Halqa markazidagi yorliq — mamnunlik foizi */
   feedbackSatisfaction: string;
   /** So'nggi faollik tarkibi kartasi */
+  // "Javob sifati" kartasi pastidagi ko'rsatkichlar
+  feedbackTotal: string;
+  feedbackCoverage: string;
   // "Eng faol xodimlar" diagrammasi (so'nggi 30 kun, top-5)
   topUsersTitle: string;
   topUsersSub: string;

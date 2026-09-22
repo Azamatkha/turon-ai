@@ -1,0 +1,296 @@
+/* Ichki raqamlar ma'lumotnomasi. Ranglar ChatHeader'dan (tk) inline
+   uzatiladi — bu yerda faqat tuzilma. Tuzilma ReportModal bilan bir xil. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fadeIn 0.18s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Balandlik QAT'IY: ro'yxat yuklanganda/bo'shaganda oyna sakramasin */
+.modal {
+  width: 100%;
+  max-width: 520px;
+  height: min(620px, 90vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 22px;
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.45);
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+  animation: popIn 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.headTitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 550;
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 0 13px;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: #4059BE;
+}
+
+.search {
+  margin-top: 10px;
+}
+
+/* Ro'yxat qolgan balandlikni egallaydi va o'zi suriladi */
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 14px;
+  --tu-sb-size: 8px;
+}
+
+.state {
+  padding: 40px 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 8px;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: rgba(90, 120, 224, 0.1);
+}
+
+.rowAvatar,
+.avatar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(140deg, #4059BE, #193070);
+  color: #fff;
+  font-weight: 700;
+}
+
+.rowAvatar {
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+}
+
+.rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowName,
+.rowSub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowName {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.rowSub {
+  font-size: 12.5px;
+}
+
+.rowIp {
+  flex: 0 0 auto;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Tanlangan xodim kartochkasi --- */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-bottom: 14px;
+  padding: 4px 6px 4px 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+.cardName {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.facts {
+  width: 100%;
+  margin: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fact dt {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.ipBox {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 16px;
+  border-top: 1px solid transparent;
+}
+
+.ipLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.ipValue {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ipNone {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+}

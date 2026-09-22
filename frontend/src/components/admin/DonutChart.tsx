@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import styles from "./DonutChart.module.css";
 
 export interface DonutSlice {
@@ -18,6 +19,8 @@ interface DonutChartProps {
   ariaLabel: string;
   /** Ulush yonida ko'rsatiladigan qiymatni formatlash (sukut bo'yicha foiz) */
   formatValue?: (slice: DonutSlice, pct: number) => string;
+  /** Standart izoh ro'yxati o'rniga o'z bloki (masalan ustunli izoh) */
+  legend?: ReactNode;
 }
 
 // SVG geometriyasi. Radius va qalinlik viewBox birligida (piksel emas) —
@@ -33,7 +36,7 @@ const C = 2 * Math.PI * R;
 const GAP = 2;
 
 export default function DonutChart({
-  slices, mounted, centerValue, centerLabel, ariaLabel, formatValue,
+  slices, mounted, centerValue, centerLabel, ariaLabel, formatValue, legend,
 }: DonutChartProps) {
   const total = slices.reduce((s, x) => s + x.value, 0);
 
@@ -91,7 +94,7 @@ export default function DonutChart({
 
       {/* Izoh ro'yxati — rang YOLG'IZ belgilovchi bo'lib qolmasligi uchun
           majburiy: har bo'lak nomi va qiymati matn bilan ham yozilgan. */}
-      <ul className={styles.legend}>
+      {legend ?? <ul className={styles.legend}>
         {arcs.map((a) => (
           <li key={a.label} className={styles.legendRow}>
             <span className={styles.dot} style={{ background: a.color }} aria-hidden />
@@ -101,7 +104,7 @@ export default function DonutChart({
             </span>
           </li>
         ))}
-      </ul>
+      </ul>}
     </div>
   );
 }

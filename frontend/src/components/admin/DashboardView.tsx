@@ -105,6 +105,7 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
         <FeedbackDonut
           likes={stats?.total_likes ?? 0}
           dislikes={stats?.total_dislikes ?? 0}
+          totalAnswers={stats?.total_messages ?? 0}
           mounted={mounted}
           t={admin}
         />

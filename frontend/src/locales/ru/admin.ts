@@ -26,6 +26,8 @@ export const admin: AdminStrings = {
   feedbackLikes: "Понравилось",
   feedbackDislikes: "Не понравилось",
   feedbackSatisfaction: "Удовлетворённость",
+  feedbackTotal: "Всего оценок",
+  feedbackCoverage: "Ответов оценено",
   topUsersTitle: "Самые активные сотрудники",
   topUsersSub: "По числу вопросов за последние 30 дней",
   topUsersCount: (n: number) => `${n.toLocaleString()} запр.`,

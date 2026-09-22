@@ -51,6 +51,45 @@ class UserRepository(SoftDeleteRepository[User]):
         result = await session.execute(query)
         return list(result.unique().scalars().all())
 
+    def _directory_base(self):
+        """Ma'lumotnomada ko'rinadiganlar: o'chirilmagan, faol, tasdiqlangan
+        (tasdiqlanmagan userda ism/lavozim hali bo'sh bo'ladi)."""
+        return select(self.model).where(
+            self.model.is_deleted.is_(False),
+            self.model.is_active.is_(True),
+            self.model.is_verified.is_(True),
+        )
+
+    async def directory_departments(self, session: AsyncSession) -> list[str]:
+        """Ma'lumotnomadagi xodimlari bor bo'limlar — alifbo tartibida."""
+        query = (
+            self._directory_base()
+            .with_only_columns(self.model.department)
+            .where(self.model.department.isnot(None), self.model.department != "")
+            .distinct()
+            .order_by(self.model.department)
+        )
+        result = await session.execute(query)
+        return [row[0] for row in result.all()]
+
+    async def directory_search(
+        self,
+        session: AsyncSession,
+        department: str | None = None,
+        search: str | None = None,
+        limit: int = 200,
+    ) -> list[User]:
+        """Bo'lim bo'yicha va/yoki ism/familiya/IP raqam bo'yicha qidiruv."""
+        query = self._directory_base()
+        if department:
+            query = query.where(self.model.department == department)
+        query = self._apply_search_filter(
+            query, search=search, fields=["first_name", "last_name", "ip_number"]
+        )
+        query = query.order_by(self.model.last_name, self.model.first_name).limit(limit)
+        result = await session.execute(query)
+        return list(result.scalars().all())
+
     async def count_by_department(
         self, session: AsyncSession
     ) -> list[tuple[str | None, int]]:

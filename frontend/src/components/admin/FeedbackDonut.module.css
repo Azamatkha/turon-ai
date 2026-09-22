@@ -30,3 +30,99 @@
   color: var(--adm-text-muted);
   margin-bottom: 20px;
 }
+
+/* =====================
+   Halqa yonidagi blok: har baho ustuni + umumiy ko'rsatkichlar
+   ===================== */
+.side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.statTop {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.statName {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-text-body);
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.statPct {
+  min-width: 38px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--chart-grid);
+}
+
+.bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.85s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--adm-border-3);
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metaValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--adm-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.metaLabel {
+  font-size: 12.5px;
+  color: var(--adm-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}
