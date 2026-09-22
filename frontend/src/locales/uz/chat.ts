@@ -22,7 +22,7 @@ export const chatStatic: ChatStaticStrings = {
   noResults: "Hech narsa topilmadi",
   history: "Tarix",
   support: "Qo‘llab-quvvatlash",
-  supportNumber: "1234",
+  supportNumber: "+998 20 028 04 19",
   supportHint: "Yordam markazi raqami",
   collapseSidebar: "Panelni yig'ish",
   theme: "Rejim",

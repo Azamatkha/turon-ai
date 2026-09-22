@@ -1576,6 +1576,30 @@ def _last_turn_was_clarify(history: list[ChatTurn] | None) -> bool:
     )
 
 
+def _declined_clarify_titles(history: list[ChatTurn] | None) -> set[str]:
+    """Suhbatda aniqlashtirish so'ralib, foydalanuvchi MAHSULOTNI TANLAMAGAN
+    (umumiy ma'noni so'ragan) nomlar.
+
+    "Meros nima" -> aniqlashtirish -> "meros tushunchasi haqida" -> umumiy
+    javob -> "meros farzandlar orasida teng bo'linadimi?" — oxirgi savolda
+    ham "meros" so'zi bor va ilgari yana o'sha aniqlashtirish qaytardi.
+    Foydalanuvchi bir marta "mahsulot emas" deganini suhbat davomida eslaymiz."""
+    if not history:
+        return set()
+    declined: set[str] = set()
+    for i, turn in enumerate(history):
+        if turn.role != "assistant":
+            continue
+        if _CLARIFY_MARKER.lower() not in to_latin(turn.content).lower():
+            continue
+        reply = next((t for t in history[i + 1 :] if t.role == "user"), None)
+        if reply is None:
+            continue
+        if _resolve_clarification(reply.content, history[: i + 1]) is None:
+            declined.update(_CLARIFY_TITLE_RE.findall(turn.content))
+    return declined
+
+
 def _clarify_reply(titles: list[str], want_cyrillic: bool) -> str:
     """Aniqlashtiruvchi savol matni. Mahsulot NOMI lotincha qoladi (katalog
     ro'yxatidagi kabi) — faqat atrofidagi matn kirillga o'giriladi."""
@@ -2740,6 +2764,7 @@ class AnswerQuestionUseCase:
                 1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS
                 and not _last_turn_was_clarify(history)
                 and not _asks_general_meaning(question)
+                and not set(partial_titles) & _declined_clarify_titles(history)
             ):
                 # Nom to'liq aytilmagan — javob TO'QILMAYDI, so'raymiz
                 logger.info(
@@ -3116,6 +3141,7 @@ class AnswerQuestionUseCase:
                 1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS
                 and not _last_turn_was_clarify(history)
                 and not _asks_general_meaning(question)
+                and not set(partial_titles) & _declined_clarify_titles(history)
             ):
                 logger.info(
                     "Aniqlashtirish so'raldi: %r -> %s", question, partial_titles

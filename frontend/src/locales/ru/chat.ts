@@ -19,7 +19,7 @@ export const chatStatic: ChatStaticStrings = {
   noResults: "Ничего не найдено",
   history: "История",
   support: "Поддержка",
-  supportNumber: "1234",
+  supportNumber: "+998 20 028 04 19",
   supportHint: "Номер службы поддержки",
   collapseSidebar: "Свернуть панель",
   theme: "Режим",

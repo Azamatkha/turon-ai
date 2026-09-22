@@ -20,7 +20,7 @@ export const chatStatic: ChatStaticStrings = {
   noResults: "Ҳеч нарса топилмади",
   history: "Тарих",
   support: "Қўллаб-қувватлаш",
-  supportNumber: "1234",
+  supportNumber: "+998 20 028 04 19",
   supportHint: "Ёрдам маркази рақами",
   collapseSidebar: "Панелни йиғиш",
   theme: "Режим",
