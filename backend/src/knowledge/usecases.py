@@ -1521,6 +1521,61 @@ _GENERIC_TITLE_WORDS = frozenset(
 }
 
 
+# Savol MAHSULOT haqida emas, balki TASHKILOT/brend haqida ekanini bildiruvchi
+# so'z o'zaklari ("Mastercard kompaniyasi qachon tashkil topgan"). Ilgari
+# bunday savolda "mastercard" so'zi karta nomlariga qisman mos kelib, bot
+# «MasterCard Gold» va h.k. dan birini tanlashni so'rardi. So'z o'zagi bilan
+# tekshiriladi: "kompaniyasichi", "tashkil", "osnovana" ham tushadi.
+_ORG_QUESTION_STEMS = (
+    "kompaniya",
+    "korporatsiya",
+    "tashkil",
+    "asoschi",
+    "asoslan",
+    "tarix",
+    "shtab",
+    "osnova",
+    "istori",
+    "korporaci",
+)
+
+
+def _asks_about_organization(question: str) -> bool:
+    """Savol kompaniya/brendning o'zi (tarixi, asoschisi, tashkil topgani)
+    haqidami — bunda bazadagi mahsulot nomlari bilan solishtirilmaydi."""
+    words = _words(_norm_for_match(_norm_apostrophes(to_latin(question).lower())))
+    return any(w.startswith(_ORG_QUESTION_STEMS) for w in words)
+
+
+# Foydalanuvchi mahsulotni emas, so'zning UMUMIY ma'nosini so'rayotganini
+# o'zi aytgan ("yo'q, umuman meros nima"). Aniqlashtirish matnimiz aynan
+# "umumiy tushuncha bo'lsa, to'liqroq yozing" deydi — shu belgini tanimasak,
+# to'liqroq yozilgan savolga ham yana o'sha savol qaytardi.
+_GENERAL_MEANING_STEMS = ("umum", "tushuncha", "atama", "voobs", "ponyati", "termin")
+_GENERAL_MEANING_PARTS = ("ma'no", "ta'rif")
+
+
+def _asks_general_meaning(question: str) -> bool:
+    text = _norm_apostrophes(to_latin(question).lower())
+    if any(part in text for part in _GENERAL_MEANING_PARTS):
+        return True
+    return any(w.startswith(_GENERAL_MEANING_STEMS) for w in _words(text))
+
+
+def _last_turn_was_clarify(history: list[ChatTurn] | None) -> bool:
+    """Oxirgi bot javobi aniqlashtiruvchi savol bo'lganmi.
+
+    Foydalanuvchi variant tanlamay, savolini to'liqroq qayta yozgan bo'lsa
+    (biz aynan shuni so'raganmiz), ikkinchi marta aniqlashtirish so'ralmaydi —
+    aks holda bot bir xil savolni cheksiz takrorlardi."""
+    if not history:
+        return False
+    last = next((t for t in reversed(history) if t.role == "assistant"), None)
+    return last is not None and (
+        _CLARIFY_MARKER.lower() in to_latin(last.content).lower()
+    )
+
+
 def _clarify_reply(titles: list[str], want_cyrillic: bool) -> str:
     """Aniqlashtiruvchi savol matni. Mahsulot NOMI lotincha qoladi (katalog
     ro'yxatidagi kabi) — faqat atrofidagi matn kirillga o'giriladi."""
@@ -2672,6 +2727,7 @@ class AnswerQuestionUseCase:
             decision is not None
             and not skip_shortcuts
             and decision.intent is Intent.CONCEPT
+            and not _asks_about_organization(question)
         ):
             catalog_title, partial_titles = await self._catalog_title_match(question)
             if catalog_title is not None:
@@ -2680,7 +2736,11 @@ class AnswerQuestionUseCase:
                     question,
                     catalog_title,
                 )
-            elif 1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS:
+            elif (
+                1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS
+                and not _last_turn_was_clarify(history)
+                and not _asks_general_meaning(question)
+            ):
                 # Nom to'liq aytilmagan — javob TO'QILMAYDI, so'raymiz
                 logger.info(
                     "Aniqlashtirish so'raldi: %r -> %s", question, partial_titles
@@ -3043,6 +3103,7 @@ class AnswerQuestionUseCase:
             decision is not None
             and not skip_shortcuts
             and decision.intent is Intent.CONCEPT
+            and not _asks_about_organization(question)
         ):
             catalog_title, partial_titles = await self._catalog_title_match(question)
             if catalog_title is not None:
@@ -3051,7 +3112,11 @@ class AnswerQuestionUseCase:
                     question,
                     catalog_title,
                 )
-            elif 1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS:
+            elif (
+                1 <= len(partial_titles) <= _CLARIFY_MAX_OPTIONS
+                and not _last_turn_was_clarify(history)
+                and not _asks_general_meaning(question)
+            ):
                 logger.info(
                     "Aniqlashtirish so'raldi: %r -> %s", question, partial_titles
                 )
