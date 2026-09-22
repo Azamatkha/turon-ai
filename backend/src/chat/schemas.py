@@ -14,6 +14,8 @@ class SessionView(Base):
     is_pinned: bool
     created_at: datetime
     updated_at: datetime
+    # Tarjimon rejimi: None | "pending" | "en" | "ru" | "uz" | "uz_cyrl"
+    translate_lang: str | None = None
 
 
 class MessageView(Base):

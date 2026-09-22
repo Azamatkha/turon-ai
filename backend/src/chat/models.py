@@ -20,6 +20,10 @@ class ChatSession(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     title: Mapped[str] = mapped_column(String(255), default="")
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Tarjimon rejimi holati (sessiyaga bog'langan — veb ham, mobil ham shu
+    # yerdan o'qiydi): None — o'chiq; "pending" — /translate yozildi, til
+    # kutilmoqda; "en" | "ru" | "uz" | "uz_cyrl" — shu tilga tarjima qilinadi.
+    translate_lang: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
 
 class ChatMessage(Base, UUIDIDMixin, TimestampMixin):

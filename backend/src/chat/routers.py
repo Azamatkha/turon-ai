@@ -17,7 +17,7 @@ suhbatini ko'rib/o'zgartirib bo'lmaydi (get_single user_id bilan filtrlanadi).
 
 import json
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -39,6 +39,7 @@ from src.knowledge.schemas import (
     RatesResult,
 )
 from src.knowledge.usecases import AnswerQuestionUseCase
+from src.translator.usecases import TranslatorUseCase, get_translator_use_case
 from src.user.auth.dependencies import get_current_user, get_user_id_from_token
 from src.user.models import User
 from src.chat.schemas import (
@@ -265,8 +266,15 @@ async def ask(
     history_use_case: Annotated[
         LoadHistoryUseCase, Depends(get_load_history_use_case)
     ],
+    translator: Annotated[TranslatorUseCase, Depends(get_translator_use_case)],
 ) -> AnswerResult:
-    """Xodim savoli -> Qdrant qidiruv -> Qwen javob (RAG)."""
+    """Xodim savoli -> Qdrant qidiruv -> Qwen javob (RAG).
+
+    Tarjimon rejimi (/translate) yoqilgan sessiyada javobni tarjimon beradi."""
+    step = await translator.prepare(current_user.id, data.session_id, data.question)
+    if step is not None:
+        return await translator.answer(step)
+
     use_case = AnswerQuestionUseCase(
         embedder=embedder, store=store, ai_client=ai_client
     )
@@ -284,21 +292,27 @@ async def ask_stream(
     history_use_case: Annotated[
         LoadHistoryUseCase, Depends(get_load_history_use_case)
     ],
+    translator: Annotated[TranslatorUseCase, Depends(get_translator_use_case)],
 ) -> StreamingResponse:
     """Xuddi /ask kabi, lekin javobni token-token (SSE oqim) qaytaradi —
     frontend real vaqtda matn va token sonini ko'rsatishi uchun."""
-    use_case = AnswerQuestionUseCase(
-        embedder=embedder, store=store, ai_client=ai_client
-    )
-    # Tarix oqim BOSHLANISHIDAN oldin olinadi: oqim ichida xato chiqsa,
-    # klient allaqachon 200 olgan bo'lardi va sababini bilmasdi.
-    history = await _resolve_history(data, current_user, history_use_case)
+    # Tarjimon holati ham, tarix ham oqim BOSHLANISHIDAN oldin olinadi: oqim
+    # ichida xato chiqsa, klient allaqachon 200 olgan bo'lardi va sababini
+    # bilmasdi.
+    step = await translator.prepare(current_user.id, data.session_id, data.question)
+    events: AsyncIterator[dict[str, Any]]
+    if step is not None:
+        events = translator.stream(step)
+    else:
+        use_case = AnswerQuestionUseCase(
+            embedder=embedder, store=store, ai_client=ai_client
+        )
+        history = await _resolve_history(data, current_user, history_use_case)
+        events = use_case.execute_stream(question=data.question, history=history)
 
     async def event_stream() -> AsyncIterator[str]:
         try:
-            async for ev in use_case.execute_stream(
-                question=data.question, history=history
-            ):
+            async for ev in events:
                 yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
         except Exception:  # noqa: BLE001 - oqim uzilsa, klientga xabar beramiz
             # Xatoning O'ZI faqat log'ga tushadi.

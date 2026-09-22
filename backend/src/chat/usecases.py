@@ -88,6 +88,7 @@ class GetSessionUseCase:
                 id=s.id,
                 title=s.title,
                 is_pinned=s.is_pinned,
+                translate_lang=s.translate_lang,
                 created_at=s.created_at,
                 updated_at=s.updated_at,
                 messages=[MessageView.model_validate(m) for m in messages],
