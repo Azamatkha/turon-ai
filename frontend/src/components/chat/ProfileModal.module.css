@@ -312,6 +312,12 @@
   letter-spacing: 0.3px;
 }
 
+/* Halqa tashqi qutida (.phoneField:focus-within) — global `input:focus-visible`
+   input ichida ikkinchi ramka chizmasin. */
+.phoneInput:focus-visible {
+  outline: none;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

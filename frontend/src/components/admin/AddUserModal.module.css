@@ -94,6 +94,17 @@
   height: 100%;
 }
 
+/* Halqa tashqi qutida (.usernameField:focus-within) chiziladi. Global
+   `input:focus-visible` qoidasi bo'lmasa, input ichida IKKINCHI ramka
+   paydo bo'lib, "quti ichida quti" ko'rinardi. */
+.usernameInput:focus-visible {
+  outline: none;
+}
+
+.usernameField:focus-within {
+  border-color: var(--adm-accent);
+}
+
 .roleBtn {
   flex: 1;
   padding: 9px 4px;

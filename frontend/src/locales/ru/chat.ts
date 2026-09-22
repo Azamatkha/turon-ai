@@ -64,6 +64,7 @@ export const chatStatic: ChatStaticStrings = {
   reportTooLarge: "Размер файла не должен превышать 5 МБ",
   reportBadType: "Только PNG, JPG или WEBP",
   reportRequired: "Заголовок и текст обязательны",
+  miniApps: "Полезные сервисы",
   rates: "Курсы валют",
   ratesHeading: "Курсы валют",
   ratesCurrency: "Валюта",

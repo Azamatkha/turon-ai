@@ -11,6 +11,7 @@ import CalculatorModal from "./CalculatorModal";
 import RatesModal from "./RatesModal";
 import NotificationsBell from "./NotificationsBell";
 import ReportModal from "./ReportModal";
+import MiniAppsMenu, { type MiniApp } from "./MiniAppsMenu";
 import HButton from "../common/HButton";
 import type { Lang } from "../../types/lang";
 import type { ThemeTokens } from "../../types/chat";
@@ -39,6 +40,13 @@ export default function ChatHeader({
   const [calcOpen, setCalcOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [ratesOpen, setRatesOpen] = useState(false);
+
+  // Yangi mini-ilova qo'shish uchun shu ro'yxatga bitta yozuv qo'shiladi
+  const miniApps: MiniApp[] = [
+    { id: "rates", label: s.rates, icon: <MdCurrencyExchange size={22} />, onOpen: () => setRatesOpen(true) },
+    { id: "calculator", label: s.calculator, icon: <FaCalculator size={19} />, onOpen: () => setCalcOpen(true) },
+    { id: "report", label: s.report, icon: <MdReportGmailerrorred size={23} />, onOpen: () => setReportOpen(true) },
+  ];
 
   const startEdit = () => {
     if (!editableTitle || !onRenameTitle) return;
@@ -101,42 +109,9 @@ export default function ChatHeader({
             <MdOutlineAdminPanelSettings size={20} />
           </HButton>
         )}
-        <HButton
-          onClick={() => setRatesOpen(true)}
-          data-tip={s.rates}
-          aria-label={s.rates}
-          className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
-          /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
-             berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
-          hoverStyle={{ transform: "translateY(-1px)" }}
-        >
-          <MdCurrencyExchange size={20} />
-        </HButton>
-        <HButton
-          onClick={() => setCalcOpen(true)}
-          data-tip={s.calculator}
-          aria-label={s.calculator}
-          className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
-          /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
-             berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
-          hoverStyle={{ transform: "translateY(-1px)" }}
-        >
-          <FaCalculator size={17} />
-        </HButton>
-        <HButton
-          onClick={() => setReportOpen(true)}
-          data-tip={s.report}
-          aria-label={s.report}
-          className={`${styles.adminBtn} tu-shiny tu-shiny-always`}
-          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
-          /* Fon hover'i CSS'da (.adminBtn:hover) — bu yerda `background`
-             berilsa, u qisqartma xossa bo'lgani uchun gradientni o'chirardi */
-          hoverStyle={{ transform: "translateY(-1px)" }}
-        >
-          <MdReportGmailerrorred size={21} />
-        </HButton>
+        {/* Kurs, kalkulyator, murojaat va keyingi mini-ilovalar bitta
+            "Yordamchi dasturlar" menyusida — header tugmalar bilan to'lib ketmasin */}
+        <MiniAppsMenu apps={miniApps} tk={tk} isDark={isDark} s={s} />
         <NotificationsBell tk={tk} isDark={isDark} s={s} />
         <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={isDark ? s.dayMode : s.nightMode} />

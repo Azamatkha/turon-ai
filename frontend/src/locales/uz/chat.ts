@@ -67,6 +67,7 @@ export const chatStatic: ChatStaticStrings = {
   reportTooLarge: "Fayl hajmi 5 MB dan oshmasin",
   reportBadType: "Faqat PNG, JPG yoki WEBP rasm",
   reportRequired: "Sarlavha va matn to‘ldirilishi shart",
+  miniApps: "Yordamchi dasturlar",
   rates: "Valyuta kurslari",
   ratesHeading: "Valyuta kurslari",
   ratesCurrency: "Valyuta",

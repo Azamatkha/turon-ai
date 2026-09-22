@@ -104,6 +104,8 @@ export interface ChatStaticStrings {
   reportTooLarge: string;
   reportBadType: string;
   reportRequired: string;
+  // "Yordamchi dasturlar" menyusi (kurs, kalkulyator, murojaat va h.k.)
+  miniApps: string;
   // Valyuta kurslari oynasi
   rates: string;
   ratesHeading: string;
