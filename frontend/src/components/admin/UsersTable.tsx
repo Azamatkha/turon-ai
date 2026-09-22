@@ -108,17 +108,68 @@ function HoverRow({ user, last, index, onChangeRole, onToggleVerified, onDelete,
   );
 }
 
+// Bir sahifadagi foydalanuvchilar soni
+const PAGE_SIZE = 10;
+
+/** Ko'rsatiladigan sahifa raqamlari: 1 … 4 5 6 … 12 (null = "…"). */
+function pageList(current: number, total: number): (number | null)[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const out: (number | null)[] = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) out.push(null);
+    out.push(p);
+  });
+  return out;
+}
+
 export default function UsersTable({ users, search, onChangeRole, onToggleVerified, onDelete, onUpdate, t: admin, lang }: Props) {
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  // Qidiruv/bo'lim o'zgarganda 1-sahifaga qaytish AdminPage'dagi `key` orqali
+  // (jadval qayta yaratiladi). User o'chirilganda esa sahifa saqlanadi —
+  // oxirgi sahifa bo'shab qolsa, pastdagi `current` uni qisqartiradi.
+  const [page, setPage] = useState(1);
+
+  // Sahifalash frontda: backend ro'yxatni to'liq qaytaradi (mobil ilova ham
+  // shu endpointdan foydalanadi), bank xodimlari soni uchun bu yetarli.
+  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+  const current = Math.min(page, totalPages);
+  const start = (current - 1) * PAGE_SIZE;
+  const pageUsers = users.slice(start, start + PAGE_SIZE);
+
   return (
     <div className={styles.table}>
       <div className={styles.headRow}>
         <span>{admin.tableUser}</span><span>{admin.tableDept}</span><span>{admin.tableRole}</span><span>{admin.tableStatus}</span><span />
       </div>
-      {users.map((u, i) => (
-        <HoverRow key={u.id} user={u} last={i === users.length - 1} index={i} onChangeRole={onChangeRole} onToggleVerified={onToggleVerified} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />
+      {pageUsers.map((u, i) => (
+        <HoverRow key={u.id} user={u} last={i === pageUsers.length - 1} index={i} onChangeRole={onChangeRole} onToggleVerified={onToggleVerified} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />
       ))}
       {users.length === 0 && <div className={styles.empty}>{admin.noUsersFound(search)}</div>}
+
+      {users.length > PAGE_SIZE && (
+        <nav className={styles.pager} aria-label={admin.pageRange(start + 1, start + pageUsers.length, users.length)}>
+          <span className={styles.pagerInfo}>{admin.pageRange(start + 1, start + pageUsers.length, users.length)}</span>
+          <div className={styles.pagerBtns}>
+            <button type="button" className={styles.pageBtn} onClick={() => setPage(current - 1)} disabled={current === 1} aria-label={admin.pagePrev} data-tip={admin.pagePrev}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            {pageList(current, totalPages).map((p, i) =>
+              p === null ? (
+                <span key={`gap-${i}`} className={styles.pageGap}>…</span>
+              ) : (
+                <button key={p} type="button" className={`${styles.pageBtn} ${p === current ? styles.pageBtnActive : ""}`} onClick={() => setPage(p)} aria-current={p === current ? "page" : undefined}>
+                  {p}
+                </button>
+              )
+            )}
+            <button type="button" className={styles.pageBtn} onClick={() => setPage(current + 1)} disabled={current === totalPages} aria-label={admin.pageNext} data-tip={admin.pageNext}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {editing && (
         <EditUserModal

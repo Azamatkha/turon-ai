@@ -239,6 +239,10 @@ export interface AdminStrings {
   addUser: string;
   more: string;
   noUsersFound: (q: string) => string;
+  // Foydalanuvchilar jadvali sahifalari (10 tadan)
+  pagePrev: string;
+  pageNext: string;
+  pageRange: (from: number, to: number, total: number) => string;
   weeklyMessagesTitle: string;
   weeklyMessagesSub: string;
   /** Haftalik grafikdagi o'rtacha chizig'ining yorlig'i */
@@ -253,8 +257,10 @@ export interface AdminStrings {
   /** Halqa markazidagi yorliq — mamnunlik foizi */
   feedbackSatisfaction: string;
   /** So'nggi faollik tarkibi kartasi */
-  activityMixTitle: string;
-  activityMixSub: string;
+  // "Eng faol xodimlar" diagrammasi (so'nggi 30 kun, top-5)
+  topUsersTitle: string;
+  topUsersSub: string;
+  topUsersCount: (n: number) => string;
   /** Halqada ro'yxatga sig'magan bo'limlar uchun umumiy nom */
   chartOther: string;
   /** Grafik uchun ma'lumot bo'lmaganda */

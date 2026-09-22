@@ -220,7 +220,8 @@
         body:null, headerNote:"Authorization: Bearer <refresh_token>", params:[], st:"200",
         resp:{ access_token:"yangi access...", refresh_token:"yangi refresh..." }, note:"Eski refresh token bekor qilinadi (rotatsiya)." },
       { m:"post", p:"/v1/users/auth/logout", auth:"user", sum:"Logout User — sessiya(lar)dan chiqish.",
-        body:{ terminate_all_sessions:false }, bodyNote:"body ixtiyoriy. true — barcha qurilmalardan chiqaradi.", params:[], st:"200", resp:{ success:true } },
+        body:{ terminate_all_sessions:false }, bodyNote:"body ixtiyoriy. true — barcha qurilmalardan chiqaradi.", params:[], st:"200", resp:{ success:true },
+        note:"Mobil ilova chiqishda ham shu endpointni chaqirishi SHART — aks holda user admin dashboardda yana 5 daqiqa 'onlayn' ko'rinib turadi. Logout userning onlayn belgisini (last_seen_at) darhol tozalaydi." },
       { m:"get", p:"/v1/users/me", auth:"user", sum:"Get User Profile — joriy foydalanuvchi ma'lumotlari.", body:null, params:[], st:"200",
         resp:{ id:"1a2b3c...", first_name:"Ali", last_name:"Valiyev", full_name:"Ali Valiyev", username:"alivaliyev", department:"IT bo'limi", role:"USER", email:"alivaliyev@turonbank.uz", phone_number:"+998991234567", ip_number:"1036", is_verified:true, pnfl:"12345678901234", patronym:"Karimovich", doc_seria:"AA", doc_number:"1234567", birth_date:"1995-04-12", position:"Bosh mutaxassis" },
         note:"phone_number (+998 va 9 raqam, bo'shliqsiz) va ip_number (1-4 xonali) — ixtiyoriy, kiritilmagan bo'lsa null. Tasdiqlanmagan userga ham ochiq — mijoz is_verified shu yerdan biladi. Verifikatsiya maydonlari tasdiqlangunga qadar null." },
@@ -320,12 +321,20 @@
         params:[], st:"200",
         resp:{ rows:[ { k:1, date:"2026-09-14", balance:50000000, principal:1677410.82, interest:916250, total:2593660.82, days:31 } ],
           total_principal:50000000, total_interest:12247859.79, total_paid:62247859.79, insurance:600000, full_cost:62847859.79 },
-        note:"Har qator: to'lovdan OLDINGI qoldiq, asosiy qarz ulushi, foiz ulushi, jami to'lov va oldingi to'lovdan beri o'tgan kunlar. Oxirgi oyda qoldiq to'liq yopiladi. insurance — kredit tanasining 1.2% i. Excel fayl SERVER emas, brauzerda shu qatorlardan yig'iladi." }
+        note:"Har qator: to'lovdan OLDINGI qoldiq, asosiy qarz ulushi, foiz ulushi, jami to'lov va oldingi to'lovdan beri o'tgan kunlar. Oxirgi oyda qoldiq to'liq yopiladi. insurance — kredit tanasining 1.2% i. Vebda Excel fayl brauzerda shu qatorlardan yig'iladi; mobil ilova uchun tayyor fayl — /schedule/xlsx." },
+      { m:"post", p:"/v1/calculator/schedule/xlsx", auth:"user", sum:"Schedule XLSX — to'lov jadvalini tayyor Excel (.xlsx) fayl qilib qaytaradi.",
+        body:{ amount:50000000, rate:21.99, months:24, method:"annuity", start_date:"2026-08-14" },
+        bodyNote:"Body /schedule bilan AYNAN bir xil (amount yoki price + down_payment, rate, months, method, ixtiyoriy start_date).",
+        params:[ {n:"lang",in:"query",t:"string",req:false,d:"fayldagi yorliqlar tili: uz (standart), uz_cyrl, ru"} ], st:"200",
+        respRaw:"Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\nContent-Disposition: attachment; filename=\"tolov_jadvali_09_34_14_08_2026.xlsx\"\n\n<.xlsx fayl baytlari>",
+        note:"JSON emas — FAYL qaytadi: mobil ilova javobni baytlar sifatida o'qib, Content-Disposition dagi nom bilan saqlaydi/ulashadi. Fayl vebdagi bilan bir xil: sarlavha, 7 ustun (№, sana, qoldiq, asosiy qarz, foiz, jami, kunlar), 'Jami' qatori, sug'urta va to'liq qiymat. 422 — body noto'g'ri yoki lang uz/uz_cyrl/ru dan boshqa." }
     ]},
     { tag: "Admin", eps: [
       { m:"get", p:"/v1/admin/stats", auth:"admin", sum:"Dashboard Stats — userlar, suhbatlar, xabarlar, bo'limlar.", body:null, params:[], st:"200",
         resp:{ total_users:42, total_sessions:310, total_messages:1580, total_departments:6, online:3, total_likes:120, total_dislikes:8,
-          departments:[{name:"IT bo'limi",count:12,pct:29}], weekly:[{label:"Du",count:40}], recent_activity:[{name:"Ali Valiyev",action:"login",when:"2026-07-22T09:30:00"}] } }
+          departments:[{name:"IT bo'limi",count:12,pct:29}], weekly:[{label:"Du",count:40}], recent_activity:[{name:"Ali Valiyev",action:"login",when:"2026-07-22T09:30:00"}],
+          top_users:[{name:"Ali Valiyev",username:"alivaliyev",department:"IT bo'limi",count:87}] },
+        note:"online — oxirgi 5 daqiqada so'rov yuborgan userlar; logout qilgan user darhol offline bo'ladi. top_users — so'nggi 30 kunda eng ko'p savol bergan 5 xodim (ko'pidan kamiga)." }
     ]},
     { tag: "Knowledge", eps: [
       { m:"get", p:"/v1/admin/knowledge", auth:"admin", stage2:true, sum:"List Knowledge — yuklangan ma'lumotlar ro'yxati.", body:null, params:[], st:"200",

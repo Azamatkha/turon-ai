@@ -14,6 +14,13 @@ class WeeklyPoint(Base):
     count: int
 
 
+class TopUserStat(Base):
+    name: str
+    username: str
+    department: str | None
+    count: int
+
+
 class RecentActivityItem(Base):
     name: str
     action: str
@@ -35,3 +42,5 @@ class DashboardStatsView(Base):
     all_departments: list[str] = []
     weekly: list[WeeklyPoint]
     recent_activity: list[RecentActivityItem]
+    # So'nggi 30 kunda eng ko'p savol bergan 5 xodim (dashboard diagrammasi)
+    top_users: list[TopUserStat] = []

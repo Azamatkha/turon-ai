@@ -3,7 +3,7 @@ import StatCard, { StatDef } from "./StatCard";
 import WeeklyChart from "./WeeklyChart";
 import DepartmentBreakdown from "./DepartmentBreakdown";
 import FeedbackDonut from "./FeedbackDonut";
-import ActivityMix, { type MixSegment } from "./ActivityMix";
+import TopUsersChart from "./TopUsersChart";
 import RecentActivity from "./RecentActivity";
 import { getStats, type DashboardStats } from "../../services/adminService";
 import type { AdminStrings } from "../../types/i18n";
@@ -78,23 +78,6 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
   const barData = (stats?.weekly ?? []).map((w) => ({ day: w.label, value: w.count }));
   const barMax = Math.max(1, ...barData.map((b) => b.value));
 
-  // So'nggi faollik ro'yxatini amal turlari bo'yicha sanaymiz — to'plangan
-  // ustun uchun. Ro'yxat backenddan qancha kelsa, tarkib ham shuncha
-  // hodisani yoritadi (butun tarixni emas).
-  const mixCounts = (stats?.recent_activity ?? []).reduce<Record<string, number>>((acc, a) => {
-    acc[a.action] = (acc[a.action] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  // Tartib QAT'IY: amal turlari doim shu ketma-ketlikda chiziladi, shunda
-  // ma'lumot yangilanganda segmentlar joyini almashtirib "sakramaydi".
-  const MIX_ORDER = ["login", "message", "session", "logout"] as const;
-  const mixSegments: MixSegment[] = MIX_ORDER.map((key) => ({
-    label: ACTIVITY[key]?.text ?? key,
-    value: mixCounts[key] ?? 0,
-    color: ACTIVITY[key]?.c ?? "var(--chart-rest)",
-  }));
-
   const activity = (stats?.recent_activity ?? []).map((a) => {
     const info = ACTIVITY[a.action] ?? {
       text: a.action,
@@ -117,7 +100,7 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
 
       {/* Ikkinchi qator — teng ikki ustun. Yuqoridagi qator "1.65fr 1fr"
           bo'lgani uchun bu yerda ham shunday qilish mumkin edi, lekin ikkala
-          karta ham ixcham: mamnunlik halqasi va bitta gorizontal ustun. */}
+          karta ham ixcham: mamnunlik halqasi va top-5 xodim ro'yxati. */}
       <div className={styles.chartRow2}>
         <FeedbackDonut
           likes={stats?.total_likes ?? 0}
@@ -125,7 +108,7 @@ export default function DashboardView({ mounted, t: admin }: { mounted: boolean;
           mounted={mounted}
           t={admin}
         />
-        <ActivityMix segments={mixSegments} mounted={mounted} t={admin} />
+        <TopUsersChart users={stats?.top_users ?? []} mounted={mounted} t={admin} />
       </div>
 
       {activity.length > 0 && <RecentActivity items={activity} t={admin} />}

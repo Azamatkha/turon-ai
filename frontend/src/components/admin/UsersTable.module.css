@@ -151,6 +151,72 @@
 .rowIdle {
   background: transparent;
 }
+
+/* =====================
+   Sahifalash (10 tadan)
+   ===================== */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 22px;
+  border-top: 1px solid var(--adm-border-3);
+  border-radius: 0 0 14px 14px;
+  background: var(--adm-card-alt);
+}
+
+.pagerInfo {
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.pagerBtns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 8px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageBtnActive,
+.pageBtnActive:hover:not(:disabled) {
+  background: var(--adm-accent);
+  border-color: var(--adm-accent);
+  color: #fff;
+}
+
+.pageGap {
+  min-width: 20px;
+  text-align: center;
+  color: var(--adm-text-muted-2);
+}
 /* ============================================================================
    RESPONSIVE
    ----------------------------------------------------------------------------
@@ -167,6 +233,11 @@
     /* overflow-x: auto qo'yilgach, "..." dropdown menyusi kesiladi.
        Shuning uchun pastda menyu uchun joy qoldiramiz. */
     padding-bottom: 2px;
+  }
+
+  .pager {
+    padding-left: var(--tu-space-4);
+    padding-right: var(--tu-space-4);
   }
 
   .headRow,

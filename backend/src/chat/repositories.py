@@ -71,3 +71,28 @@ class ChatMessageRepository(BaseRepository[ChatMessage]):
         )
         result = await session.execute(query)
         return [(row[0], int(row[1])) for row in result.all()]
+
+    async def top_users_by_requests(
+        self, session: AsyncSession, days: int = 30, limit: int = 5
+    ) -> list[tuple[str, str, str | None, int]]:
+        """So'nggi `days` kunda eng ko'p savol bergan (user xabarlari) xodimlar:
+        (ism, login, bo'lim, so'rovlar soni) — ko'pidan kamiga."""
+        since = get_utc_now() - timedelta(days=days)
+        cnt = func.count(ChatMessage.id)
+        query = (
+            select(User.first_name, User.last_name, User.username, User.department, cnt)
+            .select_from(ChatMessage)
+            .join(ChatSession, ChatMessage.session_id == ChatSession.id)
+            .join(User, ChatSession.user_id == User.id)
+            .where(ChatMessage.role == "user")
+            .where(ChatMessage.created_at >= since)
+            .where(User.is_deleted.is_(False))
+            .group_by(User.id, User.first_name, User.last_name, User.username, User.department)
+            .order_by(cnt.desc())
+            .limit(limit)
+        )
+        result = await session.execute(query)
+        return [
+            (f"{r[0] or ''} {r[1] or ''}".strip(), r[2], r[3], int(r[4]))
+            for r in result.all()
+        ]

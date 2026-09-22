@@ -18,14 +18,16 @@ himoya darajasida turadi.
 3) POST /v1/calculator/deposit  {"amount": 10000000, "rate": 18, "months": 12}
    -> {"total": 11800000, "profit": 1800000}
 4) POST /v1/calculator/schedule  (loan bilan bir xil body) -> 24 qator jadval
+5) POST /v1/calculator/schedule/xlsx?lang=uz  (xuddi shu body) -> .xlsx fayl
 ─────────────────────────────────────────────────────────────────────────────
 """
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, Response
 
 from src.calculator import services
+from src.calculator.excel import XLSX_MEDIA_TYPE, ExcelLang, build_schedule_xlsx
 from src.calculator.schemas import (
     DepositRequest,
     DepositResult,
@@ -83,4 +85,33 @@ async def payment_schedule(
     start = data.start_date or get_utc_now().date()
     return services.build_schedule(
         principal, data.rate, data.months, data.method, start
+    )
+
+
+@router.post(
+    "/schedule/xlsx",
+    response_class=Response,
+    responses={200: {"content": {XLSX_MEDIA_TYPE: {}}}},
+)
+async def payment_schedule_xlsx(
+    data: ScheduleRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    lang: Annotated[ExcelLang, Query(description="Fayldagi yorliqlar tili")] = "uz",
+) -> Response:
+    """
+    `/schedule` bilan bir xil jadval, lekin tayyor .xlsx FAYL ko'rinishida —
+    mobil ilova faylni o'zi yig'masdan shu yerdan oladi. Body `/schedule`
+    bilan bir xil.
+    """
+    principal = services.resolve_principal(data.amount, data.price, data.down_payment)
+    now = get_utc_now()
+    result = services.build_schedule(
+        principal, data.rate, data.months, data.method, data.start_date or now.date()
+    )
+    # Fayl nomi vebdagi bilan bir xil qolipda: soat_daqiqa_kun_oy_yil
+    filename = f"tolov_jadvali_{now:%H_%M_%d_%m_%Y}.xlsx"
+    return Response(
+        content=build_schedule_xlsx(result, lang),
+        media_type=XLSX_MEDIA_TYPE,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

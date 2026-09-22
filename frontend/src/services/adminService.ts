@@ -129,6 +129,13 @@ export interface RecentActivityItem {
   when: string;
 }
 
+export interface TopUserStat {
+  name: string;
+  username: string;
+  department: string | null;
+  count: number;
+}
+
 export interface DashboardStats {
   total_users: number;
   total_sessions: number;
@@ -142,6 +149,8 @@ export interface DashboardStats {
   all_departments: string[];
   weekly: WeeklyPoint[];
   recent_activity: RecentActivityItem[];
+  // So'nggi 30 kunda eng ko'p savol bergan 5 xodim
+  top_users?: TopUserStat[];
 }
 
 export async function getStats(): Promise<DashboardStats> {

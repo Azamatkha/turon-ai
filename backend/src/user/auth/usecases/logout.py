@@ -65,6 +65,13 @@ class LogoutUseCase:
                     uow.session,
                     {"user_id": UUID(user_id), "action": "logout"},
                 )
+                # Onlayn holat last_seen_at'ga tayanadi (oxirgi 5 daqiqa). Uni
+                # tozalamasak, chiqib ketgan user yana 5 daqiqa "onlayn" ko'rinardi.
+                # Boshqa qurilmada sessiya ochiq bo'lsa — o'sha qurilmaning keyingi
+                # so'rovi (_touch_last_seen) uni darhol qayta onlayn qiladi.
+                await uow.users.update(
+                    uow.session, {"last_seen_at": None}, id=UUID(user_id)
+                )
                 await uow.commit()
         except Exception:
             logger.exception("[LogoutUser] Failed to record logout event.")

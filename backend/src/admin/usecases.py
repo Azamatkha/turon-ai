@@ -9,6 +9,7 @@ from src.admin.schemas import (
     DashboardStatsView,
     DeptStat,
     RecentActivityItem,
+    TopUserStat,
     WeeklyPoint,
 )
 
@@ -71,6 +72,15 @@ class DashboardStatsUseCase:
                 for name, action, when in events
             ]
 
+            # Eng faol xodimlar — so'nggi 30 kun, top-5
+            top_rows = await uow.chat_messages.top_users_by_requests(
+                uow.session, days=30, limit=5
+            )
+            top_users = [
+                TopUserStat(name=name or username, username=username, department=dept, count=count)
+                for name, username, dept, count in top_rows
+            ]
+
             return DashboardStatsView(
                 total_users=total_users,
                 total_sessions=total_sessions,
@@ -83,6 +93,7 @@ class DashboardStatsUseCase:
                 all_departments=all_departments,
                 weekly=weekly,
                 recent_activity=recent_activity,
+                top_users=top_users,
             )
 
 

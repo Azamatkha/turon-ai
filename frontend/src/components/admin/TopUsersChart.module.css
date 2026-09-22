@@ -1,0 +1,116 @@
+/* Eng faol xodimlar — gorizontal ustunli top-5 ro'yxat. */
+
+.card {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  min-width: 0;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+  margin-bottom: 3px;
+}
+
+.sub {
+  font-size: 13.5px;
+  color: var(--adm-text-muted);
+  margin-bottom: 16px;
+}
+
+.empty {
+  padding: 26px 0;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rank {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--adm-accent-bg);
+  color: var(--adm-accent);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-text-body);
+}
+
+.dept {
+  font-weight: 500;
+  color: var(--adm-text-muted);
+}
+
+.count {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--adm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--chart-grid);
+}
+
+.bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--adm-accent);
+  transition: width 0.85s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}

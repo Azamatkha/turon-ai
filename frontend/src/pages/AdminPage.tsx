@@ -392,7 +392,8 @@ export default function AdminPage() {
                   ]}
                 />
               </div>
-              <UsersTable users={users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
+              {/* key: qidiruv yoki bo'lim o'zgarsa jadval 1-sahifadan boshlanadi */}
+              <UsersTable key={`${search}|${dept}`} users={users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
             </>
           )}
         </div>
