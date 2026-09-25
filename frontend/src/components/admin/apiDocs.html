@@ -388,7 +388,7 @@
         params:[ {n:"limit",in:"query",t:"int 1..100",req:false,d:"nechta qaytarilsin (standart 30)"}, {n:"offset",in:"query",t:"int >= 0",req:false,d:"nechtasini o'tkazib yuborish (standart 0)"}, {n:"only_unread",in:"query",t:"bool",req:false,d:"true — faqat o'qilmaganlari"} ],
         body:null, st:"200",
         resp:{ items:[ { id:"n1...", type:"knowledge_updated", params:{ title:"Kredit qoidalari" }, is_read:false, created_at:"2026-08-14T09:30:00", entity_id:null } ], unread_count:1, total:12 },
-        note:"type — bildirishnoma turi, params — shu turga mos o'zgaruvchilar. Matn TAYYOR holda kelmaydi: mijoz type+params dan foydalanuvchi tilida jumla yig'adi." },
+        note:"type — bildirishnoma turi, params — shu turga mos o'zgaruvchilar. Matn TAYYOR holda kelmaydi: mijoz type+params dan foydalanuvchi tilida jumla yig'adi. Turlar va kimga boradi: rates_updated — HAMMAGA, kuniga ko'pi bilan 1 marta va faqat kurs haqiqatan o'zgarganda; knowledge_updated — FAQAT ADMINLARGA (bilim bazasiga ma'lumot qo'shildi/tahrirlandi); report_new — FAQAT ADMINLARGA, entity_id = murojaat id. knowledge_updated birlashtiriladi: 10 daqiqa ichida ketma-ket qo'shilgan ma'lumotlar YANGI qator emas, o'sha o'qilmagan qatorga qo'shiladi — params.title oxirgi sarlavha, params.count jami soni (matn ko'rinishida, masalan \"120\"; bo'lmasa 1 deb hisoblang) — mijoz \"<title> va yana <count-1> ta\" deb ko'rsatadi." },
       { m:"get", p:"/v1/notifications/unread-count", auth:"user", sum:"Unread Count — o'qilmaganlar soni (qo'ng'iroqdagi qizil belgi).", body:null, params:[], st:"200",
         resp:{ count:3 } },
       { m:"get", p:"/v1/notifications/stream", auth:"user", sum:"Stream — real vaqtdagi signal (SSE oqim).", body:null, params:[], st:"200",

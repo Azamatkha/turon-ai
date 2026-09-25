@@ -51,20 +51,21 @@ async def _scrape_exchange_rates() -> str:
     async with httpx.AsyncClient() as http:
         embedder = OllamaEmbedder(http=http)
 
-        # Eski kurs yozuvlarini id bo'yicha o'chiramiz (payload-filtr indeksiga
-        # bog'liq emas) — kurslar har kuni o'zgaradi, eskisi qolib ketmasin.
         existing = await store.scroll_all_records(limit=10000)
         stale = [(pid, p) for pid, p in existing if p.get("title") == RATES_TITLE]
         old_text = _join_chunks([p for _, p in stale])
-        # O'chirishdan OLDIN oldingi strukturali kurslarni olib qolamiz —
-        # bugungi kurs kechagisiga nisbatan qancha o'zgarganini shu asosda
-        # hisoblaymiz.
+        # Oldingi strukturali kurslar — bugungi kurs kechagisiga nisbatan
+        # qancha o'zgarganini shu asosda hisoblaymiz.
         previous = _stored_rates([p for _, p in stale])
-        await store.delete_ids([pid for pid, _ in stale])
 
         current = apply_deltas(current, previous)
         text = render_rates(current)
 
+        # TARTIB MUHIM: avval YOZAMIZ, keyin ortiqchasini o'chiramiz.
+        # Ilgari eski kurs OLDIN o'chirilardi — embedding (Ollama) yoki Qdrant
+        # o'sha paytda javob bermasa, eski kurs yo'qolib, yangisi yozilmay
+        # qolardi va /v1/chat/rates bo'sh qaytarardi. Endi yozish yiqilsa,
+        # kechagi kurs joyida qoladi.
         result = await UploadKnowledgeUseCase(embedder=embedder, store=store).execute(
             title=RATES_TITLE,
             text=text,
@@ -73,6 +74,15 @@ async def _scrape_exchange_rates() -> str:
             # kurs oynasi (modal) shu JSON'ni o'qiydi, alohida jadval kerak emas.
             extra_payload={"rates_json": json.dumps(current, ensure_ascii=False)},
         )
+
+        # Point ID = title + chunk_index (QdrantStore._stable_id), ya'ni yangi
+        # bo'laklar eskilarining USTIGA yozildi. Faqat yangisida yo'q bo'lgan
+        # (kechagi matn uzunroq bo'lgan) bo'laklar qoladi — shularni o'chiramiz.
+        leftover = [
+            pid for pid, p in stale
+            if int(p.get("chunk_index", 0) or 0) >= result.chunks
+        ]
+        await store.delete_ids(leftover)
 
     logger.info("Valyuta kurslari yangilandi: %s bo'lak", result.chunks)
 

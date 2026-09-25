@@ -46,10 +46,14 @@ function bodyFor(n: ApiNotification, s: ChatStaticStrings): string {
 }
 
 /** Bildirishnoma bosilganda ochiladigan sahifa (bo'lmasa — null).
- *  Hozircha faqat murojaatlar: admin panelning o'sha murojaati ochiladi. */
+ *  Ikkalasi ham faqat adminga keladi: murojaat — o'sha murojaat ochiladi,
+ *  "ma'lumotlar yangilandi" — bilim bazasi ro'yxati. */
 function linkFor(n: ApiNotification): string | null {
   if (n.type === "report_new" && n.entity_id) {
     return `/admin/reports?report=${n.entity_id}`;
+  }
+  if (n.type === "knowledge_updated") {
+    return "/admin/knowledge";
   }
   return null;
 }

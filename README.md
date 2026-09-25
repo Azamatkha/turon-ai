@@ -2,12 +2,21 @@
 
 **Turonbank xodimlari uchun ichki AI yordamchi (chatbot).**
 
-Xodim ro'yxatdan o'tadi, tizimga kiradi va bank mahsulotlari, ichki hujjatlar,
-filiallar hamda xodimlar ma'lumotnomasi bo'yicha savol beradi. Javob bank o'zining
-ma'lumotlaridan olinadi — bot hech narsani "o'ylab topmaydi".
+Xodim tizimga kiradi va bank mahsulotlari, ichki hujjatlar, filiallar hamda xodimlar
+ma'lumotnomasi bo'yicha savol beradi. Javob bank o'zining ma'lumotlaridan olinadi —
+bot hech narsani "o'ylab topmaydi".
 
 Maqsad: xodim kerakli ma'lumotni qidirib o'tirmasin. Ilgari ~2000 ta ichki hujjat va
 sayt sahifalari bo'ylab qo'lda qidirishga ketadigan vaqt savol-javobga aylanadi.
+
+Chatdan tashqari **"Yordamchi dasturlar"** (mini-ilovalar) bor: valyuta kurslari,
+kredit/ipoteka/omonat kalkulyatori, ichki raqamlar ma'lumotnomasi, hujjatlarni PDF'ga
+aylantirish va muammo/taklif yuborish.
+
+Ikki mijoz **bitta backend**dan foydalanadi: veb (React) va mobil ilova (Flutter).
+Mobil ilova ro'yxatdan o'tish va Face-ID verifikatsiyasini ham bajaradi — vebda
+`/register` yopilgan (login'ga yo'naltiriladi). Shu sabab har bir yangi funksiya
+**API orqali** qilinadi va API hujjati (admin panel → API Docs) yangilab boriladi.
 
 Interfeys uch tilda: **o'zbekcha (lotin)**, **o'zbekcha (kirill)**, **ruscha**.
 
@@ -16,6 +25,8 @@ Interfeys uch tilda: **o'zbekcha (lotin)**, **o'zbekcha (kirill)**, **ruscha**.
 ## Mundarija
 
 - [Qanday ishlaydi](#qanday-ishlaydi)
+- [Yordamchi dasturlar (mini-ilovalar)](#yordamchi-dasturlar-mini-ilovalar)
+- [Fon vazifalari va bildirishnomalar](#fon-vazifalari-va-bildirishnomalar)
 - [Texnologiyalar](#texnologiyalar)
 - [Arxitektura](#arxitektura)
 - [Tez boshlash](#tez-boshlash)
@@ -67,6 +78,77 @@ mahsulot ro'yxati hech qachon to'liqsiz yoki uydirma bo'lmaydi.
 
 ---
 
+## Yordamchi dasturlar (mini-ilovalar)
+
+Chat sahifasining yuqori panelidagi **"Yordamchi dasturlar"** tugmasi (katakchali
+ikonka) quti ochadi, ilovalar shu qutida turadi. Har biri — oddiy API, mobil ilova
+ham aynan shu endpointlardan foydalanadi.
+
+| Ilova | Endpoint | Izoh |
+|---|---|---|
+| Valyuta kurslari | `GET /v1/chat/rates` | Qdrant'dan o'qiladi, saytga bormaydi (pastda — [fon vazifalari](#fon-vazifalari-va-bildirishnomalar)) |
+| Kalkulyator | `POST /v1/calculator/loan`, `/deposit` | kredit/ipoteka/omonat — sof formulalar, bazaga tegmaydi |
+| To'lov jadvali | `POST /v1/calculator/schedule` (JSON), `/schedule/xlsx?lang=uz` (Excel fayl) | vebda Excel brauzerda yig'iladi, mobil tayyor faylni oladi |
+| Ichki raqamlar | `GET /v1/users/directory/departments`, `GET /v1/users/directory?department=&q=` | bo'lim → xodim → **IP (ichki) raqam**. Faqat ism, lavozim, bo'lim, IP qaytadi — telefon/PNFL/pasport **qaytarilmaydi** |
+| PDF'ga aylantirish | `POST /v1/tools/convert/to-pdf` (multipart, `files`) | bitta Word/Excel/PowerPoint yoki 1–20 ta rasm → bitta PDF. Jami 9 MB. Fayllar serverda saqlanmaydi |
+| Muammo yoki taklif | `POST /v1/reports` | skrinshot bilan, adminga bildirishnoma boradi |
+
+**Kalkulyatordagi `method`** kredit turiga bog'lanmagan — foydalanuvchi tanlaydi:
+`flat` (ustama, har oy bir xil), `annuity` (teng to'lov), `diff` (differensial,
+to'lov kamayib boradi). Yuborilmasa — `flat`.
+
+**PDF konvertor** (`backend/src/tools/`): rasmlar `pymupdf` bilan (telefon rasmining
+EXIF burilishi to'g'rilanadi, keng rasm — albom sahifa), hujjatlar backend image'iga
+o'rnatilgan **LibreOffice** (`soffice --headless`) bilan o'giriladi. Bir vaqtda ko'pi
+bilan 2 ta LibreOffice jarayoni, bitta hujjatga 120 soniya (`CONVERT_TIMEOUT_SECONDS`).
+Skanerlangan PDF yoki parolli hujjat o'girilmaydi (400).
+
+**Yangi mini-ilova qo'shish:** backend'da endpoint (`routers.py` → `usecases.py`,
+`presentation.py` ga ro'yxatdan o'tkazish) → apiDocs'ni yangilash → frontend'da
+`src/services/` ga servis, modal komponent va `ChatHeader.tsx` dagi `miniApps`
+ro'yxatiga bitta yozuv. Matnlar uchala tilga (`src/locales/*/chat.ts`).
+
+Mobil dasturchi uchun qo'llanmalar: [`docs/mobile/`](docs/mobile/) (masalan
+[ichki raqamlar](docs/mobile/ichki-raqamlar.md) — API, ekran oqimi, Flutter kodi).
+
+---
+
+## Fon vazifalari va bildirishnomalar
+
+Celery beat jadvali (`backend/celery_tasks/main.py`, vaqtlar UTC):
+
+| Vazifa | Qachon | Nima qiladi |
+|---|---|---|
+| `scrape_exchange_rates` | har kuni 06:00 UTC (**11:00 Toshkent**) | turonbank.uz kurslar sahifasini o'qib, Qdrant'ga `title="Valyuta kurslari"` + strukturali `rates_json` bilan yozadi |
+| `cleanup_unverified_users` | har daqiqa | ro'yxatdan o'tganiga 24 soat bo'lgan tasdiqlanmagan akkauntlarni o'chiradi |
+| `cleanup_old_notifications` | har kuni 03:30 UTC | eskirgan bildirishnomalarni tozalaydi |
+
+**Valyuta kurslari** faqat shu vazifa orqali yangilanadi. Admin paneldan kurslar
+sahifasini havola sifatida qo'shish **kurs oynasini to'ldirmaydi** (u oddiy matn
+bo'lib yoziladi, `rates_json` bo'lmaydi) va keyinchalik botga eski kursni aytdiradi —
+bunday qilmang. Yangi kurs **avval yoziladi, keyin** eskisining ortiqcha bo'laklari
+o'chiriladi: embedding/Qdrant yiqilsa ham kechagi kurs joyida qoladi.
+
+Kursni qo'lda (11:00 ni kutmasdan) yangilash — `backend/` dan:
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml exec celery_worker python -m celery -A celery_tasks.main call scrape_exchange_rates
+```
+
+**Bildirishnomalar** — kimga boradi:
+
+| Tur | Kimga | Qachon |
+|---|---|---|
+| `rates_updated` | hammaga | kuniga ko'pi bilan 1 marta, faqat kurs haqiqatan o'zgarganda |
+| `knowledge_updated` | **faqat adminlarga** | bilim bazasiga ma'lumot qo'shilganda/tahrirlanganda |
+| `report_new` | faqat adminlarga | har yangi murojaat |
+
+`knowledge_updated` **birlashtiriladi**: 10 daqiqa ichida ketma-ket qo'shilgan
+ma'lumotlar yangi qator emas, o'sha o'qilmagan qatorga qo'shiladi (`params.count`).
+120 ta ma'lumot birdan qo'shilsa ham adminga bitta "…va yana 119 ta" keladi.
+
+---
+
 ## Texnologiyalar
 
 **Backend**
@@ -75,7 +157,9 @@ mahsulot ro'yxati hech qachon to'liqsiz yoki uydirma bo'lmaydi.
 - Redis 7 (kesh, rate limiter, refresh-token rotatsiyasi)
 - RabbitMQ + Celery (fon vazifalari: valyuta kurslarini yangilash, email, bildirishnomalar)
 - Qdrant (vektor baza, RAG uchun)
-- Ollama (LLM — `qwen3.5`; embedding — `mxbai-embed-large`)
+- Ollama (LLM — `qwen3.5`; embedding — `bge-m3:567m`, 1024 o'lcham) — alohida
+  serverda, backend unga `OLLAMA_BASE_URL` orqali boradi
+- LibreOffice (headless) + `pymupdf` / Pillow — PDF konvertor; Tesseract — PDF OCR
 - nginx (reverse proxy)
 - JWT (access + refresh, rotatsiya va qayta ishlatishni aniqlash), Argon2
 - Docker / Docker Compose
@@ -124,16 +208,21 @@ turon-ai/
 │   │   │   ├── pdf_extractor.py    # PDF matn qatlami + OCR
 │   │   │   ├── employee_parser.py  # Excel xodimlar ma'lumotnomasi
 │   │   │   └── rates_scraper.py    # valyuta kurslari
-│   │   ├── admin/                  # admin panel usecase'lari
+│   │   ├── admin/                  # admin panel usecase'lari (dashboard statistikasi)
+│   │   ├── calculator/             # kredit/omonat formulalari + to'lov jadvali (.xlsx)
+│   │   ├── tools/                  # mini-ilovalar: PDF konvertor (LibreOffice)
 │   │   ├── notifications/  reports/
 │   │   ├── system/                 # health, time, AI diagnostika
 │   │   └── main/                   # config.py, lifespan.py, presentation.py
 │   └── tests/                      # pytest (unit/, factories/, fakes/)
+├── docs/
+│   └── mobile/                     # mobil (Flutter) dasturchi uchun qo'llanmalar
 └── frontend/
     ├── Dockerfile                  # build -> serve (3001-port)
     ├── docker-compose.yml
     └── src/
-        ├── pages/                  # Login, Register, Chat, Admin, NotFound
+        ├── pages/                  # Login, Chat, Admin, Unverified, NotFound
+        │                           # (/register yopilgan — ro'yxatdan o'tish mobilda)
         ├── components/             # admin/, chat/, common/, login/ + effektlar
         ├── services/               # API qatlami (authService, chatBot, admin...)
         ├── contexts/  hooks/  locales/  types/  utils/  constants/
@@ -178,7 +267,7 @@ cp .env.example .env
 | `SUPER_ADMIN_USERNAME` / `_PASSWORD` / `_EMAIL` / `_PHONE` | birinchi admin |
 | `OLLAMA_BASE_URL` | Ollama serverining manzili (masalan `http://10.0.0.5:11434`) |
 | `OLLAMA_MODEL` | `qwen3.5:latest` |
-| `EMBEDDING_MODEL` | `mxbai-embed-large:latest` |
+| `EMBEDDING_MODEL` | `bge-m3:567m` — **Qdrant'dagi vektorlar shu model bilan yozilgan**, boshqasiga almashtirilsa bazani qayta yuklash kerak |
 | `QDRANT_HOST` / `QDRANT_PORT` | `qdrant` / `6333` |
 
 `.env` to'liqligini tekshirish:
@@ -265,12 +354,19 @@ API prefikslari:
 
 | Prefiks | Nima |
 |---|---|
-| `/v1/users/...` | ro'yxatdan o'tish, kirish, token yangilash |
-| `/v1/chat/...` | chat sessiyalari, xabarlar, `POST /v1/chat/ask` |
-| `/v1/admin/...` | foydalanuvchilar CRUD, dashboard |
+| `/v1/users/...` | kirish, token yangilash, profil, foydalanuvchilar CRUD, `directory` (ichki raqamlar) |
+| `/v1/users/auth/...` | login/logout/refresh; mobil: register + Face-ID `save` |
+| `/v1/chat/...` | chat sessiyalari, xabarlar, `POST /v1/chat/ask`, `GET /v1/chat/rates` |
+| `/v1/calculator/...` | kredit/omonat hisobi, to'lov jadvali (JSON va `.xlsx`) |
+| `/v1/tools/...` | mini-ilovalar: `convert/to-pdf` |
+| `/v1/admin/...` | dashboard statistikasi |
 | `/v1/admin/knowledge/...` | bilim bazasi (yuklash, ro'yxat, o'chirish) |
 | `/v1/notifications/...`, `/v1/reports/...` | bildirishnomalar, murojaatlar |
 | `/health/`, `/time/`, `/diagnostic` | tizim (prefikssiz) |
+
+To'liq, namunali API hujjati — **admin panel → API Docs** (mobil dasturchi shundan
+foydalanadi). Yangi endpoint qo'shilsa yoki o'zgarsa, `frontend/src/components/admin/apiDocs.html`
+ham yangilanadi.
 
 ---
 
@@ -294,6 +390,7 @@ Hammasi `backend/` papkasidan bajariladi.
 |---|---|
 | `make logs-app` | backend loglari |
 | `make logs-celery` | Celery worker |
+| `make logs-celery-beat` | Celery beat (jadval) |
 | `make logs-postgres` | baza |
 | `make logs` | hammasi |
 
@@ -345,8 +442,9 @@ python -m scripts.reset_admin_password
 python -m scripts.reset_admin_password "YangiParol123!"
 ```
 
-**Foydalanuvchini o'chirish / rolini o'zgartirish** — admin panelidan
-(`/v1/admin/users/...` yoki frontend Admin sahifasi) bajariladi.
+**Foydalanuvchini o'chirish / rolini o'zgartirish / qo'lda tasdiqlash** — admin
+panelidagi "Foydalanuvchilar" sahifasidan (ro'yxat 10 tadan sahifalangan) yoki API
+orqali: `GET/POST /v1/users`, `PATCH/DELETE /v1/users/{user_id}`.
 
 ---
 
@@ -483,8 +581,9 @@ make lint
   skriptlar bundan mustasno)
 - CI'da qo'shimcha: `gitleaks`, `bandit`, `pip-audit`
 
-Yangi kod atrofdagi kod uslubiga mos bo'lsin: backend izohlari **inglizcha**,
-frontend izohlari **o'zbekcha**.
+Yangi kod atrofdagi kod uslubiga mos bo'lsin: kod izohlari **o'zbekcha**.
+Foydalanuvchiga ko'rinadigan har bir matn frontend'da uchala tilga
+(`src/locales/{uz,uz_cyrl,ru}/`) qo'shiladi.
 
 ---
 
@@ -507,7 +606,47 @@ build vaqtida yoziladi — o'zgartirsangiz qayta build qiling.
 
 **Fayl yuklanmayapti (413)**
 nginx `client_max_body_size` hozir **10 MB** (`infra/nginx/app.conf`). Kattaroq PDF
-uchun uni oshirib, nginx'ni qayta ishga tushiring.
+uchun uni oshirib, nginx'ni qayta ishga tushiring. PDF konvertorning o'z chegarasi —
+jami **9 MB** (`CONVERT_MAX_BYTES`), multipart ustamasi 10 MB ga sig'ishi uchun.
+
+**Valyuta kurslari oynasi bo'sh ("Hozircha kurs ma'lumoti yo'q")**
+`GET /v1/chat/rates` xatosiz, lekin bo'sh qaytsa — Qdrant'da kurs yozuvi yo'q.
+1. Worker logidan sababini toping:
+   ```bash
+   docker compose --env-file .env -f infra/docker-compose.yml logs --since 72h celery_worker | grep -iE "exchange_rates|kurs|Embedding|Qdrant"
+   ```
+   - `Embedding xizmati bilan bog'lanib bo'lmadi` — Ollama (embedding) ishlamayapti;
+   - `sahifa tuzilishi o'zgargan` — turonbank.uz sahifasi o'zgargan, `rates_scraper.py` ni moslash kerak.
+2. Sababni tuzatib, kursni [qo'lda yangilang](#fon-vazifalari-va-bildirishnomalar).
+3. Qdrant'da kurs bormi:
+   ```bash
+   curl -s -X POST http://127.0.0.1:6333/collections/knowledge/points/count -H 'Content-Type: application/json' -d '{"filter":{"must":[{"key":"title","match":{"value":"Valyuta kurslari"}}]},"exact":true}'
+   ```
+
+**`.env` o'zgartirildi, lekin Celery eski qiymat bilan ishlayapti**
+Konteyner `.env` ni faqat **yaratilganda** o'qiydi. App qayta ishga tushsa ham
+`celery_worker`/`celery_beat` eski qiymatda qoladi (masalan `OLLAMA_BASE_URL`
+almashtirilganda fon vazifalari eski serverga urilaveradi). Qayta yarating:
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml up -d --force-recreate celery_worker celery_beat
+```
+
+Tekshirish:
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml exec celery_worker printenv OLLAMA_BASE_URL
+```
+
+**Ollama (embedding) serveri almashtirildi**
+Yangi serverda ham aynan `bge-m3:567m` bo'lishi shart (`ollama list`). Boshqa model
+bo'lsa: o'lcham farq qilsa Qdrant yozishni rad etadi, o'lcham bir xil bo'lsa ham
+qidiruv noto'g'ri bo'laklarni topa boshlaydi — butun bilim bazasini qayta yuklash
+kerak bo'ladi.
+
+**PDF konvertor: "Konvertor (LibreOffice) serverda o'rnatilmagan" (500)**
+Image eski — LibreOffice `infra/docker/Dockerfile` ga keyinroq qo'shilgan. Backend
+image'ini qayta build qiling. Lokal (Docker'siz) muhitda faqat rasm → PDF ishlaydi.
 
 **Javob juda sekin (bir necha daqiqa)**
 Ollama serverida modelning GPU'da ishlayotganini tekshiring:
@@ -520,7 +659,7 @@ ollama ps
 yoki `OLLAMA_MODEL` ni kichikroq modelga almashtirish.
 
 **Javob o'rtasidan uzilib qolyapti**
-Prompt `OLLAMA_NUM_CTX` (odatda 8192 token) dan oshib ketgan bo'lishi mumkin. Har
+Prompt `OLLAMA_NUM_CTX` (hozir 16384 token) dan oshib ketgan bo'lishi mumkin. Har
 javobda backend log'ga prompt hajmini yozadi:
 
 ```bash

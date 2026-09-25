@@ -48,9 +48,27 @@ from src.notifications.usecases import (
 )
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
+from src.user.enums import UserRole
 from src.user.models import User
 
 router = APIRouter()
+
+
+async def _notify_knowledge_updated(
+    broadcast: BroadcastNotificationUseCase, title: str
+) -> None:
+    """"Ma'lumotlar yangilandi" — FAQAT ADMINLARGA.
+
+    Ilgari barcha xodimlarga borardi: oddiy xodim uchun bu xabar foydasiz, admin
+    esa bazani o'zi boshqaradi. Bir nechta yuklash ketma-ket bo'lsa ham bitta
+    xabarga birlashadi (notifications/usecases.py -> COALESCE_WINDOWS).
+    Valyuta kursi xabari (RATES_UPDATED) bunga kirmaydi — u hammaga boradi.
+    """
+    await broadcast.execute(
+        NotificationType.KNOWLEDGE_UPDATED,
+        params={"title": title},
+        role=UserRole.ADMIN,
+    )
 
 
 @router.get("", response_model=list[KnowledgeItem])
@@ -95,9 +113,7 @@ async def update_knowledge(
     result = await use_case.execute(
         old_title=data.old_title, title=data.title, text=data.text
     )
-    await broadcast.execute(
-        NotificationType.KNOWLEDGE_UPDATED, params={"title": data.title}
-    )
+    await _notify_knowledge_updated(broadcast, data.title)
     return result
 
 
@@ -146,9 +162,7 @@ async def upload_knowledge(
     """Admin: matnni bo'laklarga bo'lib, embed qilib, sarlavha bilan Qdrant'ga yozadi."""
     use_case = UploadKnowledgeUseCase(embedder=embedder, store=store)
     result = await use_case.execute(title=data.title, text=data.text)
-    await broadcast.execute(
-        NotificationType.KNOWLEDGE_UPDATED, params={"title": data.title}
-    )
+    await _notify_knowledge_updated(broadcast, data.title)
     return result
 
 
@@ -184,9 +198,7 @@ async def upload_pdf(
     result = await use_case.execute(
         file_bytes=content, filename=file.filename or "", title=title
     )
-    await broadcast.execute(
-        NotificationType.KNOWLEDGE_UPDATED, params={"title": result.title}
-    )
+    await _notify_knowledge_updated(broadcast, result.title)
     return result
 
 
@@ -207,9 +219,7 @@ async def upload_employees(
     content = await read_upload_limited(file, config.app.KNOWLEDGE_MAX_BYTES)
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     result = await use_case.execute(file_bytes=content)
-    await broadcast.execute(
-        NotificationType.KNOWLEDGE_UPDATED, params={"title": "Xodimlar ro'yxati"}
-    )
+    await _notify_knowledge_updated(broadcast, "Xodimlar ro'yxati")
     return result
 
 
@@ -258,9 +268,7 @@ async def upload_employees_json(
     records = [r.model_dump() for r in data]
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     result = await use_case.execute_records(records=records)
-    await broadcast.execute(
-        NotificationType.KNOWLEDGE_UPDATED, params={"title": "Xodimlar ro'yxati"}
-    )
+    await _notify_knowledge_updated(broadcast, "Xodimlar ro'yxati")
     return result
 
 
@@ -279,7 +287,5 @@ async def scrape_url(
     """Admin test: bitta URL'ni ochib, toza matnini ajratib, Qdrant'ga yozadi."""
     use_case = ScrapeUrlUseCase(embedder=embedder, store=store)
     result = await use_case.execute(url=data.url)
-    await broadcast.execute(
-        NotificationType.KNOWLEDGE_UPDATED, params={"title": data.url}
-    )
+    await _notify_knowledge_updated(broadcast, data.url)
     return result
