@@ -63,7 +63,7 @@ class RegisterUserModel(StrongPasswordValidationMixin, Base):
 
 
 class RegisterTokenModel(Base):
-    """Register javobi: muvaffaqiyat bayrog'i + access token + mock p12.
+    """Register javobi: muvaffaqiyat bayrog'i + access token + client p12.
 
     Refresh token ataylab berilmaydi — tasdiqlanmagan user baribir refresh
     qila olmaydi; token tugasa (30 daqiqa) mobil qayta login qiladi.
@@ -78,7 +78,7 @@ class RegisterTokenModel(Base):
     # validatsiya) exception handler orqali boshqa formatda ketadi.
     success: bool = True
     access_token: str = Field(alias="accessToken")
-    # VAQTINCHALIK mock (qara: services/mock_p12.py)
+    # Bank bergan client p12 (qara: services/client_p12.py)
     p12_base64: str = Field(alias="p12Base64")
     p12_password: str = Field(alias="p12Password")
 

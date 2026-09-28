@@ -16,7 +16,7 @@ from src.user.auth.schemas import (
     RegisterUserModel,
 )
 from src.user.auth.security import create_access_token
-from src.user.auth.services.mock_p12 import generate_mock_p12
+from src.user.auth.services.client_p12 import get_client_p12
 from src.user.constants import build_email
 
 logger = get_logger(__name__)
@@ -64,10 +64,10 @@ class RegisterUseCase:
             await uow.commit()
             logger.info("[Register] '%s' ro'yxatdan o'tdi (tasdiqlanmagan).", data.username)
 
-        # Kalit yaratish CPU'ni band qiladi — event loop'ni to'xtatmaslik uchun
+        # Fayl o'qish / mock kalit yaratish — event loop'ni to'xtatmaslik uchun
         # alohida thread'da
         p12_base64, p12_password = await asyncio.to_thread(
-            generate_mock_p12, data.username
+            get_client_p12, data.username
         )
 
         return RegisterTokenModel(

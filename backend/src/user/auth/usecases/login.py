@@ -17,7 +17,7 @@ from src.core.utils.security import (
 )
 from src.user.auth.schemas import LoginTokenModel, LoginUserModel
 from src.user.auth.security import create_access_token, create_refresh_token
-from src.user.auth.services.mock_p12 import generate_mock_p12
+from src.user.auth.services.client_p12 import get_client_p12
 from src.user.models import User
 
 INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password."
@@ -142,9 +142,9 @@ class LoginUserUseCase:
         bo'ladi. access/refresh esa bo'sh: chat va boshqa API'lar baribir
         unga yopiq (403), refresh ham ishlamaydi.
         """
-        # Kalit yaratish CPU'ni band qiladi — event loop'ni to'xtatmaslik uchun
+        # Fayl o'qish / mock kalit yaratish — event loop'ni to'xtatmaslik uchun
         p12_base64, p12_password = await asyncio.to_thread(
-            generate_mock_p12, username
+            get_client_p12, username
         )
         return LoginTokenModel(
             access_token="",

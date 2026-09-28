@@ -192,6 +192,16 @@ class EmployeeApiConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class CertificateConfig(BaseModel):
+    # mTLS proxy (Face-ID SDK) uchun p12 sertifikat. Fayl repoda
+    # (`backend/certs/`) shifrlangan holda turadi, paroli esa FAQAT .env da —
+    # prod parol kodga ham, repoga ham yozilmaydi.
+    CERT_P12_PATH: str = "certs/base_p12.p12"
+    CERT_P12_PASSWORD: str = ""
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class QdrantConfig(BaseModel):
     QDRANT_HOST: str = "qdrant"
     QDRANT_PORT: int = 6333
@@ -294,6 +304,7 @@ class Config(BaseModel):
     qdrant: QdrantConfig
     scraping: ScrapingConfig
     employee_api: EmployeeApiConfig = EmployeeApiConfig()
+    certificate: CertificateConfig = CertificateConfig()
 
     model_config = ConfigDict(extra="ignore")
 
@@ -329,6 +340,7 @@ def get_settings() -> Config:
         qdrant=QdrantConfig(**merged_env),
         scraping=ScrapingConfig(**merged_env),
         employee_api=EmployeeApiConfig(**merged_env),
+        certificate=CertificateConfig(**merged_env),
     )
 
 
