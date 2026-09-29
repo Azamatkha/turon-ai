@@ -155,7 +155,17 @@ class AIConfig(BaseModel):
     # modelni qisman CPU'ga tushirib yuborishi mumkin (o'shanda javob keskin
     # sekinlashadi). Oshirishdan oldin `ollama ps` da 100% GPU ekanini
     # tekshiring.
-    OLLAMA_NUM_CTX: int = 16384
+    #
+    # 16384 -> 32768: server RTX PRO 6000 Blackwell (96 GB) ga almashtirildi.
+    # 27B model (~17 GB) + 32k KV-kesh + bge-m3 bemalol sig'adi, zaxira katta.
+    # Yuqoridagi 12 GB hisobi endi tarix uchun qoldirilgan.
+    OLLAMA_NUM_CTX: int = 32768
+    # Model oxirgi so'rovdan keyin VRAM'da qancha turadi. Ollama standarti
+    # atigi 5 daqiqa: 9 daqiqa jimlikdan keyin model tushirilib, keyingi
+    # savolda 27B modelni qayta yuklash router timeout'idan (20 s) uzoq
+    # davom etardi — router yiqilib, javob noto'g'ri yo'lga ketardi.
+    # 96 GB VRAM'da modelni doim ushlab turishning hech qanday narxi yo'q.
+    OLLAMA_KEEP_ALIVE: str = "24h"
 
     # Embedding (matn -> vektor). Same Ollama server, different model.
     EMBEDDING_MODEL: str = "bge-m3:567m"

@@ -209,6 +209,13 @@ class AddMessageUseCase:
                     "session_id": session_id,
                     "role": data.role,
                     "content": data.content,
+                    # Token statistikasi faqat assistant javobiga tegishli
+                    "completion_tokens": (
+                        data.completion_tokens if data.role == "assistant" else None
+                    ),
+                    "finish_reason": (
+                        data.finish_reason if data.role == "assistant" else None
+                    ),
                 },
             )
             # Suhbatni ro'yxat tepasiga ko'tarish uchun updated_at yangilanadi

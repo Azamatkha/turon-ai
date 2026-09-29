@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 from src.core.schemas import Base
 
@@ -24,6 +24,9 @@ class MessageView(Base):
     content: str
     created_at: datetime
     vote: str | None = None
+    # Faqat assistant xabarida (qara: ChatMessage.completion_tokens)
+    completion_tokens: int | None = None
+    finish_reason: str | None = None
 
 
 class SessionDetailView(SessionView):
@@ -45,6 +48,10 @@ class PinSessionModel(Base):
 class AddMessageModel(Base):
     role: str
     content: str
+    # Mijoz javob oqimining "done" hodisasidan oladi va xabar bilan birga
+    # saqlaydi. Ixtiyoriy — eski mijozlar (mobil) yubormasa ham ishlaydi.
+    completion_tokens: int | None = Field(None, ge=0)
+    finish_reason: str | None = Field(None, max_length=20)
 
     @field_validator("role")
     @classmethod

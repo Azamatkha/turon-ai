@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -40,3 +40,8 @@ class ChatMessage(Base, UUIDIDMixin, TimestampMixin):
     content: Mapped[str] = mapped_column(Text)
     # Foydalanuvchi bahosi: "up" | "down" | None
     vote: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # Assistant javobiga ketgan tokenlar (router + javob) va to'xtash sababi.
+    # Ilgari saqlanmasdi: sahifa yangilanganda token hisoblagichi barcha eski
+    # javoblardan yo'qolardi. Foydalanuvchi xabarida va eski yozuvlarda NULL.
+    completion_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    finish_reason: Mapped[str | None] = mapped_column(String(20), nullable=True)

@@ -28,6 +28,7 @@ class OllamaClient(BaseAIClient):
         self.base_url = config.ai.OLLAMA_BASE_URL.rstrip("/")
         self.model = config.ai.OLLAMA_MODEL
         self.num_ctx = config.ai.OLLAMA_NUM_CTX
+        self.keep_alive = config.ai.OLLAMA_KEEP_ALIVE
         self.timeout = config.ai.TIMEOUT_SECONDS
         self.default_temperature = config.ai.DEFAULT_TEMPERATURE
         self.http = http
@@ -66,6 +67,8 @@ class OllamaClient(BaseAIClient):
             "messages": messages,
             "stream": False,
             "think": think,
+            # Model VRAM'dan tushirilmasin (qara: config.ai.OLLAMA_KEEP_ALIVE)
+            "keep_alive": self.keep_alive,
             "options": {
                 "temperature": (
                     temperature
@@ -90,7 +93,11 @@ class OllamaClient(BaseAIClient):
                 timeout=timeout if timeout is not None else self.timeout,
             )
         except httpx.HTTPError as exc:
-            raise InfrastructureException(f"Ollama connection error: {exc}") from exc
+            # httpx.ReadTimeout matni bo'sh — xato turi nomisiz logda
+            # "Ollama connection error: " deb chiqib, sababi ko'rinmasdi.
+            raise InfrastructureException(
+                f"Ollama connection error: {type(exc).__name__} {exc}".rstrip()
+            ) from exc
 
         if resp.status_code != 200:
             raise InfrastructureException(
@@ -160,6 +167,7 @@ class OllamaClient(BaseAIClient):
             "messages": messages,
             "stream": True,
             "think": False,
+            "keep_alive": self.keep_alive,
             "options": {
                 "temperature": (
                     temperature
@@ -198,7 +206,9 @@ class OllamaClient(BaseAIClient):
                             "finish_reason": str(data.get("done_reason", "stop")),
                         }
         except httpx.HTTPError as exc:
-            raise InfrastructureException(f"Ollama connection error: {exc}") from exc
+            raise InfrastructureException(
+                f"Ollama connection error: {type(exc).__name__} {exc}".rstrip()
+            ) from exc
 
     async def generate_json(
         self,

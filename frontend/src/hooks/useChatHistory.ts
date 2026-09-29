@@ -107,7 +107,14 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
     if (loaded.current.has(id)) return;
     try {
       const detail = await getSession(id);
-      const msgs: Msg[] = detail.messages.map((m) => ({ id: m.id, role: m.role, text: m.content, time: m.created_at, vote: m.vote ?? null }));
+      // Token statistikasi DB'dan tiklanadi — refresh'dan keyin ham hisoblagich
+      // ko'rinsin. Eski yozuvlarda (saqlanmagan davr) null — ularda ko'rsatilmaydi.
+      const msgs: Msg[] = detail.messages.map((m) => ({
+        id: m.id, role: m.role, text: m.content, time: m.created_at, vote: m.vote ?? null,
+        ...(m.role === "assistant" && m.completion_tokens != null && {
+          debug: { finishReason: m.finish_reason ?? "", completionTokens: m.completion_tokens, maxTokens: 0 },
+        }),
+      }));
       // upsert: ro'yxatda bo'lsa yangilaymiz, bo'lmasa (to'g'ridan-to'g'ri link/refresh
       // — ro'yxat hali yuklanmagan) qo'shamiz
       setChats((cs) =>
@@ -196,7 +203,10 @@ export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
       return cs.map((c) => (c.id === sessionId ? { ...c, lastMessageAt: bumped } : c));
     });
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz (like/dislike uchun)
-    addMessage(sessionId, "assistant", finalText)
+    addMessage(sessionId, "assistant", finalText, {
+      completionTokens: res.completionTokens,
+      finishReason: res.finishReason,
+    })
       .then((saved) =>
         setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
       )

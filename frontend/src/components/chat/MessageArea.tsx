@@ -255,7 +255,9 @@ export default function MessageArea({
             const showActions = !!m.text && !isStreaming;
             // Streaming paytida token yuklanish indikatorida ko'rsatiladi — bu yerda
             // faqat javob tugagach (yakuniy aniq son) ko'rsatamiz (takror bo'lmasin).
-            const hasTokens = !!m.debug && !!m.text && m.debug.completionTokens > 0 && !isStreaming;
+            // Javob tugagach hisoblagich DOIM ko'rinadi (0 bo'lsa ham) — ilgari
+            // "> 0" sharti tayyor javoblarda uni yashirib, "goh bor, goh yo'q" edi.
+            const hasTokens = !!m.debug && !!m.text && !isStreaming;
             const showFooter = showActions || hasTokens;
             const v = m.vote;
 
@@ -296,7 +298,7 @@ export default function MessageArea({
                     )}
                     {/* Real-time token hisoblagichi — javob yozilishi bilan son o'zgaradi
                         (streaming paytida ham). finishReason === "length" bo'lsa — qizil. */}
-                    {m.debug && !!m.text && m.debug.completionTokens > 0 && (
+                    {m.debug && !!m.text && (m.debug.completionTokens > 0 || !isStreaming) && (
                       <span
                         className={styles.tokenMeter}
                         style={{ color: m.debug.finishReason === "length" ? "#DC2626" : tk.muted }}

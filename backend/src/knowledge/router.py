@@ -17,6 +17,7 @@ from typing import Any
 
 from loggers import get_logger
 from src.core.ai.interfaces import BaseAIClient
+from src.core.errors.exceptions import InfrastructureException
 from src.knowledge.schemas import ChatTurn
 
 logger = get_logger(__name__)
@@ -46,6 +47,9 @@ class Intent(StrEnum):
     # Savol BOSHQA bank haqida: raqobatchi bank mahsuloti, banklar ro'yxati,
     # reytingi yoki taqqoslash. Bot bunga javob bermaydi — faqat Turonbank
     OTHER_BANK = "other_bank"
+    # Til savoli: so'z ma'nosi, imlo, grammatika, tarjima, matnni tuzatish.
+    # Bazaga borilmaydi — javob modelning til bilimidan (LANGUAGE_SYSTEM)
+    LANGUAGE = "language"
     # Bankka aloqasi yo'q yoki tushunarsiz
     OTHER = "other"
 
@@ -61,8 +65,12 @@ class Route:
         ip_number: str = "",
         department: str = "",
         reply: str = "",
+        tokens: int = 0,
     ) -> None:
         self.intent = intent
+        # Router chaqiruv(lar)ida model yozgan tokenlar — javob modelsiz
+        # (tayyor matn) bo'lsa ham token hisoblagichi 0 ko'rsatmasin
+        self.tokens = tokens
         # Vektor qidiruv uchun tozalangan/to'ldirilgan so'rov
         self.search_query = search_query
         # Ajratilgan ma'lumotlar (faqat EMPLOYEE uchun mazmunli)
@@ -140,10 +148,20 @@ Niyat (intent) turlari:
                 MISOL: "Kapitalbank kartasi qancha turadi", "Ipoteka bankda
                 foiz qancha", "O'zbekistondagi top banklar ro'yxati",
                 "eng ishonchli bank qaysi", "O'zbekistonda nechta bank bor".
-- "other"     — bank/moliya/iqtisodiyot sohasiga UMUMAN aloqasi yo'q
+- "language"  — TIL savoli: oddiy so'zning ma'nosi, imlosi, grammatika,
+                sinonim, o'zbek/rus/ingliz tillari orasida tarjima, gap yoki
+                matnni to'g'rilash.
+                MISOL: "mutolaa so'zining ma'nosi nima", "hisob-kitob qanday
+                yoziladi", "ariza ruschada nima deyiladi", "shu gapni
+                to'g'rilab ber", "что значит слово иждивенец".
+                CHEGARA: MOLIYAVIY ATAMA ma'nosi ("annuitet nima",
+                "ekvayring nima degani") -> "concept"; oddiy so'z, imlo yoki
+                tarjima -> "language".
+- "other"     — bank/moliya/iqtisodiyot sohasiga ham, tilga ham aloqasi yo'q
                 (sport, siyosat, ob-havo, dasturlash, tibbiyot, ko'ngilochar)
                 yoki savol butunlay tushunarsiz.
                 MISOL: "Ronaldo qaysi jamoada o'ynaydi", "ertaga havo qanday".
+                Til savolini HECH QACHON "other" qilma — u "language".
 
 "product" MI YOKI "concept" MI — SHU CHEGARANI ANIQ TUT:
 Savolning JAVOBI qayerda turishiga qara.
@@ -250,23 +268,31 @@ Maydonlar:
 - "department"   — bo'lim/departament nomi aytilgan bo'lsa. Aks holda "".
 - "search_query" — bazadan qidirish uchun tozalangan, O'ZI YETARLI so'rov:
                    ortiqcha so'zlarsiz, olmoshlar yechilgan, kerak bo'lsa
-                   rasmiy atama bilan to'ldirilgan.
-                   smalltalk/about_bot/concept/other/other_bank/history uchun
+                   rasmiy atama bilan to'ldirilgan. HAR DOIM O'ZBEK LOTIN
+                   tilida yoz — savol ruscha bo'lsa ham tarjima qil: baza
+                   o'zbekcha ("какие вклады есть" -> "omonat turlari").
+                   smalltalk/about_bot/concept/language/other/other_bank/
+                   history uchun
                    bo'sh satr
                    qoldir — bu niyatlarda bazadan qidirilmaydi.
 - "reply"        — FAQAT "smalltalk" va "about_bot" uchun: qisqa, xushmuomala
-                   javob (1-2 gap), foydalanuvchi tilida. Boshqa hollarda "".
+                   javob (1-2 gap), foydalanuvchi TILIDA: ruscha yozgan
+                   bo'lsa — ruscha, o'zbekcha yozgan bo'lsa — o'zbek
+                   lotinida. Boshqa hollarda "".
 
 FOYDALANUVCHI O'ZBEKCHANI QANDAY YOZSA, SHUNDAY TUSHUN:
 - apostrof har xil yoziladi yoki umuman tushib qoladi: o' / oʻ / o‘ / ` / o.
   "Bo'lim", "boʻlim", "bolim" — BIR XIL so'z;
 - x va h almashadi: "shoxobcha"/"shahobcha", "Xamdamov"/"Hamdamov";
 - kirill va lotin bir xil ma'noda ("кредит" = "kredit");
+- foydalanuvchi RUSCHA ham yozishi mumkin — niyatni xuddi shunday aniqla;
 - xato terilgan so'zlar normal ("kridit", "madel") — ko'zda tutilgan so'zni
   o'zing top, "tushunmadim" dema.
 
 Sen Turonbank uchun ishlaysan. "about_bot" da: sen Turonbankning ichki AI
-yordamchisisan, bank hujjatlari va xodimlar ma'lumotlari asosida javob berasan.
+yordamchisisan, bank hujjatlari va xodimlar ma'lumotlari asosida javob berasan,
+bank-moliya atamalari va til (so'z ma'nosi, imlo, tarjima) savollariga ham
+yordam berasan.
 Qaysi model ekaningni aytma — buning o'rniga nima qila olishingni ayt.
 
 QISQA O'YLA. Bu — yo'naltirish qarori, tadqiqot emas. Bir-ikki jumlada
@@ -350,8 +376,9 @@ class QuestionRouter:
         think: bool,
         max_tokens: int,
         timeout: float,
-    ) -> dict[str, Any] | None:
-        """Modelga bir marta murojaat qiladi. JSON kelmasa None qaytaradi.
+    ) -> tuple[dict[str, Any] | None, int]:
+        """Modelga bir marta murojaat qiladi: (qaror, yozilgan_tokenlar).
+        JSON kelmasa qaror None bo'ladi.
 
         Chiqish token chegarasiga tegib uzilganini ALOHIDA logga yozamiz —
         busiz router jimgina PRODUCT'ga tushib qolgani umuman sezilmaydi
@@ -366,9 +393,23 @@ class QuestionRouter:
                 think=think,
                 timeout=timeout,
             )
+        except InfrastructureException as exc:
+            # Kutilgan xato (timeout, Ollama o'chiq) — BITTA qator. Ilgari
+            # logger.exception har safar ~80 qatorli httpx traceback'ini
+            # yozardi va boshqa loglarni ko'mib yuborardi; sababi esa baribir
+            # xabarning o'zida (masalan "ReadTimeout").
+            logger.warning(
+                "Router chaqiruvi muvaffaqiyatsiz (think=%s, timeout=%.0fs): %s | %r",
+                think,
+                timeout,
+                exc,
+                question,
+            )
+            return None, 0
         except Exception:
-            logger.exception("Router chaqiruvi muvaffaqiyatsiz: %r", question)
-            return None
+            # Kutilmagan xato — bu yerda traceback haqiqatan kerak
+            logger.exception("Router chaqiruvida kutilmagan xato: %r", question)
+            return None, 0
 
         used = int((result.usage or {}).get("completion_tokens", 0) or 0)
         if used >= max_tokens - 16:
@@ -387,8 +428,8 @@ class QuestionRouter:
                 think,
                 json.dumps(data)[:300],
             )
-            return None
-        return data
+            return None, used
+        return data, used
 
     async def classify(
         self, question: str, history: list[ChatTurn] | None = None
@@ -404,7 +445,7 @@ class QuestionRouter:
 
         # ASOSIY URINISH — O'YLASHSIZ. Chiqish qisqa, sxema bo'yicha majburlangan
         # va amalda deyarli har doim to'g'ri JSON beradi (serverda 3-21 s).
-        data = await self._ask(
+        data, tokens = await self._ask(
             prompt,
             question,
             think=False,
@@ -416,13 +457,15 @@ class QuestionRouter:
             # bermagan (yoki timeout bo'lgan) holatda tushamiz. Ko'r-ko'rona
             # PRODUCT zaxirasiga tushishdan oldingi oxirgi imkoniyat.
             logger.info("Router o'ylash bilan qayta urinilmoqda: %r", question)
-            data = await self._ask(
+            data, think_tokens = await self._ask(
                 prompt,
                 question,
                 think=True,
                 max_tokens=self.MAX_TOKENS_THINK,
                 timeout=self.TIMEOUT_THINK,
             )
+            tokens += think_tokens
+        fallback.tokens = tokens
         if data is None:
             return fallback
 
@@ -441,6 +484,7 @@ class QuestionRouter:
             ip_number=str(data.get("ip_number", "")).strip(),
             department=str(data.get("department", "")).strip(),
             reply=str(data.get("reply", "")).strip(),
+            tokens=tokens,
         )
         logger.info("Router: %r -> %r", question, route)
         return route

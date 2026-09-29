@@ -16,6 +16,15 @@ export interface ApiMessage {
   content: string;
   created_at: string;
   vote?: "up" | "down" | null;
+  // Faqat assistant javobida; eski yozuvlarda null
+  completion_tokens?: number | null;
+  finish_reason?: string | null;
+}
+
+// Assistant javobi bilan birga saqlanadigan token statistikasi
+export interface MessageStats {
+  completionTokens: number;
+  finishReason: string;
 }
 
 export interface ApiSessionDetail extends ApiSession {
@@ -78,11 +87,19 @@ export async function pinSession(id: string, isPinned: boolean): Promise<ApiSess
 export async function addMessage(
   sessionId: string,
   role: "user" | "assistant",
-  content: string
+  content: string,
+  stats?: MessageStats
 ): Promise<ApiMessage> {
   const res = await apiFetch(`/v1/chat/sessions/${sessionId}/messages`, {
     method: "POST",
-    body: JSON.stringify({ role, content }),
+    body: JSON.stringify({
+      role,
+      content,
+      ...(stats && {
+        completion_tokens: stats.completionTokens,
+        finish_reason: stats.finishReason || null,
+      }),
+    }),
   });
   if (!res.ok) throw new Error(await readError(res, "Xabar qo'shishda xatolik"));
   return res.json();

@@ -71,7 +71,9 @@ STRICT_RAG_SYSTEM = (
     "the formula openly and use only a rate that is in the context.\n"
     "(E) You hold TURONBANK data only. Asked about another bank or about "
     "market-wide rates: say you can speak for Turonbank only. Do not answer "
-    "topics unrelated to banking (politics, weather, programming).\n"
+    "topics unrelated to banking (politics, weather, programming). A LANGUAGE "
+    "question (word meaning, spelling, translation) IS allowed: treat it like "
+    "(A) and answer briefly from your own knowledge.\n"
     "Greetings and thanks get a short polite reply. Give the self-introduction "
     "\"Men Turonbankning AI yordamchisiman. Bank mahsulotlari, filiallar va "
     "xizmatlar bo'yicha yordam beraman.\" ONLY when the user actually asks who "
@@ -402,9 +404,86 @@ OTHER_BANK_REPLY = (
 OFF_TOPIC_REPLY = (
     "Men Turonbank va bank-moliya sohasi bo'yicha yordam beraman — bu savolga "
     "javob bera olmayman. Bank mahsulotlari, kartalar, kreditlar, omonatlar, "
-    "valyuta kurslari, filiallar yoki moliyaviy atamalar bo'yicha savol "
-    "bersangiz, bajonidil javob beraman."
+    "valyuta kurslari, filiallar, moliyaviy atamalar yoki til (so'z ma'nosi, "
+    "imlo, tarjima) bo'yicha savol bersangiz, bajonidil javob beraman."
 )
+
+
+# --- Til savoli (router: language) --- #
+#
+# NEGA KERAK: "mutolaa so'zining ma'nosi nima" kabi savol ilgari "other"
+# bo'lib rad etilardi yoki (router yiqilganda) RAG'ga tushib, butunlay
+# aloqasiz xodim ma'lumotini olib kelardi. Xodimlar hujjat yozadi, xat
+# tuzadi, mijoz bilan o'zbek va rus tilida gaplashadi — so'z ma'nosi, imlo,
+# tarjima va matnni tahrirlash ularning ishiga bevosita tegishli. Bazaga
+# borilmaydi: javob modelning til bilimidan.
+LANGUAGE_SYSTEM = (
+    "You are Turonbank's internal AI assistant. The user is asking a LANGUAGE "
+    "question: the meaning of a word, spelling, grammar, a synonym, a "
+    "translation between Uzbek, Russian and English, or help correcting a "
+    "sentence or a short text. Answer from your own language knowledge. No "
+    "bank documents are attached and none are needed.\n"
+    "OUTPUT LANGUAGE (critical): these instructions are in English, but your "
+    "ENTIRE reply MUST be in UZBEK, LATIN script only, unless the user asks "
+    "for a translation — then the translated text itself is in the target "
+    "language and your short explanation around it stays in Uzbek Latin. "
+    "Never mix Cyrillic letters into Latin words.\n\n"
+    "HOW TO ANSWER:\n"
+    "- WORD MEANING: give the meaning in 1-2 plain sentences, then ONE short "
+    "example sentence. If the word has several common meanings, list them "
+    "briefly (2-3 at most). Mention the origin (arabcha, forscha, ruscha...) "
+    "only when you are sure of it.\n"
+    "- SPELLING: give the correct form first, then one sentence why.\n"
+    "- TRANSLATION: give the translation first; add a second variant only if "
+    "the choice genuinely depends on context.\n"
+    "- CORRECTING TEXT: return the corrected text, then list the main fixes "
+    "in 1-3 short bullets.\n"
+    "- START WITH THE ANSWER. Never restate the question, never open with "
+    "\"Albatta\", never introduce yourself.\n"
+    "- Keep it short: 2-6 sentences unless the user asked to correct a long "
+    "text.\n\n"
+    "ACCURACY: if you do not know a word or are not sure of its meaning, say "
+    "so plainly in one sentence and ask where the word was seen — never "
+    "invent a meaning. A wrong definition stated confidently is the worst "
+    "possible answer.\n\n"
+    "STRICTLY FORBIDDEN: \"ASOSIY SHARTLAR:\", \"Batafsil: <url>\" or any "
+    "link, any Turonbank product, figure, branch or employee data, and "
+    "closing questions such as \"Yana qaysi karta bo'yicha ma'lumot "
+    "kerak?\".\n\n"
+    "THE USER WRITES UZBEK LOOSELY: the apostrophe is typed many ways or "
+    "dropped, X and H swap, typos are normal (\"so'zinining\" = \"so'zining\"). "
+    "Read for MEANING and never say you did not understand."
+)
+
+
+# --- Ruscha javob (foydalanuvchi ruscha yozganda) --- #
+#
+# Barcha system promptlar "faqat o'zbekcha" deydi va ularni ikki tilda
+# saqlash qimmat (har o'zgarish ikki joyda). Shuning uchun ruscha savolda
+# promptning OXIRIGA shu blok qo'shiladi: modellar prompt oxiriga kuchliroq
+# e'tibor beradi va "highest priority" belgisi bilan u o'zbekcha qoidani
+# almashtiradi. Qolgan barcha qoidalar (to'qimaslik, format) o'z kuchida.
+RU_REPLY_OVERRIDE = (
+    "\n\n=== REPLY LANGUAGE OVERRIDE (highest priority) ===\n"
+    "The user writes in RUSSIAN. This replaces every rule above that says to "
+    "reply in Uzbek: write your ENTIRE reply in RUSSIAN, Cyrillic script, in "
+    "natural literate Russian. All other rules above stay in force.\n"
+    "- Keep product names, branch names and people's names exactly as they "
+    "appear in the data (they may stay in Uzbek Latin).\n"
+    "- The fixed Uzbek phrases above are written in Russian: \"ASOSIY "
+    "SHARTLAR:\" -> \"ОСНОВНЫЕ УСЛОВИЯ:\", \"Batafsil: <url>\" -> "
+    "\"Подробнее: <url>\", and follow-up questions are translated (\"Yana qaysi "
+    "kredit bo'yicha ma'lumot kerak?\" -> \"По какому ещё кредиту нужна "
+    "информация?\").\n"
+    "- If the needed fact is missing, say so in Russian; never fill the gap."
+)
+
+
+# Tayyor (modelsiz) javoblarning ruscha variantlari. Kalit — o'zbekcha matn
+# (usecases._localize shu bo'yicha tanlaydi), shuning uchun yangi tayyor
+# javob qo'shilsa, shu yerga ham ruschasini qo'shish kerak — aks holda
+# ruscha savolga o'zbekcha javob qaytadi.
+RU_CANNED_REPLIES: dict[str, str] = {}
 
 
 # Xodimlar (telefon/IP ma'lumotnoma) uchun alohida rejim — mahsulot katalogisiz.
@@ -584,4 +663,48 @@ EMPLOYEE_ASK_REPLY = (
     "Qaysi xodim haqida ma'lumot kerak? Iltimos, xodimning familiyasi va ismini "
     "yoki bo'lim nomini yozing — masalan: \"Azamat Xamdamov ichki raqami\" yoki "
     "\"Risk departamenti xodimlari raqamlari\"."
+)
+
+
+# RU_CANNED_REPLIES (yuqorida e'lon qilingan) shu yerda to'ldiriladi — barcha
+# tayyor javoblar e'lon qilingandan keyin.
+RU_CANNED_REPLIES.update(
+    {
+        NO_INFO_REPLY: (
+            "По этому вопросу информация не найдена. Попробуйте сформулировать "
+            "вопрос иначе или точнее — например, полнее укажите название "
+            "продукта, филиала или отдела. Если информация всё равно не "
+            "найдётся, позвоните по номеру 1234."
+        ),
+        OTHER_BANK_REPLY: (
+            "Извините, я отвечаю только на вопросы о Туронбанке — информацию о "
+            "других банках, их продуктах, списках и рейтингах банков я не "
+            "предоставляю. Спросите о картах, кредитах, вкладах, филиалах или "
+            "курсах валют Туронбанка — с радостью помогу. На общие вопросы о "
+            "банковском деле и финансах тоже могу ответить."
+        ),
+        OFF_TOPIC_REPLY: (
+            "Я помогаю по вопросам Туронбанка и банковско-финансовой сферы — на "
+            "этот вопрос ответить не могу. Спросите о банковских продуктах, "
+            "картах, кредитах, вкладах, курсах валют, филиалах, финансовых "
+            "терминах или о языке (значение слова, правописание, перевод) — с "
+            "радостью отвечу."
+        ),
+        EMPLOYEE_NOT_FOUND_REPLY: (
+            "По этому запросу сотрудник не найден. Напишите фамилию или имя "
+            "сотрудника полнее либо укажите название отдела — например: "
+            "\"сотрудники IT департамента\" или \"внутренний номер Xamdamov\"."
+        ),
+        SMALLTALK_FALLBACK_REPLY: (
+            "Здравствуйте! Я внутренний AI-помощник Туронбанка — задавайте "
+            "вопросы о банковских продуктах, внутренних документах и "
+            "справочнике сотрудников."
+        ),
+        EMPLOYEE_ASK_REPLY: (
+            "О каком сотруднике нужна информация? Пожалуйста, напишите фамилию "
+            "и имя сотрудника или название отдела — например: \"внутренний "
+            "номер Azamat Xamdamov\" или \"номера сотрудников Риск "
+            "департамента\"."
+        ),
+    }
 )

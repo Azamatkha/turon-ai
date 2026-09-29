@@ -12,7 +12,6 @@ from src.core.utils.uzbek_script import (
     StreamingScriptFixer,
     StreamingTransliterator,
     fix_mixed_script,
-    is_cyrillic_text,
     to_cyrillic,
     to_latin,
 )
@@ -33,16 +32,20 @@ from src.knowledge.prompts import (
     EMPLOYEE_NOT_FOUND_REPLY,
     EMPLOYEE_SYSTEM,
     HISTORY_SYSTEM,
+    LANGUAGE_SYSTEM,
     NO_INFO_REPLY,
     OFF_TOPIC_REPLY,
     OTHER_BANK_REPLY,
     PDF_CLEAN_SYSTEM,
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
+    RU_CANNED_REPLIES,
+    RU_REPLY_OVERRIDE,
     SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
 )
-from src.knowledge.router import Intent, QuestionRouter
+from src.knowledge.lang import ReplyLang, detect_reply_lang
+from src.knowledge.router import Intent, QuestionRouter, Route
 from src.main.config import config
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
@@ -680,25 +683,43 @@ def _mentions_catalog_title(q_lower: str, titles: list[str]) -> bool:
     return False
 
 
-def _wants_cyrillic(question: str, history: list[ChatTurn] | None) -> bool:
-    """Javobni kirillga o'girish kerakmi — foydalanuvchi kirillcha yozganmi
-    shundan aniqlanadi. AI hamisha lotincha javob beradi (STRICT_RAG_SYSTEM),
-    bu yerda esa kerak bo'lsa natijani foydalanuvchi kutgan alifboga o'giramiz.
+def _localize(text: str, lang: ReplyLang) -> str:
+    """Tayyor (modelsiz) javobni foydalanuvchi tiliga keltiradi.
 
-    Savol faqat raqamdan iborat bo'lsa (ro'yxatdan tanlash, "3" kabi) — o'zida
-    harf yo'q, shuning uchun suhbatdagi oxirgi matnli xabardan skriptni
-    meros qilib olamiz (aks holda ro'yxatdan tanlagach javob "qaytib"
-    lotinchaga o'tib qolardi)."""
-    if is_cyrillic_text(question):
-        return True
-    if any(c.isalpha() for c in question):
+    Ilgari faqat alifbo hisobga olinardi (`to_cyrillic`), ya'ni ruscha
+    savolga o'zbekcha matn kirill harflarida qaytardi. Ruschasi yo'q matn
+    (RU_CANNED_REPLIES da kaliti yo'q) o'zbek lotinida qoladi — harf-baharf
+    kirillga o'girilgan o'zbekcha rus o'quvchisi uchun baribir tushunarsiz."""
+    if lang == "ru":
+        return RU_CANNED_REPLIES.get(text, text)
+    if lang == "uz_cyrl":
+        return to_cyrillic(text)
+    return text
+
+
+def _with_lang(system: str, lang: ReplyLang) -> str:
+    """Ruscha savolda system prompt oxiriga til almashtirish blokini qo'shadi
+    (qara: prompts.RU_REPLY_OVERRIDE)."""
+    return system + RU_REPLY_OVERRIDE if lang == "ru" else system
+
+
+def _blind_employee_guess(decision: Route | None, question: str) -> bool:
+    """Router YIQILGAN (qaror yo'q) va savolda xodimga oid aniq belgi ham yo'q.
+
+    Bu holda ism bo'yicha xodim qidiruvini ochmaymiz. Xodim yo'li routerni
+    "maslahatchi" deb biladi va yalang'och familiyani ham qidiradi — router
+    ishlaganda bu to'g'ri, chunki "concept"/"language" kabi niyatlar undan
+    oldin qaytib ketadi. Router yiqilganda esa har qanday savol shu yerga
+    tushardi: "mutolaa so'zining ma'nosi nima" savolidagi so'z xodim
+    familiyasiga prefiks bo'yicha o'xshab, foydalanuvchi tasodifiy xodimning
+    telefonini olgan. Raqam ("2206") yoki "xodim/ip" so'zi bo'lsa — qidiruv
+    baribir ochiladi, u yerda moslik aniq."""
+    if decision is not None:
         return False
-    if not history:
-        return False
-    for turn in reversed(history):
-        if turn.role == "user" and any(c.isalpha() for c in turn.content):
-            return is_cyrillic_text(turn.content)
-    return False
+    q_lower = question.lower()
+    return not _has_employee_intent(q_lower) and not re.search(
+        r"\b\d{3,5}\b", q_lower
+    )
 
 
 def _translit_preserving_titles(text: str, titles: list[str]) -> str:
@@ -753,7 +774,17 @@ def _has_employee_intent(q_lower: str) -> bool:
         return True
     if any(
         w in q_lower
-        for w in ("xodim", "hodim", "ходим", "ichki raqam", "ички рақам")
+        for w in (
+            "xodim",
+            "hodim",
+            "ходим",
+            "ichki raqam",
+            "ички рақам",
+            # Ruscha savol endi lotinga o'girilmaydi (qara: execute_stream)
+            "сотрудник",
+            "внутренний номер",
+            "внутреннего номер",
+        )
     ):
         return True
     # "2206 kimniki", "2213 kimga tegishli" — savolda "ip" so'zi yo'q, lekin
@@ -818,7 +849,9 @@ def _clean_concept_answer(text: str) -> str:
     lines = [
         ln
         for ln in text.split("\n")
-        if not ln.strip().lower().startswith(("batafsil:", "manba:", "source_url:"))
+        if not ln.strip()
+        .lower()
+        .startswith(("batafsil:", "manba:", "source_url:", "подробнее:"))
     ]
     # Oxiridagi "Yana qaysi ... beray?" / "Shu turlardan qaysi biri..." savoli
     while lines:
@@ -843,7 +876,16 @@ class _ConceptLineFilter:
     qatorni oxirigacha o'tkazmaydi. Qaror qator boshidagi bir necha belgidan
     keyin qabul qilinadi, shuning uchun oqim sezilarli kechikmaydi."""
 
-    _BAD = ("batafsil:", "manba:", "source_url:", "yana qaysi", "shu turlardan")
+    _BAD = (
+        "batafsil:",
+        "manba:",
+        "source_url:",
+        "yana qaysi",
+        "shu turlardan",
+        # Ruscha javobdagi ekvivalentlar (RU_REPLY_OVERRIDE)
+        "подробнее:",
+        "по какому ещё",
+    )
 
     def __init__(self) -> None:
         # Qator boshi — taqiqli prefiksmi yoki yo'qmi, hali aniq emas
@@ -1843,13 +1885,19 @@ class AnswerQuestionUseCase:
     # yetishmagani uchun emas, javob qisqa bo'lishi KERAK bo'lgani uchun —
     # model uzoq "ma'ruza" yozib ketmasin.
     CONCEPT_MAX_TOKENS = 500
+    # Til savoli (so'z ma'nosi, tarjima, matnni tuzatish). Odatda 100-200
+    # token; 1200 — foydalanuvchi uzunroq matnni tuzattirganda kesilmasin.
+    LANGUAGE_MAX_TOKENS = 1200
     # Promptga qo'shiladigan oxirgi xabarlar soni. 6 -> 8: chegara byudjet
     # edi, u 16384 oyna bilan bo'shadi. Mavzu bir necha almashuv oldin
     # aytilgan bo'lishi mumkin ("kompaniya" -> Visa) — kengroq oyna
     # olmoshlarni to'g'ri yechishga bevosita yordam beradi.
     HISTORY_LIMIT = 8
     # --- Prompt byudjeti (belgilarda) ---------------------------------- #
-    # num_ctx = 16384 token (config.ai.OLLAMA_NUM_CTX).
+    # num_ctx = 32768 token (config.ai.OLLAMA_NUM_CTX; 96 GB GPU'ga o'tilganda
+    # 16384 dan ko'tarildi). Quyidagi hisob 16384 uchun yozilgan va hozir ham
+    # sig'adi — zaxira endi ~21 000 token. Chegaralarni oshirish mumkin, lekin
+    # uzunroq prompt javobni sekinlashtiradi, shuning uchun hozircha tegmadik.
     # O'zbek lotinida ~3.2 belgi = 1 token.
     #
     # HAMMASI SHU OYNAGA SIG'ISHI KERAK — system prompt, kontekst, katalog,
@@ -2526,6 +2574,14 @@ class AnswerQuestionUseCase:
                 self.HISTORY_CTX_MSG_CHARS,
                 self.HISTORY_CTX_CHARS,
             )
+        elif intent is Intent.LANGUAGE:
+            # Til savoli — tarix concept'dagi kabi (mavzu: "shu so'z" qaysi
+            # so'z edi), limit esa kattaroq: matnni tuzatish so'ralishi mumkin
+            system, max_toks = LANGUAGE_SYSTEM, self.LANGUAGE_MAX_TOKENS
+            msg_chars, total_chars = (
+                self.CONCEPT_HISTORY_MSG_CHARS,
+                self.CONCEPT_HISTORY_CHARS,
+            )
         else:
             system, max_toks = CONCEPT_SYSTEM, self.CONCEPT_MAX_TOKENS
             msg_chars, total_chars = (
@@ -2650,17 +2706,22 @@ class AnswerQuestionUseCase:
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
         {"type":"delta","text":...}; oxirida token statistikasi bilan
         {"type":"done", ...}."""
-        # Javobni kirillga o'girish kerakmi — savol (raqamga almashtirilishidan
-        # OLDIN) qaysi alifboda yozilganiga qarab. AI hamisha lotincha yozadi
-        # (STRICT_RAG_SYSTEM), foydalanuvchi kirillcha yozgan bo'lsa shu yerda
-        # javobni uning alifbosiga o'giramiz.
-        want_cyrillic = _wants_cyrillic(question, history)
+        # Javob tili — savol (raqamga almashtirilishidan OLDIN) qaysi tilda
+        # yozilganiga qarab: o'zbek lotin / o'zbek kirill / rus. AI o'zbekcha
+        # javobni hamisha lotincha yozadi, kirill kerak bo'lsa shu yerda
+        # o'giramiz; ruscha javobni esa model o'zi yozadi (RU_REPLY_OVERRIDE).
+        lang = detect_reply_lang(question, history)
+        want_cyrillic = lang == "uz_cyrl"
 
         # Ichki barcha mantiq (xodim qidiruvi, turkum kalit so'zlari, embedding
-        # qidiruvi, baza) LOTINCHA ishlaydi — savolni shu yerdayoq lotinga
-        # keltiramiz. Aks holda kirillcha savol embedding'ga kirillcha
+        # qidiruvi, baza) LOTINCHA ishlaydi — o'zbekcha savolni shu yerdayoq
+        # lotinga keltiramiz. Aks holda kirillcha savol embedding'ga kirillcha
         # ketib, mos kontekst topilmay "ma'lumotim yo'q" qaytardi.
-        question = to_latin(question)
+        # RUSCHA savol o'girilMAYDI: "какой процент" -> "kakoy protsent"
+        # ma'nosiz matnga aylanardi. Qidiruv baribir o'zbekcha ketadi —
+        # router search_query'ni o'zbek lotinida yozadi.
+        if lang != "ru":
+            question = to_latin(question)
 
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
@@ -2680,20 +2741,25 @@ class AnswerQuestionUseCase:
         # qidiruviga tushib ketardi ("javob" -> "Javohir"). Endi xodim yo'li
         # faqat model shuni tasdiqlaganda ochiladi.
         decision = None if resolved else await self.router.classify(question, history)
+        # Router yozgan tokenlar. Tayyor (modelsiz) javoblarda ham token
+        # hisoblagichi shu sonni ko'rsatadi — ilgari 0 yuborilardi va frontend
+        # hisoblagichni umuman yashirardi ("goh chiqadi, goh chiqmaydi").
+        router_tokens = decision.tokens if decision is not None else 0
 
         # Salomlashish yoki bot haqidagi savol — bazaga umuman bormaymiz
         if decision is not None and decision.intent in (
             Intent.SMALLTALK,
             Intent.ABOUT_BOT,
         ):
-            reply = decision.reply or SMALLTALK_FALLBACK_REPLY
-            yield {
-                "type": "delta",
-                "text": to_cyrillic(reply) if want_cyrillic else reply,
-            }
+            # Router javobni allaqachon foydalanuvchi tilida yozgan
+            if decision.reply:
+                text = to_cyrillic(decision.reply) if want_cyrillic else decision.reply
+            else:
+                text = _localize(SMALLTALK_FALLBACK_REPLY, lang)
+            yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
-                "completion_tokens": 0,
+                "completion_tokens": router_tokens,
                 "finish_reason": "stop",
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
@@ -2727,11 +2793,10 @@ class AnswerQuestionUseCase:
                 if decision.intent is Intent.OTHER_BANK
                 else OFF_TOPIC_REPLY
             )
-            text = to_cyrillic(reply) if want_cyrillic else reply
-            yield {"type": "delta", "text": text}
+            yield {"type": "delta", "text": _localize(reply, lang)}
             yield {
                 "type": "done",
-                "completion_tokens": 0,
+                "completion_tokens": router_tokens,
                 "finish_reason": "stop",
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
@@ -2776,7 +2841,7 @@ class AnswerQuestionUseCase:
                 }
                 yield {
                     "type": "done",
-                    "completion_tokens": 0,
+                    "completion_tokens": router_tokens,
                     "finish_reason": "stop",
                     "max_tokens": self.MAX_TOKENS,
                     "sources": [],
@@ -2787,20 +2852,22 @@ class AnswerQuestionUseCase:
             decision is not None
             and not skip_shortcuts
             and catalog_title is None
-            and decision.intent in (Intent.CONCEPT, Intent.HISTORY)
+            and decision.intent in (Intent.CONCEPT, Intent.HISTORY, Intent.LANGUAGE)
         ):
             prompt, system, max_toks = self._no_search_call(
                 decision.intent, question, history
             )
             # Kirillga o'girilmaydigan javobda aralash alifboli so'zni
             # ("молияiy") tuzatamiz. Kirillga o'girilganda kerak emas —
-            # u yerda matn baribir bir alifboga keltiriladi.
+            # u yerda matn baribir bir alifboga keltiriladi. Ruscha javobda
+            # ikkalasi ham O'CHIQ: tuzatuvchi kirill harflarni lotinga
+            # "to'g'rilab" yuborardi.
             tr = StreamingTransliterator() if want_cyrillic else None
-            sf = None if want_cyrillic else StreamingScriptFixer()
+            sf = StreamingScriptFixer() if lang == "uz" else None
             lf = _ConceptLineFilter()
             async for ev in self.ai_client.stream_generate(
                 prompt,
-                system_prompt=system,
+                system_prompt=_with_lang(system, lang),
                 temperature=self.TEMPERATURE,
                 max_tokens=max_toks,
             ):
@@ -2826,6 +2893,10 @@ class AnswerQuestionUseCase:
                         yield {"type": "delta", "text": rest}
                     ev["max_tokens"] = max_toks
                     ev["sources"] = []
+                    # Javob + router tokenlari — so'rovga ketgan jami
+                    ev["completion_tokens"] = (
+                        int(ev.get("completion_tokens", 0)) + router_tokens
+                    )
                 yield ev
             return
 
@@ -2839,7 +2910,7 @@ class AnswerQuestionUseCase:
                 }
                 yield {
                     "type": "done",
-                    "completion_tokens": 0,
+                    "completion_tokens": router_tokens,
                     "finish_reason": "stop",
                     "max_tokens": self.MAX_TOKENS,
                     "sources": [SourceRef(title=RATES_TITLE, score=1.0).model_dump()],
@@ -2855,7 +2926,16 @@ class AnswerQuestionUseCase:
         # deb, bazada BOR xodim "topilmadi" bo'lardi — bir xil savol goh
         # ishlab, goh ishlamasdi. Endi qidiruvni har doim kod bajaradi (u
         # deterministik), router esa faqat salomlashishni ajratadi.
-        route = None if resolved else await self._employee_route(question)
+        #
+        # ISTISNO: router YIQILGAN bo'lsa va savolda xodim belgisi yo'q
+        # bo'lsa — ism bo'yicha taxmin qilmaymiz (qara: _blind_employee_guess).
+        # Ism moslash lotincha ishlaydi, shuning uchun ruscha savol ham
+        # lotinga o'girib beriladi ("Азамат" -> "Azamat").
+        route = (
+            None
+            if resolved or _blind_employee_guess(decision, question)
+            else await self._employee_route(to_latin(question))
+        )
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none"):
@@ -2865,11 +2945,10 @@ class AnswerQuestionUseCase:
                 canned = (
                     EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
                 )
-                text = to_cyrillic(canned) if want_cyrillic else canned
-                yield {"type": "delta", "text": text}
+                yield {"type": "delta", "text": _localize(canned, lang)}
                 yield {
                     "type": "done",
-                    "completion_tokens": 0,
+                    "completion_tokens": router_tokens,
                     "finish_reason": "stop",
                     "max_tokens": self.MAX_TOKENS,
                     "sources": [],
@@ -2885,7 +2964,7 @@ class AnswerQuestionUseCase:
             }
             yield {
                 "type": "done",
-                "completion_tokens": 0,
+                "completion_tokens": router_tokens,
                 "finish_reason": "stop",
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
@@ -2905,7 +2984,7 @@ class AnswerQuestionUseCase:
             yield {"type": "delta", "text": broad_reply}
             yield {
                 "type": "done",
-                "completion_tokens": 0,
+                "completion_tokens": router_tokens,
                 "finish_reason": "stop",
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
@@ -2915,11 +2994,11 @@ class AnswerQuestionUseCase:
         # Harfsiz (ma'nosiz) so'rov — xodim/mahsulot yo'nalishidan o'tib kelgan
         # bo'lsa, embedding qidiruviga bermaymiz (uzoq LLM chaqiruvisiz).
         if _is_meaningless_query(question):
-            text = to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY
+            text = _localize(NO_INFO_REPLY, lang)
             yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
-                "completion_tokens": 0,
+                "completion_tokens": router_tokens,
                 "finish_reason": "stop",
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
@@ -2991,11 +3070,11 @@ class AnswerQuestionUseCase:
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
-            text = to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY
+            text = _localize(NO_INFO_REPLY, lang)
             yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
-                "completion_tokens": 0,
+                "completion_tokens": router_tokens,
                 "finish_reason": "stop",
                 "max_tokens": self.MAX_TOKENS,
                 "sources": [],
@@ -3035,11 +3114,12 @@ class AnswerQuestionUseCase:
         # Aralash alifboli so'zni tuzatish — concept yo'lidagi bilan bir xil
         # sabab: model bitta so'z ichida kirill va lotinni aralashtirib
         # yuboradi va promptdagi taqiq buni to'xtata olmaydi.
+        # Ruscha javobda ikkalasi ham o'chiq (concept yo'lidagi izohga qara).
         tr = StreamingTransliterator() if want_cyrillic else None
-        sf = None if want_cyrillic else StreamingScriptFixer()
+        sf = StreamingScriptFixer() if lang == "uz" else None
         async for ev in self.ai_client.stream_generate(
             prompt,
-            system_prompt=system,
+            system_prompt=_with_lang(system, lang),
             temperature=self.TEMPERATURE,
             max_tokens=max_toks,
         ):
@@ -3049,25 +3129,33 @@ class AnswerQuestionUseCase:
                 elif sf is not None:
                     ev = {**ev, "text": sf.feed(ev["text"])}
             if ev.get("type") == "done":
-                rest = tr.flush() if tr is not None else sf.flush()
+                if tr is not None:
+                    rest = tr.flush()
+                elif sf is not None:
+                    rest = sf.flush()
+                else:
+                    rest = ""
                 if rest:
                     yield {"type": "delta", "text": rest}
                 ev["max_tokens"] = self.MAX_TOKENS
                 ev["sources"] = src_dump
+                ev["completion_tokens"] = (
+                    int(ev.get("completion_tokens", 0)) + router_tokens
+                )
             yield ev
 
     async def execute(
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AnswerResult:
-        # Javobni kirillga o'girish kerakmi — savol (raqamga almashtirilishidan
-        # OLDIN) qaysi alifboda yozilganiga qarab.
-        want_cyrillic = _wants_cyrillic(question, history)
+        # Javob tili — stream yo'li bilan bir xil (o'zbek lotin/kirill, rus)
+        lang = detect_reply_lang(question, history)
+        want_cyrillic = lang == "uz_cyrl"
 
         # Ichki barcha mantiq (xodim qidiruvi, turkum kalit so'zlari, embedding
-        # qidiruvi, baza) LOTINCHA ishlaydi — savolni shu yerdayoq lotinga
-        # keltiramiz. Aks holda kirillcha savol embedding'ga kirillcha
-        # ketib, mos kontekst topilmay "ma'lumotim yo'q" qaytardi.
-        question = to_latin(question)
+        # qidiruvi, baza) LOTINCHA ishlaydi — o'zbekcha savolni shu yerdayoq
+        # lotinga keltiramiz. Ruscha savol o'girilmaydi (stream yo'liga qara).
+        if lang != "ru":
+            question = to_latin(question)
 
         # Foydalanuvchi ro'yxatdan raqam bilan tanlagan bo'lsa ("53") — savolni
         # o'sha band nomiga almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
@@ -3084,15 +3172,22 @@ class AnswerQuestionUseCase:
 
         # Savolni TUSHUNISH — stream yo'li bilan bir xil mantiq
         decision = None if resolved else await self.router.classify(question, history)
+        router_tokens = decision.tokens if decision is not None else 0
 
         if decision is not None and decision.intent in (
             Intent.SMALLTALK,
             Intent.ABOUT_BOT,
         ):
-            reply = decision.reply or SMALLTALK_FALLBACK_REPLY
+            if decision.reply:
+                text = to_cyrillic(decision.reply) if want_cyrillic else decision.reply
+            else:
+                text = _localize(SMALLTALK_FALLBACK_REPLY, lang)
             return AnswerResult(
-                answer=to_cyrillic(reply) if want_cyrillic else reply,
+                answer=text,
                 sources=[],
+                finish_reason="stop",
+                completion_tokens=router_tokens,
+                max_tokens=self.MAX_TOKENS,
             )
 
         # Xavfsizlik to'ri — stream yo'li bilan bir xil: savolda aniq xodim
@@ -3112,10 +3207,10 @@ class AnswerQuestionUseCase:
                 else OFF_TOPIC_REPLY
             )
             return AnswerResult(
-                answer=(to_cyrillic(reply) if want_cyrillic else reply),
+                answer=_localize(reply, lang),
                 sources=[],
                 finish_reason="stop",
-                completion_tokens=0,
+                completion_tokens=router_tokens,
                 max_tokens=self.MAX_TOKENS,
             )
 
@@ -3150,7 +3245,7 @@ class AnswerQuestionUseCase:
                     answer=_clarify_reply(partial_titles, want_cyrillic),
                     sources=[],
                     finish_reason="stop",
-                    completion_tokens=0,
+                    completion_tokens=router_tokens,
                     max_tokens=self.MAX_TOKENS,
                 )
 
@@ -3158,23 +3253,27 @@ class AnswerQuestionUseCase:
             decision is not None
             and not skip_shortcuts
             and catalog_title is None
-            and decision.intent in (Intent.CONCEPT, Intent.HISTORY)
+            and decision.intent in (Intent.CONCEPT, Intent.HISTORY, Intent.LANGUAGE)
         ):
             prompt, system, max_toks = self._no_search_call(
                 decision.intent, question, history
             )
             gen = await self.ai_client.generate_text_with_usage(
                 prompt,
-                system_prompt=system,
+                system_prompt=_with_lang(system, lang),
                 temperature=self.TEMPERATURE,
                 max_tokens=max_toks,
             )
             text = _clean_concept_answer(gen.text)
+            if want_cyrillic:
+                text = to_cyrillic(text)
+            elif lang == "uz":
+                text = fix_mixed_script(text)
             return AnswerResult(
-                answer=to_cyrillic(text) if want_cyrillic else fix_mixed_script(text),
+                answer=text,
                 sources=[],
                 finish_reason=gen.finish_reason,
-                completion_tokens=gen.completion_tokens,
+                completion_tokens=gen.completion_tokens + router_tokens,
                 max_tokens=gen.max_tokens,
             )
 
@@ -3185,6 +3284,9 @@ class AnswerQuestionUseCase:
                 return AnswerResult(
                     answer=_rates_to_cyrillic(rates) if want_cyrillic else rates,
                     sources=[SourceRef(title=RATES_TITLE, score=1.0)],
+                    finish_reason="stop",
+                    completion_tokens=router_tokens,
+                    max_tokens=self.MAX_TOKENS,
                 )
 
         # Xodim (telefon/IP) savoli — alohida yo'l (mahsulot RAG'siz).
@@ -3196,7 +3298,13 @@ class AnswerQuestionUseCase:
         # deb, bazada BOR xodim "topilmadi" bo'lardi — bir xil savol goh
         # ishlab, goh ishlamasdi. Endi qidiruvni har doim kod bajaradi (u
         # deterministik), router esa faqat salomlashishni ajratadi.
-        route = None if resolved else await self._employee_route(question)
+        # Router yiqilganda ko'r-ko'rona ism taxmini yo'q — stream yo'li bilan
+        # bir xil (qara: _blind_employee_guess).
+        route = (
+            None
+            if resolved or _blind_employee_guess(decision, question)
+            else await self._employee_route(to_latin(question))
+        )
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none"):
@@ -3206,10 +3314,10 @@ class AnswerQuestionUseCase:
                     EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
                 )
                 return AnswerResult(
-                    answer=to_cyrillic(canned) if want_cyrillic else canned,
+                    answer=_localize(canned, lang),
                     sources=[],
                     finish_reason="stop",
-                    completion_tokens=0,
+                    completion_tokens=router_tokens,
                     max_tokens=self.MAX_TOKENS,
                 )
             # Stream yo'li bilan bir xil: javobni kod tuzadi, model chaqirilmaydi.
@@ -3218,7 +3326,7 @@ class AnswerQuestionUseCase:
                 answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
                 sources=[],
                 finish_reason="stop",
-                completion_tokens=0,
+                completion_tokens=router_tokens,
                 max_tokens=self.MAX_TOKENS,
             )
 
@@ -3236,7 +3344,7 @@ class AnswerQuestionUseCase:
                 answer=broad_reply,
                 sources=[],
                 finish_reason="stop",
-                completion_tokens=0,
+                completion_tokens=router_tokens,
                 max_tokens=self.MAX_TOKENS,
             )
 
@@ -3244,10 +3352,10 @@ class AnswerQuestionUseCase:
         # "ma'lumot yo'q" (uzoq LLM chaqiruvining oldini oladi).
         if _is_meaningless_query(question):
             return AnswerResult(
-                answer=to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY,
+                answer=_localize(NO_INFO_REPLY, lang),
                 sources=[],
                 finish_reason="stop",
-                completion_tokens=0,
+                completion_tokens=router_tokens,
                 max_tokens=self.MAX_TOKENS,
             )
 
@@ -3309,10 +3417,10 @@ class AnswerQuestionUseCase:
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
             return AnswerResult(
-                answer=to_cyrillic(NO_INFO_REPLY) if want_cyrillic else NO_INFO_REPLY,
+                answer=_localize(NO_INFO_REPLY, lang),
                 sources=[],
                 finish_reason="stop",
-                completion_tokens=0,
+                completion_tokens=router_tokens,
                 max_tokens=self.MAX_TOKENS,
             )
 
@@ -3337,7 +3445,7 @@ class AnswerQuestionUseCase:
 
         gen = await self.ai_client.generate_text_with_usage(
             prompt,
-            system_prompt=system,
+            system_prompt=_with_lang(system, lang),
             temperature=self.TEMPERATURE,
             max_tokens=max_toks,
         )
@@ -3345,12 +3453,12 @@ class AnswerQuestionUseCase:
         answer = _dedupe_source_links(_strip_stray_followup(gen.text.strip()))
         if want_cyrillic:
             answer = _translit_preserving_titles(answer, [s.title for s in sources])
-        else:
+        elif lang == "uz":
             answer = fix_mixed_script(answer)
         return AnswerResult(
             answer=answer,
             sources=sources,
             finish_reason=gen.finish_reason,
-            completion_tokens=gen.completion_tokens,
+            completion_tokens=gen.completion_tokens + router_tokens,
             max_tokens=gen.max_tokens,
         )
