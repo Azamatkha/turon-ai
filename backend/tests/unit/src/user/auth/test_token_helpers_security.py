@@ -88,6 +88,51 @@ async def test_create_access_token_stores_jti(
 
 
 @pytest.mark.asyncio
+async def test_create_access_token_without_face_id_has_no_verification_id(
+    fake_redis: InMemoryRedis,
+) -> None:
+    token = await security.create_access_token({"sub": "user"}, redis_client=fake_redis)
+    decoded = jwt.decode(
+        token,
+        TEST_JWT_USER_SECRET_KEY,
+        algorithms=["HS256"],
+        options={"verify_exp": False},
+    )
+
+    assert "verificationId" not in decoded
+
+
+@pytest.mark.asyncio
+async def test_create_access_token_for_face_id_maps_verification_id_to_user(
+    fake_redis: InMemoryRedis,
+) -> None:
+    """
+    Given: Face-ID uchun ikki marta token yaratiladi.
+    When: tokenlardagi verificationId Redis orqali ochiladi.
+    Then: ikkalasi ham userga olib boradi, lekin ID'lar har safar boshqa.
+    """
+    ids = []
+    for _ in range(2):
+        token = await security.create_access_token(
+            {"sub": "user-1"}, redis_client=fake_redis, for_face_id=True
+        )
+        decoded = jwt.decode(
+            token,
+            TEST_JWT_USER_SECRET_KEY,
+            algorithms=["HS256"],
+            options={"verify_exp": False},
+        )
+        ids.append(decoded["verificationId"])
+        assert (
+            await security.resolve_verification_id(decoded["verificationId"], fake_redis)
+            == "user-1"
+        )
+
+    assert ids[0] != ids[1]
+    assert await security.resolve_verification_id("unknown", fake_redis) is None
+
+
+@pytest.mark.asyncio
 async def test_create_access_token_ignores_removed_family_claim(
     fake_redis: InMemoryRedis, monkeypatch: pytest.MonkeyPatch
 ) -> None:

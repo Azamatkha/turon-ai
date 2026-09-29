@@ -75,6 +75,7 @@ class RegisterUseCase:
                 {"sub": str(user.id)},
                 redis_client=self.redis_client,
                 session_id=str(uuid4()),
+                for_face_id=True,
             ),
             p12_base64=p12_base64,
             p12_password=p12_password,

@@ -1,6 +1,4 @@
 from datetime import timedelta
-import hashlib
-import hmac
 from typing import Any
 from uuid import uuid4
 
@@ -19,20 +17,24 @@ from src.user.auth.token_helpers import (
 )
 
 
-def build_verification_id(user_id: str) -> str:
-    """user_id ning sirli kalit bilan olingan hash'i (HMAC-SHA256).
-
-    Oddiy sha256 emas: id'ni bilgan har kim uni hisoblay olmasligi uchun.
-    """
-    return hmac.new(
-        config.jwt.JWT_USER_SECRET_KEY.encode(),
-        str(user_id).encode(),
-        hashlib.sha256,
-    ).hexdigest()
+async def resolve_verification_id(
+    verification_id: str, redis_client: Redis
+) -> str | None:
+    """Face-ID `verificationId` -> user_id. Muddati o'tgan / noma'lum bo'lsa None."""
+    user_id = await redis_client.get(
+        auth_redis_keys.face_id_verification(verification_id)
+    )
+    if isinstance(user_id, bytes):
+        user_id = user_id.decode()
+    return user_id
 
 
 async def create_access_token(
-    data: dict[str, Any], redis_client: Redis, session_id: str | None = None
+    data: dict[str, Any],
+    redis_client: Redis,
+    session_id: str | None = None,
+    *,
+    for_face_id: bool = False,
 ) -> str:
     """
     Create a new JWT access token
@@ -40,6 +42,10 @@ async def create_access_token(
     Args:
         data: Dictionary containing token data (must include 'sub' key with user ID)
         session_id: Optional session ID for tracking multiple sessions per user
+        for_face_id: Face-ID SDK uchun token (register / tasdiqlanmagan login).
+            Bunda tokenga tasodifiy `verificationId` qo'yiladi va Redis'da
+            user_id ga bog'lanadi — proxy webhook'ga shu ID bilan keladi,
+            backend esa userni shu orqali topadi (GSI hujjati 7.1, 3.3).
     Returns:
         str: Encoded JWT access token
     """
@@ -51,13 +57,22 @@ async def create_access_token(
 
     payload: JWTPayload = {
         "sub": data["sub"],
-        "verificationId": build_verification_id(data["sub"]),
         "iat": int(now.timestamp()),
         "exp": int(expire.timestamp()),
         "mode": "access_token",
         "jti": jti,
         "session_id": session_id,
     }
+    if for_face_id:
+        # Oldin HMAC(user_id) edi — undan userni qaytarib topib bo'lmasdi va
+        # u har safar bir xil chiqardi. Endi har token uchun yangi tasodifiy ID
+        verification_id = uuid4().hex
+        payload["verificationId"] = verification_id
+        await redis_client.set(
+            auth_redis_keys.face_id_verification(verification_id),
+            data["sub"],
+            ex=config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
 
     encoded_jwt = jwt.encode(
         dict(payload), config.jwt.JWT_USER_SECRET_KEY, config.jwt.ALGORITHM

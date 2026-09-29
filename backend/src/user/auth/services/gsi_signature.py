@@ -17,10 +17,12 @@ from typing import Any
 from uuid import UUID
 
 import jwt
+from redis.asyncio import Redis
 
 from loggers import get_logger
 from src.core.errors.exceptions import InstanceProcessingException
 from src.main.config import config
+from src.user.auth.security import resolve_verification_id
 
 logger = get_logger(__name__)
 
@@ -70,8 +72,11 @@ def decode_signature(signature: str) -> dict[str, Any]:
         raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE) from exc
 
 
-def user_id_from_token(token: Any) -> UUID:
+async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
     """2-qadam: `claims["token"]` — bizning accessToken. Undan user aniqlanadi.
+
+    User `verificationId` orqali topiladi (Redis: verificationId -> user_id).
+    `sub` faqat qo'shimcha tekshiruv: ikkalasi bir userga olib borishi shart.
 
     `exp` tekshirilmaydi: skanerlash token muddatidan cho'zilishi mumkin, imzo
     esa baribir GSI tomonidan yangi qo'yilgan.
@@ -87,10 +92,23 @@ def user_id_from_token(token: Any) -> UUID:
         )
         if payload.get("mode") != "access_token":
             raise ValueError("token turi access_token emas")
-        return UUID(str(payload["sub"]))
+        verification_id = payload["verificationId"]
+        sub = str(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError) as exc:
         logger.info("[FaceID] Ichki token rad etildi: %s", exc)
         raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE) from exc
+
+    user_id = await resolve_verification_id(str(verification_id), redis_client)
+    if user_id is None:
+        # Muddati o'tgan yoki biz bermagan verificationId
+        logger.info("[FaceID] verificationId topilmadi: %s", verification_id)
+        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE)
+    if user_id != sub:
+        logger.warning(
+            "[FaceID] verificationId boshqa userga tegishli (sub=%s).", sub
+        )
+        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE)
+    return UUID(user_id)
 
 
 # ----- body ----- #

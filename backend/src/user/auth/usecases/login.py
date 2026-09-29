@@ -151,7 +151,10 @@ class LoginUserUseCase:
             refresh_token="",
             is_verified=False,
             token=await create_access_token(
-                token_data, redis_client=self.redis_client, session_id=session_id
+                token_data,
+                redis_client=self.redis_client,
+                session_id=session_id,
+                for_face_id=True,
             ),
             p12_base64=p12_base64,
             p12_password=p12_password,

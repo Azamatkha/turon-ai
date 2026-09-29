@@ -22,6 +22,11 @@ class AuthRedisKeyBuilder:
     ) -> str:
         return f"one-time:{purpose}:{normalized_email}"
 
+    def face_id_verification(self, verification_id: str) -> str:
+        """Face-ID tokenidagi `verificationId` -> user_id (webhook userni shu
+        orqali topadi)."""
+        return f"face-id:verification:{verification_id}"
+
     def access_pattern(self, user_id: str) -> str:
         return f"access:{user_id}:*"
 

@@ -9,6 +9,7 @@ table relationships effectively.
 
 from src.user.models import User as User
 from src.user.models import LoginEvent as LoginEvent
+from src.user.models import FaceIdSignatureLog as FaceIdSignatureLog
 from src.chat.models import ChatSession as ChatSession
 from src.chat.models import ChatMessage as ChatMessage
 from src.notifications.models import Notification as Notification

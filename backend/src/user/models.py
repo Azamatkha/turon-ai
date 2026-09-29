@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
@@ -9,9 +10,10 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    Text,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from src.core.database.base import Base
@@ -132,3 +134,28 @@ class LoginEvent(Base, UUIDIDMixin, TimestampMixin):
     action: Mapped[str] = mapped_column(
         String(20), default="login", server_default="login"
     )
+
+
+class FaceIdSignatureLog(Base, UUIDIDMixin, TimestampMixin):
+    """`/auth/save` ga kelgan har bir GSI `signature` (xato bilan tugaganlari ham).
+
+    Maqsad — GSI javobi ichida aniq nimalar kelayotganini ko'rish. Shaxsiy
+    ma'lumot saqlanadi, shuning uchun jadvalga kirish cheklangan bo'lishi kerak.
+    """
+
+    __tablename__ = "face_id_signature_logs"
+
+    # User topilmasa (token yaroqsiz / verificationId eskirgan) — NULL
+    user_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
+    request_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Kelgan xom signature (JWT satri)
+    signature: Mapped[str] = mapped_column(Text)
+    # Decode qilingan claim'lar; `body` JSON satr bo'lsa — ochilgan holda
+    claims: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # "ok" | "not_employee" | xato matni
+    result: Mapped[str] = mapped_column(String(255))

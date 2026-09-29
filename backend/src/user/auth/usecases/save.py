@@ -11,8 +11,12 @@ Qayta yuborishdan himoya: token boshqa userga bog'lab bo'lmaydi (u imzo
 ichida), tasdiqlangan user esa ikkinchi marta saqlanmaydi.
 """
 
+from typing import Any
+from uuid import UUID
+
 from fastapi import Depends
 import httpx
+from redis.asyncio import Redis
 
 from loggers import get_logger
 from src.core.database.session import get_unit_of_work
@@ -23,6 +27,7 @@ from src.core.errors.exceptions import (
     InstanceProcessingException,
 )
 from src.core.http.dependencies import get_http_client
+from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import SuccessResponse
 from src.user.auth.schemas import SaveSignatureModel
 from src.user.auth.services.employee_check import check_employee
@@ -31,6 +36,7 @@ from src.user.auth.services.gsi_signature import (
     extract_person,
     user_id_from_token,
 )
+from src.user.auth.services.gsi_signature_log import store_signature_log
 
 logger = get_logger(__name__)
 
@@ -40,13 +46,35 @@ class SaveSignatureUseCase:
         self,
         uow: ApplicationUnitOfWork[RepositoryProtocol],
         http: httpx.AsyncClient,
+        redis_client: Redis,
     ) -> None:
         self.uow = uow
         self.http = http
+        self.redis_client = redis_client
 
     async def execute(self, data: SaveSignatureModel) -> SuccessResponse:
-        claims = decode_signature(data.signature)
-        user_id = user_id_from_token(claims.get("token"))
+        # Har bir kelgan signature natijasi bilan jadvalga yoziladi (debug uchun)
+        claims: dict[str, Any] | None = None
+        user_id: UUID | None = None
+        result = "error"
+        try:
+            claims = decode_signature(data.signature)
+            user_id = await user_id_from_token(claims.get("token"), self.redis_client)
+            response = await self._verify(claims, user_id)
+            result = "ok" if response.success else "not_employee"
+            return response
+        except Exception as exc:
+            result = f"{type(exc).__name__}: {exc}"
+            raise
+        finally:
+            await store_signature_log(
+                signature=data.signature,
+                claims=claims,
+                user_id=user_id,
+                result=result,
+            )
+
+    async def _verify(self, claims: dict[str, Any], user_id: UUID) -> SuccessResponse:
         person = extract_person(claims.get("body"))
 
         # Tashqi API tranzaksiyadan OLDIN chaqiriladi — javob kutilayotganda
@@ -114,5 +142,6 @@ class SaveSignatureUseCase:
 def get_save_signature_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
     http: httpx.AsyncClient = Depends(get_http_client),
+    redis_client: Redis = Depends(get_redis_client),
 ) -> SaveSignatureUseCase:
-    return SaveSignatureUseCase(uow=uow, http=http)
+    return SaveSignatureUseCase(uow=uow, http=http, redis_client=redis_client)
