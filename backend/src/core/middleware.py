@@ -36,6 +36,11 @@ BASE_SECURITY_HEADERS = {
 DOCS_PATHS = frozenset({"/openapi.json", "/redoc"})
 # Docker healthcheck har 10 soniyada uradi — logni to'ldirib yubormasin
 QUIET_PATH_PREFIXES = ("/health",)
+# Frontend bir necha soniyada so'raydigan (polling) endpointlar. Muvaffaqiyatli
+# va tez javobi logga YOZILMAYDI — har bir ochiq tab har daqiqada bir necha
+# qator qo'shib, haqiqiy so'rovlarni ko'mib yuborardi. Xato (4xx/5xx) yoki
+# sekin (>=0.5 s) javob esa baribir yoziladi — muammo yashirinmasin.
+QUIET_POLLING_PATHS = frozenset({"/v1/notifications/unread-count"})
 
 
 def _is_docs_route(path: str) -> bool:
@@ -83,6 +88,9 @@ def register_middlewares(app: FastAPI) -> None:
         response = await call_next(request)
         process_time = time.perf_counter() - start_time
         status_code = response.status_code
+
+        if path in QUIET_POLLING_PATHS and status_code < 400 and process_time < 0.5:
+            return response
 
         # Har so'rov — BITTA qator:  GET    403     9ms  /v1/chat/sessions | sabab
         # 4xx sababini exception handler `request.state.error_reason` ga yozadi

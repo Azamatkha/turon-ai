@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import Depends
 import httpx
 
+from src.core.ai.clients.ollama import ollama_error_message
 from src.core.errors.exceptions import InfrastructureException
 from src.core.http.dependencies import get_http_client
 from src.main.config import config
@@ -32,12 +33,13 @@ class OllamaEmbedder:
             )
         except httpx.HTTPError as exc:
             raise InfrastructureException(
-                f"Embedding connection error: {exc}"
+                f"Embedding connection error: {type(exc).__name__} {exc}".rstrip()
             ) from exc
 
         if resp.status_code != 200:
             raise InfrastructureException(
-                f"Embedding error {resp.status_code}: {resp.text[:200]}"
+                "Embedding: "
+                + ollama_error_message(resp.status_code, resp.text, self.model)
             )
 
         data: dict[str, Any] = resp.json()

@@ -27,6 +27,7 @@ from loggers import get_logger
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
+from src.core.errors.exceptions import InfrastructureException
 from src.core.limiter.depends import RateLimiter
 from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
@@ -311,29 +312,36 @@ async def ask_stream(
         events = use_case.execute_stream(question=data.question, history=history)
 
     async def event_stream() -> AsyncIterator[str]:
+        # Xatoning O'ZI faqat log'ga tushadi.
+        #
+        # ILGARI klientga `str(exc)` yuborilardi. Bu xavfli: xom xato matni
+        # ichida ichki xost nomi, port, Qdrant/Ollama manzili yoki DSN
+        # bo'lagi bo'lishi mumkin — ya'ni ichki infratuzilma xaritasi
+        # brauzer konsoliga chiqib ketardi.
+        #
+        # Foydalanuvchiga esa u baribir foydasiz edi: "ConnectionError:
+        # [Errno 111]" xodimga hech narsa aytmaydi. Endi tushunarli
+        # o'zbekcha matn boradi.
+        error_payload = {
+            "type": "error",
+            "message": (
+                "Javob olishda xatolik yuz berdi. Bir oz kutib, qayta "
+                "urinib ko'ring."
+            ),
+        }
         try:
             async for ev in events:
                 yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
+        except InfrastructureException as exc:
+            # Kutilgan xato (Ollama o'chiq, model topilmadi, timeout) — BITTA
+            # qator. Sabab xabarning o'zida ("Ollama modeli topilmadi: ...");
+            # 80 qatorli httpx traceback'i hech narsa qo'shmasdi.
+            logger.error("Javob oqimi uzildi: %s | %r", exc, data.question[:200])
+            yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
         except Exception:  # noqa: BLE001 - oqim uzilsa, klientga xabar beramiz
-            # Xatoning O'ZI faqat log'ga tushadi.
-            #
-            # ILGARI klientga `str(exc)` yuborilardi. Bu xavfli: xom xato matni
-            # ichida ichki xost nomi, port, Qdrant/Ollama manzili yoki DSN
-            # bo'lagi bo'lishi mumkin — ya'ni ichki infratuzilma xaritasi
-            # brauzer konsoliga chiqib ketardi.
-            #
-            # Foydalanuvchiga esa u baribir foydasiz edi: "ConnectionError:
-            # [Errno 111]" xodimga hech narsa aytmaydi. Endi tushunarli
-            # o'zbekcha matn boradi.
+            # Kutilmagan xato — bu yerda traceback haqiqatan kerak
             logger.exception("Javob oqimi uzildi: %r", data.question[:200])
-            payload = {
-                "type": "error",
-                "message": (
-                    "Javob olishda xatolik yuz berdi. Bir oz kutib, qayta "
-                    "urinib ko'ring."
-                ),
-            }
-            yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         event_stream(),

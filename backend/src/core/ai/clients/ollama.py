@@ -22,6 +22,26 @@ from src.main.config import config
 logger = get_logger(__name__)
 
 
+def ollama_error_message(status: int, body: str, model: str) -> str:
+    """Ollama HTTP xatosini logda BITTA tushunarli qatorga aylantiradi.
+
+    Model serverda yo'q bo'lsa (nomi .env da xato yoki `ollama pull`
+    qilinmagan) Ollama 404 + {"error": "model ... not found"} qaytaradi.
+    Ilgari xom javob tanasi (bytes repr) traceback bilan birga chiqardi va
+    asl sabab — "model yo'q" — ko'rinmay qolardi."""
+    try:
+        detail = str(json.loads(body).get("error", "")) or body
+    except (ValueError, AttributeError):
+        detail = body
+    detail = " ".join(detail.split())[:200]
+    if status == 404 and "not found" in detail.lower():
+        return (
+            f"Ollama modeli topilmadi: {model!r} — .env dagi nomni tekshiring "
+            f"yoki Ollama serverida `ollama pull {model}` qiling"
+        )
+    return f"Ollama error {status}: {detail}"
+
+
 @singleton
 class OllamaClient(BaseAIClient):
     def __init__(self, http: httpx.AsyncClient) -> None:
@@ -101,7 +121,7 @@ class OllamaClient(BaseAIClient):
 
         if resp.status_code != 200:
             raise InfrastructureException(
-                f"Ollama error {resp.status_code}: {resp.text[:200]}"
+                ollama_error_message(resp.status_code, resp.text, self.model)
             )
         data: dict[str, Any] = resp.json()
         return data
@@ -188,7 +208,11 @@ class OllamaClient(BaseAIClient):
                 if resp.status_code != 200:
                     body = await resp.aread()
                     raise InfrastructureException(
-                        f"Ollama error {resp.status_code}: {body[:200]!r}"
+                        ollama_error_message(
+                            resp.status_code,
+                            body.decode("utf-8", "replace"),
+                            self.model,
+                        )
                     )
                 async for line in resp.aiter_lines():
                     line = line.strip()

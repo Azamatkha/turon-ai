@@ -19,6 +19,11 @@ logger = get_logger(__name__)
 @typed_shared_task(name="cleanup_unverified_users")
 def cleanup_unverified_users() -> str:
     result = execute_coroutine_sync(coroutine=_soft_delete_unverified_users)
+    # Task har daqiqada ishlaydi va Celery'ning o'z qatorlari jim qilingan
+    # (celery_tasks/main.py, _QuietTaskFilter). Log faqat HAQIQATAN kimdir
+    # o'chirilganda yoziladi — "0 ta o'chirildi" hech narsa bildirmaydi.
+    if result:
+        logger.info("%d ta tasdiqlanmagan akkaunt o'chirildi (24 soat o'tgan).", result)
     return f"Deleted {result} unverified users."
 
 

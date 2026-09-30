@@ -467,14 +467,18 @@ class SoftDeleteRepository(BaseRepository[T], Generic[T]):
             result = await session.execute(stmt)
             count = int(result.rowcount) if hasattr(result, "rowcount") else 0
 
+            # 0 ta yozuv — log yozilmaydi: davriy tozalash tasklari (masalan
+            # har daqiqalik cleanup_unverified_users) aks holda har daqiqada
+            # "0 record(s)" qatorini qo'shib, logni to'ldirardi.
             if commit:
                 await session.commit()
-                logger.debug(
-                    "%s batch soft-deleted %d record(s) [Committed].",
-                    self.model.__name__,
-                    count,
-                )
-            else:
+                if count:
+                    logger.debug(
+                        "%s batch soft-deleted %d record(s) [Committed].",
+                        self.model.__name__,
+                        count,
+                    )
+            elif count:
                 logger.debug(
                     "%s batch soft-deleted %d record(s) [Staged, pending commit].",
                     self.model.__name__,
