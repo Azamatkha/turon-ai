@@ -34,7 +34,11 @@ const router = createBrowserRouter([
   // Admin ichidagi sahifa manzilda saqlanadi — refresh qilinganda o'sha sahifa ochiladi
   { path: "/admin/:view", element: <RequireAdmin><AdminPage /></RequireAdmin> },
   { path: "*", element: <NotFoundPage /> },
-]);
+], {
+  // Prod'da ilova nginx ortida /chat/ ostida turadi (vite.config.ts: base).
+  // BASE_URL "/chat/" -> basename "/chat"; lokalda "/" -> "/".
+  basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/",
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

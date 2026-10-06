@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ""
+        VITE_BASE_PATH: "/chat/"
     restart: always
     ports:
       - "127.0.0.1:3001:3001"
