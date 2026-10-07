@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from loggers import get_logger
 from src.core.database.repositories import BaseRepository, SoftDeleteRepository
 from src.core.utils.datetime_utils import get_utc_now
-from src.user.models import LoginEvent, User
+from src.user.models import FaceIdSignatureLog, LoginEvent, User
 
 logger = get_logger(__name__)
 
@@ -137,3 +137,35 @@ class LoginEventRepository(BaseRepository[LoginEvent]):
         )
         result = await session.execute(query)
         return [(f"{r[2]} {r[3]}".strip(), r[1], r[0]) for r in result.all()]
+
+
+class FaceIdSignatureLogRepository(BaseRepository[FaceIdSignatureLog]):
+
+    model = FaceIdSignatureLog
+
+    async def list_with_usernames(
+        self,
+        session: AsyncSession,
+        only_failed: bool = False,
+        page: int = 1,
+        size: int = 20,
+    ) -> tuple[list[tuple[FaceIdSignatureLog, str | None]], int]:
+        """Kelgan signature'lar + user logini (topilgan bo'lsa), yangisidan
+        eskisiga. (ro'yxat, jami) qaytaradi."""
+        count_query = select(func.count()).select_from(self.model)
+        # LEFT JOIN: user topilmagan (user_id NULL) yozuvlar ham chiqishi shart
+        query = select(self.model, User.username).outerjoin(
+            User, self.model.user_id == User.id
+        )
+        if only_failed:
+            count_query = count_query.where(self.model.result != "ok")
+            query = query.where(self.model.result != "ok")
+        total = int((await session.execute(count_query)).scalar_one())
+
+        query = (
+            query.order_by(self.model.created_at.desc())
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        result = await session.execute(query)
+        return [(row[0], row[1]) for row in result.all()], total

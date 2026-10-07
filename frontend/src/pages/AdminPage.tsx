@@ -17,6 +17,7 @@ import KnowledgeListView from "../components/admin/KnowledgeListView";
 import PdfUploadView from "../components/admin/PdfUploadView";
 import ApiDocsView from "../components/admin/ApiDocsView";
 import ReportsView from "../components/admin/ReportsView";
+import FaceIdLogsView from "../components/admin/FaceIdLogsView";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
@@ -37,6 +38,7 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   dashboard: "dashboard",
   users: "users",
   reports: "reports",
+  faceIdLogs: "face-id-logs",
   knowledgeList: "knowledge",
   pdfUpload: "documents",
   apiDocs: "api-docs",
@@ -45,6 +47,7 @@ const PATH_TO_VIEW: Record<string, AdminView> = {
   dashboard: "dashboard",
   users: "users",
   reports: "reports",
+  "face-id-logs": "faceIdLogs",
   knowledge: "knowledgeList",
   documents: "pdfUpload",
   "api-docs": "apiDocs",
@@ -175,6 +178,7 @@ export default function AdminPage() {
   const onDashboard = view === "dashboard";
   const onUsers = view === "users";
   const onReports = view === "reports";
+  const onFaceIdLogs = view === "faceIdLogs";
   const onKnowledgeList = view === "knowledgeList";
   const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
@@ -379,6 +383,7 @@ export default function AdminPage() {
           {onReports && (
             <ReportsView mounted={mounted} t={t} onCountsChange={setNewReportsCount} />
           )}
+          {onFaceIdLogs && <FaceIdLogsView mounted={mounted} t={t} />}
           {onApiDocs && <ApiDocsView />}
           {onUsers && (
             <>

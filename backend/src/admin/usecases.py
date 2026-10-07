@@ -5,9 +5,12 @@ from fastapi import Depends
 from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.utils.datetime_utils import get_utc_now
+from src.user.auth.services.gsi_signature import summarize_claims
 from src.admin.schemas import (
     DashboardStatsView,
     DeptStat,
+    FaceIdLogPageView,
+    FaceIdLogView,
     RecentActivityItem,
     TopUserStat,
     WeeklyPoint,
@@ -101,3 +104,40 @@ def get_dashboard_stats_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> DashboardStatsUseCase:
     return DashboardStatsUseCase(uow=uow)
+
+
+class ListFaceIdLogsUseCase:
+    """Kelgan GSI signature'lar ro'yxati (yangisidan eskisiga)."""
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(
+        self, only_failed: bool = False, page: int = 1, size: int = 20
+    ) -> FaceIdLogPageView:
+        async with self.uow as uow:
+            rows, total = await uow.face_id_signature_logs.list_with_usernames(
+                uow.session, only_failed=only_failed, page=page, size=size
+            )
+            return FaceIdLogPageView(
+                items=[
+                    FaceIdLogView(
+                        id=log.id,
+                        created_at=log.created_at,
+                        result=log.result,
+                        username=username,
+                        request_id=log.request_id,
+                        signature=log.signature,
+                        claims=log.claims,
+                        **summarize_claims(log.claims),
+                    )
+                    for log, username in rows
+                ],
+                total=total,
+            )
+
+
+def get_list_face_id_logs_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> ListFaceIdLogsUseCase:
+    return ListFaceIdLogsUseCase(uow=uow)

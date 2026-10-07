@@ -64,7 +64,9 @@ class SaveSignatureUseCase:
             result = "ok" if response.success else "not_employee"
             return response
         except Exception as exc:
-            result = f"{type(exc).__name__}: {exc}"
+            # FaceIdRejected'da aniq sabab `reason` da (mijozga u aytilmaydi)
+            reason = getattr(exc, "reason", None) or getattr(exc, "message", None)
+            result = f"{type(exc).__name__}: {reason or exc}"
             raise
         finally:
             await store_signature_log(

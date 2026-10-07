@@ -78,6 +78,11 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
       badge: newReportsCount > 0 ? String(newReportsCount) : undefined,
     },
     {
+      id: "faceIdLogs",
+      label: admin.faceLogsNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M20 16v2a2 2 0 0 1-2 2h-2" /><path d="M8 20H6a2 2 0 0 1-2-2v-2" /><path d="M9 10v1" /><path d="M15 10v1" /><path d="M9.5 15a3.5 3.5 0 0 0 5 0" /></svg>,
+    },
+    {
       id: "knowledgeList",
       label: admin.knowledgeNav,
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>,

@@ -32,6 +32,19 @@ INVALID_SIGNATURE_MESSAGE = "Face-ID natijasi yaroqsiz"
 CLOCK_LEEWAY_SECONDS = 60
 
 
+class FaceIdRejected(InstanceProcessingException):
+    """Signature rad etildi.
+
+    Mijozga doim bir xil umumiy xabar ketadi (sabab tashqariga aytilmaydi),
+    aniq sabab esa `reason` da — u log va `face_id_signature_logs` ga yoziladi.
+    """
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(INVALID_SIGNATURE_MESSAGE)
+        self.reason = reason
+        logger.info("[FaceID] Rad etildi: %s", reason)
+
+
 @dataclass(frozen=True)
 class GsiPerson:
     """`body` dan ajratib olingan shaxs ma'lumoti (users jadvali ustunlariga mos)."""
@@ -68,8 +81,7 @@ def decode_signature(signature: str) -> dict[str, Any]:
             options={"verify_signature": False, "verify_exp": False},
         )
     except jwt.PyJWTError as exc:
-        logger.info("[FaceID] Imzo rad etildi: %s", exc)
-        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE) from exc
+        raise FaceIdRejected(f"signature ochilmadi ({exc})") from exc
 
 
 async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
@@ -82,7 +94,7 @@ async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
     esa baribir GSI tomonidan yangi qo'yilgan.
     """
     if not isinstance(token, str) or not token:
-        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE)
+        raise FaceIdRejected("signature ichida token yo'q")
     try:
         payload = jwt.decode(
             token,
@@ -90,25 +102,29 @@ async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
             algorithms=[config.jwt.ALGORITHM],
             options={"verify_exp": False},
         )
-        if payload.get("mode") != "access_token":
-            raise ValueError("token turi access_token emas")
-        verification_id = payload["verificationId"]
-        sub = str(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError) as exc:
-        logger.info("[FaceID] Ichki token rad etildi: %s", exc)
-        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE) from exc
+    except jwt.PyJWTError as exc:
+        raise FaceIdRejected(f"token bizniki emas yoki buzilgan ({exc})") from exc
+
+    if payload.get("mode") != "access_token":
+        raise FaceIdRejected("token turi access_token emas")
+    verification_id = payload.get("verificationId")
+    sub = payload.get("sub")
+    if not verification_id:
+        raise FaceIdRejected("tokenda verificationId yo'q")
+    if not sub:
+        raise FaceIdRejected("tokenda sub yo'q")
 
     user_id = await resolve_verification_id(str(verification_id), redis_client)
     if user_id is None:
-        # Muddati o'tgan yoki biz bermagan verificationId
-        logger.info("[FaceID] verificationId topilmadi: %s", verification_id)
-        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE)
-    if user_id != sub:
-        logger.warning(
-            "[FaceID] verificationId boshqa userga tegishli (sub=%s).", sub
+        raise FaceIdRejected(
+            "verificationId Redis'da topilmadi (muddati o'tgan yoki biz bermagan)"
         )
-        raise InstanceProcessingException(INVALID_SIGNATURE_MESSAGE)
-    return UUID(user_id)
+    if user_id != str(sub):
+        raise FaceIdRejected("verificationId boshqa userga tegishli (sub mos emas)")
+    try:
+        return UUID(user_id)
+    except ValueError as exc:
+        raise FaceIdRejected("user_id UUID emas") from exc
 
 
 # ----- body ----- #
@@ -219,3 +235,59 @@ def extract_person(body: Any) -> GsiPerson:
         doc_number=doc_number,
         birth_date=_parse_date(_find(body, "birth_date", "birthdate", "date_birth")),
     )
+
+
+def summarize_claims(claims: Any) -> dict[str, Any]:
+    """Admin log jadvali uchun: signature ichidan asosiy narsalarni ajratadi.
+
+    Hech narsani TEKSHIRMAYDI va xato tashlamaydi — yaroqsiz signature'da ham
+    bor narsasini ko'rsatish kerak (aynan nima yetishmayotganini bilish uchun).
+    """
+    summary: dict[str, Any] = {
+        "person_name": None,
+        "pnfl": None,
+        "document": None,
+        "birth_date": None,
+        "has_token": False,
+        "token_sub": None,
+        "verification_id": None,
+    }
+    if not isinstance(claims, dict):
+        return summary
+
+    body = claims.get("body")
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except json.JSONDecodeError:
+            body = None
+    if isinstance(body, dict):
+        names = [
+            _person_name(_find(body, "surnamelat", "surname_lat", "last_name", "surnamecyr"), 50),
+            _person_name(_find(body, "namelat", "name_lat", "first_name", "namecyr"), 50),
+            _person_name(_find(body, "patronymlat", "patronym_lat", "patronym", "patronymcyr"), 50),
+        ]
+        summary["person_name"] = " ".join(n for n in names if n) or None
+        summary["pnfl"] = _text(_find(body, "pin", "doc_pinfl", "pinfl", "pnfl"), 20)
+        doc_seria = _text(_find(body, "doc_seria", "document_seria"), 10)
+        doc_number = _text(_find(body, "doc_number", "document_number"), 20)
+        if not doc_number:
+            doc_seria, doc_number = _split_document(_find(body, "current_document"))
+        summary["document"] = f"{doc_seria or ''}{doc_number or ''}" or None
+        summary["birth_date"] = _text(
+            _find(body, "birth_date", "birthdate", "date_birth"), 20
+        )
+
+    token = claims.get("token")
+    if isinstance(token, str) and token:
+        summary["has_token"] = True
+        try:
+            # Faqat o'qish uchun — imzo bu yerda tekshirilmaydi
+            payload = jwt.decode(
+                token, options={"verify_signature": False, "verify_exp": False}
+            )
+        except jwt.PyJWTError:
+            payload = {}
+        summary["token_sub"] = _text(payload.get("sub"), 64)
+        summary["verification_id"] = _text(payload.get("verificationId"), 128)
+    return summary

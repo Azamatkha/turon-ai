@@ -8,7 +8,11 @@ from src.core.database.uow.sqlalchemy import RepositoryInstance, SQLAlchemyUnitO
 from src.chat.repositories import ChatMessageRepository, ChatSessionRepository
 from src.notifications.repositories import NotificationRepository
 from src.reports.repositories import UserReportRepository
-from src.user.repositories import LoginEventRepository, UserRepository
+from src.user.repositories import (
+    FaceIdSignatureLogRepository,
+    LoginEventRepository,
+    UserRepository,
+)
 
 
 class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
@@ -73,6 +77,11 @@ class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
     def login_events(self) -> LoginEventRepository:
         """Get the LoginEventRepository."""
         return self._get_repository(LoginEventRepository)
+
+    @property
+    def face_id_signature_logs(self) -> FaceIdSignatureLogRepository:
+        """Get the FaceIdSignatureLogRepository."""
+        return self._get_repository(FaceIdSignatureLogRepository)
 
     @property
     def notifications(self) -> NotificationRepository:
