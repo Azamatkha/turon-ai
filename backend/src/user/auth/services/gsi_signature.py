@@ -84,6 +84,22 @@ def decode_signature(signature: str) -> dict[str, Any]:
         raise FaceIdRejected(f"signature ochilmadi ({exc})") from exc
 
 
+def peek_claims(signature: str) -> dict[str, Any] | None:
+    """Imzoni TEKSHIRMASDAN claim'larni o'qiydi — faqat log uchun.
+
+    `decode_signature` rad etgan (masalan imzosi noto'g'ri) signature'ning
+    ham ichida nima kelganini ko'rish kerak. Natijaga ISHONIB BO'LMAYDI:
+    undan user aniqlanmaydi va bazaga hech narsa yozilmaydi. JWT bo'lmasa — None.
+    """
+    try:
+        claims = jwt.decode(
+            signature, options={"verify_signature": False, "verify_exp": False}
+        )
+    except jwt.PyJWTError:
+        return None
+    return claims if isinstance(claims, dict) else None
+
+
 async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
     """2-qadam: `claims["token"]` — bizning accessToken. Undan user aniqlanadi.
 

@@ -34,6 +34,7 @@ from src.user.auth.services.employee_check import check_employee
 from src.user.auth.services.gsi_signature import (
     decode_signature,
     extract_person,
+    peek_claims,
     user_id_from_token,
 )
 from src.user.auth.services.gsi_signature_log import store_signature_log
@@ -71,7 +72,8 @@ class SaveSignatureUseCase:
         finally:
             await store_signature_log(
                 signature=data.signature,
-                claims=claims,
+                # Imzo rad etilgan bo'lsa ham ichini ko'rsatamiz (faqat log uchun)
+                claims=claims if claims is not None else peek_claims(data.signature),
                 user_id=user_id,
                 result=result,
             )
