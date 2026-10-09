@@ -76,19 +76,19 @@
        "bo'g'iq" ko'rindi. */
     /* To'rt burchak BIR XIL tus va o'lcham: ilgari har biri boshqa rangda
        (binafsha / ko'k / binafsha / havorang) edi — fon "yamoq" ko'rinardi. */
-    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 60% at 100% 0%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
+    radial-gradient(ellipse 76% 64% at 0% 0%, rgba(116, 92, 240, 0.30) 0%, transparent 72%),
+    radial-gradient(ellipse 76% 64% at 100% 0%, rgba(116, 92, 240, 0.30) 0%, transparent 72%),
+    radial-gradient(ellipse 76% 64% at 100% 100%, rgba(116, 92, 240, 0.30) 0%, transparent 72%),
+    radial-gradient(ellipse 76% 64% at 0% 100%, rgba(116, 92, 240, 0.30) 0%, transparent 72%),
     linear-gradient(180deg, #F6F8FD 0%, #FAFCFE 45%, #F4F6FC 100%);
 }
 
 :global(html.dark) .bgLayer {
   background:
-    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
-    radial-gradient(ellipse 70% 60% at 100% 0%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
-    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
-    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
+    radial-gradient(ellipse 76% 64% at 0% 0%, rgba(104, 84, 228, 0.26) 0%, transparent 68%),
+    radial-gradient(ellipse 76% 64% at 100% 0%, rgba(104, 84, 228, 0.26) 0%, transparent 68%),
+    radial-gradient(ellipse 76% 64% at 100% 100%, rgba(104, 84, 228, 0.26) 0%, transparent 68%),
+    radial-gradient(ellipse 76% 64% at 0% 100%, rgba(104, 84, 228, 0.26) 0%, transparent 68%),
     linear-gradient(180deg, #0B1730 0%, #0A1526 50%, #08122A 100%);
 }
 
@@ -181,16 +181,16 @@
   height: 100%;
   pointer-events: none;
   fill: none;
-  stroke: rgba(25, 48, 112, 0.035);
+  stroke: rgba(25, 48, 112, 0.075);
   /* To'r faqat MARKAZDA (orbita halqalari atrofida) ko'rinadi va chekkalarga
      yetmasdan so'nib ketadi. Ilgari deyarli butun maydonni qoplardi —
      chiziqlar burchaklargacha aniq ko'rinib, fonni "katak daftar" qilardi. */
-  -webkit-mask-image: radial-gradient(ellipse 58% 56% at 50% 44%, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
-  mask-image: radial-gradient(ellipse 58% 56% at 50% 44%, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 62% 60% at 50% 44%, #000 0%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(ellipse 62% 60% at 50% 44%, #000 0%, #000 35%, transparent 100%);
 }
 
 :global(html.dark) .gridBg {
-  stroke: rgba(148, 197, 240, 0.06);
+  stroke: rgba(148, 197, 240, 0.09);
 }
 
 /* Rangli yoyilma. Asosiy g'oya — MARKAZ YORUG', CHEKKALAR TO'Q: shunda
