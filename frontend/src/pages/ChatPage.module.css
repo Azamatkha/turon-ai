@@ -74,19 +74,21 @@
        lekin MARKAZ ataylab toza qoldiriladi — matn shu yerda o'qiladi.
        Markaziy tovlanish sinab ko'rilgandi: butun ekran gradient bo'lib,
        "bo'g'iq" ko'rindi. */
-    radial-gradient(ellipse 78% 66% at 0% 0%, rgba(123, 77, 255, 0.30) 0%, transparent 72%),
-    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(64, 89, 190, 0.24) 0%, transparent 70%),
-    radial-gradient(ellipse 82% 70% at 100% 100%, rgba(123, 77, 255, 0.28) 0%, transparent 74%),
-    radial-gradient(ellipse 78% 66% at 0% 100%, rgba(26, 124, 200, 0.24) 0%, transparent 72%),
+    /* To'rt burchak BIR XIL tus va o'lcham: ilgari har biri boshqa rangda
+       (binafsha / ko'k / binafsha / havorang) edi — fon "yamoq" ko'rinardi. */
+    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 60% at 100% 0%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(108, 99, 232, 0.20) 0%, transparent 70%),
     linear-gradient(180deg, #F6F8FD 0%, #FAFCFE 45%, #F4F6FC 100%);
 }
 
 :global(html.dark) .bgLayer {
   background:
-    radial-gradient(ellipse 78% 66% at 0% 0%, rgba(123, 77, 255, 0.24) 0%, transparent 68%),
-    radial-gradient(ellipse 74% 62% at 100% 0%, rgba(64, 89, 190, 0.28) 0%, transparent 66%),
-    radial-gradient(ellipse 82% 70% at 100% 100%, rgba(123, 77, 255, 0.20) 0%, transparent 70%),
-    radial-gradient(ellipse 78% 66% at 0% 100%, rgba(26, 124, 200, 0.20) 0%, transparent 68%),
+    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
+    radial-gradient(ellipse 70% 60% at 100% 0%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
+    radial-gradient(ellipse 70% 60% at 100% 100%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
+    radial-gradient(ellipse 70% 60% at 0% 100%, rgba(92, 84, 214, 0.22) 0%, transparent 68%),
     linear-gradient(180deg, #0B1730 0%, #0A1526 50%, #08122A 100%);
 }
 
@@ -179,15 +181,16 @@
   height: 100%;
   pointer-events: none;
   fill: none;
-  stroke: rgba(25, 48, 112, 0.05);
-  /* To'r deyarli butun maydonni qoplaydi, faqat chekkalarda yumshoq
-     so'nadi — ai.turonbank.uz dagi kabi. */
-  -webkit-mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);
-  mask-image: radial-gradient(ellipse 95% 90% at 50% 38%, #000 40%, transparent 100%);
+  stroke: rgba(25, 48, 112, 0.035);
+  /* To'r faqat MARKAZDA (orbita halqalari atrofida) ko'rinadi va chekkalarga
+     yetmasdan so'nib ketadi. Ilgari deyarli butun maydonni qoplardi —
+     chiziqlar burchaklargacha aniq ko'rinib, fonni "katak daftar" qilardi. */
+  -webkit-mask-image: radial-gradient(ellipse 58% 56% at 50% 44%, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 58% 56% at 50% 44%, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
 }
 
 :global(html.dark) .gridBg {
-  stroke: rgba(148, 197, 240, 0.08);
+  stroke: rgba(148, 197, 240, 0.06);
 }
 
 /* Rangli yoyilma. Asosiy g'oya — MARKAZ YORUG', CHEKKALAR TO'Q: shunda
