@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import FilterSelect from "./FilterSelect";
 import { listFaceIdLogs, type ApiFaceIdLog } from "../../services/faceIdLogService";
 import type { AdminStrings } from "../../types/i18n";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./FaceIdLogsView.module.css";
 
 interface FaceIdLogsViewProps {
@@ -72,6 +73,7 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
     setSelected(null);
     setCopied(false);
   };
+  const modalRef = useModalA11y<HTMLDivElement>(close, !!selected);
 
   const copySignature = async () => {
     if (!selected) return;
@@ -148,7 +150,7 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
 
       {selected && (
         <div className={styles.overlay} onClick={close}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div ref={modalRef} role="dialog" aria-modal="true" aria-label={admin.faceLogsDetail} className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.head}>
               <div>
                 <div className={styles.title}>{admin.faceLogsDetail}</div>

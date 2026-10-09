@@ -1,0 +1,227 @@
+/* Qo'llab-quvvatlash oynasi — ko'rinishi Profil oynasi bilan bir xil oilada
+   (ProfileModal.module.css): xira fon + to'liq (shaffof emas) karta. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.16s ease both;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+  padding: 22px;
+  border-radius: 18px;
+  background: #FFFFFF;
+  color: #193070;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  animation: popIn 0.18s ease both;
+}
+
+.dark .modal {
+  background: #151D3F;
+  color: #E2E8F0;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.sub {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #64748B;
+}
+
+.dark .sub {
+  color: #94A3B8;
+}
+
+.closeBtn {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: #F1F5F9;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: #E2E8F0;
+}
+
+.dark .closeBtn {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .closeBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: inherit;
+  text-decoration: none;
+}
+
+.dark .row {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rowLink {
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.rowLink:hover {
+  background: #EEF2FF;
+  border-color: #C7D2FE;
+  transform: translateY(-1px);
+}
+
+.dark .rowLink:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: linear-gradient(140deg, #4059BE, #193070);
+  color: #FFFFFF;
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowLabel {
+  font-size: 12.5px;
+  color: #64748B;
+}
+
+.dark .rowLabel {
+  color: #94A3B8;
+}
+
+.rowValue {
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.rowValue:hover {
+  text-decoration: underline;
+}
+
+.copyBtn {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.copyBtn:hover {
+  background: #EEF2FF;
+}
+
+.dark .copyBtn {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .copyBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.arrow {
+  flex: 0 0 auto;
+  opacity: 0.6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+
+  .rowLink {
+    transition: none;
+  }
+}

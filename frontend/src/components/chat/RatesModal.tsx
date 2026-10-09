@@ -5,6 +5,7 @@ import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { fetchRates, type RateRow, type RatesResult } from "../../services/ratesService";
 import { ACCENT, PRIMARY_ON_DARK } from "./theme";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./RatesModal.module.css";
 
 interface RatesModalProps {
@@ -89,14 +90,8 @@ export default function RatesModal({ tk, isDark, s, onClose }: RatesModalProps) 
     };
   }, []);
 
-  // Esc bilan yopish — qolgan oynalarda ham shunday.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  // Esc, Tab-tuzoq va fokusni qaytarish — umumiy hook
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
 
   const channels = data?.channels ?? [];
   const rows: RateRow[] = useMemo(
@@ -107,6 +102,10 @@ export default function RatesModal({ tk, isDark, s, onClose }: RatesModalProps) 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={s.ratesHeading}
         className={styles.modal}
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}

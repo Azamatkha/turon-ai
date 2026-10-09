@@ -913,3 +913,31 @@ html.dark [data-tip]::after {
     animation: none;
   }
 }
+
+/* ============================================================================
+   SINOV VARIANTI: SHISHASIZ (TEKIS) YUZALAR
+   ----------------------------------------------------------------------------
+   Kalit — index.html dagi `<html data-glass="off">`. Atribut olib tashlansa,
+   hammasi avvalgi shisha (glassmorphism) ko'rinishiga qaytadi; bu blokka
+   tegish shart emas.
+
+   Faqat shisha tokenlari qayta e'lon qilinadi: kartochka/oyna foni to'liq
+   (shaffof emas), blur o'chiq. Shunda oyna ortidagi matn ustiga "chiqib"
+   ko'rinmaydi va `backdrop-filter` yuki ham yo'qoladi.
+   ========================================================================= */
+html[data-glass="off"] {
+  --tu-glass-bg: #FFFFFF;
+  --tu-glass-bg-strong: #FFFFFF;
+  --tu-glass-bg-soft: #F1F4FB;
+  --tu-glass-border: #DCE1EF;
+  --tu-glass-blur: none;
+  --tu-glass-shadow: 0 6px 24px rgba(14, 27, 66, 0.08);
+}
+
+html[data-glass="off"].dark {
+  --tu-glass-bg: #151D3F;
+  --tu-glass-bg-strong: #151D3F;
+  --tu-glass-bg-soft: #1D2752;
+  --tu-glass-border: rgba(154, 172, 236, 0.20);
+  --tu-glass-shadow: 0 6px 24px rgba(4, 6, 20, 0.45);
+}

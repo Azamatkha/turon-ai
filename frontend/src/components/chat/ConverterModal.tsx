@@ -13,6 +13,7 @@ import {
 import { ACCENT, PRIMARY_ON_DARK } from "./theme";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./ConverterModal.module.css";
 
 interface ConverterModalProps {
@@ -59,13 +60,10 @@ export default function ConverterModal({ tk, isDark, s, onClose }: ConverterModa
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
   const cardBg = "var(--tu-glass-bg-soft)";
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, busy]);
+  // Jarayon ketayotganda Esc oynani yopmaydi
+  const modalRef = useModalA11y<HTMLDivElement>(() => {
+    if (!busy) onClose();
+  });
 
   // Yangi fayllarni qo'shadi — qoidaga zid bo'lsa, ro'yxat o'zgarmaydi
   const addFiles = (picked: FileList | null | undefined) => {
@@ -130,6 +128,7 @@ export default function ConverterModal({ tk, isDark, s, onClose }: ConverterModa
   return createPortal(
     <div className={styles.overlay} onClick={() => !busy && onClose()}>
       <div
+        ref={modalRef}
         className={styles.modal}
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}

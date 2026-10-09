@@ -12,6 +12,11 @@ export const ACCENT = BRAND_ACCENT;
 export const PRIMARY = NAVY;
 export const PRIMARY_ON_DARK = ACCENT_ON_DARK;
 
+// SINOV: shishasiz (tekis) yuzalar. Kalit — index.html dagi
+// `<html data-glass="off">` (index.css oxiridagi blok bilan birga ishlaydi).
+// Atribut olib tashlansa, avvalgi shisha ko'rinish qaytadi.
+const SOLID = typeof document !== "undefined" && document.documentElement.dataset.glass === "off";
+
 // Asosiy mavzu (light/dark) rang to'plami — ChatHeader, MessageArea, Composer
 // shu funksiyadan qaytgan obyektni o'qib, fonni/matn rangini moslashtiradi.
 // Bitta joyda turgani uchun light/dark farqi faqat shu yerda boshqariladi.
@@ -25,8 +30,8 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
         muted: "#98A2CC",
         // Shisha (glassmorphism): fon to'liq shaffofmas emas. Blur esa
         // CSS modullardagi `backdrop-filter: var(--tu-glass-blur)` orqali.
-        card: "rgba(21,29,63,.58)",
-        bubble: "rgba(21,29,63,.40)",
+        card: SOLID ? "#151D3F" : "rgba(21,29,63,.58)",
+        bubble: SOLID ? "#131A3A" : "rgba(21,29,63,.40)",
         // Foydalanuvchi xabari — YORUG'ROQ ko'k gradient. Sahifa foni
         // (#0A1029) dan yuqorida turadi, ya'ni bulutcha fonga "botib"
         // ketmaydi va undan qora bo'lib ham ajralmaydi.
@@ -45,8 +50,8 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
         // Shisha (glassmorphism) — izoh yuqorida.
         // Chegara OQ emas, ko'kish: oq chiziq oq fonda ko'rinmasdi va
         // tugmalar "ramkasiz" bo'lib qolgandi.
-        card: "rgba(255,255,255,.62)",
-        bubble: "rgba(255,255,255,.42)",
+        card: SOLID ? "#FFFFFF" : "rgba(255,255,255,.62)",
+        bubble: SOLID ? "#FFFFFF" : "rgba(255,255,255,.42)",
         bubbleUser: "linear-gradient(176deg, #193070 0%, #24397F 60%, #33459B 100%)",
         cardBorder: "rgba(25,48,112,.16)",
         input: NAVY,

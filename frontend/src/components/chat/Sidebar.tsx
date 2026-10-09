@@ -38,8 +38,8 @@ interface SidebarProps {
   openProfile: () => void;
   onLogout: () => void;
   profileLabel: string;
-  supportHint: string;
-  supportNumber: string;
+  openSupport: () => void;
+  supportLabel: string;
   logoutLabel: string;
 }
 
@@ -61,7 +61,7 @@ export default function Sidebar({
   removeChatLabel, pinChatLabel, unpinChatLabel, moreOptionsLabel, pinnedSectionLabel, recentsSectionLabel, todayLabel,
   search, setSearch, searchPlaceholder, noResultsLabel,
   side, userName, userHandle, initial, openProfile,
-  onLogout, profileLabel, supportHint, supportNumber, logoutLabel,
+  onLogout, profileLabel, openSupport, supportLabel, logoutLabel,
 }: SidebarProps) {
   const sideHover: CSSProperties = { background: "rgba(255,255,255,.08)" };
   const btnHover: CSSProperties = { background: "rgba(255,255,255,.13)" };
@@ -72,7 +72,10 @@ export default function Sidebar({
   // Menyu <body>ga portal qilib chiqariladi — shunda sidebar ro'yxatining overflow/rang
   // qatlamlariga qo'shilib ketmaydi va har doim yaxshi ko'rinadi.
   const MENU_W = 180;
-  const [menu, setMenu] = useState<{ id: string; top: number; left: number } | null>(null);
+  // Menyuning taxminiy balandligi (vaqt satri + 2 band) — pastda joy yetishini
+  // ochishdan OLDIN bilish uchun.
+  const MENU_H = 128;
+  const [menu, setMenu] = useState<{ id: string; top?: number; bottom?: number; left: number } | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const anchorElRef = useRef<HTMLElement | null>(null);
 
@@ -81,9 +84,12 @@ export default function Sidebar({
     if (menu?.id === id) { setMenu(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
     anchorElRef.current = e.currentTarget;
+    // Pastda joy yetmasa (ro'yxatning oxirgi qatorlari) menyu tugma USTIGA
+    // ochiladi — aks holda u ekran chetidan pastga chiqib ketardi.
+    const fitsBelow = rect.bottom + 6 + MENU_H <= window.innerHeight - 8;
     setMenu({
       id,
-      top: rect.bottom + 6,
+      ...(fitsBelow ? { top: rect.bottom + 6 } : { bottom: window.innerHeight - rect.top + 6 }),
       left: Math.min(Math.max(rect.right - MENU_W, 8), window.innerWidth - MENU_W - 8),
     });
   };
@@ -107,7 +113,7 @@ export default function Sidebar({
     };
   }, [menu]);
 
-  // Profil menyusi (Profil / yordam raqami / Chiqish): user tugmasi ustiga
+  // Profil menyusi (Profil / Qo'llab-quvvatlash / Chiqish): user tugmasi ustiga
   // kursor kelganda ochiladi. Sensorli ekranda hover yo'q — bosilganda ham
   // ochiladi. Menyu ham <body>ga portal qilinadi (sidebar overflow'i kesmasin).
   const [profileMenu, setProfileMenu] = useState<{ bottom: number; left: number; width: number } | null>(null);
@@ -337,11 +343,18 @@ export default function Sidebar({
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
           <span>{profileLabel}</span>
         </button>
-        <div className={styles.profileMenuSupport}>
+        {/* Yordam: raqam menyuning o'zida emas — alohida oynada (telefon + Telegram) */}
+        <button
+          role="menuitem"
+          className={styles.moreMenuItem}
+          onClick={() => {
+            setProfileMenu(null);
+            openSupport();
+          }}
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
-          <span className={styles.profileMenuSupportHint}>{supportHint}</span>
-          <span className={styles.profileMenuSupportNumber}>{supportNumber}</span>
-        </div>
+          <span>{supportLabel}</span>
+        </button>
         <div className={styles.profileMenuDivider} />
         <button
           role="menuitem"
@@ -398,7 +411,7 @@ export default function Sidebar({
               ref={menuRef}
               role="menu"
               className={styles.moreMenu}
-              style={{ top: menu.top, left: menu.left, width: MENU_W }}
+              style={{ top: menu.top, bottom: menu.bottom, left: menu.left, width: MENU_W }}
             >
               <div className={styles.moreMenuTime}>{formatLastMessageTime(c.lastMessageAt, todayLabel)}</div>
               <button

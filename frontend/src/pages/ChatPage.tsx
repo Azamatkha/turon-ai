@@ -10,6 +10,7 @@ import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import ProfileModal from "../components/chat/ProfileModal";
+import SupportModal from "../components/chat/SupportModal";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
@@ -123,6 +124,9 @@ export default function ChatPage() {
   const openProfile = () => setProfileOpen(true);
   const closeProfile = useCallback(() => setProfileOpen(false), []);
 
+  // Qo'llab-quvvatlash oynasi (telefon + Telegram bot) — profil menyusidan ochiladi
+  const [supportOpen, setSupportOpen] = useState(false);
+
   const doLogout = async () => {
     await logout();
     navigate("/login");
@@ -217,12 +221,13 @@ export default function ChatPage() {
         openProfile={openProfile}
         onLogout={doLogout}
         profileLabel={S.profileMenu}
-        supportHint={S.supportHint}
-        supportNumber={S.supportNumber}
+        openSupport={() => setSupportOpen(true)}
+        supportLabel={S.support}
         logoutLabel={S.logOut}
       />
 
       {profileOpen && <ProfileModal S={S} isDark={isDark} onClose={closeProfile} />}
+      {supportOpen && <SupportModal S={S} isDark={isDark} onClose={() => setSupportOpen(false)} />}
 
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} />
 

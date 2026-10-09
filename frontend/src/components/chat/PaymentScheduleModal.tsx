@@ -12,6 +12,7 @@ import {
   type ScheduleResult,
 } from "../../utils/paymentSchedule";
 import { PRIMARY, PRIMARY_ON_DARK } from "./theme";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./PaymentScheduleModal.module.css";
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function PaymentScheduleModal({ input, tk, isDark, s, onClose }: Props) {
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
   const accent = isDark ? PRIMARY_ON_DARK : PRIMARY;
 
   // Jadval backenddan keladi. Oyna ochilganda bir marta so'raladi —
@@ -69,6 +71,10 @@ export default function PaymentScheduleModal({ input, tk, isDark, s, onClose }: 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={s.calcSchedule}
         className={styles.modal}
         style={{ background: tk.card, border: `1px solid ${border}` }}
         onClick={(e) => e.stopPropagation()}

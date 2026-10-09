@@ -4,6 +4,7 @@ import { DEPARTMENTS, deptLabel } from "../../services/departments";
 import type { AdminRole } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import type { Lang } from "../../types/lang";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./AddUserModal.module.css";
 
 const ROLES: AdminRole[] = ["Xodim", "Admin"];
@@ -31,12 +32,13 @@ interface AddUserModalProps {
 export default function AddUserModal({
   fName, setFName, fUser, setFUser, fDept, setFDept, fPass, setFPass, fRole, setFRole, adding, userTaken, error, onClose, onSubmit, t: admin, lang,
 }: AddUserModalProps) {
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
   return (
     <div onClick={onClose} className={styles.overlay}>
-      <div onClick={(e) => e.stopPropagation()} className={styles.modal}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-label={admin.addUserModalTitle} onClick={(e) => e.stopPropagation()} className={styles.modal}>
         <div className={styles.head}>
           <div className={styles.title}>{admin.addUserModalTitle}</div>
-          <HButton onClick={onClose} className={styles.closeBtn} baseStyle={{}} hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}>
+          <HButton onClick={onClose} aria-label={admin.close} className={styles.closeBtn} baseStyle={{}} hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
           </HButton>
         </div>

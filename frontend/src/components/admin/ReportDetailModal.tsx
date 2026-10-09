@@ -7,6 +7,7 @@ import {
   type ReportStatus,
 } from "../../services/reportService";
 import type { AdminStrings } from "../../types/i18n";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./ReportDetailModal.module.css";
 
 interface ReportDetailModalProps {
@@ -49,13 +50,7 @@ export default function ReportDetailModal({
     };
   }, [report.id, report.has_screenshot]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
 
   const save = async () => {
     setSaving(true);
@@ -71,7 +66,7 @@ export default function ReportDetailModal({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-label={admin.reportDetail} className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.head}>
           <div>
             <div className={styles.title}>{admin.reportDetail}</div>
@@ -84,7 +79,7 @@ export default function ReportDetailModal({
                 : admin.reportKindSuggestion}
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="×">
+          <button className={styles.closeBtn} onClick={onClose} aria-label={admin.close}>
             ×
           </button>
         </div>

@@ -11,6 +11,7 @@ import {
   toApiPhone,
 } from "../../utils/phone";
 import type { ChatStaticStrings } from "../../types/i18n";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./ProfileModal.module.css";
 
 interface Props {
@@ -47,17 +48,15 @@ export default function ProfileModal({ S, isDark, onClose }: Props) {
     fetchMe().then(setMe).catch(() => setError(true));
   }, []);
 
-  // Escape: tahrirlanayotgan bo'lsa — tahrirni bekor qiladi, aks holda oynani yopadi
   useEffect(() => {
     closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (editing) setEditing(false);
-      else onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, editing]);
+  }, []);
+
+  // Escape: tahrirlanayotgan bo'lsa — tahrirni bekor qiladi, aks holda oynani yopadi
+  const modalRef = useModalA11y<HTMLDivElement>(() => {
+    if (editing) setEditing(false);
+    else onClose();
+  });
 
   const startEdit = () => {
     setPhone(phoneLocalDigits(me?.phone_number));
@@ -119,6 +118,7 @@ export default function ProfileModal({ S, isDark, onClose }: Props) {
       }}
     >
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-modal-title"

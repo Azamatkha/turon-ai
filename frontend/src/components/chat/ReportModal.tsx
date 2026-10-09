@@ -5,6 +5,7 @@ import { createReport, type ReportKind } from "../../services/reportService";
 import { ACCENT, PRIMARY_ON_DARK } from "./theme";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./ReportModal.module.css";
 
 interface ReportModalProps {
@@ -46,13 +47,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
 
   const pickFile = (picked: File | null | undefined) => {
     if (!picked) return;
@@ -95,6 +90,10 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={s.reportHeading}
         className={styles.modal}
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}

@@ -9,6 +9,7 @@ import {
 import { ACCENT, PRIMARY_ON_DARK } from "./theme";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./DirectoryModal.module.css";
 
 interface DirectoryModalProps {
@@ -39,16 +40,11 @@ export default function DirectoryModal({ tk, isDark, s, onClose }: DirectoryModa
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
   const cardBg = "var(--tu-glass-bg-soft)";
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      // Avval kartochkadan ro'yxatga qaytadi, keyin oyna yopiladi
-      if (selected) setSelected(null);
-      else onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, selected]);
+  // Esc: avval kartochkadan ro'yxatga qaytadi, keyin oyna yopiladi
+  const modalRef = useModalA11y<HTMLDivElement>(() => {
+    if (selected) setSelected(null);
+    else onClose();
+  });
 
   useEffect(() => {
     fetchDirectoryDepartments()
@@ -89,6 +85,7 @@ export default function DirectoryModal({ tk, isDark, s, onClose }: DirectoryModa
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={modalRef}
         className={styles.modal}
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}

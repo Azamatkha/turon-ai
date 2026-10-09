@@ -7,6 +7,7 @@ import {
   deleteKnowledge,
   type KnowledgeDetail,
 } from "../../services/knowledgeService";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./KnowledgeDetailView.module.css";
 
 interface Props {
@@ -38,6 +39,9 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
   const [eText, setEText] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const confirmRef = useModalA11y<HTMLDivElement>(() => {
+    if (!busy) setConfirmDel(false);
+  }, confirmDel);
 
   useEffect(() => {
     let alive = true;
@@ -138,7 +142,7 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
 
       {confirmDel && (
         <div className={styles.overlay} onClick={() => setConfirmDel(false)}>
-          <div className={styles.confirm} onClick={(e) => e.stopPropagation()}>
+          <div ref={confirmRef} role="alertdialog" aria-modal="true" aria-label={admin.knowledgeDeleteConfirm} className={styles.confirm} onClick={(e) => e.stopPropagation()}>
             <div className={styles.confirmText}>{admin.knowledgeDeleteConfirm}</div>
             <div className={styles.confirmActions}>
               <button className={styles.cancelBtn} onClick={() => setConfirmDel(false)} disabled={busy}>{admin.knowledgeCancel}</button>

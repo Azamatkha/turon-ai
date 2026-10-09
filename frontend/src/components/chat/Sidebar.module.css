@@ -523,26 +523,6 @@
   box-sizing: border-box;
 }
 
-.profileMenuSupport {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 9px;
-  font-size: 13.5px;
-}
-
-.profileMenuSupportHint {
-  flex: 1;
-  min-width: 0;
-  color: rgba(241, 243, 251, 0.65);
-}
-
-.profileMenuSupportNumber {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-}
-
 .profileMenuDivider {
   height: 1px;
   margin: 4px 2px;

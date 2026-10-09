@@ -17,6 +17,7 @@ import {
 } from "../../utils/paymentSchedule";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import PaymentScheduleModal from "./PaymentScheduleModal";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./CalculatorModal.module.css";
 
 interface CalculatorModalProps {
@@ -152,6 +153,7 @@ function NumField({ label, value, onChange, cfg, suffix, decimals, tk, cardBg, a
 }
 
 export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorModalProps) {
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
   const [mode, setMode] = useState<Mode>("credit");
   const [method, setMethod] = useState<PayMethod>("flat");
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -309,6 +311,10 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={s.calcHeading}
         className={styles.modal}
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}

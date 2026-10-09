@@ -13,6 +13,7 @@ import {
   phoneLocalDigits,
   toApiPhone,
 } from "../../utils/phone";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./AddUserModal.module.css";
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
 // va verifikatsiya ma'lumotlari — xodim Face-ID'dan o'tolmasa admin ularni
 // qo'lda to'ldirib, userni tasdiqlaydi.
 export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Props) {
+  const modalRef = useModalA11y<HTMLDivElement>(onClose);
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.handle.replace(/^@/, ""));
   // Bo'lim/filial — ERKIN MATN: xodimlar bazasi (EDO) goh departament
@@ -96,13 +98,17 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
   return (
     <div onClick={onClose} className={styles.overlay}>
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={admin.editUserModalTitle}
         onClick={(e) => e.stopPropagation()}
         className={styles.modal}
         style={{ maxWidth: 760, maxHeight: "calc(100vh - 48px)", overflowY: "auto" }}
       >
         <div className={styles.head}>
           <div className={styles.title}>{admin.editUserModalTitle}</div>
-          <HButton onClick={onClose} className={styles.closeBtn} baseStyle={{}} hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}>
+          <HButton onClick={onClose} aria-label={admin.close} className={styles.closeBtn} baseStyle={{}} hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
           </HButton>
         </div>

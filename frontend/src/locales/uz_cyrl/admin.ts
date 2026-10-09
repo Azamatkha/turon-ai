@@ -39,6 +39,7 @@ export const admin: AdminStrings = {
   tableDept: "Департамент",
   tableRole: "Рол",
   tableStatus: "Ҳолат",
+  close: "Ёпиш",
   addUserModalTitle: "Янги фойдаланувчи қўшиш",
   addUserModalSub: "Turon AI ёрдамчисига рухсат беринг.",
   fullName: "Тўлиқ исм",

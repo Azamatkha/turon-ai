@@ -59,6 +59,9 @@ export interface ChatStaticStrings {
   support: string;
   supportNumber: string;
   supportHint: string;
+  supportSub: string;
+  supportTelegramLabel: string;
+  supportTelegramBot: string;
   collapseSidebar: string;
   theme: string;
   nightMode: string;
@@ -302,6 +305,7 @@ export interface AdminStrings {
   tableDept: string;
   tableRole: string;
   tableStatus: string;
+  close: string;
   addUserModalTitle: string;
   addUserModalSub: string;
   fullName: string;
