@@ -155,8 +155,11 @@ body,
      Fallback zanjiri: system-ui (har OS'ning o'z interfeys shrifti) ->
      -apple-system (macOS/iOS) -> Segoe UI (Windows). Shrift yuklanmasa ham
      interfeys buzilmaydi, faqat ko'rinishi biroz o'zgaradi. */
-  --tu-font: 'Onest Variable', system-ui, -apple-system,
-    'Segoe UI Variable Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  /* HOZIR: Inter (`@fontsource-variable/inter`, main.tsx) — yuqoridagi Onest
+     izohi tarix uchun qoldirilgan. Nomi 'Inter Variable' (paket shu nom bilan
+     ro'yxatdan o'tkazadi); oddiy 'Inter' — kompyuterda o'rnatilgan bo'lsa.
+     Orqaga qaytarish: shu qator + main.tsx dagi import + pastdagi qalinliklar. */
+  --tu-font: 'Inter Variable', 'Inter', 'Segoe UI', system-ui, sans-serif;
   --tu-font-mono: 'Cascadia Mono', 'Consolas', 'SF Mono', ui-monospace, monospace;
 
   /* Shkala Inter davridagidan +1px. Sabab: Manrope'ning x-balandligi
@@ -451,8 +454,20 @@ select {
    500 da matn xira ko'rinardi. Onest'ning shtrixi to'qroq — o'sha 600 endi
    butun interfeysni "qalin" qilib yuboradi, shuning uchun 500.
    Komponentlarning O'Z font-weight'i bo'lsa, u kuchliroq — bu faqat asos. */
+/* INTER: shtrixi Onest'nikidan ingichkaroq, lekin 500 da oddiy matn
+   "yarim qalin" ko'rinadi. 450 — o'zgaruvchan shrift bergan oraliq qiymat:
+   400 dan to'qroq (och fonda xira emas), 500 dan yengilroq. */
 body {
-  font-weight: 500;
+  font-weight: 450;
+  /* Inter'ning o'lchamga mos optik varianti (mayda matnda ochiqroq harflar) */
+  font-optical-sizing: auto;
+}
+
+/* Urg'u: qalin matn 700 emas, 650 — Inter'da 700 matn ichida "dog'" bo'lib
+   ajralib qoladi. */
+b,
+strong {
+  font-weight: 650;
 }
 
 /* Onest ham ixcham tracking bilan chizilgan — sarlavhalarni yana siqish
@@ -466,8 +481,10 @@ h3,
 h4,
 h5,
 h6 {
+  /* Inter sarlavhada siqiqroq tracking bilan yaxshi ko'rinadi (Onest'da
+     -0.005em edi) */
   font-weight: 700;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.018em;
 }
 
 /* Mayda interfeys matni (12-14px) — bu o'lchamda harflar biroz siqilib
