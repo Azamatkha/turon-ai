@@ -2,6 +2,8 @@ import { KeyboardEvent, useEffect, useState } from "react";
 import { GrLogin } from "react-icons/gr";
 import { RiLockPasswordLine } from "react-icons/ri";
 import LangSwitcher from "../LangSwitcher";
+import SupportModal from "../chat/SupportModal";
+import { chatStaticDict } from "../../locales";
 import type { Lang } from "../../types/lang";
 import type { LoginStrings } from "../../types/i18n";
 import styles from "./LoginForm.module.css";
@@ -166,23 +168,14 @@ export default function LoginForm({
         {/* yordam — tabIndex={-1} olib tashlandi (klaviatura bilan yetib
             bo'lmasdi), aria-expanded qo'shildi */}
         <div className={styles.rememberRow} style={{ justifyContent: "flex-end" }}>
-          <div className={styles.helpWrap}>
-            <button
-              type="button"
-              onClick={() => setHelpOpen((v) => !v)}
-              className={styles.helpLink}
-              aria-expanded={helpOpen}
-            >
-              {t.help}
-            </button>
-            {helpOpen && (
-              <div className={styles.helpPop} role="status">
-                {lang === "ru" ? "Служба поддержки" : lang === "uz_cyrl" ? "Ёрдам маркази" : "Yordam markazi"}
-                {": "}
-                <span className={styles.helpPhone}>1234</span>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            className={styles.helpLink}
+            aria-haspopup="dialog"
+          >
+            {t.help}
+          </button>
         </div>
 
         {/* Kirish tugmasi.
@@ -249,6 +242,12 @@ export default function LoginForm({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Qo'llab-quvvatlash oynasi — chatdagi sidebar menyusidagi bilan bir xil
+          (telefon + Telegram bot). Login sahifasi doim yorug' rejimda. */}
+      {helpOpen && (
+        <SupportModal S={chatStaticDict[lang]} isDark={false} onClose={() => setHelpOpen(false)} />
       )}
     </div>
   );

@@ -79,11 +79,17 @@ celery_app.conf.beat_schedule = {
         "task": "cleanup_unverified_users",
         "schedule": crontab(),
     },
-    # Valyuta kurslarini har kuni yangilab turamiz.
-    # Celery timezone = UTC, Toshkent = UTC+5 => 11:00 Toshkent = 06:00 UTC.
-    "scrape_exchange_rates_daily_11_tashkent": {
+    # Valyuta kurslari: bank kursni ertalab 09:00 dan e'lon qila boshlaydi va
+    # uzog'i 12:00 gacha yangilab bo'ladi — shu oraliqda HAR YARIM SOATDA
+    # tekshiramiz: 09:05, 09:35, ... 12:05, 12:35 (Toshkent).
+    # Celery timezone = UTC, Toshkent = UTC+5 => 04–07 UTC soatlari.
+    # Ilgari kuniga bir marta (11:00) edi: kurs 09:00 da chiqsa ham bizda 11:00
+    # gacha kechagisi turardi, vazifa o'sha payt yiqilsa — ertagacha.
+    # Tez-tez ishlatish xavfsiz: kurs o'zgarmagan bo'lsa vazifa hech narsa
+    # yozmaydi va bildirishnoma yubormaydi (knowledge/tasks.py -> _same_rates).
+    "scrape_exchange_rates_morning_half_hourly": {
         "task": "scrape_exchange_rates",
-        "schedule": crontab(minute=0, hour=6),
+        "schedule": crontab(minute="5,35", hour="4-7"),
     },
     # Eskirgan bildirishnomalarni har kuni kechasi tozalaymiz.
     "cleanup_old_notifications_daily": {

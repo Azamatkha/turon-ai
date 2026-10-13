@@ -1,8 +1,9 @@
 """Kunlik vazifa: valyuta kurslarini scrape qilib vektor bazaga yozadi.
 
-Har kuni Toshkent vaqti bilan 11:00 da (Celery timezone UTC — 06:00 UTC)
-ishga tushadi. Eski kurslar o'chirilib, yangisi yoziladi — bazada har doim
-faqat joriy kurs turadi.
+Har kuni Toshkent vaqti bilan 09:05–12:35 oralig'ida har yarim soatda ishga
+tushadi (jadval: celery_tasks/main.py). Kurs o'zgarmagan bo'lsa hech narsa
+yozilmaydi; o'zgargan bo'lsa yangisi eskisining ustiga yoziladi — bazada har
+doim faqat joriy kurs turadi.
 """
 
 import json
@@ -58,6 +59,18 @@ async def _scrape_exchange_rates() -> str:
         # qancha o'zgarganini shu asosda hisoblaymiz.
         previous = _stored_rates([p for _, p in stale])
 
+        # Saytdagi kurs bazadagi bilan AYNAN bir xil (dam olish kuni yoki bank
+        # hali yangilamagan) — hech narsa yozmaymiz. Ilgari bunday kuni ham
+        # qayta yozilardi: sana o'zgarmagani uchun delta hisoblanmasdi, oynadagi
+        # ▲/▼ belgilari o'chib ketardi, matn esa "o'zgargan" bo'lib ko'rinib,
+        # hammaga soxta "kurs o'zgardi" bildirishnomasi borardi. Shu tekshiruv
+        # tufayli vazifani kuniga bir necha marta ishlatish ham xavfsiz.
+        if previous is not None and _same_rates(current, previous):
+            logger.info(
+                "Valyuta kurslari o'zgarmagan (%s) — yozilmadi", current.get("stamp")
+            )
+            return "rates unchanged"
+
         current = apply_deltas(current, previous)
         text = render_rates(current)
 
@@ -108,6 +121,28 @@ def _stored_rates(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
             return None
         return data
     return None
+
+
+def _rates_core(data: dict[str, Any]) -> list[Any]:
+    """Solishtirish uchun kurslarning "sof" ko'rinishi: sana + har kanal
+    qatorlari, `delta_*` maydonlarisiz (ular bizda hisoblanadi, saytda yo'q)."""
+    return [
+        data.get("stamp"),
+        [
+            (
+                ch.get("key"),
+                [
+                    {k: v for k, v in row.items() if not k.startswith("delta_")}
+                    for row in ch.get("rows", [])
+                ],
+            )
+            for ch in data.get("channels", [])
+        ],
+    ]
+
+
+def _same_rates(current: dict[str, Any], previous: dict[str, Any]) -> bool:
+    return _rates_core(current) == _rates_core(previous)
 
 
 def _join_chunks(payloads: list[dict[str, Any]]) -> str:

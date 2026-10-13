@@ -276,10 +276,6 @@
   white-space: nowrap;
 }
 
-.helpWrap {
-  position: relative;
-}
-
 .helpLink {
   font-size: var(--tu-text-sm);
   font-weight: 600;
@@ -296,37 +292,6 @@
 .helpLink:hover {
   color: var(--tu-blue-900);
   text-decoration: underline;
-}
-
-.helpPop {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  z-index: 30;
-  white-space: nowrap;
-  padding: 9px 13px;
-  border-radius: var(--tu-radius);
-  background: var(--tu-blue-900);
-  color: #eaf1f6;
-  font-size: var(--tu-text-xs);
-  font-weight: 550;
-  box-shadow: var(--tu-shadow-lg);
-  animation: helpPop 0.18s ease both;
-}
-
-.helpPop::after {
-  content: "";
-  position: absolute;
-  right: 16px;
-  top: 100%;
-  border: 6px solid transparent;
-  border-top-color: var(--tu-blue-900);
-}
-
-.helpPhone {
-  color: var(--tu-blue-300);
-  font-weight: 700;
-  text-decoration: none;
 }
 
 /* "Hisobingiz yo'qmi?" — saytda ro'yxatdan o'tish yopilgani haqidagi izoh */
@@ -417,17 +382,6 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes helpPop {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
   }
 }
 

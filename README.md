@@ -119,7 +119,7 @@ Celery beat jadvali (`backend/celery_tasks/main.py`, vaqtlar UTC):
 
 | Vazifa | Qachon | Nima qiladi |
 |---|---|---|
-| `scrape_exchange_rates` | har kuni 06:00 UTC (**11:00 Toshkent**) | turonbank.uz kurslar sahifasini o'qib, Qdrant'ga `title="Valyuta kurslari"` + strukturali `rates_json` bilan yozadi |
+| `scrape_exchange_rates` | har kuni **09:05–12:35 Toshkent**, har yarim soatda (04–07 UTC) | turonbank.uz kurslar sahifasini o'qiydi; kurs o'zgargan bo'lsa Qdrant'ga `title="Valyuta kurslari"` + strukturali `rates_json` bilan yozadi, o'zgarmagan bo'lsa hech narsa qilmaydi |
 | `cleanup_unverified_users` | har daqiqa | ro'yxatdan o'tganiga 24 soat bo'lgan tasdiqlanmagan akkauntlarni o'chiradi |
 | `cleanup_old_notifications` | har kuni 03:30 UTC | eskirgan bildirishnomalarni tozalaydi |
 
@@ -129,7 +129,10 @@ bo'lib yoziladi, `rates_json` bo'lmaydi) va keyinchalik botga eski kursni aytdir
 bunday qilmang. Yangi kurs **avval yoziladi, keyin** eskisining ortiqcha bo'laklari
 o'chiriladi: embedding/Qdrant yiqilsa ham kechagi kurs joyida qoladi.
 
-Kursni qo'lda (11:00 ni kutmasdan) yangilash — `backend/` dan:
+Bank kursni ertalab 09:00 dan e'lon qiladi (dam olish kunlari yangilamaydi — o'sha
+kunlari oynada oxirgi ish kunining kursi turadi, bu xato emas).
+
+Kursni qo'lda (navbatdagi tekshiruvni kutmasdan) yangilash — `backend/` dan:
 
 ```bash
 docker compose --env-file .env -f infra/docker-compose.yml exec celery_worker python -m celery -A celery_tasks.main call scrape_exchange_rates

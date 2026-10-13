@@ -40,6 +40,7 @@ from src.knowledge.prompts import (
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
     RU_CANNED_REPLIES,
+    RU_LANGUAGE_OVERRIDE,
     RU_REPLY_OVERRIDE,
     SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
@@ -699,8 +700,16 @@ def _localize(text: str, lang: ReplyLang) -> str:
 
 def _with_lang(system: str, lang: ReplyLang) -> str:
     """Ruscha savolda system prompt oxiriga til almashtirish blokini qo'shadi
-    (qara: prompts.RU_REPLY_OVERRIDE)."""
-    return system + RU_REPLY_OVERRIDE if lang == "ru" else system
+    (qara: prompts.RU_REPLY_OVERRIDE).
+
+    Til savollarida (LANGUAGE_SYSTEM) blok BOSHQA: umumiysi "butun javobni
+    ruscha yoz" deydi va tarjimaga berilgan ruscha matn o'zbekchaga emas,
+    yana ruschaga "tarjima" bo'lib qaytardi (qara: RU_LANGUAGE_OVERRIDE)."""
+    if lang != "ru":
+        return system
+    if system is LANGUAGE_SYSTEM:
+        return system + RU_LANGUAGE_OVERRIDE
+    return system + RU_REPLY_OVERRIDE
 
 
 def _blind_employee_guess(decision: Route | None, question: str) -> bool:
@@ -765,27 +774,40 @@ def _expand_query(question: str) -> str:
     return f"{question} {' '.join(extra)}" if extra else question
 
 
+# "Xodim" so'zining o'zaklari — SO'Z BOSHIDAN qidiriladi ("xodimlar",
+# "ходимлари", "сотрудники" mos keladi). Ilgari matnning istalgan joyidan
+# qidirilardi va ruscha "необХОДИМо" so'zi "ходим" ga mos kelib, tarjimaga
+# berilgan ruscha matn xodim qidiruviga ketib qolardi ("сотрудник не найден").
+_EMPLOYEE_WORD_STEMS = ("xodim", "hodim", "ходим", "сотрудник")
+# Ko'p so'zli belgilar — bularda tasodifiy moslik xavfi yo'q
+_EMPLOYEE_PHRASES = (
+    "ichki raqam",
+    "ички рақам",
+    "внутренний номер",
+    "внутреннего номер",
+)
+# Xodim haqidagi savol doim QISQA ("1036 kimniki", "IT bo'limi xodimlari").
+# Bundan uzun matn — odatda tarjima/tahrir uchun tashlangan hujjat; unda
+# "IP", "сотрудник" kabi so'z uchragani xodim so'rovi degani emas. Bunday
+# matnni kalit so'z bilan xodim yo'liga MAJBURLAMAYMIZ (router o'zi hal qiladi).
+_EMPLOYEE_HINT_MAX_CHARS = 200
+
+
+def _mentions_employee_word(words: set[str]) -> bool:
+    return any(w.startswith(_EMPLOYEE_WORD_STEMS) for w in words)
+
+
 def _has_employee_intent(q_lower: str) -> bool:
     """Savol aniq XODIMLAR haqidami — bo'lim bo'yicha yo'naltirishni faqat shunda
     yoqamiz. Aks holda "Toshkent shahar BANK xizmatlari markazi" kabi filial nomi
     xodim bo'limiga (masalan "Bank karta...") noto'g'ri tushib ketardi."""
+    if len(q_lower) > _EMPLOYEE_HINT_MAX_CHARS:
+        return False
     words = set(_words(q_lower))
     if "ip" in words:
         return True
-    if any(
-        w in q_lower
-        for w in (
-            "xodim",
-            "hodim",
-            "ходим",
-            "ichki raqam",
-            "ички рақам",
-            # Ruscha savol endi lotinga o'girilmaydi (qara: execute_stream)
-            "сотрудник",
-            "внутренний номер",
-            "внутреннего номер",
-        )
-    ):
+    # Ruscha belgilar ham bor: ruscha savol lotinga o'girilmaydi (execute_stream)
+    if _mentions_employee_word(words) or any(p in q_lower for p in _EMPLOYEE_PHRASES):
         return True
     # "2206 kimniki", "2213 kimga tegishli" — savolda "ip" so'zi yo'q, lekin
     # 3-5 xonali raqam + "kim/tegishli/egasi" bu aniq ichki raqam so'rovi.
@@ -933,7 +955,7 @@ class _ConceptLineFilter:
 def _is_generic_employee_request(q_lower: str) -> bool:
     """"Xodimlar raqamlari" kabi umumiy (aniq xodim/bo'limsiz) so'rovmi —
     aniqlashtirishni so'rash uchun."""
-    has_emp = "xodim" in q_lower or "ходим" in q_lower
+    has_emp = _mentions_employee_word(set(_words(q_lower)))
     has_num = any(
         w in q_lower for w in ("raqam", "ip", "telefon", "рақам", "телефон")
     )

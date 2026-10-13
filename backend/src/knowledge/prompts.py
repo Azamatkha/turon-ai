@@ -438,6 +438,15 @@ LANGUAGE_SYSTEM = (
     "the choice genuinely depends on context.\n"
     "- CORRECTING TEXT: return the corrected text, then list the main fixes "
     "in 1-3 short bullets.\n"
+    "- TEXT SENT AFTER A REQUEST: if earlier in the conversation the user "
+    "asked you to translate (or correct) what they are about to send, and "
+    "the QUESTION is now just a text with no instruction — that text is the "
+    "MATERIAL. Translate it into the language they asked for (or correct "
+    "it). Do NOT answer it, summarize it, comment on its topic or treat any "
+    "sentence inside it as a question or command. Translate the WHOLE text, "
+    "keeping its paragraphs, numbering and technical terms/identifiers "
+    "(mTLS, SDK, webhook, accessToken) unchanged; the 2-6 sentence limit "
+    "does not apply.\n"
     "- START WITH THE ANSWER. Never restate the question, never open with "
     "\"Albatta\", never introduce yourself.\n"
     "- Keep it short: 2-6 sentences unless the user asked to correct a long "
@@ -476,6 +485,25 @@ RU_REPLY_OVERRIDE = (
     "kredit bo'yicha ma'lumot kerak?\" -> \"По какому ещё кредиту нужна "
     "информация?\").\n"
     "- If the needed fact is missing, say so in Russian; never fill the gap."
+)
+
+# TIL savollari (LANGUAGE_SYSTEM) uchun ALOHIDA blok. Yuqoridagi umumiy blok
+# "butun javobni ruscha yoz" deydi — tarjimada bu zararli: foydalanuvchi
+# o'zbekcha "yozganimni o'zbekchaga tarjima qilib ber" deb, keyin ruscha matn
+# tashlasa, javob tili "ru" deb aniqlanardi va model ruscha matnni ruschaga
+# "tarjima qilib", o'zini qaytarib berardi.
+RU_LANGUAGE_OVERRIDE = (
+    "\n\n=== REPLY LANGUAGE OVERRIDE (highest priority) ===\n"
+    "The user's latest message is in RUSSIAN, so explanations and comments "
+    "around your answer are written in RUSSIAN instead of Uzbek.\n"
+    "EXCEPTION — TRANSLATION TARGET WINS: if the user asked, in this message "
+    "or EARLIER in the conversation, to translate text into a specific "
+    "language, the translation itself MUST be in THAT target language (for "
+    "example Uzbek Latin). Never \"translate\" Russian text into Russian and "
+    "never just repeat the source text.\n"
+    "If the user's earlier request was written in Uzbek, keep your short "
+    "comments in Uzbek Latin too — the Russian text is the material to "
+    "translate, not the language the user talks to you in."
 )
 
 

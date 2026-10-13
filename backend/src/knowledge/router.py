@@ -253,6 +253,16 @@ ODATDA hozirgina gaplashilgan mavzu haqida bo'ladi. Niyatni ham,
   boshqa mavzuni (masalan omonatlarni) topib keladi — bu jiddiy xato.
 - Mavzu o'zgarganini faqat foydalanuvchi ANIQ boshqa narsa so'raganda qabul
   qil; qisqalik mavzu o'zgardi degani EMAS.
+- TARJIMA/TAHRIR UCHUN YUBORILGAN MATN. Oldingi xabarda foydalanuvchi
+  "yozganimni tarjima qilib ber", "matnni to'g'rilab ber" kabi iltimos qilgan
+  va sen matnni yuborishini so'ragan bo'lsang — KEYINGI xabar aynan O'SHA
+  MATN, savol EMAS. U nima haqida bo'lishidan (texnik hujjat, xat, shartnoma),
+  qaysi tilda va qancha uzun bo'lishidan qat'i nazar -> "language".
+  Matn ICHIDAGI so'zlarga ("IP", "банк", "сотрудник", "кредит") qarab uni
+  "employee" yoki "product" qilish JIDDIY XATO: foydalanuvchi tarjima kutib
+  turganda unga "xodim topilmadi" deb javob berilardi.
+  Xuddi shunday: savol belgisi va iltimossiz, shunchaki tashlangan uzun
+  begona tildagi matn ham odatda tarjima/tahrir uchun -> "language".
 - SUHBATNING MAVZUSI KIM/NIMA EKANINI YO'QOTMA. Foydalanuvchi "kompaniya",
   "u", "bu tashkilot" desa — bu HOZIRGINA gaplashilgan tashkilot, avtomatik
   ravishda "Turonbank" EMAS.
