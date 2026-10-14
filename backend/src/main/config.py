@@ -87,6 +87,10 @@ class JWTConfig(BaseModel):
     REFRESH_TOKEN_USED_TTL_SECONDS: int = Field(1_209_600, gt=0)
     VERIFICATION_TOKEN_EXPIRE_MINUTES: int = Field(gt=0)
     RESET_PASSWORD_TOKEN_EXPIRE_MINUTES: int = Field(gt=0)
+    # Face-ID (register / tasdiqlanmagan login) tokeni — oddiy access tokendan
+    # alohida va qisqa: GSI hujjati 7.1 namunasi va 6.2 dagi sertifikat
+    # muddati bilan bir xil (20 daqiqa). `verificationId` ham shuncha yashaydi.
+    FACE_ID_TOKEN_EXPIRE_MINUTES: int = Field(20, gt=0)
 
     # GSI Face-ID natijasini imzolaydigan HMAC (HS256) kaliti — bankka USB'da
     # beriladi. Bo'sh bo'lsa `/auth/save` imzoni TEKSHIRMAYDI, faqat o'qiydi:

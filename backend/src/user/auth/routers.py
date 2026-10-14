@@ -12,12 +12,17 @@ from src.user.auth.dependencies import (
 )
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
+    CheckFaceTokenModel,
     LoginTokenModel,
     LoginUserModel,
     LogoutRequestModel,
     RegisterTokenModel,
     RegisterUserModel,
     SaveSignatureModel,
+)
+from src.user.auth.usecases.check_face_token import (
+    CheckFaceTokenUseCase,
+    get_check_face_token_use_case,
 )
 from src.user.auth.usecases.get_access_by_refresh import (
     GetTokensByRefreshUserUseCase,
@@ -70,6 +75,26 @@ async def save_face_id_result(
     `{"success": true}` — akkaunt tasdiqlandi; `{"success": false}` — xodim emas.
     """
     return await use_case.execute(data=form_data)
+
+
+@router.post(
+    "/check-face-token",
+    response_model=SuccessResponse,
+)
+async def check_face_token(
+    form_data: CheckFaceTokenModel,
+    use_case: Annotated[
+        CheckFaceTokenUseCase, Depends(get_check_face_token_use_case)
+    ],
+) -> SuccessResponse:
+    """
+    mTLS proxy: SDK so'rovini GSI'ga uzatishdan OLDIN accessToken'ni tekshiradi.
+
+    `200 {"success": true}` — token yaroqli, proxy so'rovni GSI'ga yuboradi.
+    `401` — token yo'q / imzo noto'g'ri / muddati o'tgan / verificationId
+    topilmadi: proxy SDK'ga 401 qaytaradi, GSI'ga va webhook'ga bormaydi.
+    """
+    return await use_case.execute(token=form_data.token)
 
 
 @router.post(

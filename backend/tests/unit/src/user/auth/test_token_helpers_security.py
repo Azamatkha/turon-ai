@@ -133,6 +133,36 @@ async def test_create_access_token_for_face_id_maps_verification_id_to_user(
 
 
 @pytest.mark.asyncio
+async def test_face_id_token_uses_its_own_short_lifetime(
+    fake_redis: InMemoryRedis, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    Given: oddiy access token 300 daqiqa, Face-ID token 20 daqiqa.
+    When: ikkala turdagi token yaratiladi.
+    Then: har biri o'z muddatini oladi (umumiy qiymat Face-ID'ga ta'sir qilmaydi).
+    """
+    monkeypatch.setattr(security.config.jwt, "ACCESS_TOKEN_EXPIRE_MINUTES", 300)
+    monkeypatch.setattr(security.config.jwt, "FACE_ID_TOKEN_EXPIRE_MINUTES", 20)
+
+    def lifetime(token: str) -> int:
+        decoded = jwt.decode(
+            token,
+            TEST_JWT_USER_SECRET_KEY,
+            algorithms=["HS256"],
+            options={"verify_exp": False},
+        )
+        return decoded["exp"] - decoded["iat"]
+
+    face = await security.create_access_token(
+        {"sub": "user-1"}, redis_client=fake_redis, for_face_id=True
+    )
+    normal = await security.create_access_token({"sub": "user-1"}, redis_client=fake_redis)
+
+    assert lifetime(face) == 20 * 60
+    assert lifetime(normal) == 300 * 60
+
+
+@pytest.mark.asyncio
 async def test_create_access_token_ignores_removed_family_claim(
     fake_redis: InMemoryRedis, monkeypatch: pytest.MonkeyPatch
 ) -> None:

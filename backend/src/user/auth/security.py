@@ -46,6 +46,7 @@ async def create_access_token(
             Bunda tokenga tasodifiy `verificationId` qo'yiladi va Redis'da
             user_id ga bog'lanadi — proxy webhook'ga shu ID bilan keladi,
             backend esa userni shu orqali topadi (GSI hujjati 7.1, 3.3).
+            Muddati `FACE_ID_TOKEN_EXPIRE_MINUTES` (oddiy tokendan qisqa).
     Returns:
         str: Encoded JWT access token
     """
@@ -53,7 +54,12 @@ async def create_access_token(
     if session_id is None:
         session_id = str(uuid4())
     now = get_utc_now()
-    expire = now + timedelta(minutes=config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES)
+    lifetime_minutes = (
+        config.jwt.FACE_ID_TOKEN_EXPIRE_MINUTES
+        if for_face_id
+        else config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    expire = now + timedelta(minutes=lifetime_minutes)
 
     payload: JWTPayload = {
         "sub": data["sub"],
@@ -71,7 +77,7 @@ async def create_access_token(
         await redis_client.set(
             auth_redis_keys.face_id_verification(verification_id),
             data["sub"],
-            ex=config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            ex=lifetime_minutes * 60,
         )
 
     encoded_jwt = jwt.encode(
@@ -81,7 +87,7 @@ async def create_access_token(
     await redis_client.set(
         auth_redis_keys.access(data["sub"], session_id),
         jti,
-        ex=config.jwt.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        ex=lifetime_minutes * 60,
     )
 
     return str(encoded_jwt)

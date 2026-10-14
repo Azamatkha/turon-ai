@@ -100,14 +100,18 @@ def peek_claims(signature: str) -> dict[str, Any] | None:
     return claims if isinstance(claims, dict) else None
 
 
-async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
+async def user_id_from_token(
+    token: Any, redis_client: Redis, *, verify_exp: bool = False
+) -> UUID:
     """2-qadam: `claims["token"]` — bizning accessToken. Undan user aniqlanadi.
 
     User `verificationId` orqali topiladi (Redis: verificationId -> user_id).
     `sub` faqat qo'shimcha tekshiruv: ikkalasi bir userga olib borishi shart.
 
-    `exp` tekshirilmaydi: skanerlash token muddatidan cho'zilishi mumkin, imzo
-    esa baribir GSI tomonidan yangi qo'yilgan.
+    `verify_exp=False` (`/auth/save`): skanerlash token muddatidan cho'zilishi
+    mumkin, imzo esa baribir GSI tomonidan yangi qo'yilgan.
+    `verify_exp=True` (proxy tekshiruvi, GSI'ga yuborishdan OLDIN): muddati
+    o'tgan token rad etiladi.
     """
     if not isinstance(token, str) or not token:
         raise FaceIdRejected("signature ichida token yo'q")
@@ -116,8 +120,10 @@ async def user_id_from_token(token: Any, redis_client: Redis) -> UUID:
             token,
             config.jwt.JWT_USER_SECRET_KEY,
             algorithms=[config.jwt.ALGORITHM],
-            options={"verify_exp": False},
+            options={"verify_exp": verify_exp},
         )
+    except jwt.ExpiredSignatureError as exc:
+        raise FaceIdRejected("token muddati o'tgan (exp)") from exc
     except jwt.PyJWTError as exc:
         raise FaceIdRejected(f"token bizniki emas yoki buzilgan ({exc})") from exc
 

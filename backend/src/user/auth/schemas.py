@@ -66,7 +66,7 @@ class RegisterTokenModel(Base):
     """Register javobi: muvaffaqiyat bayrog'i + access token + client p12.
 
     Refresh token ataylab berilmaydi — tasdiqlanmagan user baribir refresh
-    qila olmaydi; token tugasa (30 daqiqa) mobil qayta login qiladi.
+    qila olmaydi; token tugasa (`FACE_ID_TOKEN_EXPIRE_MINUTES`, 20 daqiqa) mobil qayta login qiladi.
 
     JSON kalitlari mobil kutgan camelCase'da (`accessToken`, `p12Base64`,
     `p12Password`); Python ichida esa odatdagi snake_case nomlar ishlatiladi.
@@ -81,6 +81,12 @@ class RegisterTokenModel(Base):
     # Bank bergan client p12 (qara: services/client_p12.py)
     p12_base64: str = Field(alias="p12Base64")
     p12_password: str = Field(alias="p12Password")
+
+
+class CheckFaceTokenModel(Base):
+    """Proxy'dan: GSI'ga yuborishdan oldin tekshiriladigan accessToken."""
+
+    token: str = Field(min_length=1, max_length=10_000)
 
 
 class SaveSignatureModel(Base):
