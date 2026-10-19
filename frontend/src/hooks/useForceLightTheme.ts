@@ -1,4 +1,5 @@
 import { useLayoutEffect } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 
 /**
  * Kirish / ro'yxatdan o'tish sahifalarini majburan OCHIQ (light) rejimda
@@ -6,24 +7,17 @@ import { useLayoutEffect } from "react";
  *
  * Muammo: mavzu `html` elementiga `dark` klassi bilan qo'yiladi va u
  * localStorage'da saqlanadi. Foydalanuvchi chatda tungi rejimga o'tib, keyin
- * tizimdan chiqsa, klass saqlanib qolardi — login formasi esa faqat ochiq
- * ko'rinishda chizilgan (unda mavzu almashtirgich ham yo'q). Natijada global
- * dark qoidalari input fonini qoraytirib, yozuv va placeholder o'qilmas
- * bo'lib qolardi.
+ * tizimdan chiqsa, login formasi (u faqat ochiq ko'rinishda chizilgan, mavzu
+ * almashtirgichi ham yo'q) qorong'i bo'lib, yozuv o'qilmas bo'lib qolardi.
  *
- * Sahifa ochilganda klassni vaqtincha olib turamiz va chiqishda AYNAN
- * joyiga qaytaramiz — foydalanuvchining tanlovi yo'qolmaydi, qayta
- * kirganda chat yana tungi rejimda ochiladi.
+ * Klassga bu yerdan TEGILMAYDI — ThemeProvider'ga majburlov aytiladi, klassni
+ * u qo'yadi (qara: ThemeContext). Sahifadan chiqilganda majburlov olinadi va
+ * foydalanuvchining tanlovi (masalan tungi rejim) o'z-o'zidan qaytadi.
  */
 export function useForceLightTheme(): void {
+  const { setForceLight } = useTheme();
   useLayoutEffect(() => {
-    const el = document.documentElement;
-    if (!el.classList.contains("dark")) return;
-    el.classList.remove("dark");
-    el.classList.add("light");
-    return () => {
-      el.classList.remove("light");
-      el.classList.add("dark");
-    };
-  }, []);
+    setForceLight(true);
+    return () => setForceLight(false);
+  }, [setForceLight]);
 }

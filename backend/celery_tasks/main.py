@@ -1,5 +1,3 @@
-import logging
-
 from celery import Celery
 from celery.schedules import crontab
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -8,31 +6,6 @@ from loggers import get_logger
 from src.main.config import config
 
 logger = get_logger(__name__)
-
-
-# Har daqiqada ishlaydigan "uy tozalash" tasklari. Celery har bir ishga
-# tushishni 3 qator bilan yozadi (beat: "Sending due task", worker:
-# "received", "succeeded") — ya'ni kuniga ~4300 ma'nosiz qator. Task o'zi
-# natija bo'lgandagina (nimadir o'chirilganda) log yozadi (qara:
-# src/user/tasks.py).
-_QUIET_TASKS = ("cleanup_unverified_users",)
-
-
-class _QuietTaskFilter(logging.Filter):
-    """Shovqinli tasklarning FAQAT INFO/DEBUG qatorlarini yashiradi. Xato va
-    ogohlantirishlar ("raised unexpected", retry) baribir chiqadi."""
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno >= logging.WARNING:
-            return True
-        msg = record.getMessage()
-        return not any(name in msg for name in _QUIET_TASKS)
-
-
-# Filtr shu loggerlarning O'ZI yaratgan yozuvlariga qo'llanadi: beat
-# jadvalchisi, worker'ning "received" va "succeeded" qatorlari.
-for _name in ("celery.beat", "celery.worker.strategy", "celery.app.trace"):
-    logging.getLogger(_name).addFilter(_QuietTaskFilter())
 
 
 redis_url = config.redis.dsn
@@ -56,7 +29,6 @@ celery_app.conf.update(
 
 celery_app.conf.update(
     include=[
-        "src.user.tasks",
         "src.core.email_service.tasks",
         "src.knowledge.tasks",
         "src.notifications.tasks",
@@ -66,19 +38,9 @@ celery_app.conf.update(
 )
 
 celery_app.conf.beat_schedule = {
-    # Tasdiqlanmagan akkaunt ro'yxatdan o'tganiga 24 soat to'lishi bilan
-    # o'chsin — HAR DAQIQADA tekshiramiz (kechikish eng ko'pi 1 daqiqa).
-    # Har soatlik tekshiruvda user 1 soatgacha ortiqcha turib qolardi.
-    #
-    # Nega har bir user uchun "24 soatdan keyin o'chir" (ETA/countdown) taski
-    # EMAS: Celery bunday taskni 24 soat davomida tasdiqlanmagan RabbitMQ
-    # xabari sifatida ushlab turadi, RabbitMQ esa sukut bo'yicha 30 daqiqadan
-    # uzoq kutgan xabarda ulanishni uzadi (consumer_timeout). Daqiqalik
-    # tekshiruvda bu muammo yo'q, narxi esa daqiqasiga bitta kichik SQL.
-    "cleanup_unverified_users_every_minute": {
-        "task": "cleanup_unverified_users",
-        "schedule": crontab(),
-    },
+    # Tasdiqlanmagan akkauntlar avtomatik O'CHIRILMAYDI: xodimlar tashqi
+    # tizimdan `is_verified=false` holida ommaviy yuklanadi va hamma ham
+    # Face-ID'dan tez o'ta olmaydi. Bunday userni faqat admin o'chiradi.
     # Valyuta kurslari: bank kursni ertalab 09:00 dan e'lon qila boshlaydi va
     # uzog'i 12:00 gacha yangilab bo'ladi — shu oraliqda HAR YARIM SOATDA
     # tekshiramiz: 09:05, 09:35, ... 12:05, 12:35 (Toshkent).

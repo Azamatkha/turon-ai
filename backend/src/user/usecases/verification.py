@@ -7,7 +7,7 @@ Oqim:
    lavozim/bo'lim/filial. Shu saqlanganda user `is_verified=True` bo'ladi.
 
 Xodimlar bazasi `false` qaytarsa mobil 3-qadamni chaqirmaydi — user
-tasdiqlanmagan qoladi (3 kundan keyin `cleanup_unverified_users` o'chiradi).
+tasdiqlanmagan qoladi (avtomatik o'chirilmaydi, faqat admin o'chiradi).
 """
 
 from uuid import UUID

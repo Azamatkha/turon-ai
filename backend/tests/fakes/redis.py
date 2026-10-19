@@ -60,8 +60,13 @@ class InMemoryRedis:
         *,
         ex: int | None = None,
         px: int | None = None,
-    ) -> bool:
+        nx: bool = False,
+    ) -> bool | None:
         key_norm = _normalize_key(key)
+        if nx:
+            self._purge_expired(key_norm)
+            if key_norm in self._store:
+                return None
         self._store[key_norm] = _normalize_value(value)
         if ex is not None:
             self._expires[key_norm] = _now() + int(ex)

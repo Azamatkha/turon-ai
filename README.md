@@ -120,7 +120,6 @@ Celery beat jadvali (`backend/celery_tasks/main.py`, vaqtlar UTC):
 | Vazifa | Qachon | Nima qiladi |
 |---|---|---|
 | `scrape_exchange_rates` | har kuni **09:05–12:35 Toshkent**, har yarim soatda (04–07 UTC) | turonbank.uz kurslar sahifasini o'qiydi; kurs o'zgargan bo'lsa Qdrant'ga `title="Valyuta kurslari"` + strukturali `rates_json` bilan yozadi, o'zgarmagan bo'lsa hech narsa qilmaydi |
-| `cleanup_unverified_users` | har daqiqa | ro'yxatdan o'tganiga 24 soat bo'lgan tasdiqlanmagan akkauntlarni o'chiradi |
 | `cleanup_old_notifications` | har kuni 03:30 UTC | eskirgan bildirishnomalarni tozalaydi |
 
 **Valyuta kurslari** faqat shu vazifa orqali yangilanadi. Admin paneldan kurslar

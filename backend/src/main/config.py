@@ -91,6 +91,9 @@ class JWTConfig(BaseModel):
     # alohida va qisqa: GSI hujjati 7.1 namunasi va 6.2 dagi sertifikat
     # muddati bilan bir xil (20 daqiqa). `verificationId` ham shuncha yashaydi.
     FACE_ID_TOKEN_EXPIRE_MINUTES: int = Field(20, gt=0)
+    # Bitta user GSI'ga shuncha soniyada 1 tadan ko'p verify so'rovi yubora
+    # olmaydi (GSI hujjati 12, 16.3). Proxy GSI'ga yuborishdan OLDIN tekshiradi.
+    FACE_ID_RATE_LIMIT_SECONDS: int = Field(15, gt=0)
 
     # GSI Face-ID natijasini imzolaydigan HMAC (HS256) kaliti — bankka USB'da
     # beriladi. Bo'sh bo'lsa `/auth/save` imzoni TEKSHIRMAYDI, faqat o'qiydi:

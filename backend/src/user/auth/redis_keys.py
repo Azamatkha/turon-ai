@@ -27,6 +27,10 @@ class AuthRedisKeyBuilder:
         orqali topadi)."""
         return f"face-id:verification:{verification_id}"
 
+    def face_id_rate_limit(self, user_id: str) -> str:
+        """Face-ID so'rovlari orasidagi cheklov (GSI hujjati 12, 16.3)."""
+        return f"face-id:rate:{user_id}"
+
     def access_pattern(self, user_id: str) -> str:
         return f"access:{user_id}:*"
 

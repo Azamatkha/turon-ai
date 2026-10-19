@@ -467,9 +467,8 @@ class SoftDeleteRepository(BaseRepository[T], Generic[T]):
             result = await session.execute(stmt)
             count = int(result.rowcount) if hasattr(result, "rowcount") else 0
 
-            # 0 ta yozuv — log yozilmaydi: davriy tozalash tasklari (masalan
-            # har daqiqalik cleanup_unverified_users) aks holda har daqiqada
-            # "0 record(s)" qatorini qo'shib, logni to'ldirardi.
+            # 0 ta yozuv — log yozilmaydi: davriy tozalash tasklari aks holda
+            # har ishga tushishda "0 record(s)" qatorini qo'shib, logni to'ldirardi.
             if commit:
                 await session.commit()
                 if count:

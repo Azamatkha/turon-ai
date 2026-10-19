@@ -30,8 +30,8 @@ class RegisterUseCase:
     verifikatsiyasiga o'tadi (`/users/me/verification/identity` va `/employment`).
 
     Tasdiqlanmagan user chat va boshqa API'lardan foydalana olmaydi
-    (`require_permission` 403 qaytaradi). 3 kun ichida tasdiqlanmasa
-    `cleanup_unverified_users` taski uni o'chiradi.
+    (`require_permission` 403 qaytaradi). Tasdiqlanmagan akkaunt avtomatik
+    o'chirilmaydi — uni faqat admin o'chiradi.
     """
 
     def __init__(
