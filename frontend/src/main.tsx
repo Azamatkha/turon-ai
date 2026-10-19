@@ -15,6 +15,7 @@ import ChatPage from "./pages/ChatPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { RequireAuth, RequireAdmin } from "./components/RouteGuards";
+import { consumeTuronIdCode } from "./services/authService";
 
 // Marshrutlar: "/" = chat (login bo'lsa), aks holda login sahifasiga yo'naltiradi
 const router = createBrowserRouter([
@@ -40,10 +41,14 @@ const router = createBrowserRouter([
   basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/",
 });
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ThemeProvider>
-      <RouterProvider router={router} />
-    </ThemeProvider>
-  </React.StrictMode>
-);
+// Turon ID portalidan kelgan bo'lsa (#sso=…) — avval sessiyani ochamiz, keyin
+// ilovani chizamiz: marshrut himoyasi foydalanuvchini allaqachon kirgan holda ko'radi.
+consumeTuronIdCode().finally(() => {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <ThemeProvider>
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </React.StrictMode>
+  );
+});

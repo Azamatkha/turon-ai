@@ -3,7 +3,14 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useForceLightTheme } from "../hooks/useForceLightTheme";
 import { loginDict } from "../locales";
-import { login as loginRequest, isAuthenticated, ApiError, UNVERIFIED_STATUS } from "../services/authService";
+import {
+  login as loginRequest,
+  isAuthenticated,
+  ApiError,
+  UNVERIFIED_STATUS,
+  takeTuronIdError,
+  turonIdLoginUrl,
+} from "../services/authService";
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
 import LoginForm from "../components/login/LoginForm";
@@ -18,6 +25,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<"" | "invalid" | "rateLimited" | "unverified">("");
   const { lang, setLang, t } = useLang(loginDict);
+  // Turon ID orqali kirish xato bilan tugagan bo'lsa — bir marta ko'rsatamiz
+  const [ssoFailed] = useState(takeTuronIdError);
+  const portalLoginUrl = turonIdLoginUrl();
   // Chatdagi tungi rejim bu sahifaga o'tib ketmasin (yozuvlar ko'rinmay qolardi)
   useForceLightTheme();
 
@@ -59,6 +69,7 @@ export default function LoginPage() {
     <div className={styles.page}>
       <PageBackground />
 
+      <div className={styles.stack}>
       <div className={styles.card}>
         <BrandPanel t={t} />
         <LoginForm
@@ -78,6 +89,20 @@ export default function LoginPage() {
           submit={submit}
           onKey={onKey}
         />
+      </div>
+
+      {portalLoginUrl && (
+        <div className={styles.turonId}>
+          {ssoFailed && (
+            <p className={styles.turonIdError} role="alert">
+              Turon ID orqali kirib bo'lmadi. Qayta urinib ko'ring yoki login bilan kiring.
+            </p>
+          )}
+          <a className={styles.turonIdButton} href={portalLoginUrl}>
+            Turon ID orqali kirish
+          </a>
+        </div>
+      )}
       </div>
     </div>
   );
