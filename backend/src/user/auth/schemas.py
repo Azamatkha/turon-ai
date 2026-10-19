@@ -127,6 +127,12 @@ class LoginUserModel(Base):
     password: str
 
 
+class TuronIdSignInModel(Base):
+    """One-time code the Turon ID portal put into the URL fragment (#sso=…)."""
+
+    code: str = Field(min_length=16, max_length=128)
+
+
 class LogoutRequestModel(Base):
     terminate_all_sessions: bool = False
 
