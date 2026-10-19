@@ -7,6 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONUSERBASE=/install
 
+# Корпоративный прокси досматривает HTTP-загрузки и на крупных .deb замирает без ошибки;
+# HTTPS идёт туннелем (CONNECT) и проходит. Таймауты — чтобы зависание не длилось вечно.
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && printf 'Acquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nAcquire::Retries "5";\n' \
+       > /etc/apt/apt.conf.d/80-network-retries
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
@@ -29,6 +35,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUSERBASE=/install \
     PATH="/install/bin:$PATH" \
     PYTHONPATH="/install/lib/python3.13/site-packages"
+
+# Корпоративный прокси досматривает HTTP-загрузки и на крупных .deb замирает без ошибки;
+# HTTPS идёт туннелем (CONNECT) и проходит. Таймауты — чтобы зависание не длилось вечно.
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && printf 'Acquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nAcquire::Retries "5";\n' \
+       > /etc/apt/apt.conf.d/80-network-retries
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \

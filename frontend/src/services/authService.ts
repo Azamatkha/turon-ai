@@ -117,9 +117,10 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
 
   let res = await doFetch();
   if (res.status === 401 && getRefreshToken()) {
-    const ok = await tryRefresh();
-    if (ok) res = await doFetch();
-    else clearStorage();
+    const outcome = await refreshOnce();
+    if (outcome === "ok") res = await doFetch();
+    // Tarmoq/5xx/429 — sessiya tugagani emas: tokenlar qoladi, keyingi so'rov qayta urinadi
+    else if (outcome === "rejected") clearStorage();
   }
   if (res.status === 403 && path !== "/v1/users/me") void recheckVerification();
   return res;
@@ -143,20 +144,95 @@ async function recheckVerification(): Promise<void> {
   }
 }
 
-async function tryRefresh(): Promise<boolean> {
+type RefreshOutcome = "ok" | "rejected" | "unavailable";
+
+const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_SERVER_ERROR_MIN = 500;
+
+async function requestRefresh(): Promise<RefreshOutcome> {
   const refresh = getRefreshToken();
-  if (!refresh) return false;
+  if (!refresh) return "rejected";
+  let res: Response;
   try {
-    const res = await fetch(`${API_URL}/v1/users/auth/login/refresh`, {
+    res = await fetch(`${API_URL}/v1/users/auth/login/refresh`, {
       method: "POST",
       headers: { Authorization: `Bearer ${refresh}` },
     });
-    if (!res.ok) return false;
-    storeTokens(await res.json());
-    return true;
   } catch {
-    return false;
+    return "unavailable";
   }
+  if (res.ok) {
+    storeTokens(await res.json());
+    return "ok";
+  }
+  if (res.status === HTTP_TOO_MANY_REQUESTS || res.status >= HTTP_SERVER_ERROR_MIN) return "unavailable";
+  // Boshqa vkladka shu orada tokenni yangilagan bo'lsa — rad etilgani eski token
+  return getRefreshToken() !== refresh ? "ok" : "rejected";
+}
+
+let refreshInflight: Promise<RefreshOutcome> | null = null;
+
+// Bir vaqtda kelgan bir nechta 401 bitta refresh'ni kutadi: refresh token bir
+// martalik, parallel so'rovlar bir-birining yangi tokenini o'chirib yuborardi.
+function refreshOnce(): Promise<RefreshOutcome> {
+  if (!refreshInflight) {
+    refreshInflight = requestRefresh().finally(() => {
+      refreshInflight = null;
+    });
+  }
+  return refreshInflight;
+}
+
+// ── Turon ID (bankning yagona kirishi) ───────────────────────────────────
+// Portal chatni bir martalik kod bilan ochadi: https://…/chat/#sso=<kod>.
+// Kod fragmentda keladi (serverga, loglarga va Referer'ga tushmaydi); backend
+// uni Turon ID bilan almashtiradi va oddiy chat sessiyasini qaytaradi.
+const SSO_FRAGMENT = "sso";
+const SSO_ERROR_KEY = "turon_sso_error";
+
+/** Turon ID portaliga kirish sahifasi; kirgach portal shu chatni qayta ochadi. */
+export function turonIdLoginUrl(): string | null {
+  const portal = import.meta.env.VITE_TURON_PORTAL_URL;
+  return portal ? `${portal.replace(/\/$/, "")}/login?platform=chat` : null;
+}
+
+export async function signInWithTuronId(code: string): Promise<void> {
+  const res = await fetch(`${API_URL}/v1/users/auth/turon-id`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) throw new ApiError(await readError(res, "Turon ID orqali kirib bo'lmadi"), res.status);
+  // Yangi sessiya: oldingi foydalanuvchining saqlangan profili qolmasin
+  clearStorage();
+  storeTokens(await res.json());
+  await fetchMe();
+}
+
+/**
+ * Manzilda #sso=<kod> bo'lsa — uni darhol o'chiradi (tarixda qolmasin) va
+ * kirishni bajaradi. Xato bo'lsa, login sahifasi ko'rsatishi uchun belgilab qo'yadi.
+ */
+export async function consumeTuronIdCode(): Promise<void> {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const code = params.get(SSO_FRAGMENT);
+  if (!code) return;
+  window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  try {
+    // Mavjud sessiya faqat yangisi kelganda almashtiriladi (storeTokens):
+    // kod o'tmasa, foydalanuvchi oldingi sessiyasida qoladi.
+    await signInWithTuronId(code);
+    sessionStorage.removeItem(SSO_ERROR_KEY);
+  } catch {
+    sessionStorage.setItem(SSO_ERROR_KEY, "1");
+  }
+}
+
+/** Turon ID orqali kirish muvaffaqiyatsiz tugadimi (bir marta o'qiladi). */
+export function takeTuronIdError(): boolean {
+  const failed = sessionStorage.getItem(SSO_ERROR_KEY) === "1";
+  sessionStorage.removeItem(SSO_ERROR_KEY);
+  return failed;
 }
 
 export async function login(loginValue: string, password: string): Promise<string> {
