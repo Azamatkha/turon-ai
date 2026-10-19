@@ -16,6 +16,10 @@ ENV VITE_API_URL=${VITE_API_URL}
 # manzillari ham /chat/ bilan boshlanishi kerak.
 ARG VITE_BASE_PATH="/chat/"
 ENV VITE_BASE_PATH=${VITE_BASE_PATH}
+# Turon ID portali: login sahifasidagi "Turon ID orqali kirish" tugmasi shu
+# manzilga olib boradi (bo'sh bo'lsa tugma ko'rinmaydi).
+ARG VITE_TURON_PORTAL_URL="https://turon-ai.turonbank.uz"
+ENV VITE_TURON_PORTAL_URL=${VITE_TURON_PORTAL_URL}
 RUN npm run build
 
 FROM node:22-alpine AS runner
