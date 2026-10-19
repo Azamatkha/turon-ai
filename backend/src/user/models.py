@@ -45,6 +45,12 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
         ),
         # Bitta xodim (PNFL) — bitta faol akkaunt
         Index(
+            "uq_users_turon_id_sub_not_deleted",
+            "turon_id_sub",
+            unique=True,
+            postgresql_where=text("is_deleted = false AND turon_id_sub IS NOT NULL"),
+        ),
+        Index(
             "uq_users_pnfl_not_deleted",
             "pnfl",
             unique=True,
@@ -73,6 +79,8 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     )
     # --- Face-ID verifikatsiyasidan keladigan shaxsiy ma'lumotlar ---
     pnfl: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    # Turon ID account (`sub`) this user signs in with through SSO; None = never did.
+    turon_id_sub: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
     patronym: Mapped[str | None] = mapped_column(String(50), nullable=True)
     doc_seria: Mapped[str | None] = mapped_column(String(10), nullable=True)
     doc_number: Mapped[str | None] = mapped_column(String(20), nullable=True)

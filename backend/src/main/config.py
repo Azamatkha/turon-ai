@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from dotenv import dotenv_values
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -227,6 +227,26 @@ class QdrantConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class TuronIdConfig(BaseModel):
+    """Sign-in through Turon ID (the bank's SSO), for the web app.
+
+    The browser brings a one-time code from the Turon ID portal; the backend
+    exchanges it server-side with this platform's client secret.
+    """
+
+    TURON_ID_ENABLED: bool = False
+    # Turon ID API as this backend reaches it (inside the bank network / docker).
+    TURON_ID_API_URL: str = ""
+    TURON_ID_CLIENT_ID: str = "chat"
+    TURON_ID_CLIENT_SECRET: str = ""
+    # Turon ID public key: inline PEM, literal "\n" escapes allowed.
+    TURON_ID_JWT_PUBLIC_KEY: str = ""
+    TURON_ID_JWT_ALGORITHM: Literal["RS256", "ES256"] = "RS256"
+    TURON_ID_TIMEOUT_SECONDS: float = Field(10.0, gt=0)
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class AppConfig(BaseModel):
     VERSION: str
     DEBUG: bool = False
@@ -322,6 +342,7 @@ class Config(BaseModel):
     scraping: ScrapingConfig
     employee_api: EmployeeApiConfig = EmployeeApiConfig()
     certificate: CertificateConfig = CertificateConfig()
+    turon_id: TuronIdConfig = TuronIdConfig()
 
     model_config = ConfigDict(extra="ignore")
 
@@ -358,6 +379,7 @@ def get_settings() -> Config:
         scraping=ScrapingConfig(**merged_env),
         employee_api=EmployeeApiConfig(**merged_env),
         certificate=CertificateConfig(**merged_env),
+        turon_id=TuronIdConfig(**merged_env),
     )
 
 

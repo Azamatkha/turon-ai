@@ -30,6 +30,8 @@ asgiref==3.11.1
     # via -r base.in
 asyncpg==0.31.0
     # via -r base.in
+beautifulsoup4==4.13.4
+    # via -r base.in  (qo'lda: .txt base.in bilan mos emas edi, pip-compile qayta ishga tushirilsin)
 billiard==4.2.4
     # via celery
 black==26.3.1
@@ -77,6 +79,8 @@ email-validator==2.3.0
     # via
     #   -r base.in
     #   fastapi-mail
+et-xmlfile==2.0.0
+    # via openpyxl  (qo'lda qo'shildi)
 fastapi==0.136.0
     # via -r base.in
 fastapi-mail==1.6.2
@@ -126,6 +130,8 @@ mypy-extensions==1.1.0
     #   mypy
 nodeenv==1.10.0
     # via pre-commit
+openpyxl==3.1.5
+    # via -r base.in  (qo'lda qo'shildi; Excel .xlsx xodimlar faylini o'qish uchun)
 pillow==12.3.0
     # via -r base.in
 pymupdf==1.28.0
@@ -203,6 +209,10 @@ pytokens==0.4.1
     # via black
 pyyaml==6.0.3
     # via pre-commit
+qdrant-client>=1.12,<1.13
+    # via -r base.in  (server qdrant/qdrant:v1.12.4 bilan mos bo'lishi shart —
+    #   versiyasiz qolganda 1.19 o'rnatilib, "incompatible" ogohlantirishi chiqardi.
+    #   Serverni ko'tarsangiz, shu diapazonni ham birga ko'taring.)
 redis==7.4.0
     # via -r base.in
 regex==2025.11.3
@@ -218,6 +228,8 @@ starlette==0.50.0
     # via
     #   fastapi
     #   fastapi-mail
+trafilatura==2.0.0
+    # via -r base.in  (qo'lda: .txt base.in bilan mos emas edi, pip-compile qayta ishga tushirilsin)
 types-passlib==1.7.7.20260211
     # via -r dev.in
 types-pyyaml==6.0.12.20260408

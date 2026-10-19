@@ -16,6 +16,7 @@ from src.user.auth.schemas import (
     LoginTokenModel,
     LoginUserModel,
     LogoutRequestModel,
+    TuronIdSignInModel,
     RegisterTokenModel,
     RegisterUserModel,
     SaveSignatureModel,
@@ -34,6 +35,10 @@ from src.user.auth.usecases.register import RegisterUseCase, get_register_use_ca
 from src.user.auth.usecases.save import (
     SaveSignatureUseCase,
     get_save_signature_use_case,
+)
+from src.user.auth.turon_id.usecase import (
+    TuronIdSignInUseCase,
+    get_turon_id_sign_in_use_case,
 )
 from src.user.models import User
 
@@ -169,3 +174,22 @@ async def logout_user(
             data.terminate_all_sessions if data is not None else False
         ),
     )
+
+
+@router.post(
+    "/turon-id",
+    response_model=LoginTokenModel,
+    summary="Sign in through Turon ID (web).",
+    description=(
+        "The Turon ID portal opens the chat with a one-time code in the URL "
+        "fragment; the web app posts it here. The backend exchanges it with "
+        "Turon ID and returns a normal chat session. The user is linked by "
+        "Turon ID account, then by phone, or created; always verified."
+    ),
+    dependencies=[Depends(RateLimiter(times=10, seconds=60))],
+)
+async def turon_id_sign_in(
+    payload: TuronIdSignInModel,
+    use_case: Annotated[TuronIdSignInUseCase, Depends(get_turon_id_sign_in_use_case)],
+) -> LoginTokenModel:
+    return await use_case.execute(payload.code)
