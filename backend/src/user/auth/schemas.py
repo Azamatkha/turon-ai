@@ -78,7 +78,7 @@ class RegisterTokenModel(Base):
     # validatsiya) exception handler orqali boshqa formatda ketadi.
     success: bool = True
     access_token: str = Field(alias="accessToken")
-    # Bank bergan client p12 (qara: services/client_p12.py)
+    # Shu user uchun yangi imzolangan, 20 daqiqalik client p12 (qara: services/client_p12.py)
     p12_base64: str = Field(alias="p12Base64")
     p12_password: str = Field(alias="p12Password")
 

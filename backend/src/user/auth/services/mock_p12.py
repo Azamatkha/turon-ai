@@ -18,8 +18,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import NameOID
 
-# Mock sertifikat amal qilish muddati
-MOCK_CERT_VALID_DAYS = 365
+# Mock sertifikat ham haqiqiysi kabi qisqa muddatli (GSI hujjati 6.2)
+MOCK_CERT_VALID_MINUTES = 20
 
 
 def generate_mock_p12(common_name: str) -> tuple[str, str]:
@@ -45,7 +45,7 @@ def generate_mock_p12(common_name: str) -> tuple[str, str]:
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(now)
-        .not_valid_after(now + timedelta(days=MOCK_CERT_VALID_DAYS))
+        .not_valid_after(now + timedelta(minutes=MOCK_CERT_VALID_MINUTES))
         .sign(key, hashes.SHA256())
     )
 

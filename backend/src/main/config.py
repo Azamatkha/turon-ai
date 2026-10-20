@@ -210,11 +210,15 @@ class EmployeeApiConfig(BaseModel):
 
 
 class CertificateConfig(BaseModel):
-    # mTLS proxy (Face-ID SDK) uchun p12 sertifikat. Fayl repoda
-    # (`backend/certs/`) shifrlangan holda turadi, paroli esa FAQAT .env da —
-    # prod parol kodga ham, repoga ham yozilmaydi.
-    CERT_P12_PATH: str = "certs/base_p12.p12"
-    CERT_P12_PASSWORD: str = ""
+    # mTLS proxy (Face-ID SDK) ishonadigan CA. Backend har register/login'da shu
+    # CA bilan userga alohida, qisqa muddatli client p12 imzolaydi.
+    # `.crt` ochiq; `.key` MAXFIY — faqat serverda turadi, repoga tushmaydi.
+    CLIENT_CA_CERT_PATH: str = "certs/mobile-ca.crt"
+    CLIENT_CA_KEY_PATH: str = "certs/mobile-ca.key"
+    # Kalit shifrlanmagan bo'lsa bo'sh
+    CLIENT_CA_KEY_PASSWORD: str = ""
+    # GSI hujjati 6.2: client sertifikat 20 daqiqadan uzoq amal qilmasin
+    CLIENT_CERT_TTL_MINUTES: int = Field(20, gt=0, le=20)
 
     model_config = ConfigDict(extra="ignore")
 
