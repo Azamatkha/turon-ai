@@ -83,6 +83,12 @@ class RegisterTokenModel(Base):
     p12_password: str = Field(alias="p12Password")
 
 
+class UserVerifiedModel(Base):
+    """`GET /auth/user/check` javobi: user Face-ID verifikatsiyasidan o'tganmi."""
+
+    is_verified: bool
+
+
 class CheckFaceTokenModel(Base):
     """Proxy'dan: GSI'ga yuborishdan oldin tekshiriladigan accessToken."""
 

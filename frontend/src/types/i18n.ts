@@ -27,6 +27,8 @@ export interface LoginStrings {
   // Saytdan ro'yxatdan o'tish yopilgan — ro'yxatdan o'tish faqat mobil ilovada
   // (yuzni tasdiqlash kamera va SDK talab qiladi).
   noAccount: string;
+  edoLogin: string;
+  edoLoginError: string;
   registerMobileOnly: string;
   gotIt: string;
   // Mobil ilovada verifikatsiyadan o'tmagan user saytga kirganda
@@ -67,6 +69,7 @@ export interface ChatStaticStrings {
   nightMode: string;
   dayMode: string;
   adminPanel: string;
+  backToPlatforms: string;
   // Bildirishnomalar. Xabar matni bazada saqlanmaydi — backend faqat
   // turini va parametrlarini yuboradi, matn shu yerdan olinadi.
   notifications: string;

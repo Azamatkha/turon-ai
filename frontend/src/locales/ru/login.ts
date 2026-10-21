@@ -24,6 +24,8 @@ export const login: LoginStrings = {
   showPassword: "Показать пароль",
   hidePassword: "Скрыть пароль",
   noAccount: "Нет аккаунта?",
+  edoLogin: "Войти через EDO",
+  edoLoginError: "Не удалось войти через EDO. Попробуйте ещё раз или войдите по логину.",
   registerMobileOnly:
     "Регистрация доступна только в мобильном приложении. " +
     "Установите приложение Turon AI на телефон и зарегистрируйтесь там — " +

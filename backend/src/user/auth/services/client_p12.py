@@ -46,9 +46,19 @@ def _load_ca() -> tuple[x509.Certificate, CertificateIssuerPrivateKeyTypes]:
     password = config.certificate.CLIENT_CA_KEY_PASSWORD
 
     ca_cert = x509.load_pem_x509_certificate(cert_path.read_bytes())
-    ca_key = serialization.load_pem_private_key(
-        key_path.read_bytes(), password=password.encode() if password else None
-    )
+    key_bytes = key_path.read_bytes()
+    try:
+        ca_key = serialization.load_pem_private_key(
+            key_bytes, password=password.encode() if password else None
+        )
+    except TypeError:
+        # Kalit shifrlanmagan, .env da esa parol yozilgan (yoki aksincha)
+        if not password:
+            raise RuntimeError(f"{key_path} shifrlangan — CLIENT_CA_KEY_PASSWORD kerak")
+        logger.warning(
+            "%s shifrlanmagan — CLIENT_CA_KEY_PASSWORD e'tiborsiz qoldirildi", key_path
+        )
+        ca_key = serialization.load_pem_private_key(key_bytes, password=None)
 
     try:
         is_ca = ca_cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca

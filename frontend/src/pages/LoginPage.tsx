@@ -88,21 +88,10 @@ export default function LoginPage() {
           error={error}
           submit={submit}
           onKey={onKey}
+          edoUrl={portalLoginUrl}
+          edoFailed={ssoFailed}
         />
       </div>
-
-      {portalLoginUrl && (
-        <div className={styles.turonId}>
-          {ssoFailed && (
-            <p className={styles.turonIdError} role="alert">
-              Turon ID orqali kirib bo'lmadi. Qayta urinib ko'ring yoki login bilan kiring.
-            </p>
-          )}
-          <a className={styles.turonIdButton} href={portalLoginUrl}>
-            Turon ID orqali kirish
-          </a>
-        </div>
-      )}
       </div>
     </div>
   );

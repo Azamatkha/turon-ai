@@ -43,6 +43,13 @@ class RegisterUseCase:
         self.redis_client = redis_client
 
     async def execute(self, data: RegisterUserModel) -> RegisterTokenModel:
+        # Sertifikat user yaratilishidan OLDIN: imzolash xato bersa (CA fayli
+        # yo'q / buzilgan) bazada javobsiz "login band" user qolib ketmaydi.
+        # RSA kalit yaratish CPU'ni band qiladi — alohida thread'da
+        p12_base64, p12_password = await asyncio.to_thread(
+            get_client_p12, data.username
+        )
+
         async with self.uow as uow:
             existing = await uow.users.get_by_username(uow.session, data.username)
             if existing:
@@ -63,12 +70,6 @@ class RegisterUseCase:
             user = await uow.users.create(session=uow.session, data=user_data)
             await uow.commit()
             logger.info("[Register] '%s' ro'yxatdan o'tdi (tasdiqlanmagan).", data.username)
-
-        # Fayl o'qish / mock kalit yaratish — event loop'ni to'xtatmaslik uchun
-        # alohida thread'da
-        p12_base64, p12_password = await asyncio.to_thread(
-            get_client_p12, data.username
-        )
 
         return RegisterTokenModel(
             access_token=await create_access_token(

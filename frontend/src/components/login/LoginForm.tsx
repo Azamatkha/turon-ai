@@ -24,12 +24,15 @@ interface LoginFormProps {
   error: "" | "invalid" | "rateLimited" | "unverified";
   submit: () => void;
   onKey: (e: KeyboardEvent) => void;
+  // EDO (Turon ID portali) orqali kirish manzili; sozlanmagan bo'lsa tugma chiqmaydi
+  edoUrl: string | null;
+  edoFailed: boolean;
 }
 
 export default function LoginForm({
   t, lang, setLang,
   login, setLogin, password, setPassword, pwVisible, setPwVisible,
-  focus, setFocus, loading, error, submit, onKey,
+  focus, setFocus, loading, error, submit, onKey, edoUrl, edoFailed,
 }: LoginFormProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [hintOpen, setHintOpen] = useState(false);
@@ -213,6 +216,18 @@ export default function LoginForm({
             {t.noAccount}
           </button>
         </div>
+
+        {/* EDO orqali kirish — asosiy "Kirish"dan keyin, ikkilamchi uslubda */}
+        {edoUrl && (
+          <>
+            {edoFailed && (
+              <p className={styles.edoError} role="alert">{t.edoLoginError}</p>
+            )}
+            <a className={styles.edoBtn} href={edoUrl}>
+              {t.edoLogin}
+            </a>
+          </>
+        )}
       </form>
 
       {/* Modal — ekran markazida, oqimdan tashqarida. Shuning uchun ochilganda

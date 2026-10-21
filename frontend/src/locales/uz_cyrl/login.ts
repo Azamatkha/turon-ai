@@ -25,6 +25,8 @@ export const login: LoginStrings = {
   showPassword: "Паролни кўрсатиш",
   hidePassword: "Паролни яшириш",
   noAccount: "Ҳисобингиз йўқми?",
+  edoLogin: "EDO орқали кириш",
+  edoLoginError: "EDO орқали кириб бўлмади. Қайта уриниб кўринг ёки логин билан киринг.",
   registerMobileOnly:
     "Рўйхатдан ўтиш фақат мобил илова орқали амалга оширилади. " +
     "Телефонингизга Turon AI иловасини ўрнатинг ва у ерда рўйхатдан ўтинг — " +

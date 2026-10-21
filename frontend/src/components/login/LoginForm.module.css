@@ -307,6 +307,46 @@
   transition: color var(--tu-duration-fast) ease;
 }
 
+/* EDO orqali kirish — "Kirish" tugmasi bilan bir xil o'lcham va burchak,
+   lekin ikkilamchi: oq fon, brend rangidagi ramka. */
+.edoBtn {
+  width: 100%;
+  height: 52px;
+  margin-top: var(--tu-space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid var(--tu-border-strong);
+  border-radius: var(--tu-radius-md);
+  background: #fff;
+  color: var(--tu-blue-900);
+  font-size: var(--tu-text-base);
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color var(--tu-duration) ease, background var(--tu-duration) ease;
+}
+
+.edoBtn:hover {
+  border-color: var(--tu-blue-900);
+  background: var(--tu-surface-alt);
+}
+
+.edoError {
+  margin: var(--tu-space-4) 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fdecec;
+  color: #b42318;
+  font-size: var(--tu-text-sm);
+}
+
+@media (max-width: 767px) {
+  .edoBtn {
+    height: 54px;
+  }
+}
+
 .noAccountBtn:hover {
   color: var(--tu-blue-900);
   border-bottom-color: var(--tu-blue-900);

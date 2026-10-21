@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Query
 
 from src.core.limiter.depends import RateLimiter
 from src.core.schemas import SuccessResponse, TokenModel
@@ -20,10 +20,15 @@ from src.user.auth.schemas import (
     RegisterTokenModel,
     RegisterUserModel,
     SaveSignatureModel,
+    UserVerifiedModel,
 )
 from src.user.auth.usecases.check_face_token import (
     CheckFaceTokenUseCase,
     get_check_face_token_use_case,
+)
+from src.user.auth.usecases.check_user import (
+    CheckUserVerifiedUseCase,
+    get_check_user_verified_use_case,
 )
 from src.user.auth.usecases.get_access_by_refresh import (
     GetTokensByRefreshUserUseCase,
@@ -100,6 +105,27 @@ async def check_face_token(
     topilmadi: proxy SDK'ga 401 qaytaradi, GSI'ga va webhook'ga bormaydi.
     """
     return await use_case.execute(token=form_data.token)
+
+
+@router.get(
+    "/user/check",
+    response_model=UserVerifiedModel,
+    # Token talab qilinmaydi — loginlarni ommaviy "terib ko'rish"ga to'siq
+    dependencies=[Depends(RateLimiter(times=20, seconds=60))],
+)
+async def check_user_verified(
+    username: Annotated[str, Query(min_length=1, max_length=60)],
+    use_case: Annotated[
+        CheckUserVerifiedUseCase, Depends(get_check_user_verified_use_case)
+    ],
+) -> UserVerifiedModel:
+    """
+    User Face-ID verifikatsiyasidan o'tganmi — login bo'yicha.
+
+    `200 {"is_verified": true|false}`; user topilmasa (yoki o'chirilgan) — `404`.
+    Login registrsiz qidiriladi.
+    """
+    return await use_case.execute(username=username)
 
 
 @router.post(
