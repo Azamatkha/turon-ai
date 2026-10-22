@@ -16,6 +16,7 @@ import DashboardView from "../components/admin/DashboardView";
 import KnowledgeListView from "../components/admin/KnowledgeListView";
 import PdfUploadView from "../components/admin/PdfUploadView";
 import ApiDocsView from "../components/admin/ApiDocsView";
+import GuidesAdminView from "../components/admin/GuidesAdminView";
 import ReportsView from "../components/admin/ReportsView";
 import FaceIdLogsView from "../components/admin/FaceIdLogsView";
 import UsersTable from "../components/admin/UsersTable";
@@ -41,6 +42,7 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   faceIdLogs: "face-id-logs",
   knowledgeList: "knowledge",
   pdfUpload: "documents",
+  guides: "edo-guides",
   apiDocs: "api-docs",
 };
 const PATH_TO_VIEW: Record<string, AdminView> = {
@@ -50,6 +52,7 @@ const PATH_TO_VIEW: Record<string, AdminView> = {
   "face-id-logs": "faceIdLogs",
   knowledge: "knowledgeList",
   documents: "pdfUpload",
+  "edo-guides": "guides",
   "api-docs": "apiDocs",
 };
 
@@ -182,6 +185,7 @@ export default function AdminPage() {
   const onKnowledgeList = view === "knowledgeList";
   const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
+  const onGuides = view === "guides";
 
   const openAdd = () => {
     // Bo'lim MAJBURIY — bo'sh qoldirib bo'lmaydi. Modal ochilishida darrov
@@ -384,6 +388,7 @@ export default function AdminPage() {
             <ReportsView mounted={mounted} t={t} onCountsChange={setNewReportsCount} />
           )}
           {onFaceIdLogs && <FaceIdLogsView mounted={mounted} t={t} />}
+          {onGuides && <GuidesAdminView mounted={mounted} t={t} />}
           {onApiDocs && <ApiDocsView />}
           {onUsers && (
             <>

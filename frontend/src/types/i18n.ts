@@ -130,6 +130,12 @@ export interface ChatStaticStrings {
   convError: string;
   // Ichki raqamlar ma'lumotnomasi (bo'lim -> xodim -> IP raqam)
   dirTitle: string;
+  guidesTitle: string;
+  guidesSearchPh: string;
+  guidesEmpty: string;
+  guidesNotFound: string;
+  guidesError: string;
+  guidesPick: string;
   dirDepartment: string;
   dirPickDepartment: string;
   dirSearchPh: string;
@@ -422,6 +428,24 @@ export interface AdminStrings {
   faceLogsCopied: string;
   knowledgeNav: string;
   pdfNav: string;
+  guidesNav: string;
+  guidesUploadTitle: string;
+  guidesUploadSub: string;
+  guidesDropHint: string;
+  guidesTitleLabel: string;
+  guidesTitlePh: string;
+  guidesTitleRequired: string;
+  guidesUpload: string;
+  guidesUploading: string;
+  guidesUploaded: string;
+  guidesOnlyMp4: string;
+  guidesTooLarge: string;
+  guidesListTitle: string;
+  guidesEmpty: string;
+  guidesRename: string;
+  guidesSave: string;
+  guidesDeleteConfirm: string;
+  guidesError: string;
   pdfTitle: string;
   pdfSub: string;
   pdfDropHint: string;

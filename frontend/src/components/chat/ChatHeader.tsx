@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   MdCurrencyExchange,
   MdDialpad,
+  MdOndemandVideo,
   MdOutlineAdminPanelSettings,
   MdPictureAsPdf,
   MdReportGmailerrorred,
@@ -16,6 +17,7 @@ import ReportModal from "./ReportModal";
 import MiniAppsMenu, { type MiniApp } from "./MiniAppsMenu";
 import DirectoryModal from "./DirectoryModal";
 import ConverterModal from "./ConverterModal";
+import GuidesModal from "./GuidesModal";
 import HButton from "../common/HButton";
 import type { Lang } from "../../types/lang";
 import type { ThemeTokens } from "../../types/chat";
@@ -48,6 +50,7 @@ export default function ChatHeader({
   const [ratesOpen, setRatesOpen] = useState(false);
   const [dirOpen, setDirOpen] = useState(false);
   const [convOpen, setConvOpen] = useState(false);
+  const [guidesOpen, setGuidesOpen] = useState(false);
 
   // Yangi mini-ilova qo'shish uchun shu ro'yxatga bitta yozuv qo'shiladi
   const miniApps: MiniApp[] = [
@@ -55,6 +58,7 @@ export default function ChatHeader({
     { id: "calculator", label: s.calculator, icon: <FaCalculator size={19} />, onOpen: () => setCalcOpen(true) },
     { id: "converter", label: s.convTitle, icon: <MdPictureAsPdf size={22} />, onOpen: () => setConvOpen(true) },
     { id: "directory", label: s.dirTitle, icon: <MdDialpad size={22} />, onOpen: () => setDirOpen(true) },
+    { id: "edo-guides", label: s.guidesTitle, icon: <MdOndemandVideo size={22} />, onOpen: () => setGuidesOpen(true) },
     { id: "report", label: s.report, icon: <MdReportGmailerrorred size={23} />, onOpen: () => setReportOpen(true) },
   ];
 
@@ -154,6 +158,10 @@ export default function ChatHeader({
 
       {dirOpen && (
         <DirectoryModal tk={tk} isDark={isDark} s={s} onClose={() => setDirOpen(false)} />
+      )}
+
+      {guidesOpen && (
+        <GuidesModal tk={tk} isDark={isDark} s={s} onClose={() => setGuidesOpen(false)} />
       )}
 
       {ratesOpen && (

@@ -1,0 +1,243 @@
+/* EDO yo'riqnomalari. Tuzilma DirectoryModal bilan bir oilada, faqat
+   kengroq: chapda ro'yxat, o'ngda video. Ranglar ChatHeader'dan (tk). */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fadeIn 0.18s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  width: 100%;
+  max-width: 1040px;
+  height: min(640px, 90vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 22px;
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 0.45);
+  backdrop-filter: var(--tu-glass-blur);
+  -webkit-backdrop-filter: var(--tu-glass-blur);
+  animation: popIn 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.headTitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+}
+
+.listPane {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.search {
+  width: 100%;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 0 13px;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.search:focus {
+  border-color: #4059BE;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 12px;
+  --tu-sb-size: 8px;
+}
+
+.state {
+  padding: 40px 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 9px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: rgba(90, 120, 224, 0.1);
+}
+
+.rowIcon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: linear-gradient(140deg, #193070, #4059BE);
+  color: #fff;
+}
+
+.rowTitle {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.playerPane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.videoTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.video {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border-radius: 14px;
+  background: #000;
+  object-fit: contain;
+}
+
+.placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1.5px dashed;
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-align: center;
+  padding: 20px;
+}
+
+/* "Orqaga" faqat tor ekranda kerak — kengda ro'yxat yonida turibdi */
+.backBtn {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-bottom: 10px;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .modal {
+    padding: 18px;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tanlanmagan: faqat ro'yxat. Tanlangan: faqat pleyer. */
+  .playerPane {
+    display: none;
+  }
+
+  .hasSelection .listPane {
+    display: none;
+  }
+
+  .hasSelection .playerPane {
+    display: flex;
+  }
+
+  .backBtn {
+    display: inline-flex;
+  }
+
+  .video {
+    flex: 0 0 auto;
+    max-height: 60vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+}

@@ -1,0 +1,178 @@
+/* EDO yo'riqnomalari (admin). Yuklash kartasi PdfUploadView.module.css dan,
+   bu yerda faqat progress va ro'yxat. */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.progress {
+  flex: 1;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--adm-input-bg);
+  border: 1px solid var(--adm-border-2);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #193070, #4059BE);
+  transition: width 0.25s ease;
+}
+
+.progressText {
+  min-width: 42px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--adm-text-strong);
+}
+
+.cancelBtn,
+.btnGhost,
+.btnGhostDanger,
+.btn,
+.btnDanger {
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cancelBtn,
+.btnGhost {
+  border: 1px solid var(--adm-border-input);
+  background: transparent;
+  color: var(--adm-text-strong);
+}
+
+.cancelBtn:hover,
+.btnGhost:hover {
+  background: var(--adm-hover);
+}
+
+.btnGhostDanger {
+  border: 1px solid var(--adm-danger-border);
+  background: transparent;
+  color: var(--adm-danger);
+}
+
+.btnGhostDanger:hover {
+  background: var(--adm-danger-bg);
+}
+
+.btn {
+  border: none;
+  background: var(--adm-primary, #193070);
+  color: #fff;
+}
+
+.btnDanger {
+  border: none;
+  background: var(--adm-danger);
+  color: #fff;
+}
+
+.btn:disabled,
+.btnDanger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.listCard {
+  padding-bottom: 8px;
+}
+
+.count {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--adm-hover);
+  color: var(--adm-text-muted-2);
+}
+
+.empty {
+  padding: 20px 0 14px;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--adm-border-3);
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--adm-text-strong);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.editInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.confirmText {
+  font-size: 13.5px;
+  color: var(--adm-danger);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}

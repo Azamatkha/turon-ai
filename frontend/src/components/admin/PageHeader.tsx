@@ -39,6 +39,7 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
     faceIdLogs: admin.faceLogsTitle,
     knowledgeList: admin.knowledgeTitle,
     pdfUpload: admin.pdfNav,
+    guides: admin.guidesNav,
     apiDocs: "API hujjatlari",
   };
   return (
