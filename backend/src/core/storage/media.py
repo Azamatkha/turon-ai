@@ -147,3 +147,7 @@ async def delete_image(relative_path: str) -> None:
     except InstanceProcessingException:
         return
     await anyio.to_thread.run_sync(path.unlink, True)
+
+
+# Faylni o'chirish turiga bog'liq emas — video uchun ham shu funksiya
+delete_media = delete_image

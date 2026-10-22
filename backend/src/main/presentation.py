@@ -39,6 +39,7 @@ from src.core.errors.handlers import (
 from src.admin import routers as admin_routers
 from src.calculator import routers as calculator_routers
 from src.chat import routers as chat_routers
+from src.guides import routers as guide_routers
 from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers
 from src.reports import routers as report_routers
@@ -141,6 +142,10 @@ def include_routers(app: FastAPI) -> None:
     v1_router.include_router(tools_routers.router, prefix="/tools", tags=["Tools"])
     v1_router.include_router(
         report_routers.admin_router, prefix="/admin/reports", tags=["Reports"]
+    )
+    v1_router.include_router(guide_routers.router, prefix="/guides", tags=["EDO Guides"])
+    v1_router.include_router(
+        guide_routers.admin_router, prefix="/admin/guides", tags=["EDO Guides"]
     )
 
     app.include_router(v1_router, prefix="/v1")

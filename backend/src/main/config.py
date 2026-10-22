@@ -303,6 +303,14 @@ class AppConfig(BaseModel):
     # BARCHA fayllar yig'indisi. nginx client_max_body_size = 10m — multipart
     # ustamasiga joy qolishi uchun 9 MB.
     CONVERT_MAX_BYTES: int = 9 * 1024 * 1024
+    # EDO yo'riqnomasi videosi (MP4) — butun fayl uchun cheklov.
+    GUIDE_VIDEO_MAX_BYTES: int = 200 * 1024 * 1024
+    # Video BO'LAKLAB yuklanadi: nginx client_max_body_size = 10m, nginx
+    # sozlamasiga tegmaslik uchun har bir bo'lak shundan kichik bo'lishi shart.
+    # Frontend 8 MB dan yuboradi, 9 MB — zaxira bilan yuqori chegara.
+    GUIDE_CHUNK_MAX_BYTES: int = 9 * 1024 * 1024
+    # Video havolasidagi imzoli token qancha amal qiladi (soniya)
+    GUIDE_VIDEO_URL_TTL_SECONDS: int = 6 * 60 * 60
     # LibreOffice bitta hujjatni shuncha soniyadan ko'p o'girsa — to'xtatiladi
     CONVERT_TIMEOUT_SECONDS: int = 120
 
