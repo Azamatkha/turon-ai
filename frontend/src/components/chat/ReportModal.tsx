@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MdReportGmailerrorred } from "react-icons/md";
+import { LuBadgeHelp } from "react-icons/lu";
 import { createReport, type ReportKind } from "../../services/reportService";
 import { ACCENT, PRIMARY_ON_DARK } from "./theme";
 import type { ThemeTokens } from "../../types/chat";
@@ -101,7 +101,7 @@ export default function ReportModal({ tk, isDark, s, onClose }: ReportModalProps
         <div className={styles.scroll}>
           <div className={styles.head}>
             <div className={styles.headTitle} style={{ color: tk.strong }}>
-              <MdReportGmailerrorred size={21} color={accent} />
+              <LuBadgeHelp size={20} color={accent} />
               {s.reportHeading}
             </div>
             <button

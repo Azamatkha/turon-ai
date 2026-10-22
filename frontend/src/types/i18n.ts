@@ -110,7 +110,7 @@ export interface ChatStaticStrings {
   reportTooLarge: string;
   reportBadType: string;
   reportRequired: string;
-  // "Yordamchi dasturlar" menyusi (kurs, kalkulyator, murojaat va h.k.)
+  // "Qo'shimcha yordamchilar" menyusi (kurs, kalkulyator, EDO yo'riqnomasi va h.k.)
   miniApps: string;
   // PDF konvertor (Word/Excel/PowerPoint/rasm -> PDF)
   convTitle: string;
@@ -131,9 +131,7 @@ export interface ChatStaticStrings {
   // Ichki raqamlar ma'lumotnomasi (bo'lim -> xodim -> IP raqam)
   dirTitle: string;
   guidesTitle: string;
-  guidesSearchPh: string;
   guidesEmpty: string;
-  guidesNotFound: string;
   guidesError: string;
   guidesPick: string;
   dirDepartment: string;

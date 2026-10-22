@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { MdOndemandVideo } from "react-icons/md";
 import { guideVideoSrc, listGuides, type EdoGuide } from "../../services/guideService";
@@ -15,18 +15,18 @@ interface GuidesModalProps {
   onClose: () => void;
 }
 
-// EDO yo'riqnomalari: chapda ro'yxat (qidiruv bilan), o'ngda video pleyer.
+// EDO yo'riqnomalari: chapda ro'yxat, o'ngda video pleyer.
 // Tor ekranda — avval ro'yxat, tanlanganda pleyer ("orqaga" bilan).
+// Yo'riqnoma hali bo'lmasa (yoki yuklab bo'lmasa) — ikki ustun o'rniga
+// bitta ixcham holat oynasi.
 // Video bizning serverdan beriladi (YouTube emas — ko'p xodimda unga kirish yo'q).
 export default function GuidesModal({ tk, isDark, s, onClose }: GuidesModalProps) {
   const [items, setItems] = useState<EdoGuide[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<EdoGuide | null>(null);
 
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
-  const cardBg = "var(--tu-glass-bg-soft)";
 
   // Esc: video ochiq bo'lsa (tor ekranda) — ro'yxatga qaytadi, aks holda yopadi
   const modalRef = useModalA11y<HTMLDivElement>(() => {
@@ -42,16 +42,14 @@ export default function GuidesModal({ tk, isDark, s, onClose }: GuidesModalProps
       .finally(() => setLoading(false));
   }, []);
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? items.filter((g) => g.title.toLowerCase().includes(q)) : items;
-  }, [items, query]);
+  // Ro'yxat yuklandi, lekin ko'rsatadigan narsa yo'q — bitta xabar yetarli
+  const emptyState = !loading && (failed || items.length === 0);
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div
         ref={modalRef}
-        className={`${styles.modal} ${selected ? styles.hasSelection : ""}`}
+        className={`${styles.modal} ${selected ? styles.hasSelection : ""} ${emptyState ? styles.modalEmpty : ""}`}
         style={{ background: tk.card, border: `1px solid ${tk.cardBorder}` }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
@@ -68,28 +66,19 @@ export default function GuidesModal({ tk, isDark, s, onClose }: GuidesModalProps
           </button>
         </div>
 
+        {emptyState ? (
+          <div className={styles.emptyState} style={{ color: failed ? "#DC2626" : tk.muted }}>
+            <MdOndemandVideo size={44} color={accent} aria-hidden="true" />
+            <span>{failed ? s.guidesError : s.guidesEmpty}</span>
+          </div>
+        ) : (
         <div className={styles.body}>
           <div className={styles.listPane}>
-            <input
-              className={styles.search}
-              value={query}
-              maxLength={80}
-              placeholder={s.guidesSearchPh}
-              aria-label={s.guidesSearchPh}
-              onChange={(e) => setQuery(e.target.value)}
-              style={{ background: cardBg, color: tk.input, borderColor: tk.cardBorder }}
-            />
             <div className={styles.list} aria-busy={loading}>
-              {failed ? (
-                <div className={styles.state} style={{ color: "#DC2626" }}>{s.guidesError}</div>
-              ) : loading ? (
+              {loading ? (
                 <div className={styles.state} style={{ color: tk.muted }}>{s.dirLoading}</div>
-              ) : visible.length === 0 ? (
-                <div className={styles.state} style={{ color: tk.muted }}>
-                  {items.length === 0 ? s.guidesEmpty : s.guidesNotFound}
-                </div>
               ) : (
-                visible.map((g) => {
+                items.map((g) => {
                   const active = selected?.id === g.id;
                   return (
                     <button
@@ -142,6 +131,7 @@ export default function GuidesModal({ tk, isDark, s, onClose }: GuidesModalProps
             )}
           </div>
         </div>
+        )}
       </div>
     </div>,
     document.body,

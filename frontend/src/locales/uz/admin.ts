@@ -155,7 +155,7 @@ export const admin: AdminStrings = {
   pdfNav: "Hujjatlar (PDF)",
   guidesNav: "EDO yo‘riqnomalari",
   guidesUploadTitle: "Yangi video yo‘riqnoma",
-  guidesUploadSub: "EDO tizimida ariza yozishni ko‘rsatuvchi video yuklang. Xodimlar uni chatdagi «Yordamchi dasturlar → EDO yo‘riqnomasi» bo‘limida ko‘radi.",
+  guidesUploadSub: "EDO tizimida ariza yozishni ko‘rsatuvchi video yuklang. Xodimlar uni chatdagi «Qo‘shimcha yordamchilar → EDO yo‘riqnomasi» bo‘limida ko‘radi.",
   guidesDropHint: "MP4 videoni tanlang yoki shu yerga tashlang · 200 MB gacha",
   guidesTitleLabel: "Sarlavha",
   guidesTitlePh: "masalan, Internet tarmog‘iga ulanish uchun ariza",

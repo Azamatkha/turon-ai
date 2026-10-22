@@ -5,9 +5,9 @@ import {
   MdOndemandVideo,
   MdOutlineAdminPanelSettings,
   MdPictureAsPdf,
-  MdReportGmailerrorred,
 } from "react-icons/md";
 import { FaCalculator } from "react-icons/fa6";
+import { LuBadgeHelp } from "react-icons/lu";
 import LangSwitcher from "../LangSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import CalculatorModal from "./CalculatorModal";
@@ -59,7 +59,6 @@ export default function ChatHeader({
     { id: "converter", label: s.convTitle, icon: <MdPictureAsPdf size={22} />, onOpen: () => setConvOpen(true) },
     { id: "directory", label: s.dirTitle, icon: <MdDialpad size={22} />, onOpen: () => setDirOpen(true) },
     { id: "edo-guides", label: s.guidesTitle, icon: <MdOndemandVideo size={22} />, onOpen: () => setGuidesOpen(true) },
-    { id: "report", label: s.report, icon: <MdReportGmailerrorred size={23} />, onOpen: () => setReportOpen(true) },
   ];
 
   const startEdit = () => {
@@ -136,9 +135,22 @@ export default function ChatHeader({
             <MdOutlineAdminPanelSettings size={20} />
           </HButton>
         )}
-        {/* Kurs, kalkulyator, murojaat va keyingi mini-ilovalar bitta
-            "Yordamchi dasturlar" menyusida — header tugmalar bilan to'lib ketmasin */}
+        {/* Kurs, kalkulyator, EDO yo'riqnomasi va keyingi mini-ilovalar bitta
+            "Qo'shimcha yordamchilar" menyusida — header tugmalar bilan to'lib ketmasin */}
         <MiniAppsMenu apps={miniApps} tk={tk} isDark={isDark} s={s} />
+        {/* Muammo yoki taklif — yordamchi vosita emas, shuning uchun menyuda
+            emas, alohida tugma */}
+        <HButton
+          onClick={() => setReportOpen(true)}
+          data-tip={s.report}
+          aria-label={s.report}
+          aria-haspopup="dialog"
+          className={`${styles.adminBtn} tu-shiny`}
+          baseStyle={{ border: "1px solid var(--tu-glass-border)", color: isDark ? "#E2E8F0" : "#193070", backdropFilter: "var(--tu-glass-blur)", WebkitBackdropFilter: "var(--tu-glass-blur)" }}
+          hoverStyle={{ transform: "translateY(-1px)" }}
+        >
+          <LuBadgeHelp size={19} />
+        </HButton>
         <NotificationsBell tk={tk} isDark={isDark} s={s} />
         <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />
         <ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={isDark ? s.dayMode : s.nightMode} />
