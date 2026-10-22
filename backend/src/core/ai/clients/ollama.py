@@ -48,12 +48,63 @@ class OllamaClient(BaseAIClient):
         self.base_url = config.ai.OLLAMA_BASE_URL.rstrip("/")
         self.model = config.ai.OLLAMA_MODEL
         self.num_ctx = config.ai.OLLAMA_NUM_CTX
+        self.min_num_ctx = config.ai.OLLAMA_MIN_NUM_CTX
         self.keep_alive = config.ai.OLLAMA_KEEP_ALIVE
         self.timeout = config.ai.TIMEOUT_SECONDS
         self.default_temperature = config.ai.DEFAULT_TEMPERATURE
         self.http = http
+        # /api/ps keshi: (num_ctx, olingan_vaqt). Har so'rovda Ollama'ni
+        # so'ramaslik uchun.
+        self._ctx_cache: tuple[int, float] | None = None
+        # Logni faqat qiymat O'ZGARGANDA yozamiz (har so'rovda emas)
+        self._last_logged_ctx: int | None = None
+
+    # /api/ps natijasi shuncha soniya ishlatiladi
+    CTX_CACHE_TTL = 10.0
+    CTX_PROBE_TIMEOUT = 2.0
 
     # ----- helpers ----- #
+    async def _resolve_num_ctx(self) -> int:
+        """So'rovga yuboriladigan num_ctx ni tanlaydi.
+
+        Ollama bitta modelni faqat BITTA num_ctx bilan ushlaydi — boshqa qiymat
+        so'ralsa, model VRAM'dan chiqarilib qayta yuklanadi (~60 s). Serverdan
+        boshqa mijozlar ham foydalanadi (masalan 65536 bilan), shuning uchun
+        biz o'z qiymatimizni majburlamaymiz: model allaqachon yuklangan bo'lsa,
+        o'sha oynaga moslashamiz (min_num_ctx dan kichik bo'lmasa).
+        Model yuklanmagan yoki /api/ps javob bermasa — config'dagi qiymat."""
+        now = time.monotonic()
+        if self._ctx_cache and now - self._ctx_cache[1] < self.CTX_CACHE_TTL:
+            return self._ctx_cache[0]
+
+        chosen = self.num_ctx
+        try:
+            resp = await self.http.get(
+                f"{self.base_url}/api/ps", timeout=self.CTX_PROBE_TIMEOUT
+            )
+            if resp.status_code == 200:
+                for m in resp.json().get("models") or []:
+                    if self.model not in (m.get("name"), m.get("model")):
+                        continue
+                    loaded = int(m.get("context_length") or 0)
+                    if loaded >= self.min_num_ctx:
+                        chosen = loaded
+                    break
+        except (httpx.HTTPError, ValueError, TypeError):
+            # Tekshiruv ixtiyoriy — xato bo'lsa odatiy qiymat bilan davom etamiz
+            pass
+
+        if chosen != self._last_logged_ctx:
+            logger.info(
+                "Ollama num_ctx: %d (config: %d, minimum: %d)",
+                chosen,
+                self.num_ctx,
+                self.min_num_ctx,
+            )
+            self._last_logged_ctx = chosen
+        self._ctx_cache = (chosen, now)
+        return chosen
+
     @staticmethod
     def _build_messages(
         prompt: str, system_prompt: str | None
@@ -98,7 +149,8 @@ class OllamaClient(BaseAIClient):
                 "num_predict": max_tokens,
                 # Kontekst oynasini aniq belgilaymiz — aks holda Ollama standart
                 # 2048'da RAG kontekst + system prompt'ni oldidan kesib tashlaydi.
-                "num_ctx": self.num_ctx,
+                # Qiymat yuklangan modelga moslashadi (qara: _resolve_num_ctx).
+                "num_ctx": await self._resolve_num_ctx(),
             },
         }
         # JSON sxema berilsa — Ollama chiqishni STRUKTURA bo'yicha majburlaydi.
@@ -195,7 +247,7 @@ class OllamaClient(BaseAIClient):
                     else self.default_temperature
                 ),
                 "num_predict": max_tokens,
-                "num_ctx": self.num_ctx,
+                "num_ctx": await self._resolve_num_ctx(),
             },
         }
         try:

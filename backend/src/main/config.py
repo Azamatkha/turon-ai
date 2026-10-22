@@ -167,6 +167,16 @@ class AIConfig(BaseModel):
     # 27B model (~17 GB) + 32k KV-kesh + bge-m3 bemalol sig'adi, zaxira katta.
     # Yuqoridagi 12 GB hisobi endi tarix uchun qoldirilgan.
     OLLAMA_NUM_CTX: int = 32768
+    # Moslashuvchan oyna (qara: OllamaClient._resolve_num_ctx). Ollama
+    # serveridan boshqa mijozlar ham foydalanadi va bitta modelni bir vaqtda
+    # faqat BITTA num_ctx bilan ushlab turadi: boshqa qiymat so'ralsa model
+    # VRAM'dan chiqarilib qayta yuklanadi (122B uchun ~60 s, router timeout
+    # bo'lib "ma'lumot yo'q" chiqardi — 2026-10-22 loglari). Shuning uchun
+    # model allaqachon yuklangan bo'lsa, o'sha oynani ishlatamiz — faqat u
+    # shu minimumdan kichik bo'lmasa. 16384: usecases.py dagi prompt byudjeti
+    # aynan shu oyna uchun hisoblangan.
+    # OLLAMA_NUM_CTX esa endi model YUKLANMAGAN holatdagi boshlang'ich qiymat.
+    OLLAMA_MIN_NUM_CTX: int = 16384
     # Model oxirgi so'rovdan keyin VRAM'da qancha turadi. Ollama standarti
     # atigi 5 daqiqa: 9 daqiqa jimlikdan keyin model tushirilib, keyingi
     # savolda 27B modelni qayta yuklash router timeout'idan (20 s) uzoq
