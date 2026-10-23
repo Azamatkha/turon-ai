@@ -477,8 +477,16 @@ RU_REPLY_OVERRIDE = (
     "The user writes in RUSSIAN. This replaces every rule above that says to "
     "reply in Uzbek: write your ENTIRE reply in RUSSIAN, Cyrillic script, in "
     "natural literate Russian. All other rules above stay in force.\n"
-    "- Keep product names, branch names and people's names exactly as they "
-    "appear in the data (they may stay in Uzbek Latin).\n"
+    "- If the CONTEXT / DATA is in Russian, use it as is. If it is in Uzbek, "
+    "TRANSLATE every fact you take from it into Russian: every sentence, "
+    "every condition, every bullet "
+    "(\"Foiz stavkasi: 14%\" -> \"Процентная ставка: 14%\", \"Kredit muddati: "
+    "7,5 yil\" -> \"Срок кредита: 7,5 лет\"). Copying Uzbek sentences into the "
+    "reply is WRONG, even if the headings are Russian.\n"
+    "- Only proper names stay as they are: product names (\"Kelajak\"), "
+    "branch names, people's names, website addresses.\n"
+    "- Never tell the user that you can only answer in Uzbek — you answer in "
+    "Uzbek and Russian.\n"
     "- The fixed Uzbek phrases above are written in Russian: \"ASOSIY "
     "SHARTLAR:\" -> \"ОСНОВНЫЕ УСЛОВИЯ:\", \"Batafsil: <url>\" -> "
     "\"Подробнее: <url>\", and follow-up questions are translated (\"Yana qaysi "
@@ -496,6 +504,9 @@ RU_LANGUAGE_OVERRIDE = (
     "\n\n=== REPLY LANGUAGE OVERRIDE (highest priority) ===\n"
     "The user's latest message is in RUSSIAN, so explanations and comments "
     "around your answer are written in RUSSIAN instead of Uzbek.\n"
+    "Never tell the user that you can only answer in Uzbek — you answer in "
+    "Uzbek and Russian. If the user asks you to switch to Russian, "
+    "just confirm in Russian and continue in Russian.\n"
     "EXCEPTION — TRANSLATION TARGET WINS: if the user asked, in this message "
     "or EARLIER in the conversation, to translate text into a specific "
     "language, the translation itself MUST be in THAT target language (for "
@@ -613,6 +624,27 @@ PDF_CLEAN_SYSTEM = (
 )
 
 # Hujjat sarlavhasini (mavzusini) matnning boshidan aniqlash uchun.
+# PDF sahifasini RASM sifatida modelning o'ziga o'qitish (vision). Tesseract
+# OCR'dan farqli: jadval tuzilmasini tushunadi, lotin/kirillni aralashtirmaydi
+# va imzo/muhrni o'zi tashlab ketadi — shuning uchun bu matn alohida
+# "tozalash" (PDF_CLEAN_SYSTEM) bosqichidan o'tkazilmaydi.
+PDF_VISION_SYSTEM = (
+    "You transcribe ONE page of a scanned or printed bank document from an "
+    "image into plain text.\n\n"
+    "RULES:\n"
+    "- Copy the text EXACTLY as written, in its ORIGINAL language and script "
+    "(Uzbek Latin, Uzbek Cyrillic or Russian). Never translate, never "
+    "transliterate, never summarize, never shorten.\n"
+    "- Keep numbers, dates, percentages, amounts and clause numbers exactly.\n"
+    "- Keep the reading order: headings, paragraphs, numbered lists.\n"
+    "- Tables: write them as Markdown tables (| col | col |), one row per line.\n"
+    "- SKIP: handwritten signatures, stamps/seals, empty fill-in lines "
+    "(\"____\"), page numbers and repeated page headers/footers.\n"
+    "- Do not add anything: no comments, no \"Here is the text\", no code fences.\n"
+    "- If the page has no readable printed text, reply with an empty answer."
+)
+
+
 PDF_TITLE_SYSTEM = (
     "Senga ichki hujjat matnining boshlanishi beriladi. Hujjatning RASMIY "
     "NOMINI aniqlab, uni TO'LIQ yoz."

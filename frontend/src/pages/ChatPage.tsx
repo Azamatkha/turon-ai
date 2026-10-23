@@ -114,10 +114,30 @@ export default function ChatPage() {
     return () => el.removeEventListener("scroll", onScroll);
   }, [isNearBottom]);
 
+  // Foydalanuvchi YANGI savol yuborsa (yoki tahrirlab qayta yuborsa) — u qayerda
+  // turganidan qat'i nazar pastga tushamiz va javobni kuzatib boramiz. Ilgari
+  // yuqoriga chiqib yozilgan savoldan keyin ekran joyida qolib, javob ko'rinmasdi.
+  // Kalit id emas: yangi xabarning vaqtinchalik id'si saqlangach DB id'ga
+  // almashadi va javob yozilayotganda foydalanuvchini qayta pastga tortardi.
+  const userMsgs = rawMsgs.filter((m) => m.role === "user");
+  const lastUserKey = userMsgs.length ? `${userMsgs.length}:${userMsgs[userMsgs.length - 1].text}` : "";
+  const prevUserKey = useRef(lastUserKey);
+  useEffect(() => {
+    if (lastUserKey && lastUserKey !== prevUserKey.current) {
+      stickToBottom.current = true;
+    }
+    prevUserKey.current = lastUserKey;
+  }, [lastUserKey]);
+
+  // Suhbat almashtirilganda — oxirgi xabarga
+  useEffect(() => {
+    stickToBottom.current = true;
+  }, [activeId]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
-  }, [chats, thinking]);
+  }, [chats, thinking, lastUserKey, activeId]);
 
   // Profil — faqat o'qish uchun oyna (ProfileModal); ma'lumotni faqat admin o'zgartiradi
   const [profileOpen, setProfileOpen] = useState(false);

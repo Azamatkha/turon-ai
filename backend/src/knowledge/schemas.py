@@ -22,6 +22,7 @@ class PdfUploadResult(UploadResult):
     title: str           # bazaga yozilgan sarlavha (LLM aniqlagan bo'lishi mumkin)
     pages: int           # PDF'dagi sahifalar soni
     ocr_pages: int       # shundan nechtasi OCR qilindi (skanerlangan sahifalar)
+    vision_pages: int = 0  # shundan nechtasini model rasm sifatida o'qidi
     chars: int           # tozalangandan keyingi matn uzunligi
 
 

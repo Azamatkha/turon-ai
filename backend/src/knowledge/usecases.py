@@ -5,6 +5,8 @@ from collections.abc import AsyncIterator
 from itertools import chain, zip_longest
 from typing import Any
 
+from anyio import to_thread
+
 from loggers import get_logger
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.utils.datetime_utils import get_utc_now
@@ -24,7 +26,12 @@ from src.core.errors.exceptions import (
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
-from src.knowledge.pdf_extractor import extract_pdf_text
+from src.knowledge.pdf_extractor import (
+    extract_pdf_text,
+    join_pages,
+    page_fallback_text,
+    render_pdf_pages,
+)
 from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.prompts import (
     CONCEPT_SYSTEM,
@@ -37,6 +44,7 @@ from src.knowledge.prompts import (
     OFF_TOPIC_REPLY,
     OTHER_BANK_REPLY,
     PDF_CLEAN_SYSTEM,
+    PDF_VISION_SYSTEM,
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
     RU_CANNED_REPLIES,
@@ -45,7 +53,7 @@ from src.knowledge.prompts import (
     SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
 )
-from src.knowledge.lang import ReplyLang, detect_reply_lang
+from src.knowledge.lang import ReplyLang, detect_reply_lang, is_russian_text
 from src.knowledge.router import Intent, QuestionRouter, Route
 from src.main.config import config
 from src.knowledge.scraper import extract_content, fetch_html
@@ -530,6 +538,10 @@ _LIST_MATCH_STOPWORDS = {
     "bank", "xizmatlari", "markazi", "ofisi", "respublikasi", "viloyati",
     "shahar", "krediti", "kredit", "kartasi", "karta", "omonati", "omonat",
     "mikrokrediti", "mikroqarz", "ipoteka", "boyicha",
+    # Avtokreditlar ro'yxatida HAR bandda bor — ilgari "AvtoSelf 2.0
+    # Avtokrediti" deb yozilganda shu so'z "Roodell avto Avtokrediti" ga ham
+    # mos kelib, noto'g'ri band tanlanardi.
+    "avtokrediti", "avtokredit",
 }
 
 
@@ -632,27 +644,63 @@ def _resolve_list_choice(
                     return to_latin(cleaned) if cleaned else None
             return None  # tanlov ro'yxati topildi, unda bunday raqam yo'q
 
+        # Bandning nomi AYNAN ko'chirib yozilgan bo'lsa (qo'shtirnoq, registr
+        # farqi hisobga olinmaydi) — taxminiy solishtirishga hojat yo'q.
+        q_norm = " ".join(_words(to_latin(question)))
+        for _, text in items:
+            cleaned = to_latin(text.strip().strip("*").strip())
+            if q_norm and " ".join(_words(cleaned)) == q_norm:
+                return cleaned
+
         # Raqam emas — bandning NOMI bilan yozgan bo'lishi mumkin. ENG YAXSHI
         # mos kelgan bandni tanlaymiz (birinchi mos kelganini emas) — aks
         # holda tasodifiy 1-so'zlik moslik (masalan boshqa bandning nomi)
         # haqiqiy tanlovdan OLDIN kelib qolsa, noto'g'ri band qaytardi.
-        best: str | None = None
-        best_hits = 0
+        # Baho (kattasi yaxshi):
+        #   1) foydalanuvchi so'zlarining QANCHA QISMI band nomida bor
+        #      (qisqa so'zlar ham: "Kelajak UYI" — "Kelajak" ta'lim krediti
+        #      emas, "Kelajak uyi" ipotekasi);
+        #   2) shulardan nechtasi AYNAN (prefiks emas) mos kelgan — "avto"
+        #      "Roodell AVTO" da aynan bor, "AVTOself" da faqat prefiks;
+        #   3) band nomining QANCHA QISMI mos kelgan;
+        #   4) mos so'zlar soni.
+        # Ilgari faqat 4) sanalardi va durangda ro'yxatdagi BIRINCHI band
+        # tanlanardi: "AvtoSelf 2.0" uchun "Roodell avto" (2-band) qaytgan edi.
+        # Endi durang bo'lsa ("Kelajak" — ta'lim krediti ham, "Kelajak uyi"
+        # ham) hech biri tanlanmaydi: savol routerga o'tadi.
+        scored: list[tuple[tuple[float, int, float, int], str, bool]] = []
         for _, text in items:
             cleaned = to_latin(text.strip().strip("*").strip())
-            toks = [
+            name_words = [
                 w for w in _words(cleaned)
-                if len(w) >= 4 and w not in _LIST_MATCH_STOPWORDS
+                if len(w) >= 3 and w not in _LIST_MATCH_STOPWORDS
             ]
-            if not toks:
-                continue
+            toks = [w for w in name_words if len(w) >= 4]
+            q_cov = sum(
+                1 for qw in q_words
+                if any(qw == w or _prefix_match(w, qw) for w in name_words)
+            ) / len(q_words)
+            q_exact = sum(1 for qw in q_words if qw in name_words)
             hits = sum(1 for t in toks if any(_prefix_match(t, qw) for qw in q_words))
             # Qisqa (1-2 so'zlik) nomda BARCHA so'z mos kelishi shart —
             # bitta tasodifiy prefiks moslikdan xato band tanlanmasin.
             need = len(toks) if len(toks) <= 2 else len(toks) - 1
-            if hits >= need and hits > best_hits:
-                best, best_hits = cleaned, hits
-        return best
+            by_name = bool(toks) and hits >= need
+            if by_name or q_cov == 1.0:
+                ratio = hits / len(toks) if toks else 0.0
+                scored.append(((q_cov, q_exact, ratio, hits), cleaned, by_name))
+        if not scored:
+            return None
+        scored.sort(key=lambda s: s[0], reverse=True)
+        best_score, best, best_by_name = scored[0]
+        if len(scored) > 1 and scored[1][0] == best_score:
+            return None
+        if best_by_name:
+            return best
+        # Faqat "yozilgan so'zlarning hammasi bor" sharti bilan o'tgan band
+        # ("Roodell", "tez pul") — u YAGONA bo'lsagina tanlanadi.
+        full = [s for s in scored if s[0][0] == 1.0]
+        return best if len(full) == 1 else None
     return None
 
 
@@ -696,6 +744,17 @@ def _localize(text: str, lang: ReplyLang) -> str:
     if lang == "uz_cyrl":
         return to_cyrillic(text)
     return text
+
+
+def _router_reply(reply: str, lang: ReplyLang) -> str:
+    """Salomlashish / bot haqidagi savolga router yozgan javob.
+
+    Router prompti o'zbekcha va unga til bloki qo'shilmaydi, shuning uchun
+    model ruscha "Здравствуйте" ga ham "Assalomu alaykum" deb yozib qo'yardi.
+    Ruscha savolga ruscha bo'lmagan javob kelsa — tayyor ruscha matn."""
+    if not reply or (lang == "ru" and not is_russian_text(reply)):
+        return _localize(SMALLTALK_FALLBACK_REPLY, lang)
+    return to_cyrillic(reply) if lang == "uz_cyrl" else reply
 
 
 def _with_lang(system: str, lang: ReplyLang) -> str:
@@ -1105,17 +1164,64 @@ class UploadPdfUseCase:
             return ""
         return raw.strip().strip('"').strip("'").strip()[:200]
 
+    # Bitta sahifa uchun model javobi chegarasi (zich jadvalli sahifa ham sig'adi)
+    VISION_PAGE_MAX_TOKENS = 4096
+    # Bitta sahifani o'qish vaqti chegarasi (soniya)
+    VISION_PAGE_TIMEOUT = 180.0
+
+    async def _read_with_vision(self, file_bytes: bytes) -> tuple[str, int, int, int]:
+        """Har sahifani RASM qilib modelga o'qitadi.
+
+        Qaytaradi: (matn, sahifalar, OCR/zaxira sahifalar, model o'qigan sahifalar).
+        Model biror sahifada yiqilsa (timeout, xato) — o'sha sahifa uchun eski
+        yo'l: matn qatlami, u bo'lmasa OCR. Hujjat bitta sahifa tufayli
+        butunlay yo'qolmasin."""
+        pages = await to_thread.run_sync(render_pdf_pages, file_bytes)
+        parts: list[str] = []
+        vision_pages = 0
+        fallback_pages = 0
+        for i, page in enumerate(pages, start=1):
+            try:
+                res = await self.ai_client.read_image(
+                    page.png,
+                    prompt="Transcribe this page.",
+                    system_prompt=PDF_VISION_SYSTEM,
+                    max_tokens=self.VISION_PAGE_MAX_TOKENS,
+                    timeout=self.VISION_PAGE_TIMEOUT,
+                )
+                parts.append(res.text.strip())
+                vision_pages += 1
+            except Exception as exc:
+                logger.warning(
+                    "[PDF] %d-sahifani model o'qiy olmadi (%s) — matn qatlami/OCR",
+                    i, type(exc).__name__,
+                )
+                parts.append(await to_thread.run_sync(page_fallback_text, page))
+                fallback_pages += 1
+        logger.info(
+            "[PDF] %d sahifa: model %d ta, zaxira %d ta", len(pages), vision_pages, fallback_pages
+        )
+        return join_pages(parts), len(pages), fallback_pages, vision_pages
+
     async def execute(
         self, file_bytes: bytes, filename: str, title: str = ""
     ) -> PdfUploadResult:
-        raw_text, pages, ocr_pages = extract_pdf_text(file_bytes)
+        vision_pages = 0
+        if await self.ai_client.supports_vision():
+            # Model sahifani o'zi "ko'rib" o'qiydi: imzo/muhrni o'zi tashlaydi,
+            # shuning uchun alohida LLM tozalash bosqichi kerak emas.
+            raw_text, pages, ocr_pages, vision_pages = await self._read_with_vision(
+                file_bytes
+            )
+        else:
+            raw_text, pages, ocr_pages = extract_pdf_text(file_bytes)
         if not raw_text:
             raise InstanceProcessingException(
                 "PDF'dan matn ajratib bo'lmadi — sahifalar bo'sh yoki skan "
                 "sifati juda past. Faylni yaxshiroq sifatda skanerlab ko'ring."
             )
 
-        cleaned = await self._clean(raw_text)
+        cleaned = raw_text if vision_pages else await self._clean(raw_text)
         if not cleaned:
             raise InstanceProcessingException(
                 "Hujjatda mazmunli matn topilmadi (faqat imzo/muhr sahifalari?)."
@@ -1138,6 +1244,7 @@ class UploadPdfUseCase:
             title=final_title,
             pages=pages,
             ocr_pages=ocr_pages,
+            vision_pages=vision_pages,
             chars=len(cleaned),
         )
 
@@ -1723,7 +1830,7 @@ def _resolve_clarification(
         return titles[index - 1] if 1 <= index <= len(titles) else None
     # Nomi bilan javob bergan ("meros omonati")
     for title in titles:
-        toks = [w for w in _words(_norm_for_match(title)) if len(w) >= 3]
+        toks = [w for w in _words(_norm_for_match(to_latin(title))) if len(w) >= 3]
         if toks and all(w in words for w in toks):
             return title
     # "ha" — faqat bitta variant taklif qilingan bo'lsa tushunarli
@@ -1830,6 +1937,12 @@ def _format_history(
         lines.append(line)
         used += len(line)
     return "\n".join(reversed(lines))
+
+
+def _is_ru_doc(payload: dict[str, Any]) -> bool:
+    """Bilim bazasidagi bo'lak ruscha hujjatdanmi. `lang` maydoni yo'q eski
+    yozuvlar o'zbekcha hisoblanadi."""
+    return payload.get("lang") == "ru"
 
 
 def _merge_results(
@@ -1993,6 +2106,10 @@ class AnswerQuestionUseCase:
         self.router = QuestionRouter(ai_client)
         # Bitta so'rov davomidagi baza keshi (_scroll_points)
         self._points: list[dict[str, Any]] | None = None
+        # Bilim bazasining qaysi tilidagi hujjatlardan javob beriladi: ruscha
+        # savolda "ru" (ruscha hujjat bo'lsa), aks holda "uz". execute /
+        # execute_stream boshida o'rnatiladi.
+        self._kb_lang = "uz"
 
     @staticmethod
     def _category_label(source_url: str, title: str = "", text: str = "") -> str:
@@ -2047,27 +2164,45 @@ class AnswerQuestionUseCase:
         # ro'yxatdan tushib qolardi: "Omonatlar" so'ralganda «Meros omonati»
         # chiqmay qo'ygan edi, garchi bazada tursa ham.
         payloads = await self._scroll_points()
-        # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url bilan).
-        # Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
-        urls: dict[str, str] = {}
-        texts: dict[str, list[str]] = {}
-        for p in payloads:
-            if p.get("doc_type") == "employee":
-                continue
-            title = str(p.get("title", "")).strip()
-            if not title:
-                continue
-            urls.setdefault(title, str(p.get("source_url", "")))
-            # Bitta mahsulot bir necha bo'lakdan iborat — hammasini yig'amiz,
-            # manzil qaysi bo'lakda bo'lishidan qat'i nazar topilsin.
-            texts.setdefault(title, []).append(str(p.get("chunk_text", "")))
 
-        groups: dict[str, list[tuple[str, str]]] = {}
-        for title, url in urls.items():
-            body = " ".join(texts[title])
-            label = self._category_label(url, title, body)
-            groups.setdefault(label, []).append((title, body))
-        return groups
+        def build(ru: bool) -> dict[str, list[tuple[str, str]]]:
+            # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url
+            # bilan). Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
+            urls: dict[str, str] = {}
+            texts: dict[str, list[str]] = {}
+            for p in payloads:
+                if p.get("doc_type") == "employee" or _is_ru_doc(p) != ru:
+                    continue
+                title = str(p.get("title", "")).strip()
+                if not title:
+                    continue
+                urls.setdefault(title, str(p.get("source_url", "")))
+                # Bitta mahsulot bir necha bo'lakdan iborat — hammasini
+                # yig'amiz, manzil qaysi bo'lakda bo'lishidan qat'i nazar topilsin.
+                texts.setdefault(title, []).append(str(p.get("chunk_text", "")))
+
+            groups: dict[str, list[tuple[str, str]]] = {}
+            for title, url in urls.items():
+                body = " ".join(texts[title])
+                label = self._category_label(url, title, body)
+                groups.setdefault(label, []).append((title, body))
+            return groups
+
+        uz_groups = build(ru=False)
+        if self._kb_lang != "ru":
+            return uz_groups
+        # Ruscha savol: turkum ruscha hujjatlar bilan TO'LIQ qamralgan bo'lsa
+        # (kamida o'zbekchadagicha) — ruscha nomlar. Aks holda o'zbekcha
+        # ro'yxat qoladi: ruschasi qisman qo'shilgan turkumda mahsulotlar
+        # ro'yxatdan tushib qolmasin (model o'zbekcha matnni tarjima qiladi).
+        # Bitta mahsulotning ikki tildagi nomi BIR ro'yxatga aralashmaydi.
+        ru_groups = build(ru=True)
+        merged: dict[str, list[tuple[str, str]]] = {}
+        for label in {**uz_groups, **ru_groups}:
+            uz_items = uz_groups.get(label, [])
+            ru_items = ru_groups.get(label, [])
+            merged[label] = ru_items if len(ru_items) >= len(uz_items) else uz_items
+        return merged
 
     async def _build_catalog(self, question: str = "") -> str:
         """Semantik qidiruv faqat eng yaqin bir nechtasini topadi — bu esa keng
@@ -2133,7 +2268,7 @@ class AnswerQuestionUseCase:
         partial: list[str] = []
         for items in groups.values():
             for title, _ in items:
-                toks = [t for t in _words(_norm_for_match(title)) if len(t) >= 3]
+                toks = [t for t in _words(_norm_for_match(to_latin(title))) if len(t) >= 3]
                 if not toks:
                     continue
                 common = [t for t in toks if t in qwords]
@@ -2197,7 +2332,7 @@ class AnswerQuestionUseCase:
         best_title, best_title_score = "", 0
         for items in groups.values():
             for title, _ in items:
-                toks = [t for t in _words(_norm_for_match(title)) if len(t) >= 3]
+                toks = [t for t in _words(_norm_for_match(to_latin(title))) if len(t) >= 3]
                 if not toks or not all(t in qwords_n for t in toks):
                     continue
                 # Uzunroq/to'liqroq nom ustun ("Tez pul mikroqarz" > "Mikroqarz")
@@ -2410,6 +2545,19 @@ class AnswerQuestionUseCase:
         qaytarib, Sirdaryo sarlavhasi ostida Termiz manzili chiqib ketardi.
         Aniq sarlavha bor joyda taxminiy qidiruvning hojati yo'q."""
         payloads = await self.store.search_by_field("title", title, limit=40)
+        if not payloads:
+            # Ro'yxatdan tanlangan nom lotinga o'girilgan bo'ladi
+            # (_resolve_list_choice), ruscha hujjat sarlavhasi esa kirillcha
+            # ("Автокредит ..." -> "Avtokredit ..."). Bazadagi sarlavhani
+            # lotinlashtirilgan ko'rinishi bo'yicha topamiz.
+            key = _norm_for_match(to_latin(title))
+            for p in await self._scroll_points():
+                stored = str(p.get("title", ""))
+                if stored and stored != title and _norm_for_match(to_latin(stored)) == key:
+                    payloads = await self.store.search_by_field(
+                        "title", stored, limit=40
+                    )
+                    break
         payloads.sort(key=lambda p: int(p.get("chunk_index", 0)))
         return [(p, 1.0) for p in payloads]
 
@@ -2487,8 +2635,42 @@ class AnswerQuestionUseCase:
             self._points = await self.store.scroll_all_pages()
         return self._points
 
+    # Ruscha hujjat o'zbekchasidan shuncha ballgacha past bo'lsa ham afzal
+    # ko'riladi (javob tarjimasiz, asl ruscha matndan bo'lgani yaxshi).
+    RU_PREFER_MARGIN = 0.05
+
+    async def _search_chunks(
+        self, question: str, search_q: str
+    ) -> tuple[list[tuple[dict[str, Any], float]], list[tuple[dict[str, Any], float]]]:
+        """Gibrid (vektor + leksik) qidiruv -> (birlashgan natija, leksik natija).
+
+        O'zbekcha savol — faqat o'zbekcha hujjatlardan. Ruscha savol — ikkala
+        tilda qidiriladi: ruscha hujjatlar RUSCHA savolning o'zi bilan,
+        o'zbekchasi router yozgan o'zbekcha `search_query` bilan. Ruscha
+        natija yetarlicha yaqin bo'lsa va o'zbekchasidan sezilarli past
+        bo'lmasa — o'sha olinadi. Aks holda o'zbekcha (model tarjima qiladi):
+        ruscha hujjatlar QISMAN qo'shilgan bo'lsa, so'ralgan mahsulot o'rniga
+        boshqa ruscha hujjat tanlanib qolmasin."""
+        query_vector = await self.embedder.embed(_expand_query(search_q))
+        uz_results = await self.store.search(query_vector, top_k=self.TOP_K, lang="uz")
+        # GIBRID QIDIRUV: vektor qidiruvi bo'lak SARLAVHASIGA tortiladi,
+        # leksik qidiruv esa matn ICHIDAGI so'zni topadi. Ikkalasining
+        # natijasi birga beriladi — shunda "qachon tashkil qilingan"
+        # savoliga sarlavhada bunday so'z bo'lmasa ham javob topiladi.
+        uz_lexical = await self._lexical_results(f"{question} {search_q}")
+        if self._kb_lang == "ru":
+            ru_vector = await self.embedder.embed(question)
+            ru_results = await self.store.search(ru_vector, top_k=self.TOP_K, lang="ru")
+            ru_top = ru_results[0][1] if ru_results else 0.0
+            uz_top = uz_results[0][1] if uz_results else 0.0
+            if ru_top >= self.MIN_SCORE and ru_top >= uz_top - self.RU_PREFER_MARGIN:
+                logger.info("Ruscha hujjatlardan javob (ru %.3f, uz %.3f)", ru_top, uz_top)
+                ru_lexical = await self._lexical_results(question, ru=True)
+                return _merge_results(ru_results, ru_lexical), ru_lexical
+        return _merge_results(uz_results, uz_lexical), uz_lexical
+
     async def _lexical_results(
-        self, query: str
+        self, query: str, ru: bool = False
     ) -> list[tuple[dict[str, Any], float]]:
         """SO'Z bo'yicha qidiruv — vektor qidiruvga QO'SHIMCHA, o'rniga emas.
 
@@ -2510,9 +2692,10 @@ class AnswerQuestionUseCase:
         }
         if not qwords:
             return []
+        # Faqat kerakli tildagi hujjatlar (`ru` — ruscha, aks holda o'zbekcha)
         points = [
             p for p in await self._scroll_points()
-            if p.get("doc_type") != "employee"
+            if p.get("doc_type") != "employee" and _is_ru_doc(p) == ru
         ]
         if not points:
             return []
@@ -2733,6 +2916,8 @@ class AnswerQuestionUseCase:
         # javobni hamisha lotincha yozadi, kirill kerak bo'lsa shu yerda
         # o'giramiz; ruscha javobni esa model o'zi yozadi (RU_REPLY_OVERRIDE).
         lang = detect_reply_lang(question, history)
+        # Ruscha savolga ruscha hujjatlar (bo'lsa) — katalog va qidiruv shunga qaraydi
+        self._kb_lang = "ru" if lang == "ru" else "uz"
         want_cyrillic = lang == "uz_cyrl"
 
         # Ichki barcha mantiq (xodim qidiruvi, turkum kalit so'zlari, embedding
@@ -2773,11 +2958,7 @@ class AnswerQuestionUseCase:
             Intent.SMALLTALK,
             Intent.ABOUT_BOT,
         ):
-            # Router javobni allaqachon foydalanuvchi tilida yozgan
-            if decision.reply:
-                text = to_cyrillic(decision.reply) if want_cyrillic else decision.reply
-            else:
-                text = _localize(SMALLTALK_FALLBACK_REPLY, lang)
+            text = _router_reply(decision.reply, lang)
             yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
@@ -3059,14 +3240,8 @@ class AnswerQuestionUseCase:
                 if decision is not None and len(decision.search_query.strip()) >= 3
                 else await self._search_query(question, history)
             )
-            query_vector = await self.embedder.embed(_expand_query(search_q))
-            results = await self.store.search(query_vector, top_k=self.TOP_K)
-            # GIBRID QIDIRUV: vektor qidiruvi bo'lak SARLAVHASIGA tortiladi,
-            # leksik qidiruv esa matn ICHIDAGI so'zni topadi. Ikkalasining
-            # natijasi birga beriladi — shunda "qachon tashkil qilingan"
-            # savoliga sarlavhada bunday so'z bo'lmasa ham javob topiladi.
-            lexical = await self._lexical_results(f"{question} {search_q}")
-            results = _merge_results(results, lexical)
+            # Gibrid qidiruv va hujjat tilini tanlash — _search_chunks
+            results, lexical = await self._search_chunks(question, search_q)
             # Savol xodim haqida bo'lmasa — xodim bo'laklari kontekstga
             # UMUMAN kirmaydi. Ular tasodifiy o'xshashlik bilan tushib,
             # mahsulot javobiga begona ism va telefon raqamlarini olib
@@ -3171,6 +3346,8 @@ class AnswerQuestionUseCase:
     ) -> AnswerResult:
         # Javob tili — stream yo'li bilan bir xil (o'zbek lotin/kirill, rus)
         lang = detect_reply_lang(question, history)
+        # Ruscha savolga ruscha hujjatlar (bo'lsa) — katalog va qidiruv shunga qaraydi
+        self._kb_lang = "ru" if lang == "ru" else "uz"
         want_cyrillic = lang == "uz_cyrl"
 
         # Ichki barcha mantiq (xodim qidiruvi, turkum kalit so'zlari, embedding
@@ -3200,10 +3377,7 @@ class AnswerQuestionUseCase:
             Intent.SMALLTALK,
             Intent.ABOUT_BOT,
         ):
-            if decision.reply:
-                text = to_cyrillic(decision.reply) if want_cyrillic else decision.reply
-            else:
-                text = _localize(SMALLTALK_FALLBACK_REPLY, lang)
+            text = _router_reply(decision.reply, lang)
             return AnswerResult(
                 answer=text,
                 sources=[],
@@ -3413,14 +3587,8 @@ class AnswerQuestionUseCase:
                 if decision is not None and len(decision.search_query.strip()) >= 3
                 else await self._search_query(question, history)
             )
-            query_vector = await self.embedder.embed(_expand_query(search_q))
-            results = await self.store.search(query_vector, top_k=self.TOP_K)
-            # GIBRID QIDIRUV: vektor qidiruvi bo'lak SARLAVHASIGA tortiladi,
-            # leksik qidiruv esa matn ICHIDAGI so'zni topadi. Ikkalasining
-            # natijasi birga beriladi — shunda "qachon tashkil qilingan"
-            # savoliga sarlavhada bunday so'z bo'lmasa ham javob topiladi.
-            lexical = await self._lexical_results(f"{question} {search_q}")
-            results = _merge_results(results, lexical)
+            # Gibrid qidiruv va hujjat tilini tanlash — _search_chunks
+            results, lexical = await self._search_chunks(question, search_q)
 
         # Mos kontekst yo'q (yoki eng yaqini ham juda uzoq) — LLM'ni chaqirmasdan
         # darrov "ma'lumotim yo'q" deb qaytaramiz. Bu bema'ni/aloqasiz savolga

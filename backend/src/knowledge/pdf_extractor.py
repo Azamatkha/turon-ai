@@ -19,6 +19,7 @@ installed in the image yet — the failure then surfaces as a clear error on thi
 endpoint only.
 """
 
+from dataclasses import dataclass
 import re
 from typing import Any
 
@@ -149,6 +150,11 @@ def _detect_langs(image: Any, pytesseract: Any) -> str:
 
 def _ocr_page(page: Any) -> str:
     """Bitta sahifani rasmga o'girib, Tesseract orqali o'qiydi."""
+    return ocr_png(page.get_pixmap(dpi=OCR_DPI).tobytes("png"))
+
+
+def ocr_png(png: bytes) -> str:
+    """Sahifa rasmini (PNG) Tesseract orqali o'qiydi."""
     try:
         import io
 
@@ -160,10 +166,9 @@ def _ocr_page(page: Any) -> str:
             "Bu PDF skanerlangan — matn qatlami yo'q."
         ) from exc
 
-    pixmap = page.get_pixmap(dpi=OCR_DPI)
     # Kulrangga o'tkazamiz — skanerdagi rangli shovqin (muhr siyohi, qog'oz
     # tusi) harf tanishga xalaqit bermasin.
-    image = Image.open(io.BytesIO(pixmap.tobytes("png"))).convert("L")
+    image = Image.open(io.BytesIO(png)).convert("L")
     langs = _detect_langs(image, pytesseract)
     try:
         return str(pytesseract.image_to_string(image, lang=langs))
@@ -174,10 +179,7 @@ def _ocr_page(page: Any) -> str:
         ) from exc
 
 
-def extract_pdf_text(file_bytes: bytes) -> tuple[str, int, int]:
-    """PDF baytlaridan matn ajratadi.
-
-    Qaytaradi: (matn, sahifalar_soni, ocr_qilingan_sahifalar_soni)."""
+def _open_pdf(file_bytes: bytes) -> Any:
     try:
         import fitz  # PyMuPDF
     except ImportError as exc:  # pragma: no cover - muhitga bog'liq
@@ -186,12 +188,61 @@ def extract_pdf_text(file_bytes: bytes) -> tuple[str, int, int]:
         ) from exc
 
     try:
-        document = fitz.open(stream=file_bytes, filetype="pdf")
+        return fitz.open(stream=file_bytes, filetype="pdf")
     except Exception as exc:
         raise InstanceProcessingException(
             f"PDF ochilmadi (buzilgan yoki parol bilan himoyalangan?): "
             f"{type(exc).__name__}: {exc!r}"
         ) from exc
+
+
+# Modelga (vision) beriladigan sahifa rasmi zichligi. A4 200 DPI ~ 1650x2340
+# piksel: mayda shrift va jadval kataklari o'qiladi, rasm esa model
+# kontekstiga (num_ctx) bemalol sig'adi. 300 DPI faqat sekinlashtiradi.
+VISION_DPI = 200
+
+
+@dataclass(frozen=True, slots=True)
+class PdfPageImage:
+    png: bytes   # sahifa rasmi (modelga beriladi)
+    text: str    # sahifaning matn qatlami (zaxira; skanda bo'sh bo'ladi)
+
+
+def render_pdf_pages(file_bytes: bytes) -> list[PdfPageImage]:
+    """Har sahifani rasmga aylantiradi (vision model o'qishi uchun) va matn
+    qatlamini ham saqlaydi — model biror sahifada yiqilsa, zaxira bo'ladi."""
+    document = _open_pdf(file_bytes)
+    try:
+        return [
+            PdfPageImage(
+                png=page.get_pixmap(dpi=VISION_DPI).tobytes("png"),
+                text=str(page.get_text("text") or ""),
+            )
+            for page in document
+        ]
+    finally:
+        document.close()
+
+
+def page_fallback_text(page: PdfPageImage) -> str:
+    """Model o'qiy olmagan sahifa — matn qatlami, u bo'lmasa OCR."""
+    text = page.text
+    if len(text.strip()) < MIN_TEXT_CHARS_PER_PAGE:
+        text = ocr_png(page.png)
+    return _strip_noise_lines(text).strip()
+
+
+def join_pages(parts: list[str]) -> str:
+    """Sahifalar matnini kolontitulsiz, tekislangan bitta matnga yig'adi."""
+    pages = [p for p in _strip_running_headers(parts) if p.strip()]
+    return _normalize("\n\n".join(pages))
+
+
+def extract_pdf_text(file_bytes: bytes) -> tuple[str, int, int]:
+    """PDF baytlaridan matn ajratadi.
+
+    Qaytaradi: (matn, sahifalar_soni, ocr_qilingan_sahifalar_soni)."""
+    document = _open_pdf(file_bytes)
 
     parts: list[str] = []
     ocr_pages = 0
@@ -209,5 +260,4 @@ def extract_pdf_text(file_bytes: bytes) -> tuple[str, int, int]:
 
     # Kolontitul faqat BARCHA sahifalar yig'ilgach aniqlanadi (qaysi qator
     # takrorlanayotganini bitta sahifadan bilib bo'lmaydi).
-    pages = [p for p in _strip_running_headers(parts) if p.strip()]
-    return _normalize("\n\n".join(pages)), page_count, ocr_pages
+    return join_pages(parts), page_count, ocr_pages

@@ -3,7 +3,7 @@ import type { ChatStrings, ChatStaticStrings } from "../../types/i18n";
 // Til almashtirgich orqali boshqariladigan matnlar
 export const chat: ChatStrings = {
   newChat: "Yangi suhbat",
-  sub: "Bank mahsulotlari bo‘yicha savolingizni yozing — mavjud ma’lumotlar asosida javob beraman.",
+  sub: "Savolingizni o‘zbek yoki rus tilida, o‘z so‘zlaringiz bilan yozing.",
   placeholder: "Turon AI’ga yozing…",
   disclaimer: "Tizim sinov jarayonida — javoblar kechikishi yoki xato javoblar bo‘lishi mumkin.",
   sugg: ["Kredit turlari", "Bank kartalari", "Omonatlar", "Xalqaro o‘tkazmalar", "Filiallar", "Xodimlar raqamlari", "Valyuta kursi"],

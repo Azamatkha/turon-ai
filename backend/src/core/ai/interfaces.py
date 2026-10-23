@@ -69,3 +69,20 @@ class BaseAIClient(ABC):
     @abstractmethod
     async def ping(self) -> DiagnosticResponse:
         raise NotImplementedError
+
+    async def supports_vision(self) -> bool:
+        """Model rasmni o'qiy oladimi (vision). Standart holatda — yo'q."""
+        return False
+
+    async def read_image(
+        self,
+        image_png: bytes,
+        *,
+        prompt: str,
+        system_prompt: str | None = None,
+        max_tokens: int,
+        timeout: float | None = None,
+    ) -> TextGenResult:
+        """Rasmni modelga berib matn oladi (masalan PDF sahifasi). Faqat
+        `supports_vision()` True bo'lganda chaqiriladi."""
+        raise NotImplementedError

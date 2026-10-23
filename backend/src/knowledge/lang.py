@@ -59,6 +59,13 @@ def _text_lang(text: str) -> ReplyLang:
     return "ru" if ru > uz else "uz_cyrl"
 
 
+def is_russian_text(text: str) -> bool:
+    """Model yozgan javob ruschami. Kalit so'zlar emas, ALIFBO bo'yicha:
+    "Да, конечно!" kabi qisqa ruscha javobda lug'atdagi so'z bo'lmasligi
+    mumkin. Asosiy xato — ruscha savolga o'zbek LOTINida javob."""
+    return is_cyrillic_text(text) and not any(c in _UZ_CYRL_LETTERS for c in text)
+
+
 def detect_reply_lang(question: str, history: list[ChatTurn] | None) -> ReplyLang:
     """Javob qaysi tilda yozilishi kerak.
 

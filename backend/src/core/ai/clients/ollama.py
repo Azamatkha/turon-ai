@@ -1,3 +1,4 @@
+import base64
 import json
 import time
 from collections.abc import AsyncIterator
@@ -58,6 +59,8 @@ class OllamaClient(BaseAIClient):
         self._ctx_cache: tuple[int, float] | None = None
         # Logni faqat qiymat O'ZGARGANDA yozamiz (har so'rovda emas)
         self._last_logged_ctx: int | None = None
+        # Model rasm o'qiy oladimi (/api/show -> capabilities) — bir marta so'raladi
+        self._vision: bool | None = None
 
     # /api/ps natijasi shuncha soniya ishlatiladi
     CTX_CACHE_TTL = 10.0
@@ -332,6 +335,58 @@ class OllamaClient(BaseAIClient):
             attempts=[
                 AttemptInfo(model=self.model, attempt=1, ok=True, status=200)
             ],
+        )
+
+    async def supports_vision(self) -> bool:
+        """Ollama'dagi model "vision" imkoniyatiga egami (/api/show).
+
+        Javob keshlanadi. Ollama javob bermasa — keshlanmaydi va False
+        qaytadi: chaqiruvchi eski yo'lga (OCR) o'tadi, keyingi safar qayta
+        so'raladi."""
+        if self._vision is not None:
+            return self._vision
+        try:
+            resp = await self.http.post(
+                f"{self.base_url}/api/show",
+                json={"model": self.model},
+                timeout=self.CTX_PROBE_TIMEOUT * 5,
+            )
+            if resp.status_code != 200:
+                return False
+            caps = resp.json().get("capabilities") or []
+        except (httpx.HTTPError, ValueError, AttributeError):
+            return False
+        self._vision = "vision" in caps
+        logger.info("Ollama modeli %r vision: %s", self.model, self._vision)
+        return self._vision
+
+    async def read_image(
+        self,
+        image_png: bytes,
+        *,
+        prompt: str,
+        system_prompt: str | None = None,
+        max_tokens: int,
+        timeout: float | None = None,
+    ) -> TextGenResult:
+        messages: list[dict[str, Any]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append(
+            {
+                "role": "user",
+                "content": prompt,
+                # Ollama rasmni base64 ko'rinishida `images` maydonida oladi
+                "images": [base64.b64encode(image_png).decode("ascii")],
+            }
+        )
+        data = await self._chat(messages, 0.0, max_tokens, timeout=timeout)
+        return TextGenResult(
+            text=self._first_text(data),
+            finish_reason=str(data.get("done_reason", "")),
+            prompt_tokens=int(data.get("prompt_eval_count", 0)),
+            completion_tokens=int(data.get("eval_count", 0)),
+            max_tokens=max_tokens,
         )
 
     async def ping(self) -> DiagnosticResponse:

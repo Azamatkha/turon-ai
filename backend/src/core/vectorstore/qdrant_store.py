@@ -151,14 +151,24 @@ class QdrantStore:
         )
 
     async def search(
-        self, query_vector: list[float], top_k: int = 4
+        self, query_vector: list[float], top_k: int = 4, lang: str | None = None
     ) -> list[tuple[dict[str, Any], float]]:
-        """Return the `top_k` most similar points as (payload, score) pairs."""
+        """Return the `top_k` most similar points as (payload, score) pairs.
+
+        `lang` berilsa — faqat o'sha tildagi hujjatlar. "uz" — "ruscha EMAS"
+        deb filtrlanadi: `lang` maydoni yo'q eski yozuvlar ham tushib qolmasin."""
         if not await self.exists():
             return []
+        lang_cond = FieldCondition(key="lang", match=MatchValue(value="ru"))
+        query_filter = None
+        if lang == "ru":
+            query_filter = Filter(must=[lang_cond])
+        elif lang is not None:
+            query_filter = Filter(must_not=[lang_cond])
         result = await self.client.query_points(
             collection_name=self.collection,
             query=query_vector,
+            query_filter=query_filter,
             limit=top_k,
             with_payload=True,
         )
