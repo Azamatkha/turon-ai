@@ -59,9 +59,8 @@ export interface ChatStaticStrings {
   noResults: string;
   history: string;
   support: string;
-  // Sidebar pastidagi "Platformalar" tugmasi (bankning boshqa AI platformalari)
+  // Sidebar pastidagi "Platformalar" tugmasi (portaldagi platformalar sahifasi)
   platforms: string;
-  platformsEmpty: string;
   supportNumber: string;
   supportHint: string;
   supportSub: string;

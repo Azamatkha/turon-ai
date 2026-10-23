@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiUnpinLine } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
-import { PLATFORMS } from "../../constants/platforms";
+import { platformsUrl } from "../../services/authService";
 import { PRIMARY } from "./theme";
 import type { Chat, SideTokens } from "../../types/chat";
 import styles from "./Sidebar.module.css";
@@ -43,12 +43,12 @@ interface SidebarProps {
   supportLabel: string;
   logoutLabel: string;
   platformsLabel: string;
-  platformsEmptyLabel: string;
 }
 
-// "Platformalar" ikonkasi — 4 ta katak (2x2)
+// "Platformalar" ikonkasi — 4 ta katak (2x2). 16px, chiziq 2 — portal
+// sahifasidagi tugma ikonkasi bilan bir xil o'lcham.
 const platformsIcon = (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
     <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
     <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
@@ -75,7 +75,7 @@ export default function Sidebar({
   search, setSearch, searchPlaceholder, noResultsLabel,
   side, userName, userHandle, initial, openProfile,
   onLogout, profileLabel, openSupport, supportLabel, logoutLabel,
-  platformsLabel, platformsEmptyLabel,
+  platformsLabel,
 }: SidebarProps) {
   const sideHover: CSSProperties = { background: "rgba(255,255,255,.08)" };
   const btnHover: CSSProperties = { background: "rgba(255,255,255,.13)" };
@@ -178,50 +178,14 @@ export default function Sidebar({
     };
   }, [profileMenu]);
 
-  // "Platformalar" ro'yxati — tugma bosilganda ochiladi (profil menyusi kabi
-  // <body>ga portal, tugma tepasida yoki tor rail'da o'ng tomonida)
-  const [platformsMenu, setPlatformsMenu] = useState<{ bottom: number; left: number; width: number } | null>(null);
-  const platformsMenuRef = useRef<HTMLDivElement | null>(null);
-  const platformsBtnRef = useRef<HTMLDivElement | null>(null);
-
-  const togglePlatforms = () => {
-    if (platformsMenu) { setPlatformsMenu(null); return; }
-    const el = platformsBtnRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setProfileMenu(null);
-    setPlatformsMenu(
-      open
-        ? { bottom: window.innerHeight - r.top + 8, left: r.left, width: r.width }
-        : { bottom: window.innerHeight - r.bottom, left: r.right + 8, width: 240 },
-    );
-  };
-
-  useEffect(() => {
-    if (!platformsMenu) return;
-    const onDocMouseDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (platformsMenuRef.current?.contains(t) || platformsBtnRef.current?.contains(t)) return;
-      setPlatformsMenu(null);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPlatformsMenu(null);
-    };
-    const onResize = () => setPlatformsMenu(null);
-    document.addEventListener("mousedown", onDocMouseDown);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onResize);
-    return () => {
-      document.removeEventListener("mousedown", onDocMouseDown);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [platformsMenu]);
+  // "Platformalar" — portaldagi platformalar sahifasiga havola (header'dagi
+  // "← Platformalar" bilan bir xil manzil). Portal manzili sozlanmagan bo'lsa
+  // (VITE_TURON_PORTAL_URL yo'q) tugma ko'rsatilmaydi.
+  const platformsHref = platformsUrl();
 
   // Panel ochilib/yopilganda tugma joyi o'zgaradi — menyuni yopamiz
   useEffect(() => {
     setProfileMenu(null);
-    setPlatformsMenu(null);
   }, [open]);
 
   useEffect(() => () => window.clearTimeout(profileCloseTimer.current), []);
@@ -285,21 +249,19 @@ export default function Sidebar({
               <div className={styles.avatarSm}>{initial}</div>
             </HButton>
           </div>
-          <div ref={platformsBtnRef} className={styles.platformsAnchorRail}>
-            <button
-              type="button"
-              onClick={togglePlatforms}
-              data-tip={platformsLabel}
-              aria-label={platformsLabel}
-              aria-haspopup="menu"
-              aria-expanded={!!platformsMenu}
-              className={`${styles.platformsBtn} ${styles.platformsBtnIcon} tip-right`}
-            >
-              {platformsIcon}
-            </button>
-          </div>
+          {platformsHref && (
+            <div className={styles.platformsAnchorRail}>
+              <a
+                href={platformsHref}
+                data-tip={platformsLabel}
+                aria-label={platformsLabel}
+                className={`${styles.platformsBtn} ${styles.platformsBtnIcon} tip-right`}
+              >
+                {platformsIcon}
+              </a>
+            </div>
+          )}
           {renderProfileMenu()}
-          {renderPlatformsMenu()}
         </div>
       ) : (
         // ochiq panel
@@ -383,58 +345,23 @@ export default function Sidebar({
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={styles.chevron} style={{ transform: profileMenu ? "rotate(-90deg)" : undefined }}><polyline points="9 18 15 12 9 6" /></svg>
             </HButton>
           </div>
-          {/* Eng pastda — "Platformalar". Profil shu sabab bir qator tepaga suriladi. */}
-          <div ref={platformsBtnRef} className={styles.platformsRow}>
-            <button
-              type="button"
-              onClick={togglePlatforms}
-              aria-haspopup="menu"
-              aria-expanded={!!platformsMenu}
-              className={styles.platformsBtn}
-            >
-              {platformsIcon}
-              <span>{platformsLabel}</span>
-            </button>
-          </div>
+          {/* Eng pastda — "Platformalar". Profil shu sabab bir qator tepaga suriladi.
+              Joyi va o'lchami portal sahifasidagi tugma bilan AYNAN bir xil
+              (chapdan 20px, pastdan 20px, 212x38) — sahifalar almashganda
+              tugma joyidan qimirlamay, ustma-ust tushadi. */}
+          {platformsHref && (
+            <div className={styles.platformsRow}>
+              <a href={platformsHref} className={styles.platformsBtn}>
+                {platformsIcon}
+                <span>{platformsLabel}</span>
+              </a>
+            </div>
+          )}
           {renderProfileMenu()}
-          {renderPlatformsMenu()}
         </div>
       )}
     </aside>
   );
-
-  function renderPlatformsMenu() {
-    if (!platformsMenu) return null;
-    return createPortal(
-      <div
-        ref={platformsMenuRef}
-        role="menu"
-        aria-label={platformsLabel}
-        className={`${styles.moreMenu} ${styles.profileMenu}`}
-        style={{ bottom: platformsMenu.bottom, left: platformsMenu.left, width: platformsMenu.width }}
-      >
-        {PLATFORMS.length === 0 ? (
-          <div className={styles.platformsEmpty}>{platformsEmptyLabel}</div>
-        ) : (
-          PLATFORMS.map((p) => (
-            <a
-              key={p.id}
-              role="menuitem"
-              href={p.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.moreMenuItem}
-              onClick={() => setPlatformsMenu(null)}
-            >
-              {platformsIcon}
-              <span>{p.name}</span>
-            </a>
-          ))
-        )}
-      </div>,
-      document.body,
-    );
-  }
 
   function renderProfileMenu() {
     if (!profileMenu) return null;

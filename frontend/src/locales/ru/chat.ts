@@ -20,7 +20,6 @@ export const chatStatic: ChatStaticStrings = {
   history: "История",
   support: "Поддержка",
   platforms: "Платформы",
-  platformsEmpty: "Платформы скоро появятся",
   supportNumber: "+998200280419",
   supportHint: "Номер поддержки",
   supportSub: "Если есть вопрос или проблема — свяжитесь с нами.",

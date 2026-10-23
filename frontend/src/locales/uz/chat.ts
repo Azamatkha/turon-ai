@@ -23,7 +23,6 @@ export const chatStatic: ChatStaticStrings = {
   history: "Tarix",
   support: "Qo‘llab-quvvatlash",
   platforms: "Platformalar",
-  platformsEmpty: "Platformalar tez orada qo‘shiladi",
   supportNumber: "+998200280419",
   supportHint: "Yordam raqami",
   supportSub: "Savol yoki muammo bo‘lsa, biz bilan bog‘laning.",
