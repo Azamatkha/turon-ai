@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLang } from "../hooks/useLang";
 import { adminDict } from "../locales";
-import type { AdminRole, AdminUser, AdminView } from "../types/admin";
+import type { AdminRole, AdminStatus, AdminUser, AdminView } from "../types/admin";
 import {
   listUsers, createUser, changeRole, deleteUser, updateUser, getStats, type ApiUser, type BackendRole, type AdminUserUpdate,
 } from "../services/adminService";
@@ -102,6 +102,8 @@ export default function AdminPage() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [dept, setDept] = useState("");
+  // Holat filtri: "" — hammasi, aks holda faqat Online yoki Offline
+  const [statusFilter, setStatusFilter] = useState<"" | AdminStatus>("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [allDepts, setAllDepts] = useState<string[]>([]); // filter uchun barqaror ro'yxat
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -392,7 +394,7 @@ export default function AdminPage() {
           {onApiDocs && <ApiDocsView />}
           {onUsers && (
             <>
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
                 <FilterSelect
                   value={dept}
                   onChange={setDept}
@@ -401,9 +403,20 @@ export default function AdminPage() {
                     ...allDepts.map((d) => ({ value: d, label: d })),
                   ]}
                 />
+                <FilterSelect
+                  value={statusFilter}
+                  onChange={(v) => setStatusFilter(v as "" | AdminStatus)}
+                  options={[
+                    { value: "", label: t.allStatuses },
+                    { value: "Online", label: t.statusLabel.Online },
+                    { value: "Offline", label: t.statusLabel.Offline },
+                  ]}
+                />
               </div>
-              {/* key: qidiruv yoki bo'lim o'zgarsa jadval 1-sahifadan boshlanadi */}
-              <UsersTable key={`${search}|${dept}`} users={users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
+              {/* key: qidiruv, bo'lim yoki holat o'zgarsa jadval 1-sahifadan boshlanadi */}
+              <UsersTable
+                key={`${search}|${dept}|${statusFilter}`}
+                users={statusFilter ? users.filter((u) => u.status === statusFilter) : users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
             </>
           )}
         </div>

@@ -6,8 +6,18 @@ import { PRIMARY, getSideTokens } from "../chat/theme";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { AdminView } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
-import { fetchMe, logout, type Me } from "../../services/authService";
+import { fetchMe, logout, platformsUrl, type Me } from "../../services/authService";
 import styles from "./Sidebar.module.css";
+
+// "Platformalar" ikonkasi — chat sidebar'idagi bilan bir xil (portal tugmasi SVG'si)
+const platformsIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="7" height="7" rx="2" />
+    <rect x="14" y="3" width="7" height="7" rx="2" />
+    <rect x="3" y="14" width="7" height="7" rx="2" />
+    <rect x="14" y="14" width="7" height="7" rx="2" />
+  </svg>
+);
 
 interface NavItem {
   id: AdminView;
@@ -53,6 +63,9 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
   const meName = me?.full_name || "Admin";
   const meHandle = me ? "@" + me.username : "";
   const meInitial = meName.charAt(0).toUpperCase();
+
+  // Portal manzili sozlanmagan bo'lsa tugma ko'rsatilmaydi
+  const platformsHref = platformsUrl();
 
   const doLogout = async () => {
     await logout();
@@ -226,6 +239,22 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
           </div>
         )}
       </div>
+
+      {/* Eng pastda — "Platformalar" (chat sidebar'idagi bilan bir xil).
+          Yig'ilgan rejimda faqat ikonka. */}
+      {platformsHref && (
+        <div className={styles.platformsRow}>
+          <a
+            href={platformsHref}
+            className={`${styles.platformsBtn} ${collapsed ? styles.platformsBtnIcon : ""}`}
+            aria-label={admin.platforms}
+            title={collapsed ? admin.platforms : undefined}
+          >
+            {platformsIcon}
+            {!collapsed && <span>{admin.platforms}</span>}
+          </a>
+        </div>
+      )}
     </aside>
   );
 }

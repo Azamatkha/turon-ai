@@ -41,17 +41,27 @@ class DashboardStatsUseCase:
             req_by_dept = await uow.chat_messages.count_requests_by_department(
                 uow.session
             )
-            total_req = sum(c for _, c in req_by_dept)
-            departments: list[DeptStat] = []
+            # Bo'sh departament va qo'lda "Boshqa" deb yozilgani bitta
+            # "Boshqa" qatoriga birlashadi (aks holda diagrammada ikkita
+            # "Boshqa" chiqardi)
+            merged: dict[str, int] = {}
             for name, count in req_by_dept:
+                key = (name or "").strip() or "Boshqa"
+                if key.lower() == "boshqa":
+                    key = "Boshqa"
+                merged[key] = merged.get(key, 0) + count
+            total_req = sum(merged.values())
+            departments: list[DeptStat] = []
+            for name, count in merged.items():
                 pct = round(count / total_req * 100) if total_req else 0
-                departments.append(
-                    DeptStat(name=name or "Boshqa", count=count, pct=pct)
-                )
+                departments.append(DeptStat(name=name, count=count, pct=pct))
             departments.sort(key=lambda d: d.count, reverse=True)
 
-            # So'nggi 7 kun: har kun uchun xabarlar soni (eskidan yangiga)
-            per_day = await uow.chat_messages.count_per_day(uow.session, days=7)
+            # So'nggi 7 kun: har kun uchun so'rovlar soni (eskidan yangiga).
+            # Faqat foydalanuvchi xabarlari — bot javoblari sanalmaydi.
+            per_day = await uow.chat_messages.count_per_day(
+                uow.session, days=7, role="user"
+            )
             today = get_utc_now().date()
             weekly = [
                 WeeklyPoint(

@@ -355,6 +355,8 @@ export interface AdminStrings {
   phoneInvalid: string;
   ipNumberInvalid: string;
   logout: string;
+  // Sidebar pastidagi "Platformalar" tugmasi (portaldagi platformalar sahifasi)
+  platforms: string;
   uploadNav: string;
   uploadTitle: string;
   uploadCardTitle: string;
@@ -506,6 +508,8 @@ export interface AdminStrings {
   dayMode: string;
   selectLanguage: string;
   allDepts: string;
+  // Foydalanuvchilar sahifasidagi holat filtri (onlayn/oflayn) — "hammasi" varianti
+  allStatuses: string;
   password: string;
   nameLoginRequired: string;
   passTooShort: string;

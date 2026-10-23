@@ -44,16 +44,18 @@ class ChatMessageRepository(BaseRepository[ChatMessage]):
         return list(result.scalars().all())
 
     async def count_per_day(
-        self, session: AsyncSession, days: int = 7
+        self, session: AsyncSession, days: int = 7, role: str | None = None
     ) -> dict[date, int]:
-        """So'nggi `days` kun ichida har bir kundagi xabarlar soni."""
+        """So'nggi `days` kun ichida har bir kundagi xabarlar soni.
+
+        `role` berilsa — faqat shu roldagi xabarlar (masalan "user" = so'rovlar).
+        """
         since = get_utc_now() - timedelta(days=days)
         day_col = func.date(self.model.created_at)
-        query = (
-            select(day_col, func.count())
-            .where(self.model.created_at >= since)
-            .group_by(day_col)
-        )
+        query = select(day_col, func.count()).where(self.model.created_at >= since)
+        if role is not None:
+            query = query.where(self.model.role == role)
+        query = query.group_by(day_col)
         result = await session.execute(query)
         return {row[0]: int(row[1]) for row in result.all()}
 
