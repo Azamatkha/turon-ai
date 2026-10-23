@@ -1,7 +1,6 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiUnpinLine } from "react-icons/ri";
-import { RxDashboard } from "react-icons/rx";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import { platformsUrl } from "../../services/authService";
@@ -46,9 +45,17 @@ interface SidebarProps {
   platformsLabel: string;
 }
 
-// "Platformalar" ikonkasi. 16px — portal sahifasidagi tugma ikonkasi bilan
-// bir xil o'lcham.
-const platformsIcon = <RxDashboard size={16} aria-hidden="true" />;
+// "Platformalar" ikonkasi — portal sahifasidagi tugmadagi SVG'ning AYNAN
+// nusxasi (4 kvadrat, chiziq 2). RxDashboard ishlatilmaydi: u 15x15 to'r
+// uchun chizilgan ingichka ikonka, 16px da xira va mayda ko'rinardi.
+const platformsIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="7" height="7" rx="2" />
+    <rect x="14" y="3" width="7" height="7" rx="2" />
+    <rect x="3" y="14" width="7" height="7" rx="2" />
+    <rect x="14" y="14" width="7" height="7" rx="2" />
+  </svg>
+);
 
 // Oxirgi xabar vaqtini menyu uchun formatlaydi: bugun bo'lsa "Bugun · soat:daqiqa",
 // aks holda sana + vaqt (raqamli format — barcha tillarda bir xil ishlaydi)
