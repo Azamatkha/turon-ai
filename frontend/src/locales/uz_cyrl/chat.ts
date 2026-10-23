@@ -20,6 +20,8 @@ export const chatStatic: ChatStaticStrings = {
   noResults: "Ҳеч нарса топилмади",
   history: "Тарих",
   support: "Қўллаб-қувватлаш",
+  platforms: "Платформалар",
+  platformsEmpty: "Платформалар тез орада қўшилади",
   supportNumber: "+998200280419",
   supportHint: "Ёрдам рақами",
   supportSub: "Савол ёки муаммо бўлса, биз билан боғланинг.",

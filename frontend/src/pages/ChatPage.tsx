@@ -244,6 +244,8 @@ export default function ChatPage() {
         openSupport={() => setSupportOpen(true)}
         supportLabel={S.support}
         logoutLabel={S.logOut}
+        platformsLabel={S.platforms}
+        platformsEmptyLabel={S.platformsEmpty}
       />
 
       {profileOpen && <ProfileModal S={S} isDark={isDark} onClose={closeProfile} />}
