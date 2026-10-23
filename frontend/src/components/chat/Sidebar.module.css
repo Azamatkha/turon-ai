@@ -530,20 +530,20 @@
 /* =====================
    "Platformalar" tugmasi — sidebar ENG PASTIDA (profil undan tepada)
    ---------------------------------------------------------------------
-   Turon AI portalining platformalar sahifasidagi tugma bilan PIKSELMA-PIKSEL
-   bir xil: chapdan 20px, pastdan 20px, 212x38, radius 11, gradient 135deg
-   #4F46E5 -> #7C3AED, Inter 13px. Foydalanuvchi portal <-> chat o'rtasida
-   o'tganda tugma joyidan qimirlamay, ustma-ust tushadi. Qiymatlarni
-   o'zgartirsangiz — portaldagi tugmani ham birga o'zgartiring.
+   O'lcham va ko'rinish portal sahifasidagi tugma bilan bir xil: 212x38,
+   radius 11, gradient 135deg #4F46E5 -> #7C3AED, Inter 13px. Joyi — sidebar
+   enining o'rtasida, pastdan 20px.
 
-   Joylashuv `position: fixed` bilan EMAS, oqim ichida: sidebar ekranning chap
-   chetidan (x=0) boshlanadi va pastgacha cho'ziladi, shuning uchun
-   padding 20px aynan "left: 20px; bottom: 20px" ni beradi, profil esa
+   Joylashuv `position: fixed` bilan EMAS, oqim ichida, shuning uchun profil
    tabiiy ravishda tugma ustida qoladi.
    ===================== */
+/* Tugma sidebar enining o'rtasida; tepadagi 10px — profilni tugmadan
+   biroz yuqoriga ko'taradi (ikkisi bir-biriga yopishib turmasin). */
 .platformsRow {
+  display: flex;
+  justify-content: center;
   flex: 0 0 auto;
-  padding: 0 0 20px 20px;
+  padding: 10px 16px 20px;
 }
 
 .platformsAnchorRail {

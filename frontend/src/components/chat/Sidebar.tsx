@@ -346,10 +346,9 @@ export default function Sidebar({
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={styles.chevron} style={{ transform: profileMenu ? "rotate(-90deg)" : undefined }}><polyline points="9 18 15 12 9 6" /></svg>
             </HButton>
           </div>
-          {/* Eng pastda — "Platformalar". Profil shu sabab bir qator tepaga suriladi.
-              Joyi va o'lchami portal sahifasidagi tugma bilan AYNAN bir xil
-              (chapdan 20px, pastdan 20px, 212x38) — sahifalar almashganda
-              tugma joyidan qimirlamay, ustma-ust tushadi. */}
+          {/* Eng pastda — "Platformalar" (sidebar o'rtasida, pastdan 20px).
+              Profil shu sabab bir qator tepaga suriladi. O'lchami portal
+              sahifasidagi tugma bilan bir xil (212x38). */}
           {platformsHref && (
             <div className={styles.platformsRow}>
               <a href={platformsHref} className={styles.platformsBtn}>
