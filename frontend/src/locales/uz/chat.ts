@@ -33,7 +33,6 @@ export const chatStatic: ChatStaticStrings = {
   nightMode: "Tungi rejim",
   dayMode: "Kunduzgi rejim",
   adminPanel: "Admin panel",
-  backToPlatforms: "Platformalar",
   notifications: "Bildirishnomalar",
   notifEmpty: "Hozircha bildirishnoma yo‘q",
   notifMarkAll: "Hammasini o‘qilgan deb belgilash",

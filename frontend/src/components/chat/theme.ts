@@ -87,19 +87,28 @@ export function getThemeTokens(isDark: boolean): ThemeTokens {
 //
 // MUHIM: bu funksiya CHAT va ADMIN sidebar'ining IKKALASIGA xizmat qiladi —
 // ikki panel bir xil ko'rinishi kerak, farq faqat ichidagi funksiyalarda.
+//
+// 2026-10: PALITRA "PLATFORMALAR" TUGMASIGA MOSLANDI. Sidebar pastidagi
+// tugma Turon AI portalidagi tugma bilan bir xil bo'lishi shart (indigo
+// #4F46E5 -> binafsha #7C3AED), ilgarigi navy-ko'k fon esa unga mos
+// tushmasdi — tugma begona yamoqdek ko'rinardi. Endi fon AYNAN shu ikki
+// rangning TO'Q pog'onalaridan: tepada to'q indigo (#1E1B4B, #312E81),
+// pastda to'q binafsha (#4C1D95). Tugma o'z oilasidagi fonda shunchaki
+// yorqinroq bo'lib turadi.
 export function getSideTokens(isDark: boolean): SideTokens {
   return {
     bg: isDark
-      ? `linear-gradient(162deg, #05081C 0%, #0C1338 30%, #141C55 58%, #1E1C6A 82%, #2A1E72 100%)`
-      : `linear-gradient(162deg, #0D1A4A 0%, ${NAVY} 26%, #27378F 52%, #3A3599 78%, #4A34A0 100%)`,
+      ? `linear-gradient(162deg, #07061A 0%, #100E33 28%, #17154A 56%, #221760 80%, #2E1A6E 100%)`
+      : `linear-gradient(162deg, #17153F 0%, #1E1B4B 22%, #2C2A7C 50%, #3B2A8F 76%, #4C1D95 100%)`,
     fg: "#F1F3FB",
-    // Ilgari .55 edi — to'q ko'k fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
+    // Ilgari .55 edi — to'q fonda kontrast 3:1 dan past, ya'ni WCAG AA ni
     // o'tmasdi. .72 da matn o'qiladi, lekin baribir "ikkilamchi" ko'rinadi.
-    sub: "rgba(223,228,245,.72)",
+    sub: "rgba(224,226,250,.72)",
     active: "rgba(255,255,255,.14)",
     border: "rgba(255,255,255,.12)",
-    logo: ACCENT_ON_DARK,
-    // "Yangi suhbat" tugmasi — oq shisha, ustida juda yengil indigo tovlanish
-    btn: "linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(90,120,224,.18) 100%)",
+    // Faol suhbat nuqtasi — indigo-300, fonda yaxshi ko'rinadi
+    logo: "#A5B4FC",
+    // "Yangi suhbat" tugmasi — oq shisha, ustida juda yengil binafsha tovlanish
+    btn: "linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(124,58,237,.2) 100%)",
   };
 }

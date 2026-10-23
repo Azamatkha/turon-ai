@@ -71,7 +71,6 @@ export interface ChatStaticStrings {
   nightMode: string;
   dayMode: string;
   adminPanel: string;
-  backToPlatforms: string;
   // Bildirishnomalar. Xabar matni bazada saqlanmaydi — backend faqat
   // turini va parametrlarini yuboradi, matn shu yerdan olinadi.
   notifications: string;

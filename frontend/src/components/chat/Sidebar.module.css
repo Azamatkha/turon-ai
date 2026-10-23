@@ -29,9 +29,11 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(130% 42% at 8% -6%, rgba(123, 77, 255, 0.22), transparent 72%),
-    radial-gradient(90% 26% at 50% 44%, rgba(255, 255, 255, 0.07), transparent 76%),
-    radial-gradient(115% 40% at 100% 102%, rgba(90, 120, 224, 0.26), transparent 70%);
+    /* Dog'lar ham "Platformalar" tugmasi ranglarida: tepada indigo, pastda
+       binafsha (tugma turgan joy) — tugma fonga tabiiy "o'sib" chiqadi */
+    radial-gradient(130% 42% at 8% -6%, rgba(79, 70, 229, 0.26), transparent 72%),
+    radial-gradient(90% 26% at 50% 44%, rgba(255, 255, 255, 0.06), transparent 76%),
+    radial-gradient(115% 40% at 100% 102%, rgba(124, 58, 237, 0.3), transparent 70%);
 }
 
 /* Kontent yorug'lik dog'laridan yuqorida turishi kerak */
@@ -117,8 +119,8 @@
 
 .searchRow:focus-within {
   background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(140, 165, 240, 0.7);
-  box-shadow: 0 0 0 3px rgba(90, 120, 224, 0.16);
+  border-color: rgba(165, 180, 252, 0.7);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .searchIcon {
@@ -236,8 +238,8 @@
   height: 32px;
   border-radius: 9px;
   flex: 0 0 auto;
-  background: linear-gradient(140deg, #5A78E0, #193070);
-  box-shadow: 0 3px 10px rgba(10, 20, 60, 0.35);
+  background: linear-gradient(140deg, #6366F1, #3730A3);
+  box-shadow: 0 3px 10px rgba(20, 16, 70, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -278,12 +280,14 @@
 
      RANGLAR BREND KO'KINING YORUG' POG'ONALARI, to'q navy emas: sidebar foni
      o'zi to'q navy, unda #193070 bilan yozilgan matn deyarli ko'rinmasdi. */
+  /* Indigo -> och indigo -> "glow" -> binafsha -> indigo ("Platformalar"
+     tugmasi oilasi; ilgari ko'k #5A78E0 edi va yangi fonga mos tushmasdi) */
   background-image: linear-gradient(120deg,
-      #5A78E0 0%,
-      #8195E6 25%,
-      #C3CEF8 50%,
-      #A78BFF 75%,
-      #5A78E0 100%);
+      #818CF8 0%,
+      #A5B4FC 25%,
+      #E0E7FF 50%,
+      #C4B5FD 75%,
+      #818CF8 100%);
   background-size: 300% 100%;
   background-position: 0% 50%;
   -webkit-background-clip: text;
@@ -372,7 +376,7 @@
   bottom: 7px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(180deg, #8C7BF0, #5A78E0);
+  background: linear-gradient(180deg, #A78BFA, #6366F1);
 }
 
 .chatItem {
@@ -433,7 +437,7 @@
 .moreMenu {
   position: fixed;
   z-index: 1000;
-  background: linear-gradient(160deg, rgba(9, 40, 92, 0.95), rgba(32, 44, 100, 0.95));
+  background: linear-gradient(160deg, rgba(30, 27, 75, 0.96), rgba(49, 46, 129, 0.96));
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   color: #F1F5F9;
@@ -561,7 +565,10 @@
   border-radius: 11px;
   background: linear-gradient(135deg, #4F46E5, #7C3AED);
   color: #fff;
-  font-family: Inter, sans-serif;
+  /* Inter ilovada `@fontsource-variable/inter` bilan 'Inter Variable' NOMI
+     ostida yuklanadi — oddiy `Inter` deb yozilsa brauzer uni topolmay
+     Arial'ga tushardi va yozuv portaldagidan ingichka/boshqacha chiqardi. */
+  font-family: var(--tu-font);
   font-size: 13px;
   font-weight: 600;
   line-height: 1;

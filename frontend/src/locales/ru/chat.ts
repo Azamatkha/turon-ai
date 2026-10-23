@@ -30,7 +30,6 @@ export const chatStatic: ChatStaticStrings = {
   nightMode: "Ночной режим",
   dayMode: "Дневной режим",
   adminPanel: "Админ-панель",
-  backToPlatforms: "Платформы",
   notifications: "Уведомления",
   notifEmpty: "Пока нет уведомлений",
   notifMarkAll: "Отметить все прочитанными",

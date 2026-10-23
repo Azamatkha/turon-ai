@@ -22,7 +22,6 @@ import HButton from "../common/HButton";
 import type { Lang } from "../../types/lang";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
-import { platformsUrl } from "../../services/authService";
 import styles from "./ChatHeader.module.css";
 
 interface ChatHeaderProps {
@@ -42,7 +41,6 @@ interface ChatHeaderProps {
 export default function ChatHeader({
   title, lang, setLang, isDark, onToggleTheme, tk, isAdmin, onAdmin, editableTitle, onRenameTitle, s,
 }: ChatHeaderProps) {
-  const portalHref = platformsUrl();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(title);
   const [calcOpen, setCalcOpen] = useState(false);
@@ -108,19 +106,8 @@ export default function ChatHeader({
       </div>
 
       <div className={styles.right}>
-        {/* Portalga (barcha AI platformalar ro'yxati) qaytish — chatga aynan
-            o'sha sahifadan kiriladi */}
-        {portalHref && (
-          <a
-            href={portalHref}
-            aria-label={s.backToPlatforms}
-            className={`${styles.platformsBtn} tu-shiny`}
-            style={{ color: isDark ? "#E2E8F0" : "#193070" }}
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-            <span className={styles.platformsLabel}>{s.backToPlatforms}</span>
-          </a>
-        )}
+        {/* Portalga ("Platformalar") qaytish tugmasi endi sidebar pastida
+            (Sidebar.tsx) — header'da takrorlanmaydi */}
         {isAdmin && (
           <HButton
             onClick={() => onAdmin?.()}
