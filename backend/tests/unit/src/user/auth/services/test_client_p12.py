@@ -66,7 +66,10 @@ def test_issued_p12_is_short_lived_client_cert_signed_by_ca(ca: x509.Certificate
     key, cert, chain = _open(p12_base64, password)
 
     assert key is not None and cert is not None
-    assert cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value == "azamat"
+    # Proxy'da ishlaydigan umumiy turon.p12 qolipi: C, O, OU=Mobile, CN tartibida
+    assert cert.subject.rfc4514_string() == "CN=azamat,OU=Mobile,O=Turonbank,C=UZ"
+    key_usage = cert.extensions.get_extension_for_class(x509.KeyUsage).value
+    assert key_usage.digital_signature and not key_usage.key_encipherment
     assert cert.issuer == ca.subject
     assert cert.not_valid_after_utc - cert.not_valid_before_utc <= timedelta(minutes=20)
     assert cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca is False
@@ -82,6 +85,9 @@ def test_issued_p12_is_short_lived_client_cert_signed_by_ca(ca: x509.Certificate
         cert.signature_hash_algorithm,
     )
     assert [c.subject for c in chain] == [ca.subject]
+    # Mobil kalitni shu alias bo'yicha topadi
+    loaded = pkcs12.load_pkcs12(base64.b64decode(p12_base64), password.encode())
+    assert loaded.cert is not None and loaded.cert.friendly_name == b"Turonbank FaceIDS Mobile"
 
 
 def test_each_call_issues_new_cert_key_and_password(ca: x509.Certificate) -> None:

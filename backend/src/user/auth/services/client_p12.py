@@ -29,12 +29,16 @@ from src.user.auth.services.mock_p12 import generate_mock_p12
 
 logger = get_logger(__name__)
 
-# Backend va proxy serverlari soati orasidagi farq uchun: sertifikat shuncha
+# Backend, proxy va telefon soatlari orasidagi farq uchun: sertifikat shuncha
 # oldin "boshlanadi", umumiy muddat esa baribir TTL dan oshmaydi
-CLOCK_SKEW = timedelta(minutes=1)
+CLOCK_SKEW = timedelta(minutes=5)
 
-CLIENT_ORGANIZATION = "Turonbank"
+# Subject, Key Usage va alias 9443 proxy'da ishlaydigan umumiy `turon.p12`
+# (CN=faceids-mobile-01) qolipida — farqi faqat CN (username) va muddatda
 CLIENT_COUNTRY = "UZ"
+CLIENT_ORGANIZATION = "Turonbank"
+CLIENT_ORGANIZATIONAL_UNIT = "Mobile"
+P12_FRIENDLY_NAME = b"Turonbank FaceIDS Mobile"
 
 
 @lru_cache(maxsize=1)
@@ -90,9 +94,10 @@ def _issue_p12(common_name: str) -> tuple[str, str]:
 
     subject = x509.Name(
         [
-            x509.NameAttribute(NameOID.COMMON_NAME, common_name),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, CLIENT_ORGANIZATION),
             x509.NameAttribute(NameOID.COUNTRY_NAME, CLIENT_COUNTRY),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, CLIENT_ORGANIZATION),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, CLIENT_ORGANIZATIONAL_UNIT),
+            x509.NameAttribute(NameOID.COMMON_NAME, common_name),
         ]
     )
     cert = (
@@ -108,7 +113,7 @@ def _issue_p12(common_name: str) -> tuple[str, str]:
             x509.KeyUsage(
                 digital_signature=True,
                 content_commitment=False,
-                key_encipherment=True,
+                key_encipherment=False,
                 data_encipherment=False,
                 key_agreement=False,
                 key_cert_sign=False,
@@ -133,7 +138,7 @@ def _issue_p12(common_name: str) -> tuple[str, str]:
 
     password = secrets.token_urlsafe(16)
     p12_bytes = pkcs12.serialize_key_and_certificates(
-        name=common_name.encode(),
+        name=P12_FRIENDLY_NAME,
         key=key,
         cert=cert,
         cas=[ca_cert],
