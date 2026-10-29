@@ -24,7 +24,6 @@ export const login: LoginStrings = {
   showPassword: "Parolni ko‘rsatish",
   hidePassword: "Parolni yashirish",
   noAccount: "Hisobingiz yo‘qmi?",
-  edoLogin: "EDO orqali kirish",
   edoLoginError: "EDO orqali kirib bo‘lmadi. Qayta urinib ko‘ring yoki login bilan kiring.",
   registerMobileOnly:
     "Ro‘yxatdan o‘tish faqat mobil ilova orqali amalga oshiriladi. " +

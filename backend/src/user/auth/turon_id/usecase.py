@@ -37,8 +37,11 @@ class TuronIdSignInUseCase:
 
     Linking (first match wins): the account already linked to this Turon ID
     user; else an unlinked account with the same phone number; else a new one.
-    A user who came through Turon ID is trusted: verified and active (Face-ID
-    is for the mobile app). The chat role follows the Turon ID chat role.
+    Turon ID orqali kirish shaxsni TASDIQLAMAYDI: yangi user `is_verified=False`
+    bilan yaratiladi va mobil ilovada Face-ID'dan o'tgach tasdiqlanadi
+    (`/auth/save`). Tasdiqlanmagan user web'da faqat ogohlantirish sahifasini
+    ko'radi — chat API'lari unga 403. Mavjud userning holati o'zgartirilmaydi.
+    The chat role follows the Turon ID chat role.
 
     Errors:
     - UnauthorizedException: the code was refused or the user has no chat role.
@@ -64,7 +67,6 @@ class TuronIdSignInUseCase:
         async with self.uow as uow:
             user = await self._find_or_create(uow, profile)
             user.turon_id_sub = profile.sub
-            user.is_verified = True
             user.is_active = True
             user.role = profile.role
             user.last_seen_at = get_utc_now()
@@ -83,7 +85,7 @@ class TuronIdSignInUseCase:
             refresh_token=await create_refresh_token(
                 token_data, redis_client=self.redis_client, session_id=session_id
             ),
-            is_verified=True,
+            is_verified=user.is_verified,
         )
 
     async def _find_or_create(
@@ -115,7 +117,8 @@ class TuronIdSignInUseCase:
                     secrets.token_urlsafe(_UNUSABLE_PASSWORD_BYTES)
                 ),
                 "role": profile.role,
-                "is_verified": True,
+                # Face-ID (mobil ilova) dan o'tgandan keyin True bo'ladi
+                "is_verified": False,
                 "is_active": True,
             },
         )

@@ -210,7 +210,7 @@ async def logout_user(
         "The Turon ID portal opens the chat with a one-time code in the URL "
         "fragment; the web app posts it here. The backend exchanges it with "
         "Turon ID and returns a normal chat session. The user is linked by "
-        "Turon ID account, then by phone, or created; always verified."
+        "Turon ID account, then by phone, or created (unverified until Face-ID)."
     ),
     dependencies=[Depends(RateLimiter(times=10, seconds=60))],
 )

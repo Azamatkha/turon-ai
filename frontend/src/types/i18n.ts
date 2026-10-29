@@ -27,7 +27,6 @@ export interface LoginStrings {
   // Saytdan ro'yxatdan o'tish yopilgan — ro'yxatdan o'tish faqat mobil ilovada
   // (yuzni tasdiqlash kamera va SDK talab qiladi).
   noAccount: string;
-  edoLogin: string;
   edoLoginError: string;
   registerMobileOnly: string;
   gotIt: string;

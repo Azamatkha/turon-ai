@@ -9,7 +9,6 @@ import {
   ApiError,
   UNVERIFIED_STATUS,
   takeTuronIdError,
-  turonIdLoginUrl,
 } from "../services/authService";
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
@@ -27,7 +26,6 @@ export default function LoginPage() {
   const { lang, setLang, t } = useLang(loginDict);
   // Turon ID orqali kirish xato bilan tugagan bo'lsa — bir marta ko'rsatamiz
   const [ssoFailed] = useState(takeTuronIdError);
-  const portalLoginUrl = turonIdLoginUrl();
   // Chatdagi tungi rejim bu sahifaga o'tib ketmasin (yozuvlar ko'rinmay qolardi)
   useForceLightTheme();
 
@@ -88,7 +86,6 @@ export default function LoginPage() {
           error={error}
           submit={submit}
           onKey={onKey}
-          edoUrl={portalLoginUrl}
           edoFailed={ssoFailed}
         />
       </div>

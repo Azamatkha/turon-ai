@@ -24,15 +24,14 @@ interface LoginFormProps {
   error: "" | "invalid" | "rateLimited" | "unverified";
   submit: () => void;
   onKey: (e: KeyboardEvent) => void;
-  // EDO (Turon ID portali) orqali kirish manzili; sozlanmagan bo'lsa tugma chiqmaydi
-  edoUrl: string | null;
+  // Turon ID portalidan kelgan kirish (#sso=…) muvaffaqiyatsiz tugadimi
   edoFailed: boolean;
 }
 
 export default function LoginForm({
   t, lang, setLang,
   login, setLogin, password, setPassword, pwVisible, setPwVisible,
-  focus, setFocus, loading, error, submit, onKey, edoUrl, edoFailed,
+  focus, setFocus, loading, error, submit, onKey, edoFailed,
 }: LoginFormProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [hintOpen, setHintOpen] = useState(false);
@@ -217,16 +216,10 @@ export default function LoginForm({
           </button>
         </div>
 
-        {/* EDO orqali kirish — asosiy "Kirish"dan keyin, ikkilamchi uslubda */}
-        {edoUrl && (
-          <>
-            {edoFailed && (
-              <p className={styles.edoError} role="alert">{t.edoLoginError}</p>
-            )}
-            <a className={styles.edoBtn} href={edoUrl}>
-              {t.edoLogin}
-            </a>
-          </>
+        {/* EDO orqali kirish tugmasi olib tashlandi — portal (Turon ID) chatni
+            o'zi ochadi. Portal kodi o'tmasa, xatosi shu yerda ko'rinadi. */}
+        {edoFailed && (
+          <p className={styles.edoError} role="alert">{t.edoLoginError}</p>
         )}
       </form>
 

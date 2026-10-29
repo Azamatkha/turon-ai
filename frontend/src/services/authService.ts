@@ -190,16 +190,10 @@ function refreshOnce(): Promise<RefreshOutcome> {
 const SSO_FRAGMENT = "sso";
 const SSO_ERROR_KEY = "turon_sso_error";
 
-/** Turon ID portaliga kirish sahifasi; kirgach portal shu chatni qayta ochadi. */
 // Turon AI portalidagi platformalar sahifasi (chatdan "orqaga" havolasi uchun)
 export function platformsUrl(): string | null {
   const portal = import.meta.env.VITE_TURON_PORTAL_URL;
   return portal ? `${portal.replace(/\/$/, "")}/platforms` : null;
-}
-
-export function turonIdLoginUrl(): string | null {
-  const portal = import.meta.env.VITE_TURON_PORTAL_URL;
-  return portal ? `${portal.replace(/\/$/, "")}/login?platform=chat` : null;
 }
 
 export async function signInWithTuronId(code: string): Promise<void> {
