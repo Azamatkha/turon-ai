@@ -22,10 +22,17 @@ RAG_SYSTEM = (
 # Kontekst topilmaganda (yoki mos kelmaganda) beriladigan tayyor javob.
 # LLM'ni chaqirmasdan to'g'ridan-to'g'ri qaytariladi — bema'ni/aloqasiz savolga
 # uzoq "o'ylab" javob bermaslik uchun.
+# Yordam xizmati kontaktlari — frontend'dagi "Qo'llab-quvvatlash" oynasi bilan
+# bir xil (locales: supportNumber, supportTelegramBot). Havola to'liq URL
+# ko'rinishida: kirillga o'girishda tegilmaydi va chatda bosiladigan bo'ladi.
+SUPPORT_PHONE = "+998 20 028 04 19"
+SUPPORT_BOT_URL = "https://t.me/turonai_help_bot"
+
 NO_INFO_REPLY = (
     "Bu savol bo'yicha ma'lumot topilmadi. Savolni biroz boshqacha yoki aniqroq "
     "yozib qayta urinib ko'ring — masalan mahsulot, filial yoki bo'lim nomini "
-    "to'liqroq yozing. Baribir topilmasa, 1234 raqamiga qo'ng'iroq qiling."
+    "to'liqroq yozing. Baribir topilmasa, yordam xizmatiga murojaat qiling: "
+    f"{SUPPORT_PHONE} yoki Telegram bot — {SUPPORT_BOT_URL}"
 )
 
 # Qat'iy (faqat kontekst) rejim prompti. KO'RSATMALAR INGLIZCHA — modellar
@@ -734,7 +741,8 @@ RU_CANNED_REPLIES.update(
             "По этому вопросу информация не найдена. Попробуйте сформулировать "
             "вопрос иначе или точнее — например, полнее укажите название "
             "продукта, филиала или отдела. Если информация всё равно не "
-            "найдётся, позвоните по номеру 1234."
+            f"найдётся, обратитесь в службу поддержки: {SUPPORT_PHONE} или "
+            f"Telegram-бот — {SUPPORT_BOT_URL}"
         ),
         OTHER_BANK_REPLY: (
             "Извините, я отвечаю только на вопросы о Туронбанке — информацию о "

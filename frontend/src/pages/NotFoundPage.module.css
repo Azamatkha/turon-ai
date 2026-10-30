@@ -1,0 +1,142 @@
+/* 404 / 403 sahifasi: raqamlar alohida-alohida harakatlanadi.
+   1) Kirish: har bir raqam tepadan tushib, sakrab joyiga o'tiradi (navbat bilan).
+   2) Keyin: to'lqin bo'lib sekin "suzadi" — har raqam o'z vaqtida.
+   3) Sichqoncha ustiga borsa — raqam sakraydi. */
+
+.code {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.02em;
+  font-size: clamp(120px, 24vw, 210px);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  user-select: none;
+}
+
+/* Kirish animatsiyasi tashqi qatlamda, suzish — ichki qatlamda:
+   ikkalasi ham `transform` ishlatadi va bir-birini bosib ketmasligi kerak. */
+.digitWrap {
+  display: inline-block;
+  animation: digitDrop 0.9s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+
+.digit {
+  display: inline-block;
+  background: linear-gradient(160deg, #4059BE 0%, #193070 60%, #0d2747 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 18px 30px rgba(25, 48, 112, 0.22));
+  animation: digitFloat 3.6s ease-in-out infinite;
+  animation-delay: calc(0.9s + var(--i) * 0.45s);
+  transform-origin: 50% 100%;
+  cursor: default;
+}
+
+.digit:hover {
+  animation: digitJump 0.6s ease;
+}
+
+@keyframes digitDrop {
+  0% { opacity: 0; transform: translateY(-120%) rotate(-12deg) scale(0.8); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+@keyframes digitFloat {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-10px) rotate(-2deg); }
+  50% { transform: translateY(0) rotate(0); }
+  75% { transform: translateY(4px) rotate(1.5deg); }
+}
+
+@keyframes digitJump {
+  0% { transform: translateY(0) scale(1, 1); }
+  20% { transform: translateY(0) scale(1.08, 0.9); }
+  50% { transform: translateY(-26px) scale(0.95, 1.06); }
+  80% { transform: translateY(0) scale(1.04, 0.96); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+/* Yordam tugmalari (telefon + Telegram bot) — "Qo'llab-quvvatlash" oynasidagi
+   kontaktlarning o'zi, faqat tugma ko'rinishida. */
+.support {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  animation: fadeUp 0.5s ease both;
+  animation-delay: 0.7s;
+}
+
+.supportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #193070;
+  text-decoration: none;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(25, 48, 112, 0.08);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.supportBtn:hover,
+.supportBtn:focus-visible {
+  transform: translateY(-2px);
+  border-color: #4059BE;
+  box-shadow: 0 10px 24px rgba(64, 89, 190, 0.18);
+}
+
+.supportIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(64, 89, 190, 0.1);
+  color: #4059BE;
+  flex: 0 0 auto;
+}
+
+.supportText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.supportLabel {
+  font-size: 12px;
+  color: #5b7180;
+}
+
+.supportValue {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Harakatni o'chirgan foydalanuvchilar uchun (OS sozlamasi) */
+@media (prefers-reduced-motion: reduce) {
+  .digitWrap,
+  .digit,
+  .digit:hover,
+  .support {
+    animation: none;
+  }
+}

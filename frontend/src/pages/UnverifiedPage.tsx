@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
-import { loginDict } from "../locales";
+import { chatStaticDict, loginDict } from "../locales";
 import { logout } from "../services/authService";
 import NotFoundPage from "./NotFoundPage";
 
@@ -8,7 +8,8 @@ import NotFoundPage from "./NotFoundPage";
 // Dizayn 404 sahifasi bilan bir xil — faqat matn va tugma boshqa.
 export default function UnverifiedPage() {
   const navigate = useNavigate();
-  const { t } = useLang(loginDict);
+  const { t, lang } = useLang(loginDict);
+  const S = chatStaticDict[lang];
 
   const onLogout = async () => {
     await logout();
@@ -22,6 +23,12 @@ export default function UnverifiedPage() {
       message={t.unverifiedText}
       actionLabel={t.unverifiedLogout}
       onAction={onLogout}
+      support={{
+        phoneLabel: S.supportHint,
+        phone: S.supportNumber,
+        botLabel: S.supportTelegramLabel,
+        bot: S.supportTelegramBot,
+      }}
     />
   );
 }

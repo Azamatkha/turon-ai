@@ -1,6 +1,8 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import DotField from "../components/DotField";
 import Logo from "../components/common/Logo";
+import styles from "./NotFoundPage.module.css";
 
 const ACTION_STYLE = {
   position: "relative",
@@ -26,6 +28,15 @@ interface Props {
   // Berilsa — "Bosh sahifaga" havolasi o'rniga shu tugma chiqadi
   actionLabel?: string;
   onAction?: () => void;
+  // Berilsa — yordam telefoni va Telegram bot tugmalari chiqadi
+  support?: SupportContacts;
+}
+
+export interface SupportContacts {
+  phoneLabel: string;
+  phone: string;
+  botLabel: string;
+  bot: string;
 }
 
 // 404 — mavjud bo'lmagan sahifa (dot-field fon bilan).
@@ -36,6 +47,7 @@ export default function NotFoundPage({
   message = "Siz qidirgan sahifa mavjud emas yoki ko‘chirilgan bo‘lishi mumkin.",
   actionLabel,
   onAction,
+  support,
 }: Props) {
   return (
     <div
@@ -73,22 +85,13 @@ export default function NotFoundPage({
         <Logo size={52} />
       </div>
 
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          fontSize: "clamp(120px, 24vw, 210px)",
-          fontWeight: 900,
-          lineHeight: 0.9,
-          letterSpacing: -8,
-          background: "linear-gradient(160deg, #4059BE 0%, #193070 60%, #0d2747 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-          textShadow: "0 24px 60px rgba(25,48,112,.2)",
-        }}
-      >
-        {code}
+      {/* Har bir raqam alohida span — o'z animatsiyasi bilan (CSS'dagi --i navbat) */}
+      <div className={styles.code} role="img" aria-label={code}>
+        {code.split("").map((ch, i) => (
+          <span key={i} className={styles.digitWrap} style={{ "--i": i } as CSSProperties} aria-hidden="true">
+            <span className={styles.digit}>{ch}</span>
+          </span>
+        ))}
       </div>
 
       <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: -4 }}>
@@ -97,6 +100,36 @@ export default function NotFoundPage({
       <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 380, lineHeight: 1.5 }}>
         {message}
       </div>
+
+      {support && (
+        <div className={styles.support}>
+          {/* Telefon — bosilsa qo'ng'iroq ilovasi ochiladi */}
+          <a href={`tel:${support.phone}`} className={styles.supportBtn}>
+            <span className={styles.supportIcon} aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
+            </span>
+            <span className={styles.supportText}>
+              <span className={styles.supportLabel}>{support.phoneLabel}</span>
+              <span className={styles.supportValue}>{support.phone}</span>
+            </span>
+          </a>
+          {/* Telegram bot — yangi oynada */}
+          <a
+            href={`https://t.me/${support.bot}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.supportBtn}
+          >
+            <span className={styles.supportIcon} aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" /></svg>
+            </span>
+            <span className={styles.supportText}>
+              <span className={styles.supportLabel}>{support.botLabel}</span>
+              <span className={styles.supportValue}>@{support.bot}</span>
+            </span>
+          </a>
+        </div>
+      )}
 
       {onAction ? (
         <button type="button" onClick={onAction} style={ACTION_STYLE}>
