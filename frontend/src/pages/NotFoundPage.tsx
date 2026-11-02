@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import DotField from "../components/DotField";
 import Logo from "../components/common/Logo";
 import styles from "./NotFoundPage.module.css";
@@ -30,6 +31,18 @@ interface Props {
   onAction?: () => void;
   // Berilsa — yordam telefoni va Telegram bot tugmalari chiqadi
   support?: SupportContacts;
+  // Berilsa — telefon bilan skanerlash uchun QR kodlar (kartochkalar ostida)
+  qrCodes?: QrItem[];
+}
+
+export interface QrItem {
+  title: string;
+  value: string;
+  // QR ostidagi qisqa yozuv (masalan, "@turonai_help_bot")
+  caption?: string;
+  // O'rtadagi logotip (data-URI). Xato tuzatish "H" darajada — logotip
+  // QR'ning bir qismini yopsa ham skanerlanadi.
+  logo?: string;
 }
 
 export interface SupportContacts {
@@ -48,6 +61,7 @@ export default function NotFoundPage({
   actionLabel,
   onAction,
   support,
+  qrCodes,
 }: Props) {
   return (
     <div
@@ -128,6 +142,27 @@ export default function NotFoundPage({
               <span className={styles.supportValue}>@{support.bot}</span>
             </span>
           </a>
+        </div>
+      )}
+
+      {qrCodes && qrCodes.length > 0 && (
+        <div className={styles.qrList}>
+          {qrCodes.map((qr) => (
+            <figure key={qr.value} className={styles.qrCard}>
+              <figcaption className={styles.qrTitle}>{qr.title}</figcaption>
+              <QRCodeSVG
+                value={qr.value}
+                size={148}
+                level="H"
+                marginSize={0}
+                fgColor="#000000"
+                bgColor="#FFFFFF"
+                title={qr.title}
+                imageSettings={qr.logo ? { src: qr.logo, height: 34, width: 34, excavate: true } : undefined}
+              />
+              {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
+            </figure>
+          ))}
         </div>
       )}
 

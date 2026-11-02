@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiUnpinLine } from "react-icons/ri";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
+import PlatformsButton from "../common/PlatformsButton";
 import { platformsUrl } from "../../services/authService";
 import { PRIMARY } from "./theme";
 import type { Chat, SideTokens } from "../../types/chat";
@@ -44,18 +45,6 @@ interface SidebarProps {
   logoutLabel: string;
   platformsLabel: string;
 }
-
-// "Platformalar" ikonkasi — portal sahifasidagi tugmadagi SVG'ning AYNAN
-// nusxasi (4 kvadrat, chiziq 2). RxDashboard ishlatilmaydi: u 15x15 to'r
-// uchun chizilgan ingichka ikonka, 16px da xira va mayda ko'rinardi.
-const platformsIcon = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="3" width="7" height="7" rx="2" />
-    <rect x="14" y="3" width="7" height="7" rx="2" />
-    <rect x="3" y="14" width="7" height="7" rx="2" />
-    <rect x="14" y="14" width="7" height="7" rx="2" />
-  </svg>
-);
 
 // Oxirgi xabar vaqtini menyu uchun formatlaydi: bugun bo'lsa "Bugun · soat:daqiqa",
 // aks holda sana + vaqt (raqamli format — barcha tillarda bir xil ishlaydi)
@@ -252,14 +241,7 @@ export default function Sidebar({
           </div>
           {platformsHref && (
             <div className={styles.platformsAnchorRail}>
-              <a
-                href={platformsHref}
-                data-tip={platformsLabel}
-                aria-label={platformsLabel}
-                className={`${styles.platformsBtn} ${styles.platformsBtnIcon} tip-right`}
-              >
-                {platformsIcon}
-              </a>
+              <PlatformsButton label={platformsLabel} iconOnly className="tip-right" />
             </div>
           )}
           {renderProfileMenu()}
@@ -351,10 +333,7 @@ export default function Sidebar({
               sahifasidagi tugma bilan bir xil (212x38). */}
           {platformsHref && (
             <div className={styles.platformsRow}>
-              <a href={platformsHref} className={styles.platformsBtn}>
-                {platformsIcon}
-                <span>{platformsLabel}</span>
-              </a>
+              <PlatformsButton label={platformsLabel} />
             </div>
           )}
           {renderProfileMenu()}

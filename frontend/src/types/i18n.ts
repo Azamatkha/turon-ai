@@ -34,6 +34,11 @@ export interface LoginStrings {
   unverifiedTitle: string;
   unverifiedText: string;
   unverifiedLogout: string;
+  // 403 sahifasidagi QR kodlar sarlavhalari
+  unverifiedQrTelegram: string;
+  unverifiedQrApp: string;
+  // Login sahifasidagi "Platformalar" tugmasi (portaldagi platformalar sahifasi)
+  platforms: string;
 }
 
 export interface ChatStrings {

@@ -76,3 +76,19 @@
 }
 
 /* Turon ID (bankning yagona kirishi) — kartadan pastda, ikkinchi darajali tugma */
+
+/* "Platformalar" — kartadan pastda, markazda */
+.platformsRow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding: var(--tu-space-4) 0;
+}
+
+/* Telefonda karta butun ekranni egallaydi — tugma oq fon ustida qoladi */
+@media (max-width: 560px) {
+  .platformsRow {
+    background: var(--tu-surface);
+  }
+}

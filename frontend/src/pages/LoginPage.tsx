@@ -13,6 +13,7 @@ import {
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
 import LoginForm from "../components/login/LoginForm";
+import PlatformsButton from "../components/common/PlatformsButton";
 import styles from "./LoginPage.module.css";
 
 export default function LoginPage() {
@@ -88,6 +89,10 @@ export default function LoginPage() {
           onKey={onKey}
           edoFailed={ssoFailed}
         />
+      </div>
+      {/* Portaldagi platformalar sahifasiga havola (chat sidebar'idagi bilan bir xil) */}
+      <div className={styles.platformsRow}>
+        <PlatformsButton label={t.platforms} />
       </div>
       </div>
     </div>

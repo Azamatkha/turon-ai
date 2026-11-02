@@ -35,4 +35,7 @@ export const login: LoginStrings = {
   unverifiedText:
     "Фойдаланиш учун мобил илова орқали верификациядан ўтинг ёки админга мурожаат қилинг.",
   unverifiedLogout: "Чиқиш",
+  unverifiedQrTelegram: "Телеграм ботга ўтиш учун QR код",
+  unverifiedQrApp: "Мобил иловани юклаб олиш учун QR код",
+  platforms: "Платформалар",
 };

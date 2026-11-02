@@ -34,4 +34,7 @@ export const login: LoginStrings = {
   unverifiedText:
     "Для работы пройдите верификацию в мобильном приложении или обратитесь к администратору.",
   unverifiedLogout: "Выйти",
+  unverifiedQrTelegram: "QR-код для перехода в Telegram-бот",
+  unverifiedQrApp: "QR-код для скачивания мобильного приложения",
+  platforms: "Платформы",
 };
