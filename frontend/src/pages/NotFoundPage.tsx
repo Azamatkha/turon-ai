@@ -8,7 +8,6 @@ import styles from "./NotFoundPage.module.css";
 const ACTION_STYLE = {
   position: "relative",
   zIndex: 1,
-  marginTop: 20,
   padding: "12px 26px",
   borderRadius: 14,
   border: "none",
@@ -74,7 +73,8 @@ export default function NotFoundPage({
         background: "#F8FAFC",
         color: "#193070",
         textAlign: "center",
-        padding: 24,
+        // Tepa/past joy — burchakdagi logo va tugma kontentni bosib qolmasin
+        padding: "84px 24px 96px",
         overflow: "hidden",
       }}
     >
@@ -93,8 +93,9 @@ export default function NotFoundPage({
         />
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, color: "#4059BE", marginBottom: 2 }}>
-        <Logo size={52} />
+      {/* Logo — chap yuqori burchakda */}
+      <div className={styles.cornerLogo}>
+        <Logo size={44} />
       </div>
 
       {/* Har bir raqam alohida span — o'z animatsiyasi bilan (CSS'dagi --i navbat) */}
@@ -106,7 +107,7 @@ export default function NotFoundPage({
         ))}
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: -4 }}>
+      <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: 20 }}>
         {title}
       </div>
       <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 380, lineHeight: 1.5 }}>
@@ -156,15 +157,18 @@ export default function NotFoundPage({
         </div>
       )}
 
-      {onAction ? (
-        <button type="button" onClick={onAction} style={ACTION_STYLE}>
-          {actionLabel}
-        </button>
-      ) : (
-        <Link to="/" style={ACTION_STYLE}>
-          Bosh sahifaga qaytish
-        </Link>
-      )}
+      {/* Asosiy tugma — chap pastki burchakda */}
+      <div className={styles.cornerAction}>
+        {onAction ? (
+          <button type="button" onClick={onAction} style={ACTION_STYLE}>
+            {actionLabel}
+          </button>
+        ) : (
+          <Link to="/" style={ACTION_STYLE}>
+            Bosh sahifaga qaytish
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

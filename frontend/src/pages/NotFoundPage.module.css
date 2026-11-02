@@ -176,6 +176,22 @@
   text-transform: uppercase;
 }
 
+/* Logo — chap yuqori, asosiy tugma — chap pastki burchakda */
+.cornerLogo {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  z-index: 1;
+  color: #4059BE;
+}
+
+.cornerAction {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  z-index: 1;
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
