@@ -310,6 +310,10 @@ export async function fetchMe(): Promise<Me> {
   return storeMe(u);
 }
 
+// Chiqishdan keyin o'tiladigan sahifa — Turon AI portalining logini
+// (chatning o'z /login sahifasi emas)
+export const PORTAL_LOGIN_URL = "https://turon-ai.turonbank.uz/login";
+
 export async function logout(): Promise<void> {
   try {
     await apiFetch("/v1/users/auth/logout", { method: "POST", body: JSON.stringify({}) });

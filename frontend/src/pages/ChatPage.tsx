@@ -5,7 +5,7 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { fetchMe, logout } from "../services/authService";
+import { fetchMe, logout, PORTAL_LOGIN_URL } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -149,7 +149,8 @@ export default function ChatPage() {
 
   const doLogout = async () => {
     await logout();
-    navigate("/login");
+    // To'liq sahifa almashtiriladi — portalning login sahifasiga
+    window.location.assign(PORTAL_LOGIN_URL);
   };
 
   const tk = getThemeTokens(isDark);

@@ -32,7 +32,7 @@ export const login: LoginStrings = {
   gotIt: "Tushunarli",
   unverifiedTitle: "Akkauntingiz tasdiqlanmagan",
   unverifiedText:
-    "Foydalanish uchun mobil ilova orqali verifikatsiyadan o‘ting yoki adminga murojaat qiling.",
+    "Turon AI’dan foydalanish uchun quyidagi bot orqali mobil ilovani yuklab oling yoki adminga murojaat qiling.",
   unverifiedLogout: "Chiqish",
   unverifiedQrTelegram: "Telegram botga o‘tish uchun QR kod",
   unverifiedQrApp: "Mobil ilovani yuklab olish uchun QR kod",

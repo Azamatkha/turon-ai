@@ -1,10 +1,7 @@
 import { useLang } from "../hooks/useLang";
 import { chatStaticDict, loginDict } from "../locales";
-import { logout } from "../services/authService";
+import { logout, PORTAL_LOGIN_URL } from "../services/authService";
 import NotFoundPage, { type QrItem } from "./NotFoundPage";
-
-// "Chiqish"dan keyin o'tiladigan sahifa — Turon AI portalining logini
-const PORTAL_LOGIN_URL = "https://turon-ai.turonbank.uz/login";
 
 // Mobil ilovani yuklab olish havolasi. Hozircha noma'lum — bo'sh bo'lsa
 // ikkinchi QR ko'rsatilmaydi. Havola aniq bo'lgach shu yerga yoziladi.
@@ -47,7 +44,7 @@ export default function UnverifiedPage() {
 
   return (
     <NotFoundPage
-      code="403"
+      code={null}
       title={t.unverifiedTitle}
       message={t.unverifiedText}
       actionLabel={t.unverifiedLogout}

@@ -22,7 +22,8 @@ const ACTION_STYLE = {
 } as const;
 
 interface Props {
-  code?: string;
+  // null — katta raqam ko'rsatilmaydi, uning o'rniga sarlavhaning o'zi animatsiya bilan chiqadi
+  code?: string | null;
   title?: string;
   message?: string;
   // Berilsa — "Bosh sahifaga" havolasi o'rniga shu tugma chiqadi
@@ -30,7 +31,7 @@ interface Props {
   onAction?: () => void;
   // Berilsa — yordam telefoni tugmasi chiqadi
   support?: SupportContacts;
-  // Berilsa — telefon bilan skanerlash uchun QR kodlar (kartochkalar ostida)
+  // Berilsa — telefon bilan skanerlash uchun QR kodlar (yordam raqamidan tepada)
   qrCodes?: QrItem[];
 }
 
@@ -98,38 +99,37 @@ export default function NotFoundPage({
         <Logo size={44} />
       </div>
 
-      {/* Har bir raqam alohida span — o'z animatsiyasi bilan (CSS'dagi --i navbat) */}
-      <div className={styles.code} role="img" aria-label={code}>
-        {code.split("").map((ch, i) => (
-          <span key={i} className={styles.digitWrap} style={{ "--i": i } as CSSProperties} aria-hidden="true">
-            <span className={styles.digit}>{ch}</span>
-          </span>
-        ))}
-      </div>
+      {code ? (
+        <>
+          {/* Har bir raqam alohida span — o'z animatsiyasi bilan (CSS'dagi --i navbat) */}
+          <div className={styles.code} role="img" aria-label={code}>
+            {code.split("").map((ch, i) => (
+              <span key={i} className={styles.digitWrap} style={{ "--i": i } as CSSProperties} aria-hidden="true">
+                <span className={styles.digit}>{ch}</span>
+              </span>
+            ))}
+          </div>
 
-      <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: 20 }}>
-        {title}
-      </div>
-      <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 380, lineHeight: 1.5 }}>
+          <div style={{ position: "relative", zIndex: 1, fontSize: 22, fontWeight: 700, marginTop: 20 }}>
+            {title}
+          </div>
+        </>
+      ) : (
+        // Raqam yo'q — sarlavhaning o'zi katta va har bir so'z raqamlardek
+        // navbat bilan tushib, keyin sekin "suzadi"
+        <h1 className={styles.headline} aria-label={title}>
+          {title.split(" ").map((word, i) => (
+            <span key={i} className={styles.digitWrap} style={{ "--i": i } as CSSProperties} aria-hidden="true">
+              <span className={`${styles.digit} ${styles.headlineWord}`}>{word}</span>
+            </span>
+          ))}
+        </h1>
+      )}
+      <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 440, lineHeight: 1.5 }}>
         {message}
       </div>
 
-      {support && (
-        <div className={styles.support}>
-          {/* Telefon — bosilsa qo'ng'iroq ilovasi ochiladi */}
-          <a href={`tel:${support.phone}`} className={styles.supportBtn}>
-            <span className={styles.supportIcon} aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
-            </span>
-            <span className={styles.supportText}>
-              <span className={styles.supportLabel}>{support.phoneLabel}</span>
-              <span className={styles.supportValue}>{support.phone}</span>
-            </span>
-          </a>
-        </div>
-      )}
-
-      {/* QR kodlar — kartochkalar ostida (kompyuterida Telegram yo'q xodimlar telefon bilan skanerlaydi) */}
+      {/* QR kodlar — matn ostida, yordam raqamidan tepada (kompyuterida Telegram yo'q xodimlar telefon bilan skanerlaydi) */}
       {qrCodes && qrCodes.length > 0 && (
         <div className={styles.qrList}>
           {qrCodes.map((qr) => (
@@ -143,17 +143,32 @@ export default function NotFoundPage({
               <span className={styles.qrTitle}>{qr.title}</span>
               <QRCodeSVG
                 value={qr.value}
-                size={148}
+                size={200}
                 level="H"
                 marginSize={0}
                 fgColor="#000000"
                 bgColor="#FFFFFF"
                 title={qr.title}
-                imageSettings={qr.logo ? { src: qr.logo, height: 34, width: 34, excavate: true } : undefined}
+                imageSettings={qr.logo ? { src: qr.logo, height: 46, width: 46, excavate: true } : undefined}
               />
               {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
             </a>
           ))}
+        </div>
+      )}
+
+      {support && (
+        <div className={styles.support}>
+          {/* Telefon — bosilsa qo'ng'iroq ilovasi ochiladi */}
+          <a href={`tel:${support.phone}`} className={styles.supportBtn}>
+            <span className={styles.supportIcon} aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
+            </span>
+            <span className={styles.supportText}>
+              <span className={styles.supportLabel}>{support.phoneLabel}</span>
+              <span className={styles.supportValue}>{support.phone}</span>
+            </span>
+          </a>
         </div>
       )}
 
