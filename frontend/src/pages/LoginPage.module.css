@@ -77,18 +77,23 @@
 
 /* Turon ID (bankning yagona kirishi) — kartadan pastda, ikkinchi darajali tugma */
 
-/* "Platformalar" — kartadan pastda, markazda */
+/* "Platformalar" — chap pastki burchakda, chat sidebar'idagi bilan bir xil
+   joyda: 282px sidebar o'rtasida (chapdan (282-212)/2 = 35px), pastdan 20px */
 .platformsRow {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  padding: var(--tu-space-4) 0;
+  position: fixed;
+  left: 35px;
+  bottom: 20px;
+  z-index: 2;
 }
 
-/* Telefonda karta butun ekranni egallaydi — tugma oq fon ustida qoladi */
+/* Telefonda karta butun ekranni egallaydi — tugma oqimga qaytadi
+   (aks holda forma ustiga tushib qolardi) */
 @media (max-width: 560px) {
   .platformsRow {
+    position: static;
+    display: flex;
+    justify-content: center;
+    padding: var(--tu-space-4) 0;
     background: var(--tu-surface);
   }
 }

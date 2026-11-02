@@ -1,8 +1,10 @@
-import { useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { chatStaticDict, loginDict } from "../locales";
 import { logout } from "../services/authService";
 import NotFoundPage, { type QrItem } from "./NotFoundPage";
+
+// "Chiqish"dan keyin o'tiladigan sahifa — Turon AI portalining logini
+const PORTAL_LOGIN_URL = "https://turon-ai.turonbank.uz/login";
 
 // Mobil ilovani yuklab olish havolasi. Hozircha noma'lum — bo'sh bo'lsa
 // ikkinchi QR ko'rsatilmaydi. Havola aniq bo'lgach shu yerga yoziladi.
@@ -21,13 +23,13 @@ const TELEGRAM_LOGO =
 // Mobil ilovada verifikatsiyadan o'tmagan user saytga kirganda ko'rinadi.
 // Dizayn 404 sahifasi bilan bir xil — faqat matn va tugma boshqa.
 export default function UnverifiedPage() {
-  const navigate = useNavigate();
   const { t, lang } = useLang(loginDict);
   const S = chatStaticDict[lang];
 
   const onLogout = async () => {
     await logout();
-    navigate("/login", { replace: true });
+    // To'liq sahifa almashtiriladi — portalning login sahifasiga
+    window.location.assign(PORTAL_LOGIN_URL);
   };
 
   // Kompyuterida Telegram ochilmaydigan xodimlar telefon bilan skanerlaydi

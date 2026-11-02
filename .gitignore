@@ -15,6 +15,6 @@ backend/data/documents/
 CLAUDE.md
 
 mobile-faceids/
-
+aihelp/
 # mTLS client CA maxfiy kaliti — faqat serverda
 backend/certs/mobile-ca.key

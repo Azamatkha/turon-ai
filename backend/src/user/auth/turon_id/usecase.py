@@ -23,6 +23,7 @@ from src.user.auth.turon_id.domain import (
     placeholder_email,
     trim,
 )
+from src.user.enums import UserRole
 from src.user.models import User
 
 logger = get_logger(__name__)
@@ -43,7 +44,9 @@ class TuronIdSignInUseCase:
     bilan yaratiladi va mobil ilovada Face-ID'dan o'tgach tasdiqlanadi
     (`/auth/save`). Tasdiqlanmagan user web'da faqat ogohlantirish sahifasini
     ko'radi — chat API'lari unga 403. Mavjud userning holati o'zgartirilmaydi.
-    The chat role follows the Turon ID chat role.
+    Rol Turon ID'dan OLINMAYDI: yangi user doim oddiy USER bo'lib yaratiladi,
+    mavjud userning roli (admin bergan bo'lsa ham) o'zgartirilmaydi. Turon ID'dagi
+    chat roli faqat kirish huquqi sifatida tekshiriladi (client.py).
 
     Errors:
     - UnauthorizedException: the code was refused or the user has no chat role.
@@ -70,7 +73,6 @@ class TuronIdSignInUseCase:
             user = await self._find_or_create(uow, profile)
             user.turon_id_sub = profile.sub
             user.is_active = True
-            user.role = profile.role
             user.last_seen_at = get_utc_now()
             await uow.login_events.create(
                 uow.session, {"user_id": user.id, "action": "login"}
@@ -129,7 +131,8 @@ class TuronIdSignInUseCase:
                 "password_hash": hash_password(
                     secrets.token_urlsafe(_UNUSABLE_PASSWORD_BYTES)
                 ),
-                "role": profile.role,
+                # Rol EDO'dan olinmaydi — hamma oddiy user, kerak bo'lsa admin o'zgartiradi
+                "role": UserRole.USER,
                 # Face-ID (mobil ilova) dan o'tgandan keyin True bo'ladi
                 "is_verified": False,
                 "is_active": True,

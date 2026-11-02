@@ -90,7 +90,7 @@ export default function LoginPage() {
           edoFailed={ssoFailed}
         />
       </div>
-      {/* Portaldagi platformalar sahifasiga havola (chat sidebar'idagi bilan bir xil) */}
+      {/* Portaldagi platformalar sahifasiga havola — chap pastki burchakda (chat sidebar'idagi bilan bir xil) */}
       <div className={styles.platformsRow}>
         <PlatformsButton label={t.platforms} />
       </div>
