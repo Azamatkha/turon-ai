@@ -64,6 +64,18 @@
 
 /* Yordam telefoni — "Qo'llab-quvvatlash" oynasidagi kontaktning o'zi,
    faqat tugma ko'rinishida. */
+.support {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  animation: fadeUp 0.5s ease both;
+  animation-delay: 0.7s;
+}
+
 .supportBtn {
   display: inline-flex;
   align-items: center;
@@ -114,43 +126,33 @@
   font-weight: 600;
 }
 
-/* Logo — chap yuqori burchakda */
-.cornerLogo {
-  position: absolute;
-  top: 24px;
-  left: 28px;
-  z-index: 1;
-  color: #4059BE;
-}
-
-/* Yordam raqami va QR kodlar — bitta qatorda, yonma-yon, vertikal markazda */
-.contacts {
+/* QR kodlar — kompyuterida Telegram yo'q xodimlar telefon bilan skanerlaydi */
+.qrList {
   position: relative;
   z-index: 1;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   justify-content: center;
-  gap: 20px;
-  margin-top: 22px;
+  gap: 14px;
+  margin-top: 14px;
   animation: fadeUp 0.5s ease both;
-  animation-delay: 0.7s;
+  animation-delay: 0.8s;
 }
 
 .qrCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  width: 236px;
+  gap: 10px;
+  width: 196px;
   box-sizing: border-box;
-  padding: 16px 20px 18px;
-  border-radius: 24px;
+  padding: 14px 16px 16px;
+  border-radius: 18px;
   border: 1px solid #E2E8F0;
   background: #FFFFFF;
   color: #000;
   text-decoration: none;
-  box-shadow: 0 10px 28px rgba(25, 48, 112, 0.1);
+  box-shadow: 0 6px 18px rgba(25, 48, 112, 0.08);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -162,13 +164,13 @@
 }
 
 .qrTitle {
-  font-size: 13.5px;
+  font-size: 12.5px;
   line-height: 1.35;
   color: #5b7180;
 }
 
 .qrCaption {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -184,7 +186,8 @@
   .digitWrap,
   .digit,
   .digit:hover,
-  .contacts {
+  .support,
+  .qrList {
     animation: none;
   }
 }
