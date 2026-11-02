@@ -1,0 +1,19 @@
+# Faqat serverda: `app` ni Turon ID loyihasining docker tarmog'iga ham ulaydi —
+# EDO paroli Turon ID Postgres'idan o'qib tekshiriladi (services/edo_login.py).
+# Makefile bu faylni `turonid-network` mavjud bo'lsagina qo'shadi, lokalda
+# tarmoq yo'q — fayl e'tiborsiz qoladi.
+#
+# Ulanish: EDO_LOGIN_DB_URL=postgresql+asyncpg://<user>:<parol>@turonid-postgres:5432/postgres
+# Ikkala loyihada ham `postgres` servisi bor, shuning uchun host — servis nomi
+# emas, konteyner nomi (`turonid-postgres`). Port — konteyner ichidagi 5432
+# (host'dagi 5430 faqat server mashinasining o'zidan ulanish uchun).
+services:
+  app:
+    networks:
+      - app-network
+      - turonid-network
+
+networks:
+  turonid-network:
+    external: true
+    name: turonid-network

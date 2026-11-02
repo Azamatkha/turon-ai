@@ -219,6 +219,24 @@ class EmployeeApiConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class EdoLoginConfig(BaseModel):
+    """EDO login/parol tekshiruvi — Turon ID (SSO) orqali ochilgan akkauntlar
+    mobil ilovaga yoki saytga EDO paroli bilan kirishi uchun.
+
+    Turon ID bazasiga FAQAT O'QISH uchun ulanish. URL BO'SH bo'lsa, tekshiruv
+    o'chiq: bunday userlar faqat SSO orqali kiradi.
+    Masalan: postgresql+asyncpg://turon_id_ro:<parol>@<host>:5432/turon_id
+    (docker ichidan host mashina — odatda 172.17.0.1 yoki host.docker.internal).
+    Baza foydalanuvchisiga faqat SELECT ruxsati berilsin."""
+
+    EDO_LOGIN_DB_URL: str = ""
+    # Turon ID'dagi userlar jadvali: `username` va `password_hash` (bcrypt) ustunlari
+    EDO_LOGIN_USERS_TABLE: str = Field("users", pattern=r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$")
+    EDO_LOGIN_TIMEOUT_SECONDS: float = Field(10.0, gt=0)
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class CertificateConfig(BaseModel):
     # mTLS proxy (Face-ID SDK) ishonadigan CA. Backend har register/login'da shu
     # CA bilan userga alohida, qisqa muddatli client p12 imzolaydi.
@@ -363,6 +381,7 @@ class Config(BaseModel):
     qdrant: QdrantConfig
     scraping: ScrapingConfig
     employee_api: EmployeeApiConfig = EmployeeApiConfig()
+    edo_login: EdoLoginConfig = EdoLoginConfig()
     certificate: CertificateConfig = CertificateConfig()
     turon_id: TuronIdConfig = TuronIdConfig()
 
@@ -400,6 +419,7 @@ def get_settings() -> Config:
         qdrant=QdrantConfig(**merged_env),
         scraping=ScrapingConfig(**merged_env),
         employee_api=EmployeeApiConfig(**merged_env),
+        edo_login=EdoLoginConfig(**merged_env),
         certificate=CertificateConfig(**merged_env),
         turon_id=TuronIdConfig(**merged_env),
     )

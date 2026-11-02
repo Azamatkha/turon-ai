@@ -4,6 +4,7 @@ argon2-cffi
 beautifulsoup4
 asgiref
 asyncpg
+bcrypt
 celery
 email-validator
 fastapi

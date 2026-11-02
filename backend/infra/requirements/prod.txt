@@ -32,6 +32,8 @@ asgiref==3.11.1
     # via -r base.in
 asyncpg==0.31.0
     # via -r base.in
+bcrypt==4.3.0
+    # via -r base.in  (Turon ID bazasidagi $2y$ parol hash'ini tekshirish)
 billiard==4.2.4
     # via celery
 blinker==1.9.0

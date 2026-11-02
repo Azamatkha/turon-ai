@@ -1,8 +1,10 @@
 # Docker settings
 COMPOSE_BASE = infra/docker-compose.yml
 COMPOSE_DEV = infra/docker-compose.override.yml
-DOCKER_COMPOSE = docker compose --env-file .env -f $(COMPOSE_BASE)
-DOCKER_COMPOSE_DEV = docker compose --env-file .env -f $(COMPOSE_BASE) -f $(COMPOSE_DEV)
+# Turon ID tarmog'i faqat serverda bor: mavjud bo'lsa `app` unga ham ulanadi
+COMPOSE_TURONID = $(if $(shell docker network inspect turonid-network >/dev/null 2>&1 && echo yes),-f infra/docker-compose.turonid.yml)
+DOCKER_COMPOSE = docker compose --env-file .env -f $(COMPOSE_BASE) $(COMPOSE_TURONID)
+DOCKER_COMPOSE_DEV = docker compose --env-file .env -f $(COMPOSE_BASE) $(COMPOSE_TURONID) -f $(COMPOSE_DEV)
 DOCKER_COMPOSE_EXEC = $(DOCKER_COMPOSE) exec
 
 # Container names

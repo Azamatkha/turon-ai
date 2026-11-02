@@ -36,7 +36,9 @@ class TuronIdSignInUseCase:
     the backend exchanges it and opens a normal chat session.
 
     Linking (first match wins): the account already linked to this Turon ID
-    user; else an unlinked account with the same phone number; else a new one.
+    user; else an unlinked account with the same phone number; else an
+    unlinked account with the same login (mobil ro'yxatda xodim EDO loginini
+    yozadi — Turon ID ham shu loginni beradi); else a new one.
     Turon ID orqali kirish shaxsni TASDIQLAMAYDI: yangi user `is_verified=False`
     bilan yaratiladi va mobil ilovada Face-ID'dan o'tgach tasdiqlanadi
     (`/auth/save`). Tasdiqlanmagan user web'da faqat ogohlantirish sahifasini
@@ -103,6 +105,17 @@ class TuronIdSignInUseCase:
                     "[TuronIdSignIn] linked existing user %s by phone", by_phone.id
                 )
                 return by_phone
+        # Login bo'yicha — registrsiz (bazadagi unikallik qoidasi bilan bir xil).
+        # Allaqachon boshqa Turon ID akkauntiga bog'langan user olinmaydi.
+        wanted = trim(profile.username, USERNAME_MAX_LENGTH)
+        if wanted:
+            by_username = await uow.users.get_by_username(uow.session, wanted)
+            if by_username is not None and by_username.turon_id_sub is None:
+                logger.info(
+                    "[TuronIdSignIn] linked existing user %s by username",
+                    by_username.id,
+                )
+                return by_username
 
         user = await uow.users.create(
             uow.session,

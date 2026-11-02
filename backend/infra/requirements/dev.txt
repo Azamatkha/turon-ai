@@ -32,6 +32,8 @@ asyncpg==0.31.0
     # via -r base.in
 beautifulsoup4==4.13.4
     # via -r base.in  (qo'lda: .txt base.in bilan mos emas edi, pip-compile qayta ishga tushirilsin)
+bcrypt==4.3.0
+    # via -r base.in  (Turon ID bazasidagi $2y$ parol hash'ini tekshirish)
 billiard==4.2.4
     # via celery
 black==26.3.1

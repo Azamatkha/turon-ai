@@ -18,6 +18,7 @@ from src.core.utils.security import (
 from src.user.auth.schemas import LoginTokenModel, LoginUserModel
 from src.user.auth.security import create_access_token, create_refresh_token
 from src.user.auth.services.client_p12 import get_client_p12
+from src.user.auth.services.edo_login import check_edo_password
 from src.user.models import User
 
 INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password."
@@ -46,6 +47,10 @@ class LoginUserUseCase:
     Workflow:
     1) Retrieve user by username.
     2) Verify password (using dummy hash if user not found to prevent timing attacks).
+       Parol bizning bazadan o'tmasa va user Turon ID (SSO) orqali ochilgan
+       bo'lsa (`turon_id_sub` bor) — Turon ID bazasidan tekshiriladi: bunday userning
+       bizdagi paroli tasodifiy, haqiqiysi EDO'da. EDO tasdiqlasa, parol
+       bizning bazaga ham yoziladi — keyingi kirishlar EDO'siz o'tadi.
     3) Check if user is active.
     4) Rehash and persist the password if needed.
     5) Generate access and refresh tokens.
@@ -90,7 +95,12 @@ class LoginUserUseCase:
                 raise InstanceProcessingException(INVALID_CREDENTIALS_MESSAGE)
 
             correct_password = await verify_password(data.password, user.password_hash)
-            if not correct_password:
+            # Bizdagi parol mos kelmadi, lekin akkaunt EDO (Turon ID) orqali
+            # ochilgan — parolni EDO'ning o'zidan so'raymiz
+            edo_password = False
+            if not correct_password and user.turon_id_sub is not None:
+                edo_password = await check_edo_password(data.username, data.password)
+            if not correct_password and not edo_password:
                 logger.debug(
                     "[LoginUser] Incorrect password for user '%s'",
                     data.username,
@@ -104,7 +114,19 @@ class LoginUserUseCase:
                 )
                 raise InstanceProcessingException(INVALID_CREDENTIALS_MESSAGE)
 
-            await self._rehash_password_if_needed(uow, user, data.password)
+            if edo_password:
+                # EDO tasdiqlagan parol endi bizning bazada ham shu userning
+                # paroli bo'ladi: keyingi kirishlar EDO'ga bormasdan o'tadi.
+                # (EDO'da parol o'zgarsa, eskisi bizda ishlab turaveradi —
+                # yangisi EDO orqali o'tib, uni ham almashtiradi.)
+                await uow.users.update(
+                    uow.session,
+                    {"password_hash": hash_password(data.password)},
+                    id=user.id,
+                )
+                logger.info("[LoginUser] '%s' paroli EDO'dan olindi.", data.username)
+            else:
+                await self._rehash_password_if_needed(uow, user, data.password)
             # So'nggi faollik + onlayn holat
             user.last_seen_at = get_utc_now()
             await uow.login_events.create(
