@@ -5,12 +5,13 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { fetchMe, logout, PORTAL_LOGIN_URL } from "../services/authService";
+import { fetchMe, logout, PORTAL_LOGIN_URL, type Me } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import ProfileModal from "../components/chat/ProfileModal";
 import SupportModal from "../components/chat/SupportModal";
+import ContactsPromptModal from "../components/chat/ContactsPromptModal";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
@@ -40,6 +41,8 @@ export default function ChatPage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("user");
+  // IP raqami yo'q xodimga kirishda chiqadigan eslatma (ContactsPromptModal)
+  const [promptMe, setPromptMe] = useState<Me | null>(null);
 
   // Haqiqiy foydalanuvchini backenddan olamiz (login token bilan)
   useEffect(() => {
@@ -48,9 +51,21 @@ export default function ChatPage() {
         setFullName(me.full_name);
         setUsername(me.username);
         setRole(me.role);
+        // Brauzer seansida BIR MARTA: har sahifa yangilanishida chiqib
+        // bezor qilmasin. Yangi kirishda (yangi seans) yana eslatadi.
+        const key = `contacts-prompt-shown:${me.id}`;
+        let shown = false;
+        try {
+          shown = sessionStorage.getItem(key) === "1";
+          if (!me.ip_number) sessionStorage.setItem(key, "1");
+        } catch {
+          /* sessionStorage yopiq — har safar ko'rsatamiz, zarari yo'q */
+        }
+        if (!me.ip_number && !shown) setPromptMe(me);
       })
       .catch(() => navigate("/login"));
   }, [navigate]);
+  const closeContactsPrompt = useCallback(() => setPromptMe(null), []);
 
   // URL → holat: manzildagi sessionId (to'g'ridan-to'g'ri link yoki refresh) faol suhbatga aylanadi
   useEffect(() => {
@@ -250,6 +265,15 @@ export default function ChatPage() {
 
       {profileOpen && <ProfileModal S={S} isDark={isDark} onClose={closeProfile} />}
       {supportOpen && <SupportModal S={S} isDark={isDark} onClose={() => setSupportOpen(false)} />}
+      {promptMe && (
+        <ContactsPromptModal
+          S={S}
+          isDark={isDark}
+          me={promptMe}
+          onClose={closeContactsPrompt}
+          onSaved={closeContactsPrompt}
+        />
+      )}
 
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} />
 

@@ -244,6 +244,12 @@ export interface ChatStaticStrings {
   contactsSaveError: string;
   phoneInvalid: string;
   ipNumberInvalid: string;
+  // Kirishda IP raqami yo'q bo'lsa chiqadigan eslatma oynasi
+  contactsPromptTitle: string;
+  contactsPromptText: string;
+  contactsPromptEmpty: string;
+  contactsPromptLater: string;
+  contactsPromptSave: string;
   infoPatronym: string;
   infoPosition: string;
   infoDepartment: string;

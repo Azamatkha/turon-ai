@@ -135,22 +135,9 @@ export default function ProfileModal({ S, isDark, onClose }: Props) {
           </button>
         </div>
 
-        <h2 className={styles.sectionTitle}>{S.employeeInfo}</h2>
-        {error ? (
-          <div className={styles.error} role="alert">{S.profileLoadError}</div>
-        ) : (
-          <dl className={styles.list} aria-busy={!me}>
-            {rows.map(([label, value]) => (
-              <div key={label} className={styles.row}>
-                <dt className={styles.label}>{label}</dt>
-                <dd className={styles.value}>{me ? value || "—" : "…"}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-        <div className={styles.hint}>{S.employeeInfoHint}</div>
-
-        {/* Kontaktlar — foydalanuvchi o'zi kiritadi (ixtiyoriy) */}
+        {/* Kontaktlar — foydalanuvchi o'zi kiritadi (ixtiyoriy). ENG TEPADA:
+            ilgari uzun xodim ma'lumotlari ostida edi va telefonni o'zgartirish
+            uchun oynani oxirigacha aylantirish kerak bo'lardi. */}
         {me && (
           <section className={styles.contacts} aria-labelledby="profile-contacts-title">
             <div className={styles.contactsHead}>
@@ -214,6 +201,21 @@ export default function ProfileModal({ S, isDark, onClose }: Props) {
             )}
           </section>
         )}
+
+        <h2 className={styles.sectionTitle}>{S.employeeInfo}</h2>
+        {error ? (
+          <div className={styles.error} role="alert">{S.profileLoadError}</div>
+        ) : (
+          <dl className={styles.list} aria-busy={!me}>
+            {rows.map(([label, value]) => (
+              <div key={label} className={styles.row}>
+                <dt className={styles.label}>{label}</dt>
+                <dd className={styles.value}>{me ? value || "—" : "…"}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        <div className={styles.hint}>{S.employeeInfoHint}</div>
       </div>
     </div>
   );

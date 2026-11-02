@@ -191,14 +191,14 @@
 /* =====================
    Kontaktlar (foydalanuvchi o'zi kiritadi)
    ===================== */
+/* Oynaning tepasida turadi — xodim ma'lumotlaridan pastki chiziq bilan ajraladi */
 .contacts {
-  margin-top: 18px;
-  padding-top: 4px;
-  border-top: 1px solid #E2E8F0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .dark .contacts {
-  border-top-color: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .contactsHead {

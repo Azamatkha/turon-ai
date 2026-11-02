@@ -1,0 +1,81 @@
+/* Kirishdagi "IP yoki telefon kiriting" eslatmasi. Asosiy karta, maydon va
+   tugma stillari ProfileModal.module.css dan olinadi — bu yerda faqat
+   sarlavha bloki va 5 soniyalik taymer chizig'i. */
+
+/* Ikki marta yozilgan klass — ProfileModal.module.css dagi .modal'dan
+   (yuklanish tartibidan qat'i nazar) ustun tursin */
+.modal.modal {
+  position: relative;
+  max-width: 440px;
+  overflow: hidden;
+}
+
+.timer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(64, 89, 190, 0.12);
+}
+
+.timerBar {
+  height: 100%;
+  background: linear-gradient(90deg, #4059BE, #193070);
+  transform-origin: left center;
+  animation-name: shrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(140deg, #4059BE, #193070);
+  color: #FFFFFF;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.text {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.dark .text {
+  color: #94A3B8;
+}
+
+@keyframes shrink {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timerBar {
+    animation: none;
+  }
+}
