@@ -776,3 +776,33 @@ RU_CANNED_REPLIES.update(
         ),
     }
 )
+
+
+# Valyuta kursi savoli. Raqamlarni KOD tayyorlaydi (kurs jadvali + hisob),
+# model faqat ulardan foydalanib AYNAN berilgan savolga javob yozadi. Ilgari
+# javobni butunlay kod tuzardi va u savolda faqat valyuta nomini ko'rardi:
+# "120 dollar necha so'm?" ga ham, "unda so'mda qancha?" ga ham bir xil kurs
+# jadvali chiqardi. Model yozgan javobdagi har bir raqam faktlarda borligi
+# kodda tekshiriladi (usecases._rates_reply) — mos kelmasa jadvalga qaytiladi.
+RATES_SYSTEM = (
+    "You are Turonbank's internal AI assistant. The user asks about currency "
+    "exchange. Answer ONLY from the FACTS block: Turonbank's official rates "
+    "and, when present, a CALCULATION block prepared by the system.\n"
+    "OUTPUT LANGUAGE (critical): reply in UZBEK, LATIN script only, never in "
+    "English.\n\n"
+    "RULES:\n"
+    "- Answer exactly what was asked. If an amount is converted, start with the "
+    "result from the CALCULATION block, then name the rate it is based on. Do "
+    "not dump the whole rate table when one currency was asked about.\n"
+    "- NEVER compute anything yourself and never write a number that is not in "
+    "FACTS: copy rates and results digit for digit, in the same format.\n"
+    "- 'sotib olish' is the rate at which the bank BUYS currency from the "
+    "client (client sells currency, gets so'm); 'sotish' is the rate at which "
+    "the bank SELLS currency to the client.\n"
+    "- Use the previous conversation only to understand what 'shu summa', "
+    "'unda', 'u' refer to.\n"
+    "- If the question also asks for advice outside banking (what to buy, how "
+    "to make a profit), do not give such advice; answer only the exchange part.\n"
+    "- Keep it short: 2-6 lines, no greeting, no introduction about yourself.\n"
+    "- Finish with the line from FACTS that starts with 'Batafsil:'."
+)

@@ -44,6 +44,7 @@ from src.knowledge.prompts import (
     OFF_TOPIC_REPLY,
     OTHER_BANK_REPLY,
     PDF_CLEAN_SYSTEM,
+    RATES_SYSTEM,
     PDF_VISION_SYSTEM,
     PDF_TITLE_SYSTEM,
     QUERY_REWRITE_SYSTEM,
@@ -1904,6 +1905,138 @@ _RATE_CHANNEL_HINTS: dict[str, tuple[str, ...]] = {
 }
 
 
+# So'm yozilishlari (apostroflar _norm_apostrophes bilan bir xillashtirilgan),
+# qo'shimchalari bilan: "so'mga", "somda". To'liq moslik — "summa" so'm emas.
+_SOM_UNIT_RE = re.compile(r"(so'm|som|sum|uzs|сум|сўм)(ga|da|ni|dan|lik)?")
+# Summa: "120", "1 000 000", "12 023.46", ixtiyoriy "ming"/"mln" va birlik.
+# Birlik raqamga yopishib ham yozilishi mumkin ("120dollar", "120$").
+_AMOUNT_RE = re.compile(
+    r"(?<![\d.,])(\d{1,3}(?:[  ]\d{3})+|\d+)(?:[.,](\d+))?\s*"
+    r"(ming|mln|million|mlrd|milliard)?\s*(\$|[a-z'а-яёўқғҳ]+)?(?:\s+([a-z'а-яёўқғҳ]+))?"
+)
+
+
+def _amount_unit(word: str | None) -> str | None:
+    """Birlik so'zidan valyuta kodi: "dollari" -> "USD", "so'mga" -> "UZS"."""
+    if not word:
+        return None
+    if word == "$":
+        return "USD"
+    if _SOM_UNIT_RE.fullmatch(word):
+        return "UZS"
+    for code, aliases in _CURRENCY_ALIASES.items():
+        if any(word.startswith(a) for a in aliases):
+            return code
+    return None
+_AMOUNT_MULT = {
+    "ming": 1_000,
+    "mln": 1_000_000,
+    "million": 1_000_000,
+    "mlrd": 1_000_000_000,
+    "milliard": 1_000_000_000,
+}
+# Javobdagi raqamni solishtirish uchun ajratish ("11 970", "12 023,46", "120")
+_NUMBER_RE = re.compile(r"\d{1,3}(?:[  ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?")
+
+
+def _fmt_amount(x: float, decimals: int) -> str:
+    """1436400 -> "1 436 400"; 1442815.2 (2 xona) -> "1 442 815.20"."""
+    return f"{x:,.{decimals}f}".replace(",", " ")
+
+
+def _numbers_in(text: str) -> set[float]:
+    """Matndagi barcha sonlar (bo'shliqli minglar va vergulli kasr bilan)."""
+    out: set[float] = set()
+    for m in _NUMBER_RE.findall(text):
+        try:
+            out.add(round(float(m.replace(" ", "").replace(" ", "").replace(",", ".")), 2))
+        except ValueError:
+            continue
+    return out
+
+
+def _parse_amounts(q: str) -> list[tuple[float, str]]:
+    """Savoldagi summalar: [(miqdor, valyuta_kodi yoki "UZS")].
+
+    Faqat birligi aniq yozilgan summa olinadi ("120 dollar", "$120",
+    "1 mln so'm") — birliksiz son (sana, karta raqami) hisobga kirmaydi."""
+    found: list[tuple[float, str]] = []
+    for m in re.finditer(r"\$\s*(\d+(?:[.,]\d+)?)", q):
+        found.append((float(m.group(1).replace(",", ".")), "USD"))
+    for m in _AMOUNT_RE.finditer(q):
+        whole, frac, mult, unit, unit2 = m.groups()
+        # Birlik keyingi so'zda ham bo'lishi mumkin: "120 AQSh dollari"
+        code = _amount_unit(unit) or _amount_unit(unit2)
+        if not code:
+            continue
+        value = float(whole.replace(" ", "").replace(" ", "") + (f".{frac}" if frac else ""))
+        value *= _AMOUNT_MULT.get(mult or "", 1)
+        if value > 0 and (value, code) not in found:
+            found.append((value, code))
+    return found
+
+
+def _rates_calculation(
+    q: str, data: dict[str, Any], wanted_codes: set[str], wanted_channels: set[str]
+) -> str:
+    """Savolda summa bo'lsa — konvertatsiyani KOD hisoblaydi (model emas).
+
+    Valyuta -> so'm: bank valyutani SOTIB OLISH kursi bo'yicha;
+    so'm -> valyuta: bank valyutani SOTISH kursi bo'yicha. Har birida
+    Markaziy bank kursi bo'yicha natija ham beriladi (taqqoslash uchun).
+    Kanal aytilmagan bo'lsa — birinchi kanal (ayirboshlash shoxobchasi)."""
+    amounts = _parse_amounts(q)
+    if not amounts:
+        return ""
+    channels = data.get("channels") or []
+    channel = next(
+        (c for c in channels if c.get("key") in wanted_channels), channels[0] if channels else None
+    )
+    if not channel:
+        return ""
+    rows = {str(r.get("code")): r for r in channel.get("rows", [])}
+
+    lines: list[str] = []
+    for value, code in amounts:
+        if code == "UZS":
+            # So'mdan valyutaga: valyuta aytilmagan bo'lsa — USD
+            for target in sorted(wanted_codes) or ["USD"]:
+                row = rows.get(target)
+                if not row:
+                    continue
+                if row.get("sell"):
+                    lines.append(
+                        f"{_fmt_amount(value, 0)} so'mga bankdan {target} sotib olsangiz "
+                        f"(sotish kursi {_fmt_amount(float(row['sell']), 2 if float(row['sell']) % 1 else 0)}): "
+                        f"{_fmt_amount(value / float(row['sell']), 2)} {target}"
+                    )
+                if row.get("cb"):
+                    lines.append(
+                        f"Markaziy bank kursi ({_fmt_amount(float(row['cb']), 2)}) bo'yicha: "
+                        f"{_fmt_amount(value / float(row['cb']), 2)} {target}"
+                    )
+            continue
+        row = rows.get(code)
+        if not row:
+            continue
+        shown = _fmt_amount(value, 2 if value % 1 else 0)
+        if row.get("buy"):
+            buy = float(row["buy"])
+            lines.append(
+                f"{shown} {code} ni bankka sotsangiz (sotib olish kursi "
+                f"{_fmt_amount(buy, 2 if buy % 1 else 0)}): {_fmt_amount(value * buy, 0)} so'm"
+            )
+        if row.get("cb"):
+            cb = float(row["cb"])
+            lines.append(
+                f"Markaziy bank kursi ({_fmt_amount(cb, 2)}) bo'yicha: "
+                f"{_fmt_amount(value * cb, 2)} so'm"
+            )
+    if not lines:
+        return ""
+    return f"Hisob ({channel['label']} kursi bo'yicha):\n" + "\n".join(f"* {ln}" for ln in lines)
+
+
 def _rates_to_cyrillic(text: str) -> str:
     """Kurs javobini kirillga o'giradi, lekin valyuta KODLARI (USD, EUR...),
     havola va ilova nomi lotincha qoladi — "УСД" deb yozish xato bo'lardi."""
@@ -2565,19 +2698,8 @@ class AnswerQuestionUseCase:
     # ustiga qo'shiladi, ularni almashtirmaydi.
     LEXICAL_TOP_K = 4
 
-    async def _rates_answer(self, question: str) -> str:
-        """Valyuta kursi javobini KOD tuzadi — model umuman chaqirilmaydi.
-
-        Sabab xodimlar javobinikiga o'xshash: kurs ma'lumoti to'liq
-        strukturali va aniq bo'lishi shart. Modelga qoldirilganda u
-        muntazam ravishda buzardi — sanani "11-avgust kuni" ga aylantirar,
-        valyuta nomini ("AQSh dollari") tashlab ketar, javob boshiga
-        "Men Turonbankning AI yordamchisiman..." deb kirish so'zi qo'shar,
-        va bularning hammasi uchun sekin serverda ~40 soniya ketardi.
-        Endi javob bir necha o'n millisekundda tayyor bo'ladi.
-
-        Bo'sh satr qaytsa — kurs ma'lumoti bazada yo'q (yoki eski, JSON'siz
-        yozuv turibdi); chaqiruvchi odatdagi RAG yo'liga o'tadi."""
+    async def _load_rates(self) -> dict[str, Any] | None:
+        """Bazadagi oxirgi kurs ma'lumoti (kunlik Celery vazifasi yozadi)."""
         payloads = await self.store.search_by_field("title", RATES_TITLE, limit=40)
         data: dict[str, Any] | None = None
         for payload in payloads:
@@ -2591,9 +2713,12 @@ class AnswerQuestionUseCase:
                 data = None
             break
         if not data or not data.get("channels"):
-            return ""
+            return None
+        return data
 
-        q = _norm_apostrophes(to_latin(question).lower())
+    @staticmethod
+    def _rates_wanted(q: str) -> tuple[set[str], set[str]]:
+        """Savolda aytilgan valyutalar va kanallar (bo'sh = hammasi)."""
         wanted_codes = {
             code
             for code, aliases in _CURRENCY_ALIASES.items()
@@ -2604,7 +2729,14 @@ class AnswerQuestionUseCase:
             for key, hints in _RATE_CHANNEL_HINTS.items()
             if any(h in q for h in hints)
         }
+        return wanted_codes, wanted_channels
 
+    @staticmethod
+    def _rates_table(
+        data: dict[str, Any],
+        wanted_codes: set[str],
+        wanted_channels: set[str],
+    ) -> str:
         blocks: list[str] = []
         for channel in data["channels"]:
             if wanted_channels and channel.get("key") not in wanted_channels:
@@ -2624,6 +2756,78 @@ class AnswerQuestionUseCase:
         stamp = str(data.get("stamp", "")).strip()
         head = f"Valyuta kurslari — {stamp}" if stamp else "Valyuta kurslari"
         return f"{head}\n\n" + "\n\n".join(blocks) + f"\n\nBatafsil: {RATES_URL}"
+
+    # Kurs javobi qisqa (2-6 qator)
+    RATES_MAX_TOKENS = 600
+
+    async def _rates_reply(
+        self,
+        question: str,
+        search_query: str,
+        history: list[ChatTurn] | None,
+        lang: ReplyLang,
+    ) -> tuple[str, int] | None:
+        """Valyuta savoliga javob: (matn, model_tokenlari). Kurs bazada yo'q
+        bo'lsa None — chaqiruvchi odatdagi RAG yo'liga o'tadi.
+
+        Ishni ikkiga bo'lamiz:
+          * KOD — faktlar: kerakli valyuta/kanal jadvali va savolda summa
+            bo'lsa, konvertatsiya hisobi. Raqamlar shu yerda tug'iladi.
+          * MODEL — shu faktlardan AYNAN berilgan savolga javob yozadi.
+        Bundan oldin (2026-11-02 gacha) javobni faqat kod tuzardi — undan
+        ham oldin modelga qoldirilganda u sanani buzar, kirish so'zi qo'shar
+        va eski sekin serverda ~40 s ketardi. Kod esa savoldan bitta valyuta nomini
+        ushlab, doim butun jadvalni chiqarardi: "120 dollar necha so'm?" ga
+        ham hisob berilmasdi, "unda so'mda qancha?" ga esa (xabarda "dollar"
+        yo'q) hamma valyutalar chiqardi.
+
+        Routerning search_query'si ham qo'shiladi: u suhbatdan olmoshlarni
+        yechadi ("shu summa" -> "120 AQSh dollari so'mda").
+
+        Model javobidagi har bir son faktlarda (yoki savol/tarixda) bo'lishi
+        SHART — aks holda model raqamni buzgan yoki o'zi hisoblagan bo'ladi va
+        biz kod tuzgan javobga (hisob + jadval) qaytamiz."""
+        data = await self._load_rates()
+        if data is None:
+            return None
+        q = _norm_apostrophes(to_latin(f"{question} {search_query}").lower())
+        wanted_codes, wanted_channels = self._rates_wanted(q)
+        table = self._rates_table(data, wanted_codes, wanted_channels)
+        if not table:
+            return None
+        calc = _rates_calculation(q, data, wanted_codes, wanted_channels)
+        facts = f"{calc}\n\n{table}" if calc else table
+
+        convo = _format_history(
+            history, self.HISTORY_LIMIT, self.MAX_HISTORY_MSG_CHARS, self.MAX_HISTORY_CHARS
+        )
+        prompt = f"FACTS:\n{facts}\n\nQUESTION: {question}"
+        if convo:
+            prompt = f"Previous conversation:\n{convo}\n\n{prompt}"
+        try:
+            gen = await self.ai_client.generate_text_with_usage(
+                prompt,
+                system_prompt=_with_lang(RATES_SYSTEM, lang),
+                temperature=self.TEMPERATURE,
+                max_tokens=self.RATES_MAX_TOKENS,
+            )
+        except InfrastructureException as exc:
+            logger.warning("Kurs javobi: model ishlamadi (%s) — jadval beriladi", exc)
+            return facts, 0
+
+        text = gen.text.strip()
+        allowed = _numbers_in(facts) | _numbers_in(question) | _numbers_in(search_query)
+        allowed |= _numbers_in(convo)
+        # Ro'yxat raqami, "1-2 kun" kabi kichik sonlar — tekshirmaymiz
+        stray = {n for n in _numbers_in(text) if n >= 10 and n not in allowed}
+        if not text or stray or gen.finish_reason == "length":
+            logger.warning(
+                "Kurs javobi rad etildi (begona sonlar: %s, finish=%s) — jadval beriladi",
+                sorted(stray)[:5],
+                gen.finish_reason,
+            )
+            return facts, gen.completion_tokens
+        return text, gen.completion_tokens
 
     async def _scroll_points(self) -> list[dict[str, Any]]:
         """Bazadagi barcha bo'laklar — bitta so'rov davomida BIR MARTA o'qiladi.
@@ -3103,17 +3307,21 @@ class AnswerQuestionUseCase:
                 yield ev
             return
 
-        # Valyuta kursi — javobni kod tuzadi, model chaqirilmaydi (_rates_answer)
+        # Valyuta kursi — faktlarni kod, javobni model yozadi (_rates_reply)
         if decision is not None and decision.intent is Intent.RATES:
-            rates = await self._rates_answer(question)
+            rates = await self._rates_reply(
+                question, decision.search_query, history, lang
+            )
             if rates:
-                yield {
-                    "type": "delta",
-                    "text": _rates_to_cyrillic(rates) if want_cyrillic else rates,
-                }
+                text, rate_tokens = rates
+                if want_cyrillic:
+                    text = _rates_to_cyrillic(text)
+                elif lang == "uz":
+                    text = fix_mixed_script(text)
+                yield {"type": "delta", "text": text}
                 yield {
                     "type": "done",
-                    "completion_tokens": router_tokens,
+                    "completion_tokens": router_tokens + rate_tokens,
                     "finish_reason": "stop",
                     "max_tokens": self.MAX_TOKENS,
                     "sources": [SourceRef(title=RATES_TITLE, score=1.0).model_dump()],
@@ -3473,15 +3681,22 @@ class AnswerQuestionUseCase:
                 max_tokens=gen.max_tokens,
             )
 
-        # Valyuta kursi — javobni kod tuzadi, model chaqirilmaydi (_rates_answer)
+        # Valyuta kursi — faktlarni kod, javobni model yozadi (_rates_reply)
         if decision is not None and decision.intent is Intent.RATES:
-            rates = await self._rates_answer(question)
+            rates = await self._rates_reply(
+                question, decision.search_query, history, lang
+            )
             if rates:
+                text, rate_tokens = rates
+                if want_cyrillic:
+                    text = _rates_to_cyrillic(text)
+                elif lang == "uz":
+                    text = fix_mixed_script(text)
                 return AnswerResult(
-                    answer=_rates_to_cyrillic(rates) if want_cyrillic else rates,
+                    answer=text,
                     sources=[SourceRef(title=RATES_TITLE, score=1.0)],
                     finish_reason="stop",
-                    completion_tokens=router_tokens,
+                    completion_tokens=router_tokens + rate_tokens,
                     max_tokens=self.MAX_TOKENS,
                 )
 

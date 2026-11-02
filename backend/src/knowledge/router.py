@@ -251,8 +251,19 @@ ODATDA hozirgina gaplashilgan mavzu haqida bo'ladi. Niyatni ham,
   yillik foiz stavkasi"
   "foizlari qanday ularni" ni O'Z HOLICHA qoldirsang, qidiruv butunlay
   boshqa mavzuni (masalan omonatlarni) topib keladi — bu jiddiy xato.
-- Mavzu o'zgarganini faqat foydalanuvchi ANIQ boshqa narsa so'raganda qabul
-  qil; qisqalik mavzu o'zgardi degani EMAS.
+- TARIXGA QACHON QARASH — ikki tomonga ham xato qilma:
+  * Savol O'Z-O'ZIDAN TO'LIQ bo'lsa (o'z predmeti bor: "Visa Gold
+    shartlari", "dollar kursi qancha", "ta'lim krediti foizi") — u YANGI
+    savol. Oldingi mavzuni unga yopishtirma, niyatni faqat shu savoldan
+    aniqla. Oldingi mavzuda "qotib qolish" ham JIDDIY XATO.
+  * Savolda ishora bo'lsa ("shu", "u", "unda", "ularni", "yana", "shu
+    summa", "birinchisi") yoki predmeti yo'q bo'lsa ("foizi qancha?",
+    "muddati?") — o'shanda tarixdan to'ldir.
+  Qisqa savol o'z-o'zidan mavzu o'zgardi ham, o'zgarmadi ham degani EMAS —
+  ishora yoki predmet borligiga qara.
+  MISOL: valyuta haqida gaplashilgan, keyin "ipoteka krediti bormi" -> bu
+  yangi mavzu ("product"), "rates" EMAS. Lekin "unda so'mda qancha bo'ladi"
+  -> oldingi summaga ishora, tarixdan to'ldir.
 - TARJIMA/TAHRIR UCHUN YUBORILGAN MATN. Oldingi xabarda foydalanuvchi
   "yozganimni tarjima qilib ber", "matnni to'g'rilab ber" kabi iltimos qilgan
   va sen matnni yuborishini so'ragan bo'lsang — KEYINGI xabar aynan O'SHA
@@ -281,6 +292,9 @@ Maydonlar:
                    rasmiy atama bilan to'ldirilgan. HAR DOIM O'ZBEK LOTIN
                    tilida yoz — savol ruscha bo'lsa ham tarjima qil: baza
                    o'zbekcha ("какие вклады есть" -> "omonat turlari").
+                   "rates" uchun: SUMMA va VALYUTANI aniq yoz, ishora
+                   bo'lsa suhbatdan olib ("shu summa so'mda qancha", oldin
+                   "120 dollar" aytilgan -> "120 dollar so'mda").
                    smalltalk/about_bot/concept/language/other/other_bank/
                    history uchun
                    bo'sh satr
