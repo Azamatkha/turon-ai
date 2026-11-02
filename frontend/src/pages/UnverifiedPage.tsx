@@ -54,8 +54,6 @@ export default function UnverifiedPage() {
       support={{
         phoneLabel: S.supportHint,
         phone: S.supportNumber,
-        botLabel: S.supportTelegramLabel,
-        bot: S.supportTelegramBot,
       }}
     />
   );

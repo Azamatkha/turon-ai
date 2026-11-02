@@ -29,9 +29,9 @@ interface Props {
   // Berilsa — "Bosh sahifaga" havolasi o'rniga shu tugma chiqadi
   actionLabel?: string;
   onAction?: () => void;
-  // Berilsa — yordam telefoni va Telegram bot tugmalari chiqadi
+  // Berilsa — yordam telefoni tugmasi chiqadi
   support?: SupportContacts;
-  // Berilsa — telefon bilan skanerlash uchun QR kodlar (kartochkalar ostida)
+  // Berilsa — telefon bilan skanerlash uchun QR kodlar (asosiy blokdan o'ngda)
   qrCodes?: QrItem[];
 }
 
@@ -48,8 +48,6 @@ export interface QrItem {
 export interface SupportContacts {
   phoneLabel: string;
   phone: string;
-  botLabel: string;
-  bot: string;
 }
 
 // 404 — mavjud bo'lmagan sahifa (dot-field fon bilan).
@@ -63,38 +61,8 @@ export default function NotFoundPage({
   support,
   qrCodes,
 }: Props) {
-  return (
-    <div
-      style={{
-        position: "relative",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        background: "#F8FAFC",
-        color: "#193070",
-        textAlign: "center",
-        padding: 24,
-        overflow: "hidden",
-      }}
-    >
-      {/* interaktiv nuqta-to'r foni (login/admin sahifalaridagidek) */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0, opacity: 0.55, pointerEvents: "none" }} aria-hidden="true">
-        <DotField
-          dotRadius={3.5}
-          dotSpacing={26}
-          bulgeOnly
-          bulgeStrength={18}
-          cursorRadius={220}
-          glowRadius={160}
-          gradientFrom="#dbe0e7"
-          gradientTo="#cfd6df"
-          glowColor="rgba(64,89,190,0.07)"
-        />
-      </div>
-
+  const content = (
+    <>
       <div style={{ position: "relative", zIndex: 1, color: "#4059BE", marginBottom: 2 }}>
         <Logo size={52} />
       </div>
@@ -127,42 +95,6 @@ export default function NotFoundPage({
               <span className={styles.supportValue}>{support.phone}</span>
             </span>
           </a>
-          {/* Telegram bot — yangi oynada */}
-          <a
-            href={`https://t.me/${support.bot}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.supportBtn}
-          >
-            <span className={styles.supportIcon} aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" /></svg>
-            </span>
-            <span className={styles.supportText}>
-              <span className={styles.supportLabel}>{support.botLabel}</span>
-              <span className={styles.supportValue}>@{support.bot}</span>
-            </span>
-          </a>
-        </div>
-      )}
-
-      {qrCodes && qrCodes.length > 0 && (
-        <div className={styles.qrList}>
-          {qrCodes.map((qr) => (
-            <figure key={qr.value} className={styles.qrCard}>
-              <figcaption className={styles.qrTitle}>{qr.title}</figcaption>
-              <QRCodeSVG
-                value={qr.value}
-                size={148}
-                level="H"
-                marginSize={0}
-                fgColor="#000000"
-                bgColor="#FFFFFF"
-                title={qr.title}
-                imageSettings={qr.logo ? { src: qr.logo, height: 34, width: 34, excavate: true } : undefined}
-              />
-              {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
-            </figure>
-          ))}
         </div>
       )}
 
@@ -174,6 +106,73 @@ export default function NotFoundPage({
         <Link to="/" style={ACTION_STYLE}>
           Bosh sahifaga qaytish
         </Link>
+      )}
+    </>
+  );
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        background: "#F8FAFC",
+        color: "#193070",
+        textAlign: "center",
+        padding: 24,
+        overflow: "hidden",
+      }}
+    >
+      {/* interaktiv nuqta-to'r foni (login/admin sahifalaridagidek) */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, opacity: 0.55, pointerEvents: "none" }} aria-hidden="true">
+        <DotField
+          dotRadius={3.5}
+          dotSpacing={26}
+          bulgeOnly
+          bulgeStrength={18}
+          cursorRadius={220}
+          glowRadius={160}
+          gradientFrom="#dbe0e7"
+          gradientTo="#cfd6df"
+          glowColor="rgba(64,89,190,0.07)"
+        />
+      </div>
+
+      {qrCodes && qrCodes.length > 0 ? (
+        // QR bor bo'lsa — ikki ustun: chapda matn va tugmalar, o'ngda QR
+        <div className={styles.layout}>
+          <div className={styles.main}>{content}</div>
+          <aside className={styles.qrList}>
+            {qrCodes.map((qr) => (
+              <a
+                key={qr.value}
+                href={qr.value}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.qrCard}
+              >
+                <span className={styles.qrTitle}>{qr.title}</span>
+                <QRCodeSVG
+                  value={qr.value}
+                  size={220}
+                  level="H"
+                  marginSize={0}
+                  fgColor="#000000"
+                  bgColor="#FFFFFF"
+                  title={qr.title}
+                  imageSettings={qr.logo ? { src: qr.logo, height: 48, width: 48, excavate: true } : undefined}
+                />
+                {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
+              </a>
+            ))}
+          </aside>
+        </div>
+      ) : (
+        content
       )}
     </div>
   );
