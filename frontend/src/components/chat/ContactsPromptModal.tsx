@@ -23,10 +23,10 @@ interface Props {
   onSaved: (me: Me) => void;
 }
 
-// Oyna o'zi yopilguncha vaqt. Foydalanuvchi oynaga tegsa (bosish, yozish,
+// Oyna o'zi yopilguncha vaqt (5 s juda tez edi — o'qib ulgurilmasdi). Foydalanuvchi oynaga tegsa (bosish, yozish,
 // klaviatura) — taymer to'xtaydi va oyna u o'zi yopguncha turadi: yozib
 // turgan odamning oynasi qo'lidan "tortib olinmasin".
-const AUTO_CLOSE_MS = 5000;
+const AUTO_CLOSE_MS = 10000;
 
 // Kirishda IP raqami yo'q xodimga eslatma: hamkasblar uni topishi uchun
 // IP yoki telefon raqamini kiritishni so'raydi. Bittasi yetarli.
@@ -94,7 +94,7 @@ export default function ContactsPromptModal({ S, isDark, me, onClose, onSaved }:
         onPointerDown={touch}
         onKeyDown={touch}
       >
-        {/* 5 soniyalik taymer chizig'i — tegilgach yo'qoladi */}
+        {/* Taymer chizig'i — tegilgach yo'qoladi */}
         {!touched && (
           <div className={styles.timer} aria-hidden="true">
             <div className={styles.timerBar} style={{ animationDuration: `${AUTO_CLOSE_MS}ms` }} />

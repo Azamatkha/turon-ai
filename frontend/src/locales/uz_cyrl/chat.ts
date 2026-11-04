@@ -2,8 +2,8 @@ import type { ChatStrings, ChatStaticStrings } from "../../types/i18n";
 
 // O'zbekcha (kirill yozuvi) — lotin "uz" lug'atining transliteratsiyasi
 export const chat: ChatStrings = {
-  newChat: "Янги суҳбат",
-  sub: "Саволингизни ўзбек ёки рус тилида, ўз сўзларингиз билан ёзинг.",
+  newChat: "Янги чат",
+  sub: "Саволингизни ўзбек ёки рус тилида ёзинг.",
   placeholder: "Turon AI'га ёзинг…",
   disclaimer: "Тизим синов жараёнида — жавоблар кечикиши ёки хато жавоблар бўлиши мумкин.",
   sugg: ["Кредит турлари", "Банк карталари", "Омонатлар", "Халқаро ўтказмалар", "Филиаллар", "Ходимлар рақамлари", "Валюта курси"],
@@ -14,7 +14,7 @@ export const chatStatic: ChatStaticStrings = {
   openSidebar: "Панелни очиш",
   skipToContent: "Асосий қисмга ўтиш",
   closeSidebar: "Панелни ёпиш",
-  newChatTitle: "Янги суҳбат",
+  newChatTitle: "Янги чат",
   search: "Қидириш",
   searchPlaceholder: "Суҳбатлардан қидириш…",
   noResults: "Ҳеч нарса топилмади",

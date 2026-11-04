@@ -211,7 +211,7 @@ export default function Sidebar({
               <Logo size={22} />
             </span>
           </div>
-          <HButton onClick={newChat} data-tip="Yangi suhbat" aria-label="Yangi suhbat boshlash" className={`${styles.railBtn} tip-right`} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
+          <HButton onClick={newChat} data-tip={newChatLabel} aria-label={newChatLabel} className={`${styles.railBtn} tip-right`} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
           </HButton>
           <HButton onClick={openAndSearch} data-tip="Qidirish" aria-label="Suhbatlardan qidirish" className={`${styles.railBtn} tip-right`} baseStyle={{ opacity: 0.82, color: side.fg }} hoverStyle={sideHover}>

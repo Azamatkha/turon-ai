@@ -32,9 +32,9 @@ export const login: LoginStrings = {
   gotIt: "Понятно",
   unverifiedTitle: "Аккаунт не подтверждён",
   unverifiedText:
-    "Чтобы пользоваться Turon AI, скачайте мобильное приложение через бота ниже или обратитесь к администратору.",
+    "Чтобы пользоваться Turon AI, отсканируйте QR-код ниже с Android-телефона и скачайте мобильное приложение через бота или обратитесь к администратору.",
   unverifiedLogout: "Выйти",
-  unverifiedQrTelegram: "QR-код для перехода в Telegram-бот",
+  unverifiedQrTelegram: "Отсканируйте камерой Android-телефона",
   unverifiedQrApp: "QR-код для скачивания мобильного приложения",
   platforms: "Платформы",
 };

@@ -248,7 +248,7 @@ export const admin: AdminStrings = {
   statDislikes: "Dislayklar",
   actLogin: "tizimga kirdi",
   actLogout: "tizimdan chiqdi",
-  actSession: "yangi suhbat ochdi",
+  actSession: "yangi chat ochdi",
   actMessage: "so‘rov jo‘natdi",
   timeNow: "hozir",
   timeMinAgo: (m: number) => `${m} daq oldin`,

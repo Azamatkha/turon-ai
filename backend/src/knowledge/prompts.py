@@ -725,6 +725,34 @@ SMALLTALK_FALLBACK_REPLY = (
 )
 
 
+# "Sen nimasan", "nima qila olasan" va suhbat boshidagi salomga — bot va
+# ilovadagi vositalar haqida TAYYOR matn. Ilgari javobni router modeli
+# o'zi yozardi va u faqat chatning o'zini aytardi: ilovadagi kalkulyator,
+# PDF konvertor, ichki raqamlar kabi vositalar umuman tilga olinmasdi.
+# Ro'yxat frontenddagi "Qo'shimcha yordamchilar" menyusiga mos
+# (frontend/src/components/chat/ChatHeader.tsx) — u yerga yangi vosita
+# qo'shilsa, shu matn ham yangilanadi.
+CAPABILITIES_REPLY = (
+    "Men Turonbankning ichki AI yordamchisiman. Quyidagilarda yordam beraman:\n"
+    "* Bank mahsulotlari — kreditlar, omonatlar, kartalar, o'tkazmalar, "
+    "ularning shartlari va hujjatlari.\n"
+    "* Xodimlar ma'lumotnomasi — ism, bo'lim yoki ichki (IP) raqam bo'yicha "
+    "xodimni topish.\n"
+    "* Valyuta kurslari va summani so'mga yoki valyutaga hisoblash.\n"
+    "* Filiallar va bank xizmatlari markazlari (BXM).\n"
+    "* Moliyaviy atamalar va til savollari — so'z ma'nosi, imlo, tarjima, "
+    "matnni tuzatish.\n\n"
+    "Yuqoridagi \"Qo'shimcha yordamchilar\" menyusida yana:\n"
+    "* Kalkulyator — kredit, omonat, ipoteka va avtokredit hisobi, to'lov "
+    "jadvali bilan.\n"
+    "* Valyuta kurslari jadvali.\n"
+    "* PDF'ga aylantirish.\n"
+    "* Ichki raqamlar ma'lumotnomasi.\n"
+    "* EDO yo'riqnomasi (video).\n\n"
+    "Savolingizni o'zbek yoki rus tilida yozing."
+)
+
+
 # "Xodimlar raqamlari" kabi umumiy so'rovga — aniqlashtirishni so'raymiz.
 EMPLOYEE_ASK_REPLY = (
     "Qaysi xodim haqida ma'lumot kerak? Iltimos, xodimning familiyasi va ismini "
@@ -737,6 +765,25 @@ EMPLOYEE_ASK_REPLY = (
 # tayyor javoblar e'lon qilingandan keyin.
 RU_CANNED_REPLIES.update(
     {
+        CAPABILITIES_REPLY: (
+            "Я внутренний AI-помощник Туронбанка. Помогаю с:\n"
+            "* Продуктами банка — кредиты, вклады, карты, переводы, их условия "
+            "и документы.\n"
+            "* Справочником сотрудников — поиск по имени, отделу или "
+            "внутреннему (IP) номеру.\n"
+            "* Курсами валют и пересчётом суммы в сумы или валюту.\n"
+            "* Филиалами и центрами банковских услуг (БХМ).\n"
+            "* Финансовыми терминами и языковыми вопросами — значение слова, "
+            "орфография, перевод, исправление текста.\n\n"
+            "В меню «Дополнительные помощники» вверху также есть:\n"
+            "* Калькулятор — кредит, вклад, ипотека и автокредит, с графиком "
+            "платежей.\n"
+            "* Таблица курсов валют.\n"
+            "* Конвертация в PDF.\n"
+            "* Справочник внутренних номеров.\n"
+            "* Инструкция по ЭДО (видео).\n\n"
+            "Пишите вопрос на узбекском или русском языке."
+        ),
         NO_INFO_REPLY: (
             "По этому вопросу информация не найдена. Попробуйте сформулировать "
             "вопрос иначе или точнее — например, полнее укажите название "

@@ -34,6 +34,7 @@ from src.knowledge.pdf_extractor import (
 )
 from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.prompts import (
+    CAPABILITIES_REPLY,
     CONCEPT_SYSTEM,
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
@@ -756,6 +757,22 @@ def _router_reply(reply: str, lang: ReplyLang) -> str:
     if not reply or (lang == "ru" and not is_russian_text(reply)):
         return _localize(SMALLTALK_FALLBACK_REPLY, lang)
     return to_cyrillic(reply) if lang == "uz_cyrl" else reply
+
+
+def _bot_reply(decision: Route, history: list[ChatTurn] | None, lang: ReplyLang) -> str:
+    """Salomlashish va bot haqidagi savolga javob.
+
+    "Sen nimasan / nima qila olasan" (ABOUT_BOT) va suhbatning BIRINCHI
+    salomiga — bot va ilovadagi vositalar ro'yxati (CAPABILITIES_REPLY).
+    Suhbat o'rtasidagi "rahmat", "xayr" kabi gapga esa routerning qisqa
+    javobi: har safar uzun ro'yxat chiqsa bezor qiladi."""
+    if decision.intent is Intent.ABOUT_BOT:
+        return _localize(CAPABILITIES_REPLY, lang)
+    if not history:
+        greeting = "Здравствуйте!" if lang == "ru" else _localize("Assalomu alaykum!", lang)
+        body = _localize(CAPABILITIES_REPLY, lang)
+        return f"{greeting} {body}"
+    return _router_reply(decision.reply, lang)
 
 
 def _with_lang(system: str, lang: ReplyLang) -> str:
@@ -3162,7 +3179,7 @@ class AnswerQuestionUseCase:
             Intent.SMALLTALK,
             Intent.ABOUT_BOT,
         ):
-            text = _router_reply(decision.reply, lang)
+            text = _bot_reply(decision, history, lang)
             yield {"type": "delta", "text": text}
             yield {
                 "type": "done",
@@ -3585,7 +3602,7 @@ class AnswerQuestionUseCase:
             Intent.SMALLTALK,
             Intent.ABOUT_BOT,
         ):
-            text = _router_reply(decision.reply, lang)
+            text = _bot_reply(decision, history, lang)
             return AnswerResult(
                 answer=text,
                 sources=[],

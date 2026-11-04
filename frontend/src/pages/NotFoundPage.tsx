@@ -133,13 +133,9 @@ export default function NotFoundPage({
       {qrCodes && qrCodes.length > 0 && (
         <div className={styles.qrList}>
           {qrCodes.map((qr) => (
-            <a
-              key={qr.value}
-              href={qr.value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.qrCard}
-            >
+            // Oddiy quti, havola EMAS: QR telefon kamerasi bilan skanerlanadi,
+            // kompyuterda bosilganda Telegram sahifasi ochilib ketmasin
+            <div key={qr.value} className={styles.qrCard}>
               <span className={styles.qrTitle}>{qr.title}</span>
               <QRCodeSVG
                 value={qr.value}
@@ -152,7 +148,7 @@ export default function NotFoundPage({
                 imageSettings={qr.logo ? { src: qr.logo, height: 46, width: 46, excavate: true } : undefined}
               />
               {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
-            </a>
+            </div>
           ))}
         </div>
       )}

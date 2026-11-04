@@ -42,3 +42,12 @@ TITLE_SYSTEM = (
     "Xabar: Toshkent shahar bxm\n"
     "Sarlavha: Toshkent shahar BXM ma'lumotlari\n"
 )
+
+# Ruscha xabar uchun qo'shimcha. Ilgari ruscha xabarga ham o'zbek lotinida
+# sarlavha yozilib, so'ng kirillga o'girilardi — yon panelda ruscha suhbat
+# "Банк кредит турлари ҳақида" kabi o'zbek-kirill sarlavha bilan chiqardi.
+TITLE_RU_OVERRIDE = (
+    "\n\nMUHIM: foydalanuvchi xabari RUS tilida. Yuqoridagi \"o'zbek tilida\" "
+    "qoidasi o'rniga sarlavhani RUS TILIDA, kirill yozuvida yoz "
+    "(\"Кредит турлари\" emas, \"Виды банковских кредитов\")."
+)

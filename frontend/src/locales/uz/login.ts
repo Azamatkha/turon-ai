@@ -32,9 +32,9 @@ export const login: LoginStrings = {
   gotIt: "Tushunarli",
   unverifiedTitle: "Akkauntingiz tasdiqlanmagan",
   unverifiedText:
-    "Turon AI’dan foydalanish uchun quyidagi bot orqali mobil ilovani yuklab oling yoki adminga murojaat qiling.",
+    "Turon AI’dan foydalanish uchun Android telefon orqali quyidagi QR kodni skanerlang va bot orqali mobil ilovani yuklab oling yoki adminga murojaat qiling.",
   unverifiedLogout: "Chiqish",
-  unverifiedQrTelegram: "Telegram botga o‘tish uchun QR kod",
+  unverifiedQrTelegram: "Android telefon kamerasi bilan skanerlang",
   unverifiedQrApp: "Mobil ilovani yuklab olish uchun QR kod",
   platforms: "Platformalar",
 };

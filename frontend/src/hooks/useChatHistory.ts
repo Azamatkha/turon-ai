@@ -43,7 +43,7 @@ function stripStrayFollowup(text: string): string {
 
 // Chat tarixini BACKEND (PostgreSQL) bilan boshqaradi — foydalanuvchiga bog'langan.
 // useChatSimulation bilan bir xil interfeysni qaytaradi (ChatPage o'zgarmaydi).
-export function useChatHistory(newChatLabel: string = "Yangi suhbat") {
+export function useChatHistory(newChatLabel: string = "Yangi chat") {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);

@@ -33,9 +33,9 @@ export const login: LoginStrings = {
   gotIt: "Тушунарли",
   unverifiedTitle: "Аккаунтингиз тасдиқланмаган",
   unverifiedText:
-    "Turon AI’дан фойдаланиш учун қуйидаги бот орқали мобил иловани юклаб олинг ёки админга мурожаат қилинг.",
+    "Turon AI’дан фойдаланиш учун Android телефон орқали қуйидаги QR кодни сканерланг ва бот орқали мобил иловани юклаб олинг ёки админга мурожаат қилинг.",
   unverifiedLogout: "Чиқиш",
-  unverifiedQrTelegram: "Телеграм ботга ўтиш учун QR код",
+  unverifiedQrTelegram: "Android телефон камераси билан сканерланг",
   unverifiedQrApp: "Мобил иловани юклаб олиш учун QR код",
   platforms: "Платформалар",
 };
