@@ -52,9 +52,11 @@ export default function ThoughtLine({ working, seconds, steps, s, color, accent 
           </svg>
         )}
         {/* Ekran o'quvchisi uchun — bosqich o'zgarganda o'qiladi */}
-        <span className={styles.sr} role="status">
-          {working ? s.thinkSteps[steps[steps.length - 1]] ?? s.thinkingLabel : s.thoughtFor(fmt(seconds))}
-        </span>
+        {working && (
+          <span className={styles.sr} role="status">
+            {s.thinkSteps[steps[steps.length - 1]] ?? s.thinkingLabel}
+          </span>
+        )}
       </button>
 
       {hasSteps && (

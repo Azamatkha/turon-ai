@@ -3,6 +3,9 @@
 .root {
   font-size: 14px;
   line-height: 1.4;
+  /* Javobni nusxalashda "N soniya o'yladi" qatori qo'shilmasin */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .head {
@@ -75,15 +78,19 @@
 }
 
 /* Bosqichlar: balandlikni 0fr -> 1fr bilan silliq ochamiz */
+/* Yig'iq holatda visibility:hidden — matn nusxalanganda bosqichlar qo'shilib ketmasin */
 .trace {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 0.3s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.25s ease;
+  visibility: hidden;
+  transition: grid-template-rows 0.3s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.25s ease, visibility 0s linear 0.3s;
 }
 .traceOpen {
   grid-template-rows: 1fr;
   opacity: 1;
+  visibility: visible;
+  transition: grid-template-rows 0.3s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.25s ease, visibility 0s;
 }
 .fold {
   overflow: hidden;

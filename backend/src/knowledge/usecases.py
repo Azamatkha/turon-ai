@@ -1889,7 +1889,26 @@ def _word_match(a: str, b: str) -> bool:
     mikrokreditlar ham qo'shilib ketardi. Bu yerda qisqa so'z deyarli TO'LIQ
     mos kelishi talab qilinadi (oxirgi bitta harf farqiga ruxsat)."""
     cp = _common_prefix_len(a, b)
-    return cp >= 4 and cp >= min(len(a), len(b)) - 1
+    if not (cp >= 4 and cp >= min(len(a), len(b)) - 1):
+        return False
+    # Qolgan qism QO'SHIMCHA bo'lishi shart, yangi so'z bo'lagi emas. Aks
+    # holda "KONTR kafolat" savoli "KONTRakt" so'zli ta'lim kreditini
+    # topib, model "kontr kafolat"ni "kontrakt kafolati" deb talqin qildi.
+    return _is_suffix_tail(a[cp:]) and _is_suffix_tail(b[cp:])
+
+
+# So'z oxiridagi qo'shimchalar (o'zbek + eng ko'p ruscha kelishik oxirlari,
+# lotinga o'girilgan holda). Qisqa qoldiq (<=2 harf) har doim ruxsat —
+# "krediti", "kredita", "kreditov" kabi.
+_WORD_SUFFIXES = (
+    "lar", "ning", "dan", "dagi", "gacha", "imiz", "ingiz", "lik", "chi",
+    "siz", "roq", "ish", "lash", "gan",
+    "nyy", "noy", "nogo", "nym", "nykh", "ami", "akh", "ymi",
+)
+
+
+def _is_suffix_tail(rest: str) -> bool:
+    return len(rest) <= 2 or rest.startswith(_WORD_SUFFIXES)
 
 
 def _text_words(text: str) -> set[str]:
