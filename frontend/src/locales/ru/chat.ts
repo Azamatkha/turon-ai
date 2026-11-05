@@ -191,6 +191,7 @@ export const chatStatic: ChatStaticStrings = {
   contactsPromptEmpty: "Заполните хотя бы одно поле",
   contactsPromptLater: "Позже",
   contactsPromptSave: "Сохранить",
+  contactsEditText: "По этим номерам вас найдут коллеги. Если оставить поле пустым, номер будет удалён.",
   infoPatronym: "Отчество",
   infoPosition: "Должность",
   infoDepartment: "Отдел / Филиал",

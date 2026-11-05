@@ -40,6 +40,8 @@ interface SidebarProps {
   openProfile: () => void;
   onLogout: () => void;
   profileLabel: string;
+  openContacts: () => void;
+  contactsLabel: string;
   openSupport: () => void;
   supportLabel: string;
   logoutLabel: string;
@@ -64,7 +66,7 @@ export default function Sidebar({
   removeChatLabel, pinChatLabel, unpinChatLabel, moreOptionsLabel, pinnedSectionLabel, recentsSectionLabel, todayLabel,
   search, setSearch, searchPlaceholder, noResultsLabel,
   side, userName, userHandle, initial, openProfile,
-  onLogout, profileLabel, openSupport, supportLabel, logoutLabel,
+  onLogout, profileLabel, openContacts, contactsLabel, openSupport, supportLabel, logoutLabel,
   platformsLabel,
 }: SidebarProps) {
   const sideHover: CSSProperties = { background: "rgba(255,255,255,.08)" };
@@ -364,6 +366,18 @@ export default function Sidebar({
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
           <span>{profileLabel}</span>
+        </button>
+        {/* Kontaktlar (telefon, IP) — alohida oynada; profilda faqat xodim ma'lumotlari */}
+        <button
+          role="menuitem"
+          className={styles.moreMenuItem}
+          onClick={() => {
+            setProfileMenu(null);
+            openContacts();
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2.2" /><path d="M5.5 16c.6-1.6 2-2.5 3.5-2.5s2.9.9 3.5 2.5" /><line x1="14.5" y1="9" x2="18" y2="9" /><line x1="14.5" y1="13" x2="18" y2="13" /></svg>
+          <span>{contactsLabel}</span>
         </button>
         {/* Yordam: raqam menyuning o'zida emas — alohida oynada (telefon + Telegram) */}
         <button

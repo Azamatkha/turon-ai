@@ -194,6 +194,7 @@ export const chatStatic: ChatStaticStrings = {
   contactsPromptEmpty: "Kamida bittasini kiriting",
   contactsPromptLater: "Keyinroq",
   contactsPromptSave: "Saqlash",
+  contactsEditText: "Hamkasblaringiz sizni shu raqamlar orqali topadi. Maydonni bo‘sh qoldirsangiz, raqam o‘chiriladi.",
   infoPatronym: "Otasining ismi",
   infoPosition: "Lavozim",
   infoDepartment: "Bo‘lim / Filial",

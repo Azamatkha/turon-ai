@@ -15,6 +15,8 @@ class Permission(StrEnum):
     CREATE_USER = "create_user"
     EDIT_USER = "edit_user"
     DELETE_USER = "delete_user"
+    # Foydalanuvchi rolini almashtirish — faqat super admin
+    MANAGE_ROLES = "manage_roles"
 
     # Settings permissions
     VIEW_SETTINGS = "view_settings"

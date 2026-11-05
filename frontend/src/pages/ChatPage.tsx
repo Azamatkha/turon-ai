@@ -12,6 +12,7 @@ import SidebarToggle from "../components/chat/SidebarToggle";
 import ProfileModal from "../components/chat/ProfileModal";
 import SupportModal from "../components/chat/SupportModal";
 import ContactsPromptModal from "../components/chat/ContactsPromptModal";
+import { isPanelRole } from "../utils/roles";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
@@ -43,6 +44,9 @@ export default function ChatPage() {
   const [role, setRole] = useState("user");
   // IP raqami yo'q xodimga kirishda chiqadigan eslatma (ContactsPromptModal)
   const [promptMe, setPromptMe] = useState<Me | null>(null);
+  // Menyudagi "Kontaktlar" oynasi — o'sha komponent, "edit" rejimida
+  const [me, setMe] = useState<Me | null>(null);
+  const [contactsOpen, setContactsOpen] = useState(false);
 
   // Haqiqiy foydalanuvchini backenddan olamiz (login token bilan)
   useEffect(() => {
@@ -51,6 +55,7 @@ export default function ChatPage() {
         setFullName(me.full_name);
         setUsername(me.username);
         setRole(me.role);
+        setMe(me);
         // Brauzer seansida BIR MARTA: har sahifa yangilanishida chiqib
         // bezor qilmasin. Yangi kirishda (yangi seans) yana eslatadi.
         const key = `contacts-prompt-shown:${me.id}`;
@@ -257,6 +262,8 @@ export default function ChatPage() {
         openProfile={openProfile}
         onLogout={doLogout}
         profileLabel={S.profileMenu}
+        openContacts={() => setContactsOpen(true)}
+        contactsLabel={S.contactsTitle}
         openSupport={() => setSupportOpen(true)}
         supportLabel={S.support}
         logoutLabel={S.logOut}
@@ -271,7 +278,23 @@ export default function ChatPage() {
           isDark={isDark}
           me={promptMe}
           onClose={closeContactsPrompt}
-          onSaved={closeContactsPrompt}
+          onSaved={(updated) => {
+            setMe(updated);
+            closeContactsPrompt();
+          }}
+        />
+      )}
+      {contactsOpen && me && (
+        <ContactsPromptModal
+          S={S}
+          isDark={isDark}
+          me={me}
+          mode="edit"
+          onClose={() => setContactsOpen(false)}
+          onSaved={(updated) => {
+            setMe(updated);
+            setContactsOpen(false);
+          }}
         />
       )}
 
@@ -298,7 +321,7 @@ export default function ChatPage() {
           isDark={isDark}
           onToggleTheme={toggleTheme}
           tk={tk}
-          isAdmin={role === "admin"}
+          isAdmin={isPanelRole(role)}
           onAdmin={() => navigate("/admin")}
           editableTitle={!!activeId && !!active.title}
           onRenameTitle={(next) => renameChat(activeId, next)}

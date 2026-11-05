@@ -250,6 +250,8 @@ export interface ChatStaticStrings {
   contactsPromptEmpty: string;
   contactsPromptLater: string;
   contactsPromptSave: string;
+  // Menyudagi "Kontaktlar" oynasining izohi
+  contactsEditText: string;
   infoPatronym: string;
   infoPosition: string;
   infoDepartment: string;
@@ -346,6 +348,7 @@ export interface AdminStrings {
   delete: string;
   changeRole: string;
   makeAdmin: string;
+  makeSuperAdmin: string;
   makeXodim: string;
   verifyUser: string;
   unverifyUser: string;

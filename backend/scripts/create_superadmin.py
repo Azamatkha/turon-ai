@@ -14,10 +14,10 @@ async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 async def create_superadmin() -> None:
     async with async_session() as session:
-        stmt = select(User).where(User.role == UserRole.ADMIN).limit(1)
+        stmt = select(User).where(User.role == UserRole.SUPER_ADMIN).limit(1)
         result = await session.execute(stmt)
         if result.scalar_one_or_none():
-            print("Admin already exists, skipping.")
+            print("Super admin already exists, skipping.")
             return
 
         admin = User(
@@ -27,7 +27,7 @@ async def create_superadmin() -> None:
             username=config.administration.SUPER_ADMIN_USERNAME,
             phone_number=config.administration.SUPER_ADMIN_PHONE,
             password_hash=hash_password(config.administration.SUPER_ADMIN_PASSWORD),
-            role=UserRole.ADMIN,
+            role=UserRole.SUPER_ADMIN,
             is_verified=True,
             is_active=True,
         )

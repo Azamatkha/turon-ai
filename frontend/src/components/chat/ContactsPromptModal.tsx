@@ -21,6 +21,10 @@ interface Props {
   me: Me;
   onClose: () => void;
   onSaved: (me: Me) => void;
+  // "prompt" — kirishdagi eslatma (10 s taymer, kamida bitta raqam shart);
+  // "edit" — menyudagi "Kontaktlar" bandidan ochiladi (taymersiz, maydonni
+  // bo'shatib raqamni o'chirish mumkin).
+  mode?: "prompt" | "edit";
 }
 
 // Oyna o'zi yopilguncha vaqt (5 s juda tez edi — o'qib ulgurilmasdi). Foydalanuvchi oynaga tegsa (bosish, yozish,
@@ -28,14 +32,17 @@ interface Props {
 // turgan odamning oynasi qo'lidan "tortib olinmasin".
 const AUTO_CLOSE_MS = 10000;
 
-// Kirishda IP raqami yo'q xodimga eslatma: hamkasblar uni topishi uchun
-// IP yoki telefon raqamini kiritishni so'raydi. Bittasi yetarli.
-export default function ContactsPromptModal({ S, isDark, me, onClose, onSaved }: Props) {
+// Telefon va IP (ichki) raqamni kiritish oynasi. Ikki joydan ochiladi:
+// kirishda IP raqami yo'q xodimga eslatma sifatida va menyudagi
+// "Kontaktlar" bandidan (qara: mode).
+export default function ContactsPromptModal({ S, isDark, me, onClose, onSaved, mode = "prompt" }: Props) {
+  const isPrompt = mode === "prompt";
   const [phone, setPhone] = useState(() => phoneLocalDigits(me.phone_number));
   const [ip, setIp] = useState(me.ip_number ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [touched, setTouched] = useState(false);
+  // Tahrir rejimida taymer umuman yo'q — oyna "tegilgan" holatda boshlanadi
+  const [touched, setTouched] = useState(!isPrompt);
 
   const modalRef = useModalA11y<HTMLDivElement>(onClose);
 
@@ -51,7 +58,7 @@ export default function ContactsPromptModal({ S, isDark, me, onClose, onSaved }:
 
   const save = async () => {
     if (saving) return;
-    if (!phone.trim() && !ip.trim()) {
+    if (isPrompt && !phone.trim() && !ip.trim()) {
       setError(S.contactsPromptEmpty);
       return;
     }
@@ -106,8 +113,8 @@ export default function ContactsPromptModal({ S, isDark, me, onClose, onSaved }:
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" /></svg>
           </span>
           <div className={styles.headText}>
-            <h2 id="contacts-prompt-title" className={styles.title}>{S.contactsPromptTitle}</h2>
-            <p id="contacts-prompt-text" className={styles.text}>{S.contactsPromptText}</p>
+            <h2 id="contacts-prompt-title" className={styles.title}>{isPrompt ? S.contactsPromptTitle : S.contactsTitle}</h2>
+            <p id="contacts-prompt-text" className={styles.text}>{isPrompt ? S.contactsPromptText : S.contactsEditText}</p>
           </div>
           <button type="button" onClick={onClose} aria-label={S.close} className={p.closeBtn}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
@@ -156,7 +163,7 @@ export default function ContactsPromptModal({ S, isDark, me, onClose, onSaved }:
 
           <div className={p.actions}>
             <button type="button" onClick={onClose} className={p.secondaryBtn} disabled={saving}>
-              {S.contactsPromptLater}
+              {isPrompt ? S.contactsPromptLater : S.cancelEdit}
             </button>
             <button type="submit" className={p.primaryBtn} disabled={saving} aria-busy={saving}>
               {S.contactsPromptSave}

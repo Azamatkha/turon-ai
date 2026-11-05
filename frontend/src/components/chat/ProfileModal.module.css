@@ -189,25 +189,9 @@
 }
 
 /* =====================
-   Kontaktlar (foydalanuvchi o'zi kiritadi)
+   Kontakt maydonlari va tugmalari — ContactsPromptModal ham shu klasslardan
+   foydalanadi (profilning o'zida endi kontakt bo'limi yo'q)
    ===================== */
-/* Oynaning tepasida turadi — xodim ma'lumotlaridan pastki chiziq bilan ajraladi */
-.contacts {
-  padding-bottom: 14px;
-  border-bottom: 1px solid #E2E8F0;
-}
-
-.dark .contacts {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-.contactsHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .linkBtn {
   margin-top: 12px;
   padding: 6px 12px;

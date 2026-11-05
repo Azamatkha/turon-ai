@@ -287,7 +287,9 @@ async def update_user_admin(
     """
     Admin tomonidan foydalanuvchi ma'lumotlari yoki rolini yangilash.
     """
-    return await use_case.execute(user_id=user_id, data=user_form_data)
+    return await use_case.execute(
+        user_id=user_id, data=user_form_data, current_user=current_user
+    )
 
 
 @router.delete("/{user_id}", response_model=SuccessResponse)

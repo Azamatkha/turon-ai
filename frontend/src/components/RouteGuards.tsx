@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
-import { isAuthenticated, isVerified, getRole } from "../services/authService";
+import { isAuthenticated, isVerified } from "../services/authService";
+import { isPanelRole } from "../utils/roles";
 import UnverifiedPage from "../pages/UnverifiedPage";
 
 // Login qilmagan foydalanuvchini login sahifasiga yo'naltiradi.
@@ -10,9 +11,9 @@ export function RequireAuth({ children }: { children: ReactElement }) {
   return isVerified() ? children : <UnverifiedPage />;
 }
 
-// Faqat admin uchun; admin bo'lmasa bosh sahifaga qaytaradi
+// Faqat admin va super admin uchun; boshqalar bosh sahifaga qaytadi
 export function RequireAdmin({ children }: { children: ReactElement }) {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
   if (!isVerified()) return <UnverifiedPage />;
-  return getRole() === "admin" ? children : <Navigate to="/" replace />;
+  return isPanelRole() ? children : <Navigate to="/" replace />;
 }

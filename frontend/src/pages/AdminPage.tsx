@@ -28,11 +28,15 @@ import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
 import CosmicSingularity from "../components/CosmicSingularity";
 import Logo from "../components/common/Logo";
+import { canSeeView, isSuperAdmin } from "../utils/roles";
 import styles from "./AdminPage.module.css";
 
-// Faqat ikki rol: Admin va Xodim (oddiy foydalanuvchi).
-const toAdminRole = (r: BackendRole): AdminRole => (r === "admin" ? "Admin" : "Xodim");
-const toBackendRole = (r: AdminRole): BackendRole => (r === "Admin" ? "admin" : "user");
+// Uch rol: Super admin, Admin va Xodim (oddiy foydalanuvchi; moderator ham
+// shu yerda ko'rinadi — u alohida boshqarilmaydi).
+const toAdminRole = (r: BackendRole): AdminRole =>
+  r === "super_admin" ? "SuperAdmin" : r === "admin" ? "Admin" : "Xodim";
+const toBackendRole = (r: AdminRole): BackendRole =>
+  r === "SuperAdmin" ? "super_admin" : r === "Admin" ? "admin" : "user";
 
 // Ochiq sahifa <-> manzildagi bo'lak (/admin/users, /admin/knowledge ...)
 const VIEW_TO_PATH: Record<AdminView, string> = {
@@ -82,14 +86,17 @@ export default function AdminPage() {
   // to'g'ridan-to'g'ri link ochilganda o'sha sahifa qoladi (dashboardga qaytmaydi).
   const { view: viewParam } = useParams();
   const navigate = useNavigate();
-  const [view, setView] = useState<AdminView>(
-    () => PATH_TO_VIEW[viewParam ?? ""] ?? "dashboard"
-  );
+  // Oddiy admin faqat ko'radi: tahrirlash tugmalari va yopiq bo'limlar yashiriladi
+  const canManage = isSuperAdmin();
+  const [view, setView] = useState<AdminView>(() => {
+    const v = PATH_TO_VIEW[viewParam ?? ""];
+    return v && canSeeView(v) ? v : "dashboard";
+  });
 
   // URL -> holat (orqaga/oldinga tugmalari, to'g'ridan-to'g'ri link)
   useEffect(() => {
     const v = PATH_TO_VIEW[viewParam ?? ""];
-    if (v && v !== view) setView(v);
+    if (v && v !== view && canSeeView(v)) setView(v);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewParam]);
 
@@ -369,7 +376,7 @@ export default function AdminPage() {
         </div>
 
         <PageHeader
-          view={view} search={search} setSearch={setSearch} onAddUser={openAdd}
+          view={view} search={search} setSearch={setSearch} onAddUser={canManage ? openAdd : undefined}
           isDark={isDark} onToggleTheme={toggleTheme}
           lang={lang} setLang={setLang} t={t}
         />
@@ -416,7 +423,7 @@ export default function AdminPage() {
               {/* key: qidiruv, bo'lim yoki holat o'zgarsa jadval 1-sahifadan boshlanadi */}
               <UsersTable
                 key={`${search}|${dept}|${statusFilter}`}
-                users={statusFilter ? users.filter((u) => u.status === statusFilter) : users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
+                users={statusFilter ? users.filter((u) => u.status === statusFilter) : users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} canManage={canManage} t={t} lang={lang} />
             </>
           )}
         </div>

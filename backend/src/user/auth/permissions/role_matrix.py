@@ -2,8 +2,9 @@ from src.user.auth.permissions.enum import Permission
 from src.user.enums import UserRole
 
 ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
-    # Admin - full system access for user-related functions
-    UserRole.ADMIN: {
+    # Super admin — tizimning to'liq boshqaruvi: foydalanuvchilar va ularning
+    # rollari, bilim bazasi, EDO yo'riqnomalari, murojaatlar holati, loglar.
+    UserRole.SUPER_ADMIN: {
         # Dashboard permissions
         Permission.VIEW_DASHBOARD,
         Permission.EDIT_DASHBOARD,
@@ -15,6 +16,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         Permission.CREATE_USER,
         Permission.EDIT_USER,
         Permission.DELETE_USER,
+        Permission.MANAGE_ROLES,
         # Settings permissions
         Permission.VIEW_SETTINGS,
         Permission.EDIT_SETTINGS,
@@ -24,6 +26,16 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         # System permissions
         Permission.VIEW_LOGS,
         Permission.MANAGE_BACKUPS,
+    },
+    # Admin — boshqaruv paneli, foydalanuvchilar ro'yxati va murojaatlarni
+    # faqat KO'RADI. Foydalanuvchini tahrirlay, rolini almashtira, o'chira
+    # olmaydi; bilim bazasi va sozlamalar (EDIT_SETTINGS) ham yopiq.
+    UserRole.ADMIN: {
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_PROFILE,
+        Permission.EDIT_PROFILE,
+        Permission.VIEW_USERS,
+        Permission.VIEW_REPORTS,
     },
     # Editor - can create and edit content but cannot manage users or system settings
     UserRole.MODERATOR: {

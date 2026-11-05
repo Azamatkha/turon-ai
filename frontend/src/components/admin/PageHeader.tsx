@@ -18,7 +18,8 @@ interface PageHeaderProps {
   view: AdminView;
   search: string;
   setSearch: (v: string) => void;
-  onAddUser: () => void;
+  // Berilmasa — "Foydalanuvchi qo'shish" tugmasi yo'q (oddiy admin faqat ko'radi)
+  onAddUser?: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
   lang: Lang;
@@ -72,7 +73,7 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
             <input className={styles.searchInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={admin.searchUsersPh} />
           </div>
         )}
-        {onUsers && (
+        {onUsers && onAddUser && (
           <HButton onClick={onAddUser} className={`${styles.addBtn} tu-shiny`} baseStyle={{}} hoverStyle={{ transform: "translateY(-2px)" }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             {admin.addUser}

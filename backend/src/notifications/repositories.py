@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -75,7 +76,7 @@ class NotificationRepository(BaseRepository[Notification]):
         notification_type: str,
         params: dict[str, str] | None = None,
         entity_id: UUID | None = None,
-        role: UserRole | None = None,
+        role: UserRole | Collection[UserRole] | None = None,
         coalesce_after: datetime | None = None,
     ) -> list[UUID]:
         """Bitta xabarni bir nechta foydalanuvchiga tarqatadi.
@@ -102,7 +103,8 @@ class NotificationRepository(BaseRepository[Notification]):
             User.is_deleted.is_(False), User.is_active.is_(True)
         )
         if role is not None:
-            query = query.where(User.role == role)
+            roles = (role,) if isinstance(role, UserRole) else tuple(role)
+            query = query.where(User.role.in_(roles))
         result = await session.execute(query)
         user_ids = list(result.scalars().all())
         if not user_ids:

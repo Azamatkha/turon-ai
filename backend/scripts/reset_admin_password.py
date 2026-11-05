@@ -30,7 +30,7 @@ async def reset_admin_password(new_password: str) -> None:
         admin = (await session.execute(stmt)).scalar_one_or_none()
 
         if admin is None:
-            stmt = select(User).where(User.role == UserRole.ADMIN).limit(1)
+            stmt = select(User).where(User.role == UserRole.SUPER_ADMIN).limit(1)
             admin = (await session.execute(stmt)).scalar_one_or_none()
 
         if admin is None:

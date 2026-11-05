@@ -192,6 +192,7 @@ export const chatStatic: ChatStaticStrings = {
   contactsPromptEmpty: "Камида биттасини киритинг",
   contactsPromptLater: "Кейинроқ",
   contactsPromptSave: "Сақлаш",
+  contactsEditText: "Ҳамкасбларингиз сизни шу рақамлар орқали топади. Майдонни бўш қолдирсангиз, рақам ўчирилади.",
   infoPatronym: "Отасининг исми",
   infoPosition: "Лавозим",
   infoDepartment: "Бўлим / Филиал",

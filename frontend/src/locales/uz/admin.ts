@@ -51,7 +51,7 @@ export const admin: AdminStrings = {
   role: "Rol",
   taken: "Band",
   create: "Yaratish",
-  roleLabel: { Xodim: "Xodim", Admin: "Admin" } as Record<AdminRole, string>,
+  roleLabel: { Xodim: "Xodim", Admin: "Admin", SuperAdmin: "Super admin" } as Record<AdminRole, string>,
   statusLabel: { Online: "Onlayn", Offline: "Oflayn" } as Record<AdminStatus, string>,
   // Tahrirlash modali
   editUser: "Tahrirlash",
@@ -63,6 +63,7 @@ export const admin: AdminStrings = {
   delete: "O‘chirish",
   changeRole: "Rolni o‘zgartirish",
   makeAdmin: "Admin qilish",
+  makeSuperAdmin: "Super admin qilish",
   makeXodim: "Xodim qilish",
   verifyUser: "Tasdiqlash",
   unverifyUser: "Tasdiqni bekor qilish",

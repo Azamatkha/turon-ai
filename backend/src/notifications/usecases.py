@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import timedelta
 from uuid import UUID
 
@@ -130,7 +131,7 @@ class BroadcastNotificationUseCase:
         notification_type: str,
         params: dict[str, str] | None = None,
         entity_id: UUID | None = None,
-        role: UserRole | None = None,
+        role: UserRole | Collection[UserRole] | None = None,
     ) -> int:
         window = COALESCE_WINDOWS.get(notification_type)
         coalesce_after = get_utc_now() - window if window else None
