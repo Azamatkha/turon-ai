@@ -3131,7 +3131,17 @@ class AnswerQuestionUseCase:
         """execute bilan bir xil RAG mantiqi, lekin javobni token-token (oqim)
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
         {"type":"delta","text":...}; oxirida token statistikasi bilan
-        {"type":"done", ...}."""
+        {"type":"done", ...}.
+
+        Bosqich hodisalari {"type":"status","step":...} — frontend "O'ylayapman…"
+        qatorida ko'rsatadi. Faqat HAQIQATAN boshlangan ish uchun yuboriladi:
+          analyze   — savol tahlili (router);
+          rates     — valyuta kurslari olinmoqda;
+          employees — xodimlar ro'yxatidan qidiruv;
+          search    — bilim bazasidan qidiruv;
+          write     — model javob yozmoqda.
+        Tayyor (modelsiz) javoblarda faqat "analyze" bo'ladi."""
+        yield {"type": "status", "step": "analyze"}
         # Javob tili — savol (raqamga almashtirilishidan OLDIN) qaysi tilda
         # yozilganiga qarab: o'zbek lotin / o'zbek kirill / rus. AI o'zbekcha
         # javobni hamisha lotincha yozadi, kirill kerak bo'lsa shu yerda
@@ -3289,6 +3299,7 @@ class AnswerQuestionUseCase:
             tr = StreamingTransliterator() if want_cyrillic else None
             sf = StreamingScriptFixer() if lang == "uz" else None
             lf = _ConceptLineFilter()
+            yield {"type": "status", "step": "write"}
             async for ev in self.ai_client.stream_generate(
                 prompt,
                 system_prompt=_with_lang(system, lang),
@@ -3326,6 +3337,7 @@ class AnswerQuestionUseCase:
 
         # Valyuta kursi — faktlarni kod, javobni model yozadi (_rates_reply)
         if decision is not None and decision.intent is Intent.RATES:
+            yield {"type": "status", "step": "rates"}
             rates = await self._rates_reply(
                 question, decision.search_query, history, lang
             )
@@ -3359,6 +3371,14 @@ class AnswerQuestionUseCase:
         # bo'lsa — ism bo'yicha taxmin qilmaymiz (qara: _blind_employee_guess).
         # Ism moslash lotincha ishlaydi, shuning uchun ruscha savol ham
         # lotinga o'girib beriladi ("Азамат" -> "Azamat").
+        #
+        # Xodim qidiruvi har savolda (tez, kod bilan) ishlaydi — bosqich esa
+        # faqat savol rostdan xodim haqida bo'lganda ko'rsatiladi, aks holda
+        # mahsulot savolida ham "xodimlardan qidiryapman" chiqib turardi.
+        if skip_shortcuts or (
+            decision is not None and decision.intent is Intent.EMPLOYEE
+        ):
+            yield {"type": "status", "step": "employees"}
         route = (
             None
             if resolved or _blind_employee_guess(decision, question)
@@ -3451,6 +3471,7 @@ class AnswerQuestionUseCase:
             exact_title = RATES_TITLE
         results: list[tuple[dict[str, Any], float]] = []
         lexical: list[tuple[dict[str, Any], float]] = []
+        yield {"type": "status", "step": "search"}
         if exact_title:
             results = await self._results_by_title(exact_title)
         if not results:
@@ -3539,6 +3560,7 @@ class AnswerQuestionUseCase:
         # Ruscha javobda ikkalasi ham o'chiq (concept yo'lidagi izohga qara).
         tr = StreamingTransliterator() if want_cyrillic else None
         sf = StreamingScriptFixer() if lang == "uz" else None
+        yield {"type": "status", "step": "write"}
         async for ev in self.ai_client.stream_generate(
             prompt,
             system_prompt=_with_lang(system, lang),

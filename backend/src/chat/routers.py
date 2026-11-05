@@ -331,6 +331,9 @@ async def ask_stream(
         }
         try:
             async for ev in events:
+                # Bosqich hodisalari faqat so'ragan mijozga (qara: with_status)
+                if ev.get("type") == "status" and not data.with_status:
+                    continue
                 yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
         except InfrastructureException as exc:
             # Kutilgan xato (Ollama o'chiq, model topilmadi, timeout) — BITTA

@@ -1,5 +1,10 @@
 export type Role = "user" | "assistant";
 
+// Backend oqimidagi bosqichlar ({"type":"status","step":...}) —
+// backend/src/knowledge/usecases.py execute_stream bilan bir xil
+export type ThinkStep = "analyze" | "rates" | "employees" | "search" | "write";
+export const THINK_STEPS: readonly ThinkStep[] = ["analyze", "rates", "employees", "search", "write"];
+
 export interface Msg {
   id: string;
   role: Role;
@@ -8,6 +13,11 @@ export interface Msg {
   vote?: "up" | "down" | null; // foydalanuvchi bahosi
   // Debug: token statistikasi (faqat assistant xabarlarida bo'ladi)
   debug?: { finishReason: string; completionTokens: number; maxTokens: number };
+  // Javob oldidan "o'ylash": o'tgan bosqichlar va birinchi so'zgacha ketgan
+  // vaqt (soniya). Faqat shu sessiyada — bazaga saqlanmaydi.
+  thought?: { steps: ThinkStep[]; seconds: number };
+  // Foydalanuvchi "To'xtatish"ni bosgan (bazada finish_reason="interrupted")
+  interrupted?: boolean;
 }
 
 export interface Chat {

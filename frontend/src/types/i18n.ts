@@ -1,4 +1,5 @@
 import type { AdminRole, AdminStatus } from "./admin";
+import type { ThinkStep } from "./chat";
 
 // Tilga bog'liq lug'atlar uchun umumiy shakllar (uz/ru bir xil interfeysga mos kelishi kerak)
 export interface LoginStrings {
@@ -212,6 +213,11 @@ export interface ChatStaticStrings {
   copy: string;
   copied: string;
   regenerate: string;
+  // "O'ylayapman…" qatori: jarayon, yakun ("3.4 soniya o'yladi") va bosqichlar
+  thinkingLabel: string;
+  thoughtFor: (sec: string) => string;
+  thinkSteps: Record<ThinkStep, string>;
+  interrupted: string;
   resend: string;
   editMessage: string;
   saveEdit: string;

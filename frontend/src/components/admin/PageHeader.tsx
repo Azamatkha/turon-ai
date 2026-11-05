@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { IoMdChatboxes } from "react-icons/io";
 import HButton from "../common/HButton";
+import StarBorder from "../common/StarBorder";
+import { ACCENT } from "../chat/theme";
 import ThemeToggle from "../chat/ThemeToggle";
 import NotificationsBell from "../chat/NotificationsBell";
 import { getThemeTokens } from "../chat/theme";
@@ -43,6 +45,12 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
     guides: admin.guidesNav,
     apiDocs: "API hujjatlari",
   };
+  // Navbar tugmalari chetidagi aylanuvchi nur (chat header bilan bir xil)
+  const star = (node: React.ReactNode, radius = 10) => (
+    <StarBorder color={isDark ? "#ffffff" : ACCENT} theme={isDark ? "dark" : "light"} radius={radius}>
+      {node}
+    </StarBorder>
+  );
   return (
     <header className={styles.header}>
       <div>
@@ -51,11 +59,11 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
       <div className={styles.actions}>
         {/* Bildirishnomalar chatdagi bilan bir xil komponent — admin murojaat
             xabarini shu yerdan ham ko'ra oladi */}
-        <NotificationsBell tk={getThemeTokens(isDark)} isDark={isDark} s={chatStaticDict[lang]} />
+        {star(<NotificationsBell tk={getThemeTokens(isDark)} isDark={isDark} s={chatStaticDict[lang]} />)}
         {/* Chatga qaytish — chat sahifasidagi "admin panel" tugmasining
             ko'zgusi. Ilgari u yon panelda bo'lim sifatida turardi, lekin u
             BO'LIM emas, boshqa sahifaga o'tish — o'rni shu yerda. */}
-        <HButton
+        {star(<HButton
           onClick={() => navigate("/")}
           data-tip={admin.chatNav}
           aria-label={admin.chatNav}
@@ -64,9 +72,9 @@ export default function PageHeader({ view, search, setSearch, onAddUser, isDark,
           hoverStyle={{ transform: "translateY(-1px)" }}
         >
           <IoMdChatboxes size={20} />
-        </HButton>
-        <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={admin.selectLanguage} />
-        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} label={isDark ? admin.dayMode : admin.nightMode} />
+        </HButton>)}
+        {star(<LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={admin.selectLanguage} />, 11)}
+        {star(<ThemeToggle isDark={isDark} onToggle={onToggleTheme} label={isDark ? admin.dayMode : admin.nightMode} />, 15)}
         {onUsers && (
           <div className={styles.searchBox}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--adm-text-muted-2)" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" /></svg>

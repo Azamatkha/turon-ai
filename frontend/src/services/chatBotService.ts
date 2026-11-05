@@ -1,4 +1,5 @@
 import { apiFetch } from "./authService";
+import { THINK_STEPS, type ThinkStep } from "../types/chat";
 
 // Xatolik yoki javob bo'lmaganda ko'rsatiladigan zaxira matn
 const FALLBACK =
@@ -25,8 +26,9 @@ export interface AskResult {
 
 // Oqim (SSE) hodisasi — backend token-token yuboradigan bo'laklar
 interface StreamEvent {
-  type: "delta" | "done" | "error";
+  type: "delta" | "done" | "error" | "status";
   text?: string;
+  step?: string;
   completion_tokens?: number;
   finish_reason?: string;
   max_tokens?: number;
@@ -41,11 +43,13 @@ export async function askReplyStream(
   question: string,
   history: ChatTurn[] = [],
   onDelta: (fullText: string, estTokens: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  // Backend qaysi bosqichda ekani (savol tahlili, qidiruv, javob yozish...)
+  onStatus?: (step: ThinkStep) => void
 ): Promise<AskResult> {
   const res = await apiFetch("/v1/chat/ask/stream", {
     method: "POST",
-    body: JSON.stringify({ question, history }),
+    body: JSON.stringify({ question, history, with_status: true }),
     signal,
   });
   if (!res.ok || !res.body) throw new Error("stream unavailable");
@@ -76,7 +80,11 @@ export async function askReplyStream(
       } catch {
         continue;
       }
-      if (ev.type === "delta") {
+      if (ev.type === "status") {
+        // Notanish bosqich (backend yangiroq bo'lsa) — e'tiborsiz qoldiramiz
+        const step = ev.step as ThinkStep;
+        if (THINK_STEPS.includes(step)) onStatus?.(step);
+      } else if (ev.type === "delta") {
         full += ev.text ?? "";
         // Aniq token faqat oxirida keladi — oraliqda taxminiy ko'rsatamiz
         onDelta(full, Math.max(1, Math.round(full.length / 4)));

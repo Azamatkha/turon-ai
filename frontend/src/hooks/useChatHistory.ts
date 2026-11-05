@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Chat, Msg } from "../types/chat";
+import type { Chat, Msg, ThinkStep } from "../types/chat";
 import { askReply, askReplyStream } from "../services/chatBotService";
 import {
   listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle, pinSession,
@@ -58,6 +58,23 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // "O'ylayapman…" qatori: backend yuborgan bosqichlar va boshlangan vaqt.
+  // Ref — respond() ichidagi callback'lar eng oxirgi qiymatni ko'rsin.
+  const [liveSteps, setLiveSteps] = useState<ThinkStep[]>([]);
+  const stepsRef = useRef<ThinkStep[]>([]);
+  const thinkStartRef = useRef(0);
+
+  useEffect(() => {
+    if (!thinking) return;
+    thinkStartRef.current = Date.now();
+    stepsRef.current = [];
+    setLiveSteps([]);
+  }, [thinking]);
+
+  const thoughtSoFar = () => ({
+    steps: stepsRef.current,
+    seconds: (Date.now() - thinkStartRef.current) / 1000,
+  });
 
   // Boshlang'ich yuklash: suhbatlar ro'yxati + birinchisining xabarlari
   useEffect(() => {
@@ -111,6 +128,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
       // ko'rinsin. Eski yozuvlarda (saqlanmagan davr) null — ularda ko'rsatilmaydi.
       const msgs: Msg[] = detail.messages.map((m) => ({
         id: m.id, role: m.role, text: m.content, time: m.created_at, vote: m.vote ?? null,
+        interrupted: m.finish_reason === "interrupted",
         ...(m.role === "assistant" && m.completion_tokens != null && {
           debug: { finishReason: m.finish_reason ?? "", completionTokens: m.completion_tokens, maxTokens: 0 },
         }),
@@ -224,7 +242,9 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
 
     // Birinchi token kelmaguncha "thinking" indikatori turadi — bo'sh bubble
     // ko'rinmasin. Birinchi token (yoki yakun) kelganda assistant xabarini qo'shamiz.
+    // O'sha paytgacha o'tgan bosqichlar va vaqt xabarga "o'yladi" bo'lib yoziladi.
     let started = false;
+    let partial = "";
     const ensureStarted = () => {
       if (started) return;
       started = true;
@@ -237,6 +257,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
           text: "",
           time: new Date().toISOString(),
           debug: { finishReason: "", completionTokens: 0, maxTokens: 0 },
+          thought: thoughtSoFar(),
         },
       ]);
     };
@@ -248,6 +269,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
         history,
         (fullText) => {
           ensureStarted();
+          partial = fullText;
           setActiveMsgs(sessionId, (m) =>
             m.map((x) =>
               x.id === tempId
@@ -256,14 +278,34 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
             )
           );
         },
-        abort.signal
+        abort.signal,
+        (step) => {
+          if (stepsRef.current[stepsRef.current.length - 1] === step) return;
+          stepsRef.current = [...stepsRef.current, step];
+          setLiveSteps(stepsRef.current);
+        }
       );
       ensureStarted();
       finalizeAssistant(sessionId, tempId, res);
     } catch {
-      // Foydalanuvchi to'xtatgan bo'lsa — hozirgi matnni qoldiramiz, xato deb ko'rsatmaymiz
+      // Foydalanuvchi to'xtatgan — xabar "To'xtatildi" belgisi bilan qoladi
       if (abort.signal.aborted) {
         setGenerating(false);
+        if (started) {
+          setActiveMsgs(sessionId, (m) =>
+            m.map((x) => (x.id === tempId ? { ...x, interrupted: true } : x))
+          );
+          // Yarim matn bazaga ham saqlanadi — refresh'da yo'qolmasin
+          if (partial.trim()) {
+            addMessage(sessionId, "assistant", partial, { completionTokens: 0, finishReason: "interrupted" })
+              .then((saved) =>
+                setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
+              )
+              .catch(() => {});
+          }
+        } else {
+          appendInterrupted(sessionId, tempId);
+        }
         return;
       }
       // Streaming ishlamadi — eski (oqimsiz) yo'lga qaytamiz
@@ -347,10 +389,27 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
     pendingRef.current = setTimeout(() => respond(sessionId, text, history), 150);
   };
 
+  // Hali birorta so'z kelmasdan to'xtatilgan javob — bo'sh xabar o'rniga
+  // "To'xtatildi" belgisi. Bazaga saqlanmaydi (bo'sh matn mobil tarixda
+  // bo'sh pufakcha bo'lib chiqardi).
+  const appendInterrupted = (sessionId: string, id: string) => {
+    setActiveMsgs(sessionId, (m) => [
+      ...m,
+      { id, role: "assistant", text: "", time: new Date().toISOString(), interrupted: true, thought: thoughtSoFar() },
+    ]);
+  };
+
   const stop = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (pendingRef.current) clearTimeout(pendingRef.current);
-    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
+    if (abortRef.current) {
+      // respond() o'zining catch'ida "To'xtatildi"ni qo'yadi
+      abortRef.current.abort();
+      abortRef.current = null;
+    } else if (generating && activeId) {
+      // So'rov hali jo'natilmagan edi (150 ms kechikish ichida)
+      appendInterrupted(activeId, "a" + Date.now());
+    }
     setThinking(false); setGenerating(false);
   };
 
@@ -440,6 +499,6 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
 
   return {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
+    draft, setDraft, thinking, generating, liveSteps, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
   };
 }

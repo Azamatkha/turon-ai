@@ -67,6 +67,16 @@
   border-radius: 4px 18px 18px 18px;
 }
 
+/* Foydalanuvchi to'xtatgan javob belgisi: "■ To'xtatildi" */
+.interrupted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: italic;
+}
+
 /* =====================
    Containers
    ===================== */

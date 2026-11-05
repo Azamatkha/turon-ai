@@ -19,6 +19,8 @@ import DirectoryModal from "./DirectoryModal";
 import ConverterModal from "./ConverterModal";
 import GuidesModal from "./GuidesModal";
 import HButton from "../common/HButton";
+import StarBorder from "../common/StarBorder";
+import { ACCENT } from "./theme";
 import type { Lang } from "../../types/lang";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
@@ -58,6 +60,13 @@ export default function ChatHeader({
     { id: "directory", label: s.dirTitle, icon: <MdDialpad size={22} />, onOpen: () => setDirOpen(true) },
     { id: "edo-guides", label: s.guidesTitle, icon: <MdOndemandVideo size={22} />, onOpen: () => setGuidesOpen(true) },
   ];
+
+  // Navbar tugmalari chetidagi aylanuvchi nur: dark'da oq, light'da brend ko'k
+  const star = (node: React.ReactNode, radius = 10) => (
+    <StarBorder color={isDark ? "#ffffff" : ACCENT} theme={isDark ? "dark" : "light"} radius={radius}>
+      {node}
+    </StarBorder>
+  );
 
   const startEdit = () => {
     if (!editableTitle || !onRenameTitle) return;
@@ -108,7 +117,7 @@ export default function ChatHeader({
       <div className={styles.right}>
         {/* Portalga ("Platformalar") qaytish tugmasi endi sidebar pastida
             (Sidebar.tsx) — header'da takrorlanmaydi */}
-        {isAdmin && (
+        {isAdmin && star(
           <HButton
             onClick={() => onAdmin?.()}
             data-tip={s.adminPanel}
@@ -124,10 +133,10 @@ export default function ChatHeader({
         )}
         {/* Kurs, kalkulyator, EDO yo'riqnomasi va keyingi mini-ilovalar bitta
             "Qo'shimcha yordamchilar" menyusida — header tugmalar bilan to'lib ketmasin */}
-        <MiniAppsMenu apps={miniApps} tk={tk} isDark={isDark} s={s} />
+        {star(<MiniAppsMenu apps={miniApps} tk={tk} isDark={isDark} s={s} />)}
         {/* Muammo yoki taklif — yordamchi vosita emas, shuning uchun menyuda
             emas, alohida tugma */}
-        <HButton
+        {star(<HButton
           onClick={() => setReportOpen(true)}
           data-tip={s.report}
           aria-label={s.report}
@@ -137,10 +146,10 @@ export default function ChatHeader({
           hoverStyle={{ transform: "translateY(-1px)" }}
         >
           <LuBadgeHelp size={19} />
-        </HButton>
-        <NotificationsBell tk={tk} isDark={isDark} s={s} />
-        <LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />
-        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={isDark ? s.dayMode : s.nightMode} />
+        </HButton>)}
+        {star(<NotificationsBell tk={tk} isDark={isDark} s={s} />)}
+        {star(<LangSwitcher lang={lang} onChange={setLang} theme={isDark ? "dark" : "light"} align="right" tip={s.selectLanguage} />, 11)}
+        {star(<ThemeToggle isDark={isDark} onToggle={onToggleTheme} tk={tk} label={isDark ? s.dayMode : s.nightMode} />, 15)}
       </div>
 
       {calcOpen && (

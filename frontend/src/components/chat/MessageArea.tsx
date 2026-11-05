@@ -3,7 +3,8 @@ import { RiContactsBook2Line, RiCopperCoinLine, RiGlobalLine, RiHandCoinLine, Ri
 import { MdCurrencyExchange, MdOutlineCreditCard, MdOutlineLocationOn, MdOutlineSavings } from "react-icons/md";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
-import type { Msg, ThemeTokens } from "../../types/chat";
+import type { Msg, ThemeTokens, ThinkStep } from "../../types/chat";
+import ThoughtLine from "./ThoughtLine";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import MessageContent, { toPlainText } from "./MessageContent";
@@ -63,6 +64,8 @@ interface MessageAreaProps {
   rawMsgs: Msg[];
   thinking: boolean;
   generating: boolean;
+  // Backend yuborgan bosqichlar (javobning birinchi so'zigacha)
+  liveSteps: ThinkStep[];
   onRegenerate: () => void;
   onEditResend: (id: string, text: string) => void;
   tk: ThemeTokens;
@@ -74,8 +77,9 @@ interface MessageAreaProps {
 type Vote = "up" | "down";
 
 export default function MessageArea({
-  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, onRegenerate, onEditResend, tk, isDark, s, onVote,
+  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, liveSteps, onRegenerate, onEditResend, tk, isDark, s, onVote,
 }: MessageAreaProps) {
+  const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // Tahrirlanayotgan foydalanuvchi xabari (id) va uning matni
   const [editId, setEditId] = useState<string | null>(null);
@@ -103,7 +107,7 @@ export default function MessageArea({
       return;
     }
     const start = Date.now();
-    const id = setInterval(() => setElapsed((Date.now() - start) / 1000), 200);
+    const id = setInterval(() => setElapsed((Date.now() - start) / 1000), 100);
     return () => clearInterval(id);
   }, [thinking, generating]);
 
@@ -253,11 +257,12 @@ export default function MessageArea({
             // Amal tugmalari javob tugagach ko'rinadi; token hisoblagichi esa yozilish
             // paytida ham ko'rinadi (real vaqtda 1,2,3... sanab boradi).
             const showActions = !!m.text && !isStreaming;
+            // To'xtatilgan xabarda token soni ma'nosiz (0 yoki taxminiy)
             // Streaming paytida token yuklanish indikatorida ko'rsatiladi — bu yerda
             // faqat javob tugagach (yakuniy aniq son) ko'rsatamiz (takror bo'lmasin).
             // Javob tugagach hisoblagich DOIM ko'rinadi (0 bo'lsa ham) — ilgari
             // "> 0" sharti tayyor javoblarda uni yashirib, "goh bor, goh yo'q" edi.
-            const hasTokens = !!m.debug && !!m.text && !isStreaming;
+            const hasTokens = !!m.debug && !!m.text && !isStreaming && !m.interrupted;
             const showFooter = showActions || hasTokens;
             const v = m.vote;
 
@@ -265,9 +270,33 @@ export default function MessageArea({
               <div key={m.id} className={`${styles.messageRow} ${styles.messageRowBot}`}>
                 <div className={styles.botAvatar}><Logo size={17} /></div>
                 <div className={styles.botCol}>
-                  <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(25, 48, 112,.04)" }}>
-                    <MessageContent text={m.text} />
-                  </div>
+                  {m.thought && (
+                    <ThoughtLine
+                      working={false}
+                      seconds={m.thought.seconds}
+                      steps={m.thought.steps}
+                      s={s}
+                      color={tk.muted}
+                      accent={accent}
+                    />
+                  )}
+                  {!!m.text && (
+                    <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(25, 48, 112,.04)" }}>
+                      <MessageContent text={m.text} />
+                    </div>
+                  )}
+                  {m.interrupted && (
+                    <div className={styles.interrupted} style={{ color: tk.muted }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+                      <span>{s.interrupted}</span>
+                      {/* Matnsiz to'xtatilgan javobda amal tugmalari yo'q — qayta yaratish shu yerda */}
+                      {!m.text && isLast && !generating && (
+                        <button onClick={onRegenerate} className={styles.actBtn} data-tip={s.regenerate} aria-label={s.regenerate}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {showFooter && (
                     <div className={styles.footerRow} style={{ color: tk.muted }}>
@@ -322,17 +351,21 @@ export default function MessageArea({
             );
           })}
 
-          {(thinking || generating) && (
+          {/* Birinchi so'zgacha — "O'ylayapman… 2.2s" va backend bosqichlari */}
+          {thinking && (
+            <div className={styles.typingRow}>
+              <div className={styles.botAvatar}><Logo size={17} /></div>
+              <div className={styles.botCol}>
+                <ThoughtLine working seconds={elapsed} steps={liveSteps} s={s} color={tk.muted} accent={accent} />
+              </div>
+            </div>
+          )}
+          {/* Javob yozilayotganda — matn ostida "yozyapti" nuqtalari */}
+          {generating && !thinking && (
             <div className={styles.typingRow}>
               <div className={styles.botAvatar}><Logo size={17} /></div>
               <div className={styles.typingBubble} style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}>
                 <TypingIndicator color={isDark ? "#8195E6" : "#4059BE"} />
-                {/* Javob kutilayotgan vaqt (soniya) — uzoq kutishda jarayon ketayotgani bilinadi */}
-                {elapsed >= 1 && (
-                  <span className={styles.tokenMeter} style={{ color: tk.muted, marginLeft: 4 }}>
-                    {elapsed.toFixed(1)}s
-                  </span>
-                )}
               </div>
             </div>
           )}

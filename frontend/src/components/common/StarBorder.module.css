@@ -1,0 +1,24 @@
+/* O'rovchi: o'lchami ichidagi tugmaga teng. `isolation` YO'Q — aks holda
+   ichidagi ochiluvchi menyular (til tanlash) sahifa ustiga chiqolmasdi. */
+.root {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+/* Nur tugma USTIDAN chiziladi, lekin bosishga xalaqit bermaydi.
+   z-index 2 — tugmadan baland, ochiluvchi menyulardan (50) past. */
+.light {
+  position: absolute;
+  top: -48px;
+  left: -48px;
+  width: calc(100% + 96px);
+  height: calc(100% + 96px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Ichkaridagi eski aylanuvchi ramka (.tu-shiny) — ikki effekt ustma-ust tushmasin */
+.root :global(.tu-shiny)::before {
+  display: none;
+}

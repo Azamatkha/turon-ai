@@ -29,7 +29,7 @@ export default function ChatPage() {
   const S = chatStaticDict[lang]; // tanlangan tildagi statik matnlar
   const {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, editAndResend, voteMsg,
+    draft, setDraft, thinking, generating, liveSteps, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, editAndResend, voteMsg,
   } = useChatHistory(T.newChat);
 
   // Tor ekranda sidebar kontent USTIGA suriladigan panel (drawer) bo'ladi va
@@ -339,6 +339,7 @@ export default function ChatPage() {
           rawMsgs={rawMsgs}
           thinking={thinking}
           generating={generating}
+          liveSteps={liveSteps}
           onRegenerate={regenerate}
           onEditResend={editAndResend}
           tk={tk}

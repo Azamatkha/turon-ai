@@ -80,6 +80,10 @@ class QuestionRequest(Base):
     # Ikkalasi birga kelsa `session_id` ustun: baza — yagona haqiqat manbai.
     history: list[ChatTurn] = []
     session_id: UUID | None = None
+    # /ask/stream: true bo'lsa oqimda {"type":"status","step":...} hodisalari
+    # ham keladi (web "O'ylayapman…" qatori uchun). Default o'chiq — eski
+    # mijozlar (mobil) notanish hodisa turini olmasin.
+    with_status: bool = False
 
 
 class RateRow(Base):
