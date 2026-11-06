@@ -13,7 +13,7 @@ from sqlalchemy import (
     Text,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from src.core.database.base import Base
@@ -90,6 +90,12 @@ class User(Base, UUIDIDMixin, TimestampMixin, SoftDeleteMixin):
     # goh departament, goh filial ("Navoiy BXM") keladi — ikkalasi ham
     # `department` ga yoziladi.
     position: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    # Admin qo'yadigan kalit so'zlar: xodim qaysi tizim/ishga mas'ul ("edo",
+    # "ip telefoniya"). Chat-bot "EDO ga kim qaraydi?" savolida shu xodimni
+    # topadi. Kichik harfda saqlanadi.
+    keywords: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String(50)), nullable=True
+    )
 
     """relationships"""
     # Add relationships here

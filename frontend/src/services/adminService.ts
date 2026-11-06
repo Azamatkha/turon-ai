@@ -19,6 +19,8 @@ export interface ApiUser {
   position?: string | null;
   phone_number?: string | null;
   ip_number?: string | null;
+  // Admin qo'ygan kalit so'zlar (xodim nimaga mas'ul)
+  keywords?: string[];
   pnfl?: string | null;
   patronym?: string | null;
   doc_seria?: string | null;
@@ -43,6 +45,8 @@ export interface AdminUserUpdate {
   // Kontaktlar: bo'sh satr — o'chirish
   phone_number?: string;
   ip_number?: string;
+  // Kalit so'zlar: [] — hammasini o'chirish
+  keywords?: string[];
 }
 
 async function readError(res: Response, fallback: string): Promise<string> {

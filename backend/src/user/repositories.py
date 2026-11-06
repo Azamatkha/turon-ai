@@ -90,6 +90,30 @@ class UserRepository(SoftDeleteRepository[User]):
         result = await session.execute(query)
         return list(result.scalars().all())
 
+    async def directory_by_ip(
+        self, session: AsyncSession, ip_numbers: set[str]
+    ) -> list[User]:
+        """Ichki IP raqami aynan mos xodimlar — chat-bot qidiruvi uchun."""
+        if not ip_numbers:
+            return []
+        query = (
+            self._directory_base()
+            .where(self.model.ip_number.in_(ip_numbers))
+            .order_by(self.model.last_name, self.model.first_name)
+        )
+        result = await session.execute(query)
+        return list(result.scalars().all())
+
+    async def directory_with_keywords(self, session: AsyncSession) -> list[User]:
+        """Admin kalit so'z qo'ygan xodimlar ("edo", "ip telefoniya" ...).
+        Bunday xodimlar oz bo'ladi — moslashni chaqiruvchi Python'da qiladi."""
+        query = self._directory_base().where(
+            self.model.keywords.isnot(None),
+            func.cardinality(self.model.keywords) > 0,
+        )
+        result = await session.execute(query)
+        return list(result.scalars().all())
+
     async def count_by_department(
         self, session: AsyncSession
     ) -> list[tuple[str | None, int]]:

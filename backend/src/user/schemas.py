@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Any
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator
@@ -38,6 +39,29 @@ def normalize_phone(value: str | None) -> str | None:
     if not UZ_PHONE_VALIDATOR.match(digits):
         raise ValueError(PHONE_ERROR)
     return digits
+
+
+# Kalit so'zlar cheklovlari (admin xodimga qo'yadi: "edo", "ip telefoniya")
+KEYWORD_MAX_LEN = 50
+KEYWORDS_MAX_COUNT = 20
+
+
+def normalize_keywords(value: list[str] | None) -> list[str] | None:
+    """Kalit so'zlar: kichik harf, ortiqcha bo'shliqsiz, takrorsiz.
+    None — tegilmaydi, bo'sh ro'yxat — hammasi o'chiriladi."""
+    if value is None:
+        return None
+    out: list[str] = []
+    for raw in value:
+        kw = " ".join(str(raw).replace("‘", "'").replace("’", "'").split()).lower()
+        if not kw or kw in out:
+            continue
+        if len(kw) > KEYWORD_MAX_LEN:
+            raise ValueError(f"Kalit so'z {KEYWORD_MAX_LEN} belgidan oshmasin")
+        out.append(kw)
+    if len(out) > KEYWORDS_MAX_COUNT:
+        raise ValueError(f"Kalit so'zlar {KEYWORDS_MAX_COUNT} tadan oshmasin")
+    return out
 
 
 def normalize_ip_number(value: str | None) -> str | None:
@@ -98,6 +122,14 @@ class UserAdminListItem(Base):
     position: str | None = None
     phone_number: str | None = None
     ip_number: str | None = None
+    # Admin qo'ygan kalit so'zlar (xodim nimaga mas'ul)
+    keywords: list[str] = Field(default_factory=list)
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def keywords_none_to_list(cls, value: Any) -> Any:
+        # Bazada NULL bo'lishi mumkin
+        return value or []
     # Admin tahrirlash oynasi uchun (Face-ID'dan o'tolmagan xodimni qo'lda to'ldirish)
     pnfl: str | None = None
     patronym: str | None = None
@@ -171,6 +203,13 @@ class UpdateContactsModel(Base):
 
     phone_number: str | None = None
     ip_number: str | None = None
+    # Kalit so'zlar: None = tegma, [] = hammasini o'chirish
+    keywords: list[str] | None = None
+
+    @field_validator("keywords")
+    @classmethod
+    def validate_keywords(cls, value: list[str] | None) -> list[str] | None:
+        return normalize_keywords(value)
 
     @field_validator("phone_number")
     @classmethod

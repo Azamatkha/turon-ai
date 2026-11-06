@@ -45,6 +45,8 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
   // Kontaktlar: telefon maydonida faqat +998 dan keyingi 9 ta raqam turadi
   const [phone, setPhone] = useState(phoneLocalDigits(user.phone));
   const [ipNumber, setIpNumber] = useState(user.ipNumber ?? "");
+  // Kalit so'zlar — vergul bilan: "edo, ip telefoniya"
+  const [keywords, setKeywords] = useState((user.keywords ?? []).join(", "));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -87,6 +89,8 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
         // Bo'sh bo'lsa backend raqamni o'chiradi
         phone_number: toApiPhone(phone),
         ip_number: ipNumber.trim(),
+        // Bo'sh ro'yxat — hammasini o'chirish
+        keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
       });
       onClose();
     } catch (e) {
@@ -189,6 +193,12 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
               <label className={styles.fieldLabel}>{admin.ipNumberLabel}</label>
               <input value={ipNumber} onChange={(e) => setIpNumber(e.target.value.replace(/\D/g, "").slice(0, IP_NUMBER_MAX_DIGITS))} placeholder="1036" inputMode="numeric" className={styles.input} />
             </div>
+          </div>
+          {/* Xodim nimaga mas'ul — chat-bot "EDO ga kim qaraydi?" savolida shu xodimni topadi */}
+          <div>
+            <label className={styles.fieldLabel}>{admin.keywordsLabel}</label>
+            <input value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder={admin.keywordsPh} className={styles.input} />
+            <div style={{ marginTop: 6, fontSize: 13, color: "var(--adm-text-muted)" }}>{admin.keywordsHint}</div>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, fontWeight: 600, color: "var(--adm-text-strong)", cursor: "pointer" }}>
             <input type="checkbox" checked={verified} onChange={(e) => setVerified(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#4059BE" }} />

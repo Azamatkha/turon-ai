@@ -72,6 +72,7 @@ const mapUser = (u: ApiUser): AdminUser => ({
   position: u.position ?? "",
   phone: u.phone_number ?? "",
   ipNumber: u.ip_number ?? "",
+  keywords: u.keywords ?? [],
 });
 
 export default function AdminPage() {

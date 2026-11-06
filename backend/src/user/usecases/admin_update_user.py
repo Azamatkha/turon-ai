@@ -71,6 +71,9 @@ class AdminUpdateUserUseCase:
                 if value is not None:
                     # Bo'sh satr — maydonni tozalash
                     update_data[field] = value.strip() or None
+            if data.keywords is not None:
+                # Bo'sh ro'yxat — kalit so'zlarni tozalash
+                update_data["keywords"] = data.keywords or None
             if data.birth_date is not None:
                 update_data["birth_date"] = data.birth_date
             if data.password is not None:

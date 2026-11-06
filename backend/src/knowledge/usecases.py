@@ -25,6 +25,7 @@ from src.core.errors.exceptions import (
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
+from src.knowledge.directory import users_by_ip, users_with_keywords
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import (
     extract_pdf_text,
@@ -895,6 +896,29 @@ def _has_employee_intent(q_lower: str) -> bool:
         or "egasi" in words
     )
     return bool(whose and re.search(r"\b\d{3,5}\b", q_lower))
+
+
+# "Kim qaraydi / kim mas'ul / kimga murojaat" — admin qo'ygan KALIT SO'Z
+# bo'yicha xodim qidiruvi faqat shunday savolda ochiladi. Aks holda "EDO da
+# hujjat qanday yuboriladi" kabi oddiy savol ham yo'riqnoma o'rniga xodimni
+# qaytarardi. Apostrofsiz va lotinda (_text_words shunday qaytaradi; ruscha
+# "кто/отвечает" ham lotinga o'giriladi).
+_RESPONSIBLE_STEMS = (
+    "kim", "qaray", "masul", "javobgar", "shugullan", "murojaat", "boglan",
+    "kto", "otvecha", "zanima",
+)
+# Savol faqat ichki raqamning o'zi: "2206" yoki "2206?"
+_BARE_IP_RE = re.compile(r"\s*\d{3,4}\s*\??\s*")
+
+
+def _keyword_hit(keyword: str, qwords: set[str]) -> bool:
+    """Kalit so'zning HAR bir so'zi savolda bor (qo'shimcha bilan ham:
+    "edo" ~ "edoga", "ip" ~ "iplarga")."""
+    toks = _text_words(keyword)
+    return bool(toks) and all(
+        any(w == t or (w.startswith(t) and _is_suffix_tail(w[len(t):])) for w in qwords)
+        for t in toks
+    )
 
 
 _MANBA_PAREN_RE = re.compile(r"\s*\(\s*manba\s*:?[^)]*\)", re.IGNORECASE)
@@ -2631,6 +2655,31 @@ class AnswerQuestionUseCase:
                     out.append(p)
         return out
 
+    async def _directory_hits(self, question: str) -> list[dict[str, Any]]:
+        """Xodimlar MA'LUMOTNOMASI (users jadvali) — vektor bazadan OLDIN.
+
+        * ichki raqam so'rovi ("2206", "2206 kimniki", "ip 2206") — xodimlar
+          o'zi kiritgan IP raqam bo'yicha;
+        * "EDO ga kim qaraydi" — admin qo'ygan kalit so'z bo'yicha.
+        Bo'sh ro'yxat — topilmadi, odatdagi yo'l (router, vektor baza) davom
+        etadi."""
+        q_lower = question.lower()
+        if len(q_lower) > _EMPLOYEE_HINT_MAX_CHARS:
+            return []
+        nums = set(re.findall(r"\b\d{3,4}\b", q_lower))
+        # Raqam faqat aniq IP so'rovida: "2025-yil" yoki "1000 dollar" ichki
+        # raqam emas.
+        if nums and (_has_employee_intent(q_lower) or _BARE_IP_RE.fullmatch(q_lower)):
+            return await users_by_ip(nums)
+        qwords = _text_words(q_lower)
+        if not any(w.startswith(_RESPONSIBLE_STEMS) for w in qwords):
+            return []
+        return [
+            rec
+            for kws, rec in await users_with_keywords()
+            if any(_keyword_hit(k, qwords) for k in kws)
+        ]
+
     async def _employee_route(
         self, question: str
     ) -> tuple[str, list[dict[str, Any]]] | None:
@@ -3193,6 +3242,26 @@ class AnswerQuestionUseCase:
         )
         question = resolved or question
 
+        # Xodimlar ma'lumotnomasi (o'zi kiritgan IP, admin qo'ygan kalit so'z)
+        # — vektor bazadan va routerdan OLDIN: aniq moslik, model kerak emas.
+        if not resolved:
+            hits = await self._directory_hits(question)
+            if hits:
+                yield {"type": "status", "step": "employees"}
+                emp_text = _format_employee_answer(hits[:60])
+                yield {
+                    "type": "delta",
+                    "text": to_cyrillic(emp_text) if want_cyrillic else emp_text,
+                }
+                yield {
+                    "type": "done",
+                    "completion_tokens": 0,
+                    "finish_reason": "stop",
+                    "max_tokens": self.MAX_TOKENS,
+                    "sources": [],
+                }
+                return
+
         # Savolni TUSHUNISH: nima so'ralayotganini model aniqlaydi. Ilgari bu
         # regex bilan qilinardi va mahsulot belgisi yo'q HAR QANDAY savol ism
         # qidiruviga tushib ketardi ("javob" -> "Javohir"). Endi xodim yo'li
@@ -3634,6 +3703,19 @@ class AnswerQuestionUseCase:
             question, history
         )
         question = resolved or question
+
+        # Xodimlar ma'lumotnomasi — stream yo'li bilan bir xil
+        if not resolved:
+            hits = await self._directory_hits(question)
+            if hits:
+                emp_text = _format_employee_answer(hits[:60])
+                return AnswerResult(
+                    answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
+                    sources=[],
+                    finish_reason="stop",
+                    completion_tokens=0,
+                    max_tokens=self.MAX_TOKENS,
+                )
 
         # Savolni TUSHUNISH — stream yo'li bilan bir xil mantiq
         decision = None if resolved else await self.router.classify(question, history)

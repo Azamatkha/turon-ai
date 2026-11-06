@@ -354,6 +354,10 @@ export interface AdminStrings {
   delete: string;
   changeRole: string;
   makeAdmin: string;
+  // Tahrirlash oynasidagi "Kalit so'zlar" maydoni
+  keywordsLabel: string;
+  keywordsPh: string;
+  keywordsHint: string;
   makeXodim: string;
   verifyUser: string;
   unverifyUser: string;
