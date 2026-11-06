@@ -203,14 +203,6 @@ class UpdateContactsModel(Base):
 
     phone_number: str | None = None
     ip_number: str | None = None
-    # Kalit so'zlar: None = tegma, [] = hammasini o'chirish
-    keywords: list[str] | None = None
-
-    @field_validator("keywords")
-    @classmethod
-    def validate_keywords(cls, value: list[str] | None) -> list[str] | None:
-        return normalize_keywords(value)
-
     @field_validator("phone_number")
     @classmethod
     def validate_phone(cls, value: str | None) -> str | None:
@@ -244,6 +236,13 @@ class AdminUpdateUserModel(Base):
     # Kontaktlar: None = tegma, bo'sh satr = o'chirish
     phone_number: str | None = None
     ip_number: str | None = None
+    # Kalit so'zlar: None = tegma, [] = hammasini o'chirish
+    keywords: list[str] | None = None
+
+    @field_validator("keywords")
+    @classmethod
+    def validate_keywords(cls, value: list[str] | None) -> list[str] | None:
+        return normalize_keywords(value)
 
     @field_validator("phone_number")
     @classmethod
