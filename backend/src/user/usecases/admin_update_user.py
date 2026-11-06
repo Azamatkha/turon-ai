@@ -8,13 +8,9 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import (
     InstanceAlreadyExistsException,
     InstanceNotFoundException,
-    PermissionDeniedException,
 )
 from src.core.utils.security import hash_password
-from src.user.auth.permissions.enum import Permission
-from src.user.auth.permissions.role_matrix import ROLE_PERMISSIONS
 from src.user.constants import build_email, split_full_name
-from src.user.models import User
 from src.user.schemas import AdminUpdateUserModel, UserAdminListItem
 
 logger = get_logger(__name__)
@@ -25,16 +21,8 @@ class AdminUpdateUserUseCase:
         self.uow = uow
 
     async def execute(
-        self, user_id: UUID, data: AdminUpdateUserModel, current_user: User
+        self, user_id: UUID, data: AdminUpdateUserModel
     ) -> UserAdminListItem:
-        if data.role is not None:
-            # Rolni faqat super admin almashtiradi. O'z rolini esa hech kim:
-            # oxirgi super admin o'zini pasaytirib, tizimni boshqaruvsiz
-            # qoldirmasin.
-            if Permission.MANAGE_ROLES not in ROLE_PERMISSIONS.get(current_user.role, set()):
-                raise PermissionDeniedException("Rolni faqat super admin o'zgartira oladi")
-            if user_id == current_user.id:
-                raise PermissionDeniedException("O'z rolingizni o'zgartira olmaysiz")
         async with self.uow as uow:
             update_data: dict = {}
 

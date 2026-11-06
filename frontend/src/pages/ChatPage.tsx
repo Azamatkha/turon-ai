@@ -12,7 +12,6 @@ import SidebarToggle from "../components/chat/SidebarToggle";
 import ProfileModal from "../components/chat/ProfileModal";
 import SupportModal from "../components/chat/SupportModal";
 import ContactsPromptModal from "../components/chat/ContactsPromptModal";
-import { isPanelRole } from "../utils/roles";
 import ChatHeader from "../components/chat/ChatHeader";
 import MessageArea from "../components/chat/MessageArea";
 import Composer from "../components/chat/Composer";
@@ -321,7 +320,7 @@ export default function ChatPage() {
           isDark={isDark}
           onToggleTheme={toggleTheme}
           tk={tk}
-          isAdmin={isPanelRole(role)}
+          isAdmin={role === "admin"}
           onAdmin={() => navigate("/admin")}
           editableTitle={!!activeId && !!active.title}
           onRenameTitle={(next) => renameChat(activeId, next)}

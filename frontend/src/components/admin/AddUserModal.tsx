@@ -7,7 +7,7 @@ import type { Lang } from "../../types/lang";
 import { useModalA11y } from "../../hooks/useModalA11y";
 import styles from "./AddUserModal.module.css";
 
-const ROLES: AdminRole[] = ["Xodim", "Admin", "SuperAdmin"];
+const ROLES: AdminRole[] = ["Xodim", "Admin"];
 
 interface AddUserModalProps {
   fName: string;

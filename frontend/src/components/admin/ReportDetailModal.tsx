@@ -8,7 +8,6 @@ import {
 } from "../../services/reportService";
 import type { AdminStrings } from "../../types/i18n";
 import { useModalA11y } from "../../hooks/useModalA11y";
-import { isSuperAdmin } from "../../utils/roles";
 import styles from "./ReportDetailModal.module.css";
 
 interface ReportDetailModalProps {
@@ -25,13 +24,6 @@ export default function ReportDetailModal({
   onSaved,
 }: ReportDetailModalProps) {
   const [status, setStatus] = useState<ReportStatus>(report.status);
-  // Holatni o'zgartirish faqat super admin'da (backend: MANAGE_REPORTS)
-  const canManage = isSuperAdmin();
-  const statusOptions = [
-    { value: "new", label: admin.reportStatusNew },
-    { value: "in_progress", label: admin.reportStatusInProgress },
-    { value: "resolved", label: admin.reportStatusResolved },
-  ];
   const [comment, setComment] = useState(report.admin_comment);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -111,29 +103,17 @@ export default function ReportDetailModal({
             )}
           </div>
 
-          {/* Oddiy admin murojaatni faqat KO'RADI: holat va izoh o'qish uchun */}
-          {!canManage && (
-            <div className={styles.section}>
-              <span className={styles.label}>{admin.reportColStatus}</span>
-              <div>{statusOptions.find((o) => o.value === report.status)?.label}</div>
-              {report.admin_comment && (
-                <>
-                  <span className={styles.label}>{admin.reportComment}</span>
-                  <div>{report.admin_comment}</div>
-                </>
-              )}
-            </div>
-          )}
-
-          {canManage && (
-          <>
           <div className={styles.section}>
             <span className={styles.label}>{admin.reportColStatus}</span>
             <FilterSelect
               value={status}
               onChange={(v) => setStatus(v as ReportStatus)}
               fullWidth
-              options={statusOptions}
+              options={[
+                { value: "new", label: admin.reportStatusNew },
+                { value: "in_progress", label: admin.reportStatusInProgress },
+                { value: "resolved", label: admin.reportStatusResolved },
+              ]}
             />
           </div>
 
@@ -158,8 +138,6 @@ export default function ReportDetailModal({
           >
             {admin.reportSave}
           </button>
-          </>
-          )}
         </div>
       </div>
     </div>

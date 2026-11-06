@@ -57,8 +57,7 @@ router = APIRouter()
 async def _notify_knowledge_updated(
     broadcast: BroadcastNotificationUseCase, title: str
 ) -> None:
-    """"Ma'lumotlar yangilandi" — FAQAT SUPER ADMINLARGA (bazani faqat ular
-    boshqaradi; oddiy admin bilim bazasini ko'rmaydi).
+    """"Ma'lumotlar yangilandi" — FAQAT ADMINLARGA.
 
     Ilgari barcha xodimlarga borardi: oddiy xodim uchun bu xabar foydasiz, admin
     esa bazani o'zi boshqaradi. Bir nechta yuklash ketma-ket bo'lsa ham bitta
@@ -68,7 +67,7 @@ async def _notify_knowledge_updated(
     await broadcast.execute(
         NotificationType.KNOWLEDGE_UPDATED,
         params={"title": title},
-        role=UserRole.SUPER_ADMIN,
+        role=UserRole.ADMIN,
     )
 
 

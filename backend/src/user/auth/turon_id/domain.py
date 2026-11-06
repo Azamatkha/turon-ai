@@ -9,9 +9,7 @@ from src.user.enums import UserRole
 
 PLATFORM_CODE: Final = "chat"
 # Strongest first; Turon ID role codes on the `chat` platform equal ours.
-ROLE_PRECEDENCE: Final = (
-    UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MODERATOR, UserRole.USER
-)
+ROLE_PRECEDENCE: Final = (UserRole.ADMIN, UserRole.MODERATOR, UserRole.USER)
 NAME_MAX_LENGTH: Final = 50
 USERNAME_MAX_LENGTH: Final = 60
 # Chat requires a valid e-mail per account (EmailStr). SSO users without one get

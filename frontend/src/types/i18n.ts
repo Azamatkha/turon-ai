@@ -354,7 +354,6 @@ export interface AdminStrings {
   delete: string;
   changeRole: string;
   makeAdmin: string;
-  makeSuperAdmin: string;
   makeXodim: string;
   verifyUser: string;
   unverifyUser: string;

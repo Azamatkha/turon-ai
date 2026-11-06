@@ -19,7 +19,7 @@ from src.reports.schemas import (
     ReportView,
     UpdateReportModel,
 )
-from src.user.enums import ADMIN_PANEL_ROLES
+from src.user.enums import UserRole
 from src.user.models import User
 
 logger = get_logger(__name__)
@@ -102,7 +102,7 @@ class CreateReportUseCase:
                 notification_type=NotificationType.REPORT_NEW,
                 params={"title": title},
                 entity_id=report.id,
-                role=ADMIN_PANEL_ROLES,
+                role=UserRole.ADMIN,
             )
             await uow.commit()
             view = _to_view(report)

@@ -7,7 +7,6 @@ import { useTheme } from "../../contexts/ThemeContext";
 import type { AdminView } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
 import { fetchMe, logout, platformsUrl, type Me } from "../../services/authService";
-import { canSeeView } from "../../utils/roles";
 import styles from "./Sidebar.module.css";
 
 // "Platformalar" ikonkasi — chat sidebar'idagi bilan bir xil (portal tugmasi SVG'si)
@@ -142,7 +141,7 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
       </div>
 
       <nav className={styles.nav}>
-        {navItems.filter((item) => canSeeView(item.id)).map((item) => {
+        {navItems.map((item) => {
           const act = view === item.id;
           return (
             <HButton

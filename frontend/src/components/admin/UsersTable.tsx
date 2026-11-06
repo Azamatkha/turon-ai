@@ -18,7 +18,6 @@ function displayDept(dept: string, lang: Lang): string {
 // Ranglar CSS o'zgaruvchilaridan — dark mode'da avtomatik yorqinlashadi
 // (avval hardcoded edi va qorong'u fonda o'qilmasdi).
 const roleColor: Record<AdminRole, { c: string; bg: string }> = {
-  SuperAdmin: { c: "var(--adm-danger)", bg: "var(--adm-danger-bg)" },
   Admin: { c: "var(--adm-info)", bg: "var(--adm-info-bg)" },
   Xodim: { c: "var(--adm-accent-2)", bg: "var(--adm-accent-2-bg)" },
 };
@@ -34,31 +33,24 @@ interface Props {
   onToggleVerified: (id: string, verified: boolean) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, input: AdminUserUpdate) => Promise<void>;
-  // false — oddiy admin: jadval faqat ko'rish uchun, amallar menyusi yo'q
-  canManage: boolean;
   t: AdminStrings;
   lang: Lang;
 }
 
-// Rol almashtirish bandlari: joriy roldan boshqa ikkitasi
-const ROLE_ORDER: AdminRole[] = ["SuperAdmin", "Admin", "Xodim"];
-const roleAction = (r: AdminRole, admin: AdminStrings): string =>
-  r === "SuperAdmin" ? admin.makeSuperAdmin : r === "Admin" ? admin.makeAdmin : admin.makeXodim;
-
 // Hoverlanadigan jadval qatori + amallar menyusi (tahrirlash / rol / o'chirish)
-function HoverRow({ user, last, index, onChangeRole, onToggleVerified, onDelete, onEdit, canManage, admin, lang }: {
+function HoverRow({ user, last, index, onChangeRole, onToggleVerified, onDelete, onEdit, admin, lang }: {
   user: AdminUser; last: boolean; index: number;
   onChangeRole: (id: string, role: AdminRole) => void;
   onToggleVerified: (id: string, verified: boolean) => void;
   onDelete: (id: string) => void;
   onEdit: (u: AdminUser) => void;
-  canManage: boolean;
   admin: AdminStrings;
   lang: Lang;
 }) {
   const [hovered, setHovered] = useState(false);
   const [menu, setMenu] = useState(false);
   const u = user;
+  const nextRole: AdminRole = u.role === "Admin" ? "Xodim" : "Admin";
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -83,28 +75,22 @@ function HoverRow({ user, last, index, onChangeRole, onToggleVerified, onDelete,
       <span className={styles.deptCell}>{displayDept(u.dept, lang)}</span>
       <span className={styles.cellCenter}><span className={styles.rolePill} style={{ color: roleColor[u.role].c, background: roleColor[u.role].bg }}>{admin.roleLabel[u.role]}</span></span>
       <span className={styles.cellCenter}><span className={styles.statusPill} style={{ color: statusColor[u.status].c, background: statusColor[u.status].bg }}><span className={styles.statusDot} style={{ background: statusColor[u.status].c }} />{admin.statusLabel[u.status]}</span></span>
-      {canManage ? (
-        <button data-tip={admin.more} aria-label={admin.more} className={styles.moreBtn} onClick={() => setMenu((m) => !m)}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
-        </button>
-      ) : (
-        <span />
-      )}
+      <button data-tip={admin.more} aria-label={admin.more} className={styles.moreBtn} onClick={() => setMenu((m) => !m)}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+      </button>
 
-      {canManage && menu && (
+      {menu && (
         <div style={{ position: "absolute", right: 12, ...(last ? { bottom: 46 } : { top: 46 }), zIndex: 20, background: "var(--adm-card)", border: "1px solid var(--adm-border)", borderRadius: 12, boxShadow: "0 16px 40px rgba(15,23,42,.18)", padding: 6, minWidth: 190 }}>
           <button onClick={() => { onEdit(u); setMenu(false); }}
             style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
             {admin.editUser}
           </button>
-          {ROLE_ORDER.filter((r) => r !== u.role).map((r) => (
-            <button key={r} onClick={() => { onChangeRole(u.id, r); setMenu(false); }}
-              style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>
-              {roleAction(r, admin)}
-            </button>
-          ))}
+          <button onClick={() => { onChangeRole(u.id, nextRole); setMenu(false); }}
+            style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>
+            {u.role === "Admin" ? admin.makeXodim : admin.makeAdmin}
+          </button>
           <button onClick={() => { onToggleVerified(u.id, !u.verified); setMenu(false); }}
             style={{ display: "flex", width: "100%", alignItems: "center", gap: 9, padding: "9px 10px", border: "none", background: "transparent", color: "var(--adm-text-strong)", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></svg>
@@ -138,7 +124,7 @@ function pageList(current: number, total: number): (number | null)[] {
   return out;
 }
 
-export default function UsersTable({ users, search, onChangeRole, onToggleVerified, onDelete, onUpdate, canManage, t: admin, lang }: Props) {
+export default function UsersTable({ users, search, onChangeRole, onToggleVerified, onDelete, onUpdate, t: admin, lang }: Props) {
   const [editing, setEditing] = useState<AdminUser | null>(null);
   // Qidiruv/bo'lim o'zgarganda 1-sahifaga qaytish AdminPage'dagi `key` orqali
   // (jadval qayta yaratiladi). User o'chirilganda esa sahifa saqlanadi —
@@ -158,7 +144,7 @@ export default function UsersTable({ users, search, onChangeRole, onToggleVerifi
         <span>{admin.tableUser}</span><span>{admin.tableDept}</span><span>{admin.tableRole}</span><span>{admin.tableStatus}</span><span />
       </div>
       {pageUsers.map((u, i) => (
-        <HoverRow key={u.id} user={u} last={i === pageUsers.length - 1} index={i} onChangeRole={onChangeRole} onToggleVerified={onToggleVerified} onDelete={onDelete} onEdit={setEditing} canManage={canManage} admin={admin} lang={lang} />
+        <HoverRow key={u.id} user={u} last={i === pageUsers.length - 1} index={i} onChangeRole={onChangeRole} onToggleVerified={onToggleVerified} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />
       ))}
       {users.length === 0 && <div className={styles.empty}>{admin.noUsersFound(search)}</div>}
 

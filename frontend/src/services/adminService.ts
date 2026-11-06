@@ -2,7 +2,7 @@
 
 import { apiFetch } from "./authService";
 
-export type BackendRole = "super_admin" | "admin" | "moderator" | "user";
+export type BackendRole = "admin" | "moderator" | "user";
 
 export interface ApiUser {
   id: string;
