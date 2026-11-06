@@ -1,6 +1,6 @@
 // Haqiqiy chat tarixi xizmati — backendga ulangan (/v1/chat).
 
-import { apiFetch } from "./authService";
+import { apiFetch, readApiError } from "./authService";
 
 export interface ApiSession {
   id: string;
@@ -31,14 +31,7 @@ export interface ApiSessionDetail extends ApiSession {
   messages: ApiMessage[];
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = await res.json();
-    return data.detail || data.message || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const readError = readApiError;
 
 export async function listSessions(): Promise<ApiSession[]> {
   const res = await apiFetch("/v1/chat/sessions");

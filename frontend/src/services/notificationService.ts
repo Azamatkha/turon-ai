@@ -1,6 +1,6 @@
 // Bildirishnomalar xizmati — backendga ulangan (/v1/notifications).
 
-import { apiFetch, ApiError } from "./authService";
+import { apiFetch, ApiError, readApiError } from "./authService";
 
 export interface ApiNotification {
   id: string;
@@ -19,14 +19,7 @@ export interface ApiNotificationList {
   total: number;
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = await res.json();
-    return data.detail || data.message || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const readError = readApiError;
 
 export async function getUnreadCount(): Promise<number> {
   const res = await apiFetch("/v1/notifications/unread-count");

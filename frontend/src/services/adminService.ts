@@ -1,6 +1,6 @@
 // Haqiqiy admin xizmati — backendga ulangan (/v1/users).
 
-import { apiFetch } from "./authService";
+import { apiFetch, readApiError } from "./authService";
 
 export type BackendRole = "admin" | "moderator" | "user";
 
@@ -49,14 +49,7 @@ export interface AdminUserUpdate {
   keywords?: string[];
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = await res.json();
-    return data.detail || data.message || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const readError = readApiError;
 
 export async function listUsers(search = "", department = ""): Promise<ApiUser[]> {
   const params = new URLSearchParams();

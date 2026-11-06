@@ -4,7 +4,7 @@
 // video esa 200 MB gacha. Fayl 8 MB lik bo'laklarga bo'linib ketma-ket
 // yuboriladi (backend: src/guides/storage.py).
 
-import { API_URL, apiFetch } from "./authService";
+import { API_URL, apiFetch, readApiError } from "./authService";
 
 export interface EdoGuide {
   id: string;
@@ -21,14 +21,7 @@ interface UploadStart {
   max_bytes: number;
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = await res.json();
-    return data.detail || data.message || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const readError = readApiError;
 
 export async function listGuides(): Promise<EdoGuide[]> {
   const res = await apiFetch("/v1/guides");

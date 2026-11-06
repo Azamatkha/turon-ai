@@ -74,24 +74,46 @@ export default function EditUserModal({ user, onClose, onSubmit, t: admin }: Pro
     setSaving(true);
     setErr("");
     try {
-      await onSubmit({
-        full_name: name.trim(),
-        username: username.trim(),
-        department: dept.trim() || DEFAULT_DEPARTMENT,
-        password: pass || undefined,
-        is_verified: verified,
-        pnfl: pnfl.trim(),
-        patronym: patronym.trim(),
-        doc_seria: docSeria.trim().toUpperCase(),
-        doc_number: docNumber.trim(),
-        birth_date: birthDate || undefined,
-        position: position.trim(),
+      // Faqat O'ZGARGAN maydonlar yuboriladi. Ilgari hammasi qayta
+      // yuborilardi va tegilmagan eski qiymat (masalan SSO'dan kelgan login)
+      // backend tekshiruvidan o'tmasa, lavozimni o'zgartirish ham rad etilardi.
+      const toPayload = (v: {
+        name: string; username: string; dept: string; verified: boolean; pnfl: string;
+        patronym: string; docSeria: string; docNumber: string; birthDate: string;
+        position: string; phone: string; ipNumber: string; keywords: string;
+      }): AdminUserUpdate => ({
+        full_name: v.name.trim(),
+        username: v.username.trim(),
+        department: v.dept.trim() || DEFAULT_DEPARTMENT,
+        is_verified: v.verified,
+        pnfl: v.pnfl.trim(),
+        patronym: v.patronym.trim(),
+        doc_seria: v.docSeria.trim().toUpperCase(),
+        doc_number: v.docNumber.trim(),
+        birth_date: v.birthDate || undefined,
+        position: v.position.trim(),
         // Bo'sh bo'lsa backend raqamni o'chiradi
-        phone_number: toApiPhone(phone),
-        ip_number: ipNumber.trim(),
+        phone_number: toApiPhone(v.phone),
+        ip_number: v.ipNumber.trim(),
         // Bo'sh ro'yxat — hammasini o'chirish
-        keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
+        keywords: v.keywords.split(",").map((k) => k.trim()).filter(Boolean),
       });
+      const next = toPayload({ name, username, dept, verified, pnfl, patronym, docSeria, docNumber, birthDate, position, phone, ipNumber, keywords });
+      const before = toPayload({
+        name: user.name, username: user.handle.replace(/^@/, ""),
+        dept: user.dept === "—" || !user.dept ? "" : user.dept, verified: user.verified,
+        pnfl: user.pnfl ?? "", patronym: user.patronym ?? "", docSeria: user.docSeria ?? "",
+        docNumber: user.docNumber ?? "", birthDate: user.birthDate ?? "", position: user.position ?? "",
+        phone: phoneLocalDigits(user.phone), ipNumber: user.ipNumber ?? "", keywords: (user.keywords ?? []).join(", "),
+      });
+      const changed: AdminUserUpdate = {};
+      for (const key of Object.keys(next) as (keyof AdminUserUpdate)[]) {
+        if (JSON.stringify(next[key]) !== JSON.stringify(before[key])) {
+          (changed as Record<string, unknown>)[key] = next[key];
+        }
+      }
+      if (pass) changed.password = pass;
+      if (Object.keys(changed).length > 0) await onSubmit(changed);
       onClose();
     } catch (e) {
       setErr(e instanceof Error ? e.message : admin.saveFailed);

@@ -88,20 +88,32 @@ export class ApiError extends Error {
   }
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
+// Backend xato matni. FastAPI validatsiya xatolari (422) massiv bo'lib keladi —
+// ularni o'qiladigan matnga aylantiramiz, aks holda "[object Object]" chiqardi.
+export async function readApiError(res: Response, fallback: string): Promise<string> {
   try {
     const data = await res.json();
-    const d = data.detail ?? data.message;
-    // FastAPI validatsiya xatolari massiv ko'rinishida keladi
+    const d = data?.detail ?? data?.message;
     if (Array.isArray(d)) {
-      return d.map((e) => e?.msg || e?.message || String(e)).join("; ") || fallback;
+      return (
+        d
+          .map((e) => {
+            const msg = String(e?.msg || e?.message || "").replace(/^Value error,\s*/i, "");
+            const field = Array.isArray(e?.loc) ? e.loc[e.loc.length - 1] : "";
+            return field && typeof field === "string" ? `${field}: ${msg}` : msg;
+          })
+          .filter(Boolean)
+          .join("; ") || fallback
+      );
     }
-    if (typeof d === "string") return d;
+    if (typeof d === "string" && d) return d;
     return fallback;
   } catch {
     return fallback;
   }
 }
+
+
 
 // Avtorizatsiyalangan so'rov: 401 bo'lsa refresh token bilan bir marta qayta uradi
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
@@ -202,7 +214,7 @@ export async function signInWithTuronId(code: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),
   });
-  if (!res.ok) throw new ApiError(await readError(res, "Turon ID orqali kirib bo'lmadi"), res.status);
+  if (!res.ok) throw new ApiError(await readApiError(res, "Turon ID orqali kirib bo'lmadi"), res.status);
   // Yangi sessiya: oldingi foydalanuvchining saqlangan profili qolmasin
   clearStorage();
   storeTokens(await res.json());
@@ -241,7 +253,7 @@ export async function login(loginValue: string, password: string): Promise<strin
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username: loginValue.trim(), password }),
   });
-  if (!res.ok) throw new ApiError(await readError(res, "Login yoki parol noto'g'ri"), res.status);
+  if (!res.ok) throw new ApiError(await readApiError(res, "Login yoki parol noto'g'ri"), res.status);
   const data = await res.json();
   // Tasdiqlanmagan userga backend access/refresh bermaydi (faqat mobil
   // Face-ID uchun token + p12). Web'da u baribir chatga kira olmaydi —
@@ -270,7 +282,7 @@ export async function register(input: {
       password: input.password,
     }),
   });
-  if (!res.ok) throw new ApiError(await readError(res, "Ro'yxatdan o'tishda xatolik"), res.status);
+  if (!res.ok) throw new ApiError(await readApiError(res, "Ro'yxatdan o'tishda xatolik"), res.status);
   return login(input.username, input.password);
 }
 
@@ -305,7 +317,7 @@ function storeMe(u: any): Me {
 
 export async function fetchMe(): Promise<Me> {
   const res = await apiFetch("/v1/users/me");
-  if (!res.ok) throw new Error(await readError(res, "Profilni olishda xatolik"));
+  if (!res.ok) throw new Error(await readApiError(res, "Profilni olishda xatolik"));
   const u = await res.json();
   return storeMe(u);
 }
@@ -334,7 +346,7 @@ export async function updateProfile(input: {
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    throw new ApiError(await readError(res, "Profilni saqlashda xatolik"), res.status);
+    throw new ApiError(await readApiError(res, "Profilni saqlashda xatolik"), res.status);
   }
   const u = await res.json();
   return storeMe(u);
@@ -353,7 +365,7 @@ export async function updateContacts(input: {
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    throw new ApiError(await readError(res, "Raqamlarni saqlashda xatolik"), res.status);
+    throw new ApiError(await readApiError(res, "Raqamlarni saqlashda xatolik"), res.status);
   }
   return storeMe(await res.json());
 }
@@ -370,7 +382,7 @@ export async function changePassword(newPassword: string): Promise<void> {
   });
   if (!res.ok) {
     throw new ApiError(
-      await readError(res, "Parolni o'zgartirishda xatolik"),
+      await readApiError(res, "Parolni o'zgartirishda xatolik"),
       res.status,
     );
   }

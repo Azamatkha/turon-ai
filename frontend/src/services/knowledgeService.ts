@@ -1,7 +1,7 @@
 // Bilim bazasi xizmati — admin yuklagan ma'lumotni backendga jo'natadi.
 // Backend uni chunk'larga bo'lib, embed qilib, Qdrant vektorli bazaga yozadi.
 
-import { apiFetch } from "./authService";
+import { apiFetch, readApiError } from "./authService";
 
 export interface UploadResult {
   // Bazaga yozilgan bo'laklar (chunk) soni — tasdiq uchun
@@ -40,14 +40,7 @@ export interface KnowledgeDetail {
   chunks: KnowledgeChunk[];
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const data = await res.json();
-    return data.detail || data.message || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const readError = readApiError;
 
 // Qo'lda kiritilgan matnni yuborish (faylsiz) — JSON
 export async function uploadText(title: string, text: string): Promise<UploadResult> {
