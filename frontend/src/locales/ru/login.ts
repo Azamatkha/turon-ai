@@ -39,6 +39,6 @@ export const login: LoginStrings = {
   unverifiedVideoNudge: "Сначала посмотрите короткую инструкцию",
   unverifiedVideoPlay: "Смотреть инструкцию",
   unverifiedVideoReplay: "Посмотреть ещё раз",
-  unverifiedVideoEnded: "Теперь скачайте приложение по QR-коду и пройдите верификацию",
+  unverifiedVideoEnded: "Теперь отсканируйте QR-код и скачайте приложение через бота",
   platforms: "Платформы",
 };

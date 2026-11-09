@@ -121,9 +121,10 @@
 }
 
 .endedText {
-  font-size: 14px;
-  opacity: 0.85;
-  max-width: 300px;
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.92;
+  max-width: 420px;
   line-height: 1.4;
 }
 

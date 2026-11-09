@@ -39,6 +39,6 @@ export const login: LoginStrings = {
   unverifiedVideoNudge: "Avval qisqa qo‘llanmani ko‘ring",
   unverifiedVideoPlay: "Qo‘llanmani ko‘rish",
   unverifiedVideoReplay: "Qayta ko‘rish",
-  unverifiedVideoEnded: "Endi QR kod orqali ilovani yuklab oling va verifikatsiyadan o‘ting",
+  unverifiedVideoEnded: "Endi QR kodni skanerlang va bot orqali ilovani yuklab oling",
   platforms: "Platformalar",
 };

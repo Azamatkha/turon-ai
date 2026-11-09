@@ -40,6 +40,6 @@ export const login: LoginStrings = {
   unverifiedVideoNudge: "Аввал қисқа қўлланмани кўринг",
   unverifiedVideoPlay: "Қўлланмани кўриш",
   unverifiedVideoReplay: "Қайта кўриш",
-  unverifiedVideoEnded: "Энди QR код орқали иловани юклаб олинг ва верификациядан ўтинг",
+  unverifiedVideoEnded: "Энди QR кодни сканерланг ва бот орқали иловани юклаб олинг",
   platforms: "Платформалар",
 };
