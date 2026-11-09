@@ -7,9 +7,23 @@ import NotFoundPage, { type QrItem } from "./NotFoundPage";
 // Verifikatsiya qo'llanmasi — public/videos/ da; BASE_URL (/chat/) bilan birga
 const VIDEO_SRC = `${import.meta.env.BASE_URL}videos/verification.mp4`;
 
-// Mobil ilovani yuklab olish havolasi. Hozircha noma'lum — bo'sh bo'lsa
-// ikkinchi QR ko'rsatilmaydi. Havola aniq bo'lgach shu yerga yoziladi.
-const MOBILE_APP_DOWNLOAD_URL = "";
+// Android ilova (APK) — public/app/ da. Yangi versiya chiqqanda
+// aihelp/aiapk/TuronAI.apk shu yerga qayta nusxalanadi.
+// QR telefonda ochiladi, shuning uchun manzil to'liq (domen bilan) bo'lishi kerak.
+const MOBILE_APP_DOWNLOAD_URL = `${window.location.origin}${import.meta.env.BASE_URL}app/TuronAI.apk`;
+
+// QR o'rtasidagi Android belgisi: yashil doira ichida oq robot boshi
+const ANDROID_LOGO =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+      '<circle cx="12" cy="12" r="12" fill="#3DDC84"/>' +
+      '<path d="M5.5 16.5a6.5 6.5 0 0 1 13 0z" fill="#fff"/>' +
+      '<path d="M8 9.2 6.8 7.4M16 9.2l1.2-1.8" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>' +
+      '<circle cx="9.6" cy="13.6" r=".9" fill="#3DDC84"/>' +
+      '<circle cx="14.4" cy="13.6" r=".9" fill="#3DDC84"/>' +
+      "</svg>",
+  );
 
 // QR o'rtasidagi Telegram belgisi: qora doira ichida oq "qog'oz samolyot"
 const TELEGRAM_LOGO =
@@ -42,9 +56,13 @@ export default function UnverifiedPage() {
       logo: TELEGRAM_LOGO,
     },
   ];
-  if (MOBILE_APP_DOWNLOAD_URL) {
-    qrCodes.push({ title: t.unverifiedQrApp, value: MOBILE_APP_DOWNLOAD_URL });
-  }
+  // Ikkinchi QR — skanerlansa APK to'g'ridan-to'g'ri yuklanadi (faqat Android)
+  qrCodes.push({
+    title: t.unverifiedQrApp,
+    value: MOBILE_APP_DOWNLOAD_URL,
+    caption: "Android",
+    logo: ANDROID_LOGO,
+  });
 
   return (
     <NotFoundPage

@@ -1,4 +1,6 @@
 node_modules/
 dist/
+# APK image ichiga build qilinmaydi — runtime'da volume orqali ulanadi
+downloads/
 Dockerfile
 .dockerignore
