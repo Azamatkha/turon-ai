@@ -164,6 +164,12 @@ check-lint:
 test:
 	TESTING=true pytest
 
+# Oltin savollar: ishlayotgan backend'ga haqiqiy so'rovlar (TURON_TOKEN kerak).
+# Misol: make golden TURON_API=http://localhost:8100 ARGS="--only security"
+.PHONY: golden
+golden:
+	python scripts/golden_eval.py $(ARGS)
+
 .PHONY: test-cov
 test-cov:
 	TESTING=true pytest --cov=src --cov-report=term-missing --cov-report=xml

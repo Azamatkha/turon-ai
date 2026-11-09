@@ -17,6 +17,8 @@ from src.user.auth.permissions.enum import Permission
 from src.user.auth.routers import router as auth_router
 from src.user.auth.schemas import UserNewPassword
 from src.user.dependencies import get_user_service
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 from src.user.schemas import (
     AdminCreateUserModel,
@@ -271,11 +273,17 @@ async def create_user(
     current_user: Annotated[User, Depends(require_permission(Permission.CREATE_USER))],
     user_form_data: AdminCreateUserModel,
     use_case: Annotated[AdminCreateUserUseCase, Depends(get_admin_create_user_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> UserAdminListItem:
     """
     Admin tomonidan yangi foydalanuvchi yaratish.
     """
-    return await use_case.execute(data=user_form_data)
+    result = await use_case.execute(data=user_form_data)
+    await audit.log(
+        current_user, AuditAction.USER_CREATE, "user", result.id, result.username,
+        details={"role": result.role, "department": result.department},
+    )
+    return result
 
 @router.patch("/{user_id}", response_model=UserAdminListItem)
 async def update_user_admin(
@@ -283,11 +291,18 @@ async def update_user_admin(
     current_user: Annotated[User, Depends(require_permission(Permission.EDIT_USER))],
     user_form_data: AdminUpdateUserModel,
     use_case: Annotated[AdminUpdateUserUseCase, Depends(get_admin_update_user_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> UserAdminListItem:
     """
     Admin tomonidan foydalanuvchi ma'lumotlari yoki rolini yangilash.
     """
-    return await use_case.execute(user_id=user_id, data=user_form_data)
+    result = await use_case.execute(user_id=user_id, data=user_form_data)
+    # Faqat yuborilgan maydonlar; parol qiymati audit'da "***" bo'lib qoladi
+    await audit.log(
+        current_user, AuditAction.USER_UPDATE, "user", user_id, result.username,
+        details=user_form_data.model_dump(exclude_unset=True),
+    )
+    return result
 
 
 @router.delete("/{user_id}", response_model=SuccessResponse)
@@ -295,8 +310,11 @@ async def delete_user_admin(
     user_id: UUID,
     current_user: Annotated[User, Depends(require_permission(Permission.DELETE_USER))],
     use_case: Annotated[AdminDeleteUserUseCase, Depends(get_admin_delete_user_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> SuccessResponse:
     """
     Foydalanuvchini (yumshoq) o'chirish.
     """
-    return await use_case.execute(user_id=user_id)
+    result = await use_case.execute(user_id=user_id)
+    await audit.log(current_user, AuditAction.USER_DELETE, "user", user_id)
+    return result

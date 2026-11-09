@@ -56,6 +56,7 @@ async def invalidate_user_session(
     await redis_client.delete(
         auth_redis_keys.access(user_id, session_id),
         auth_redis_keys.refresh(user_id, session_id),
+        auth_redis_keys.session_meta(user_id, session_id),
     )
 
 

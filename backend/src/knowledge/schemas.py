@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from pydantic import Field
@@ -47,6 +48,10 @@ class KnowledgeItem(Base):
     preview: str         # birinchi bo'lakning qisqa ko'rinishi
     # Yuklangan vaqti (ISO). Eski yozuvlarda bo'lmasligi mumkin — bo'sh satr.
     uploaded_at: str = ""
+    # Amal qilish muddati ("YYYY-MM-DD"); muddatsiz bo'lsa bo'sh satr
+    valid_until: str = ""
+    # Matni aynan bir xil boshqa hujjatlar sarlavhalari (dublikat)
+    duplicates: list[str] = []
 
 
 class KnowledgeChunk(Base):
@@ -58,6 +63,12 @@ class KnowledgeDetail(Base):
     title: str
     lang: str
     chunks: list[KnowledgeChunk]   # barcha bo'laklar (chunk_index bo'yicha tartiblangan)
+
+
+class KnowledgeValidityRequest(Base):
+    title: str = Field(min_length=1, max_length=500)
+    # None — muddatni olib tashlash (cheksiz amal qiladi)
+    valid_until: date | None = None
 
 
 class UpdateKnowledgeRequest(Base):
@@ -127,3 +138,25 @@ class AnswerResult(Base):
     finish_reason: str = ""
     completion_tokens: int = 0
     max_tokens: int = 0
+
+
+class RescrapeFailure(Base):
+    title: str
+    # Xato turi: "ConnectTimeout", "HTTPStatusError", "empty" (matn chiqmadi)
+    error: str
+
+
+class RescrapeResultView(Base):
+    started_at: str
+    finished_at: str
+    checked: int
+    unchanged: int
+    changed: list[str]
+    failed: list[RescrapeFailure]
+
+
+class RescrapeStatusView(Base):
+    # Haftalik avtomatik tekshiruv yoqilganmi (RESCRAPE_ENABLED)
+    enabled: bool
+    running: bool
+    last: RescrapeResultView | None = None

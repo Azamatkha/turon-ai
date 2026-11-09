@@ -32,11 +32,13 @@ interface SidebarProps {
   usersCount: number;
   // Ko'rib chiqilmagan murojaatlar soni (0 bo'lsa belgi ko'rinmaydi)
   newReportsCount: number;
+  // Ko'rib chiqilmagan yoqmagan javoblar soni
+  dislikedCount?: number;
   collapsed: boolean;
   t: AdminStrings;
 }
 
-export default function Sidebar({ view, setView, usersCount, newReportsCount, collapsed, t: admin }: SidebarProps) {
+export default function Sidebar({ view, setView, usersCount, newReportsCount, dislikedCount = 0, collapsed, t: admin }: SidebarProps) {
   const navigate = useNavigate();
   // Ranglar chat sidebar'i bilan AYNAN bir manbadan (`chat/theme.ts`) keladi —
   // ikki panel bir xil ko'rinishi kerak, faqat ichidagi funksiyalar farq qiladi.
@@ -89,6 +91,32 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, co
       label: admin.reportsNav,
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="15" x2="12" y2="15" /></svg>,
       badge: newReportsCount > 0 ? String(newReportsCount) : undefined,
+    },
+    {
+      id: "questions",
+      label: admin.questionsNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
+    },
+    {
+      id: "disliked",
+      label: admin.dislikedNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></svg>,
+      badge: dislikedCount > 0 ? String(dislikedCount) : undefined,
+    },
+    {
+      id: "audit",
+      label: admin.auditNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 12 11 14 15 10" /></svg>,
+    },
+    {
+      id: "system",
+      label: admin.systemNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>,
+    },
+    {
+      id: "backups",
+      label: admin.backupNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" /></svg>,
     },
     {
       id: "faceIdLogs",

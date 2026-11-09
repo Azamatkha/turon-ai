@@ -958,3 +958,26 @@ html[data-glass="off"].dark {
   --tu-glass-border: rgba(154, 172, 236, 0.20);
   --tu-glass-shadow: 0 6px 24px rgba(4, 6, 20, 0.45);
 }
+
+/* ============================================================================
+   Suhbatni PDF'ga chop etish (ChatExportMenu). Chop etish ko'rinishi <body>
+   ning bevosita bolasi; print paytida qolgan hamma narsa yashiriladi.
+   ========================================================================= */
+.tu-print-root {
+  display: none;
+}
+
+@media print {
+  body > *:not(.tu-print-root) {
+    display: none !important;
+  }
+
+  .tu-print-root {
+    display: block;
+  }
+
+  @page {
+    margin: 16mm 14mm;
+  }
+}
+

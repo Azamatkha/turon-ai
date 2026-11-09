@@ -19,6 +19,7 @@ from qdrant_client.models import (
     VectorParams,
 )
 
+from src.core.vectorstore.version import bump_kb_version
 from src.main.config import config
 
 
@@ -60,6 +61,7 @@ class QdrantStore:
             for vector, payload in zip(vectors, payloads, strict=True)
         ]
         await self.client.upsert(collection_name=self.collection, points=points)
+        await bump_kb_version()
 
     async def count(self) -> int:
         """Total number of points currently in the collection."""
@@ -149,6 +151,7 @@ class QdrantStore:
             collection_name=self.collection,
             points_selector=PointIdsList(points=ids),
         )
+        await bump_kb_version()
 
     async def search(
         self, query_vector: list[float], top_k: int = 4, lang: str | None = None
@@ -184,6 +187,7 @@ class QdrantStore:
                 must=[FieldCondition(key=key, match=MatchValue(value=value))]
             ),
         )
+        await bump_kb_version()
 
     async def search_by_field(
         self, key: str, value: str, limit: int = 50
@@ -203,6 +207,20 @@ class QdrantStore:
         )
         return [dict(r.payload or {}) for r in records]
 
+    async def set_payload_by_title(self, title: str, payload: dict[str, Any]) -> None:
+        """Sarlavhaning BARCHA bo'laklari payload'iga maydon(lar) yozadi
+        (vektorlar qayta hisoblanmaydi). Masalan `valid_until`."""
+        if not await self.exists():
+            return
+        await self.client.set_payload(
+            collection_name=self.collection,
+            payload=payload,
+            points=Filter(
+                must=[FieldCondition(key="title", match=MatchValue(value=title))]
+            ),
+        )
+        await bump_kb_version()
+
     async def delete_by_title(self, title: str) -> None:
         """Delete every point whose payload.title matches (one uploaded item)."""
         if not await self.exists():
@@ -213,3 +231,4 @@ class QdrantStore:
                 must=[FieldCondition(key="title", match=MatchValue(value=title))]
             ),
         )
+        await bump_kb_version()

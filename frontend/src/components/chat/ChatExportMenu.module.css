@@ -1,0 +1,134 @@
+/* Suhbatni yuklab olish menyusi + PDF uchun chop etish ko'rinishi */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.trigger:hover {
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 210px;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover:not(:disabled) {
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.badge {
+  flex: 0 0 auto;
+  min-width: 30px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.word {
+  background: #2b579a;
+}
+
+.pdf {
+  background: #dc2626;
+}
+
+.err {
+  padding: 6px 10px 2px;
+  font-size: 12.5px;
+  color: #dc2626;
+}
+
+/* ---- Chop etish ko'rinishi (faqat print paytida ko'rinadi) ---- */
+
+.print {
+  color: #0f172a;
+  background: #fff;
+  font-family: Calibri, "Segoe UI", Arial, sans-serif;
+  font-size: 11.5pt;
+  line-height: 1.5;
+}
+
+.printTitle {
+  margin: 0 0 4px;
+  font-size: 18pt;
+  color: #193070;
+}
+
+.printMeta {
+  margin-bottom: 16px;
+  font-size: 9pt;
+  color: #64748b;
+}
+
+.printMsg {
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  break-inside: avoid-page;
+}
+
+.printWho {
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: #4059be;
+}
+
+.printTime {
+  font-weight: 400;
+  color: #64748b;
+}
+
+.printBody table {
+  border-collapse: collapse;
+}
+
+.printBody th,
+.printBody td {
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+}

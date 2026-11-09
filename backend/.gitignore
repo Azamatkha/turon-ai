@@ -172,3 +172,8 @@ cython_debug/
 # Migration files
 #migrations/versions/*.py
 #!migrations/versions/__init__.py
+# Zaxira nusxalar (infra/backup, src/backup) — repoga ham, obrazga ham tushmasin
+backups/
+# Oltin savollar hisobotlari va qoralamasi (javob matnlari) — repoga emas
+tests/golden/reports/
+tests/golden/golden_draft.json

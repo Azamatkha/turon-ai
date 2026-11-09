@@ -14,6 +14,12 @@ class NotificationType(StrEnum):
     RATES_UPDATED = "rates_updated"
     # Foydalanuvchi yangi murojaat (muammo/taklif) yubordi — adminlarga
     REPORT_NEW = "report_new"
+    # Bilim bazasi hujjatining muddati 7 kundan keyin tugaydi — adminlarga
+    KNOWLEDGE_EXPIRING = "knowledge_expiring"
+    # Hujjat muddati tugadi (kecha oxirgi kuni edi) — adminlarga
+    KNOWLEDGE_EXPIRED = "knowledge_expired"
+    # Avtomatik qayta scraping: ba'zi sahifalar ochilmadi — adminlarga
+    KNOWLEDGE_SOURCE_FAILED = "knowledge_source_failed"
 
     @classmethod
     def values(cls) -> set[str]:

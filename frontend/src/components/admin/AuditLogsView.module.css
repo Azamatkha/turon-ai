@@ -1,0 +1,230 @@
+/* Audit jurnali — FaceIdLogsView jadvali uslubida */
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search {
+  flex: 0 1 280px;
+  min-width: 160px;
+  padding: 8px 12px;
+  border: 1px solid var(--adm-border-input, var(--adm-border-2));
+  border-radius: 10px;
+  background: var(--adm-input-bg, var(--adm-card));
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+}
+
+.refreshBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.total {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.card {
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 170px 150px 210px minmax(0, 1fr) 130px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  text-align: left;
+}
+
+.headRow {
+  background: var(--adm-card-alt);
+  border-bottom: 1px solid var(--adm-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.entry {
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.entry:last-child {
+  border-bottom: none;
+}
+
+.dataRow {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--adm-text-body);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dataRow:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.dataRow:disabled {
+  cursor: default;
+  color: var(--adm-text-body);
+}
+
+.colDate {
+  color: var(--adm-text-muted-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.colActor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--adm-text-strong);
+}
+
+.colTarget {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colIp {
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toneDanger {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.toneSuccess {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+}
+
+.toneInfo {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.details {
+  margin: 0;
+  padding: 4px 16px 14px 198px;
+  display: grid;
+  gap: 4px;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 13.5px;
+}
+
+.detailRow dt {
+  color: var(--adm-text-muted);
+}
+
+.detailRow dd {
+  margin: 0;
+  color: var(--adm-text-strong);
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .headRow {
+    display: none;
+  }
+
+  .details {
+    padding-left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap {
+    transition: none;
+  }
+}

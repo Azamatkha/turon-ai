@@ -1,0 +1,218 @@
+/* Zaxira nusxalar — holat kartalari + fayllar jadvali */
+
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.hint {
+  flex: 1 1 320px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.refreshBtn,
+.runBtn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.refreshBtn {
+  border: 1px solid var(--adm-border-2);
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.runBtn {
+  border: none;
+  background: var(--adm-accent);
+  color: #fff;
+}
+
+.refreshBtn:disabled,
+.runBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error,
+.warnBox {
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.error {
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+}
+
+.warnBox {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 16px 18px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.state {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.good {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+}
+
+.warn {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.bad {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--adm-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--adm-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.table {
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px 110px 150px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--adm-border);
+  font-size: 14px;
+  color: var(--adm-text-body);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.headRow {
+  background: var(--adm-card-alt);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  color: var(--adm-text-muted-2);
+  font-size: 13px;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+@media (max-width: 760px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .row > :nth-child(2),
+  .row > :nth-child(4) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap {
+    transition: none;
+  }
+}

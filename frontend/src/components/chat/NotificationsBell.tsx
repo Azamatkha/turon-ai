@@ -28,6 +28,12 @@ function titleFor(n: ApiNotification, s: ChatStaticStrings): string {
       return s.notifRatesUpdated;
     case "report_new":
       return s.notifReportNew;
+    case "knowledge_expiring":
+      return s.notifKnowledgeExpiring;
+    case "knowledge_expired":
+      return s.notifKnowledgeExpired;
+    case "knowledge_source_failed":
+      return s.notifKnowledgeSourceFailed;
     default:
       return s.notifications;
   }
@@ -52,7 +58,12 @@ function linkFor(n: ApiNotification): string | null {
   if (n.type === "report_new" && n.entity_id) {
     return `/admin/reports?report=${n.entity_id}`;
   }
-  if (n.type === "knowledge_updated") {
+  if (
+    n.type === "knowledge_updated" ||
+    n.type === "knowledge_expiring" ||
+    n.type === "knowledge_expired" ||
+    n.type === "knowledge_source_failed"
+  ) {
     return "/admin/knowledge";
   }
   return null;

@@ -12,6 +12,8 @@ from src.user.auth.dependencies import (
 )
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
+    ActiveSessionView,
+    RevokeSessionsResult,
     CheckFaceTokenModel,
     LoginTokenModel,
     LoginUserModel,
@@ -36,6 +38,14 @@ from src.user.auth.usecases.get_access_by_refresh import (
 )
 from src.user.auth.usecases.login import LoginUserUseCase, get_login_user_use_case
 from src.user.auth.usecases.logout import LogoutUseCase, get_logout_use_case
+from src.user.auth.usecases.sessions import (
+    ListActiveSessionsUseCase,
+    RevokeOtherSessionsUseCase,
+    RevokeSessionUseCase,
+    get_list_active_sessions_use_case,
+    get_revoke_other_sessions_use_case,
+    get_revoke_session_use_case,
+)
 from src.user.auth.usecases.register import RegisterUseCase, get_register_use_case
 from src.user.auth.usecases.save import (
     SaveSignatureUseCase,
@@ -220,3 +230,46 @@ async def turon_id_sign_in(
     use_case: Annotated[TuronIdSignInUseCase, Depends(get_turon_id_sign_in_use_case)],
 ) -> LoginTokenModel:
     return await use_case.execute(payload.code)
+
+
+# ---- Faol seanslar ----
+
+
+@router.get("/sessions", response_model=list[ActiveSessionView])
+async def list_active_sessions(
+    authenticated: Annotated[AuthenticatedUser, Depends(get_current_user_with_session)],
+    use_case: Annotated[
+        ListActiveSessionsUseCase, Depends(get_list_active_sessions_use_case)
+    ],
+) -> list[ActiveSessionView]:
+    """Joriy userning faol seanslari (qurilma, IP, oxirgi faollik)."""
+    return await use_case.execute(
+        user_id=str(authenticated.user.id),
+        current_session_id=authenticated.session_id,
+    )
+
+
+@router.delete("/sessions/{session_id}", response_model=RevokeSessionsResult)
+async def revoke_session(
+    session_id: str,
+    authenticated: Annotated[AuthenticatedUser, Depends(get_current_user_with_session)],
+    use_case: Annotated[RevokeSessionUseCase, Depends(get_revoke_session_use_case)],
+) -> RevokeSessionsResult:
+    """Bitta seansni (qurilmani) yopish."""
+    return await use_case.execute(
+        user_id=str(authenticated.user.id), session_id=session_id
+    )
+
+
+@router.post("/sessions/revoke-others", response_model=RevokeSessionsResult)
+async def revoke_other_sessions(
+    authenticated: Annotated[AuthenticatedUser, Depends(get_current_user_with_session)],
+    use_case: Annotated[
+        RevokeOtherSessionsUseCase, Depends(get_revoke_other_sessions_use_case)
+    ],
+) -> RevokeSessionsResult:
+    """Joriy qurilmadan tashqari barcha seanslardan chiqish."""
+    return await use_case.execute(
+        user_id=str(authenticated.user.id),
+        current_session_id=authenticated.session_id,
+    )

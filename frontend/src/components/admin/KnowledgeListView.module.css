@@ -255,3 +255,56 @@
 .addBtn {
   --tu-shine-color: rgba(255, 255, 255, 0.6);
 }
+
+/* Karta pastki qatori: til + amal qilish muddati */
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.cardFoot .lang {
+  margin-top: 0;
+}
+
+.validity {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vOk {
+  background: var(--adm-card-alt);
+  color: var(--adm-text-muted);
+}
+
+.vSoon {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.vExpired {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.staleBtn {
+  padding: 8px 12px;
+  border: 1px solid var(--adm-danger-border);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-danger);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.staleBtnOn {
+  background: var(--adm-danger-bg);
+}
+

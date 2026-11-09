@@ -19,10 +19,11 @@ import DirectoryModal from "./DirectoryModal";
 import ConverterModal from "./ConverterModal";
 import GuidesModal from "./GuidesModal";
 import HButton from "../common/HButton";
+import ChatExportMenu from "./ChatExportMenu";
 import StarBorder from "../common/StarBorder";
 import { ACCENT } from "./theme";
 import type { Lang } from "../../types/lang";
-import type { ThemeTokens } from "../../types/chat";
+import type { Msg, ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import styles from "./ChatHeader.module.css";
 
@@ -37,11 +38,15 @@ interface ChatHeaderProps {
   onAdmin?: () => void;
   editableTitle?: boolean;
   onRenameTitle?: (next: string) => void;
+  // Yuklab olish (Word / PDF) — saqlangan suhbat va xabarlar bo'lsa
+  exportSessionId?: string;
+  exportMessages?: Msg[];
   s: ChatStaticStrings;
 }
 
 export default function ChatHeader({
-  title, lang, setLang, isDark, onToggleTheme, tk, isAdmin, onAdmin, editableTitle, onRenameTitle, s,
+  title, lang, setLang, isDark, onToggleTheme, tk, isAdmin, onAdmin, editableTitle, onRenameTitle,
+  exportSessionId, exportMessages, s,
 }: ChatHeaderProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(title);
@@ -109,6 +114,16 @@ export default function ChatHeader({
               <button onClick={startEdit} data-tip="Suhbat nomini tahrirlash" aria-label="Suhbat nomini tahrirlash" className={styles.renameBtn} style={{ color: tk.muted }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
               </button>
+            )}
+            {exportSessionId && !!exportMessages?.length && (
+              <ChatExportMenu
+                sessionId={exportSessionId}
+                title={title}
+                messages={exportMessages}
+                lang={lang}
+                tk={tk}
+                s={s}
+              />
             )}
           </>
         )}

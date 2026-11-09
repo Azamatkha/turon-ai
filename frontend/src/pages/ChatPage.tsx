@@ -254,6 +254,7 @@ export default function ChatPage() {
         setSearch={setSearch}
         searchPlaceholder={S.searchPlaceholder}
         noResultsLabel={S.noResults}
+        messagesSectionLabel={S.searchInMessages}
         side={side}
         userName={userName}
         userHandle={userHandle}
@@ -324,6 +325,8 @@ export default function ChatPage() {
           onAdmin={() => navigate("/admin")}
           editableTitle={!!activeId && !!active.title}
           onRenameTitle={(next) => renameChat(activeId, next)}
+          exportSessionId={activeId || undefined}
+          exportMessages={rawMsgs}
           s={S}
         />
 

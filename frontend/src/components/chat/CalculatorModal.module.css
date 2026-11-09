@@ -170,6 +170,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Fokus halqasi butun qutini o'raydi. Global `input:focus-visible`
+   (index.css) halqani faqat ichki inputga chizardi va u qutining bir qismini
+   egallab turardi. Ichki inputdagisini o'chirib, qutiga beramiz. */
+.inputBox:focus-within {
+  outline: 2px solid var(--tu-focus-ring);
+  outline-offset: 2px;
+}
+
+.inputBox .valueInput:focus-visible {
+  outline: none;
+}
+
 .unit {
   flex: 0 0 auto;
   font-size: 13px;

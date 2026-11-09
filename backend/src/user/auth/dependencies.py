@@ -14,6 +14,7 @@ from src.core.utils.datetime_utils import get_utc_now
 from src.main.config import config
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.redis_keys import auth_redis_keys
+from src.user.auth.sessions import touch_session
 from src.user.auth.token_helpers import invalidate_all_user_sessions
 from src.user.dependencies import get_user_repository
 from src.user.models import User
@@ -54,6 +55,8 @@ async def get_current_user(
     session: AsyncSession = Depends(get_session),
     redis_client: Redis = Depends(get_redis_client),
     user_repository: UserRepository = Depends(get_user_repository),
+    # FastAPI `Request` annotatsiyasi bo'yicha o'zi beradi; testlar chaqirmasa — None
+    request: Request = None,  # type: ignore[assignment]
 ) -> User:
     """
     Resolve the authenticated user from a valid access token.
@@ -77,6 +80,7 @@ async def get_current_user(
         session=session,
         redis_client=redis_client,
         user_repository=user_repository,
+        request=request,
     )
     # Chat, kalkulyator, bildirishnoma va h.k. shu dependency'ga tayanadi —
     # tasdiqlanmagan user ulardan foydalana olmasligi shu yerda kafolatlanadi.
@@ -90,6 +94,8 @@ async def get_current_user_allow_unverified(
     session: AsyncSession = Depends(get_session),
     redis_client: Redis = Depends(get_redis_client),
     user_repository: UserRepository = Depends(get_user_repository),
+    # FastAPI `Request` annotatsiyasi bo'yicha o'zi beradi; testlar chaqirmasa — None
+    request: Request = None,  # type: ignore[assignment]
 ) -> User:
     """`get_current_user` bilan bir xil, lekin tasdiqlanmagan userni ham o'tkazadi.
 
@@ -102,6 +108,7 @@ async def get_current_user_allow_unverified(
         session=session,
         redis_client=redis_client,
         user_repository=user_repository,
+        request=request,
     )
     return authenticated.user
 
@@ -111,6 +118,8 @@ async def get_current_user_with_session(
     session: AsyncSession = Depends(get_session),
     redis_client: Redis = Depends(get_redis_client),
     user_repository: UserRepository = Depends(get_user_repository),
+    # FastAPI `Request` annotatsiyasi bo'yicha o'zi beradi; testlar chaqirmasa — None
+    request: Request = None,  # type: ignore[assignment]
 ) -> AuthenticatedUser:
     """
     Resolve the authenticated user and current access-token session identifier.
@@ -148,6 +157,8 @@ async def get_current_user_with_session(
         raise credentials_exception
 
     await _touch_last_seen(user, session)
+    # "Faol seanslar" ro'yxati uchun: qurilma, IP, oxirgi faollik
+    await touch_session(redis_client, str(user_id), session_id, request)
 
     return AuthenticatedUser(user=user, session_id=session_id)
 

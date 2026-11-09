@@ -48,6 +48,8 @@ from src.reports.usecases import (
 from src.user.auth.dependencies import get_current_user
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 
 router = APIRouter()
@@ -130,6 +132,12 @@ async def update_report(
         User, Depends(require_permission(Permission.MANAGE_REPORTS))
     ],
     use_case: Annotated[UpdateReportUseCase, Depends(get_update_report_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> ReportAdminView:
     """Admin: murojaat holatini va izohini yangilaydi."""
-    return await use_case.execute(report_id=report_id, data=data)
+    result = await use_case.execute(report_id=report_id, data=data)
+    await audit.log(
+        current_user, AuditAction.REPORT_UPDATE, "report", report_id,
+        details={"status": data.status, "admin_comment": data.admin_comment[:300]},
+    )
+    return result

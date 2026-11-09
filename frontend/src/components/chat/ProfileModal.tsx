@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchMe, type Me } from "../../services/authService";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { useModalA11y } from "../../hooks/useModalA11y";
+import ActiveSessions from "./ActiveSessions";
 import styles from "./ProfileModal.module.css";
 
 interface Props {
@@ -91,6 +92,8 @@ export default function ProfileModal({ S, isDark, onClose }: Props) {
           </dl>
         )}
         <div className={styles.hint}>{S.employeeInfoHint}</div>
+
+        <ActiveSessions S={S} isDark={isDark} />
       </div>
     </div>
   );

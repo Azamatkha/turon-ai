@@ -96,6 +96,10 @@ export interface ChatStaticStrings {
   notifKnowledgeUpdated: string;
   notifRatesUpdated: string;
   notifReportNew: string;
+  // Bilim bazasi hujjati muddati (faqat adminga)
+  notifKnowledgeExpiring: string;
+  notifKnowledgeExpired: string;
+  notifKnowledgeSourceFailed: string;
   notifTimeNow: string;
   notifMinAgo: (m: number) => string;
   notifHourAgo: (h: number) => string;
@@ -218,12 +222,38 @@ export interface ChatStaticStrings {
   stop: string;
   copy: string;
   copied: string;
+  // Javobdagi jadvalni nusxalash (Excel'ga qo'yish uchun TSV)
+  copyTable: string;
+  // Javob keshdan berilganda token o'rnida
+  answerFromCache: string;
   regenerate: string;
   // "O'ylayapman…" qatori: jarayon, yakun ("3.4 soniya o'yladi") va bosqichlar
   thinkingLabel: string;
   thoughtFor: (sec: string) => string;
   thinkSteps: Record<ThinkStep, string>;
   interrupted: string;
+  // Javob tagidagi manba chiplari sarlavhasi
+  sourcesLabel: string;
+  // Javob tagidagi "keyingi savol" takliflari sarlavhasi
+  followupLabel: string;
+  // Sidebar qidiruvi: xabarlar matnidan topilganlar
+  searchInMessages: string;
+  // Suhbatni yuklab olish
+  exportChat: string;
+  exportDocx: string;
+  exportPdf: string;
+  exportError: string;
+  exportYou: string;
+  // Dislike sababi paneli
+  dislikeTitle: string;
+  dislikeReasonWrong: string;
+  dislikeReasonOutdated: string;
+  dislikeReasonIncomplete: string;
+  dislikeReasonOther: string;
+  dislikeCommentPh: string;
+  dislikeSend: string;
+  dislikeClose: string;
+  dislikeThanks: string;
   resend: string;
   editMessage: string;
   saveEdit: string;
@@ -242,6 +272,19 @@ export interface ChatStaticStrings {
   // Profil oynasidagi "Xodim ma'lumotlari" kartasi (mobil verifikatsiyadan)
   employeeInfo: string;
   employeeInfoHint: string;
+  // Profil -> Faol seanslar (sessionsRevokedOthers ichida {n} — soni)
+  sessionsTitle: string;
+  sessionsHint: string;
+  sessionsLoadError: string;
+  sessionsCurrent: string;
+  sessionsUnknownDevice: string;
+  sessionsLastActive: string;
+  sessionsRevoke: string;
+  sessionsRevokeOthers: string;
+  sessionsRevokeOthersConfirm: string;
+  sessionsRevokeOthersYes: string;
+  sessionsRevokedOthers: string;
+  sessionsCancel: string;
   infoFirstName: string;
   infoLastName: string;
   profileLoadError: string;
@@ -455,6 +498,121 @@ export interface AdminStrings {
   faceLogsSignature: string;
   faceLogsCopy: string;
   faceLogsCopied: string;
+  // Yoqmagan javoblar navbati
+  // Bilim bazasi: amal qilish muddati
+  knowledgeValidityLabel: string;
+  knowledgeValidityHint: string;
+  knowledgeValidityUntil: string;
+  knowledgeValidityExpired: string;
+  knowledgeValiditySave: string;
+  knowledgeValidityClear: string;
+  knowledgeValidityNone: string;
+  knowledgeValiditySaved: string;
+  knowledgeValidityFilter: (n: number) => string;
+  // Saytdan qayta tekshirish va dublikatlar
+  rescrapeTitle: string;
+  rescrapeSchedule: string;
+  rescrapeDisabled: string;
+  rescrapeRunning: string;
+  rescrapeNever: string;
+  rescrapeRun: string;
+  rescrapeChanged: string;
+  rescrapeFailed: string;
+  rescrapeEmpty: string;
+  rescrapeError: string;
+  rescrapeLast: (when: string, checked: number, changed: number, failed: number) => string;
+  knowledgeDuplicate: (n: number) => string;
+  dislikedNav: string;
+  dislikedHint: string;
+  dislikedFilterOpen: string;
+  dislikedFilterAll: string;
+  dislikedEmpty: string;
+  dislikedLoadError: string;
+  dislikedQuestion: string;
+  dislikedAnswer: string;
+  dislikedComment: string;
+  dislikedSources: string;
+  dislikedNoSources: string;
+  dislikedExpand: string;
+  dislikedCollapse: string;
+  dislikedMarkReviewed: string;
+  dislikedReopen: string;
+  dislikedReviewedBadge: string;
+  dislikedReasonWrong: string;
+  dislikedReasonOutdated: string;
+  dislikedReasonIncomplete: string;
+  dislikedReasonOther: string;
+  // Savollar tahlili
+  questionsNav: string;
+  questionsLoadError: string;
+  questionsEmpty: string;
+  questionsStatTotal: string;
+  questionsStatNoInfo: string;
+  questionsStatAvgTime: string;
+  questionsStatTokens: string;
+  questionsTopTitle: string;
+  questionsTopHint: string;
+  questionsUnansweredTitle: string;
+  questionsUnansweredHint: string;
+  questionsPeriod: (n: number) => string;
+  questionsUsers: (n: number) => string;
+  questionsErrors: (n: number) => string;
+  // Audit jurnali
+  auditNav: string;
+  auditLoadError: string;
+  auditEmpty: string;
+  auditSearchPh: string;
+  auditColActor: string;
+  auditColAction: string;
+  auditColTarget: string;
+  auditTypeAll: string;
+  auditTypeUser: string;
+  auditTypeKnowledge: string;
+  auditTypeReport: string;
+  auditTypeGuide: string;
+  auditTypeMessage: string;
+  // Amal kaliti ("user.update") -> matn; noma'lumi kalitning o'zi ko'rinadi
+  auditActions: Record<string, string>;
+  // details maydon nomi -> matn
+  auditFields: Record<string, string>;
+  // Zaxira nusxalar
+  backupNav: string;
+  backupLoadError: string;
+  backupEmpty: string;
+  backupNotMounted: string;
+  backupRunQdrant: string;
+  backupQueued: string;
+  backupKindPostgres: string;
+  backupKindQdrant: string;
+  backupStateOk: string;
+  backupStateStale: string;
+  backupStateNone: string;
+  backupStateFailed: string;
+  backupLatest: string;
+  backupLastRun: string;
+  backupCount: string;
+  backupColFile: string;
+  backupColKind: string;
+  backupColSize: string;
+  backupHint: (days: number) => string;
+  // Tizim holati
+  systemNav: string;
+  systemLoadError: string;
+  systemOk: string;
+  systemDegraded: string;
+  systemDown: string;
+  systemCompOk: string;
+  systemCompFail: string;
+  systemNonCritical: string;
+  systemLlmTitle: string;
+  systemStatQuestions: string;
+  systemStatP50: string;
+  systemStatP95: string;
+  systemStatErrors: string;
+  systemChartTitle: string;
+  // Bugun keshdan berilgan javoblar
+  systemStatCache: string;
+  systemCheckedAt: (time: string) => string;
   knowledgeNav: string;
   pdfNav: string;
   guidesNav: string;

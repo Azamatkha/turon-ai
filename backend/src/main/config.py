@@ -183,6 +183,14 @@ class AIConfig(BaseModel):
     # davom etardi — router yiqilib, javob noto'g'ri yo'lga ketardi.
     # 96 GB VRAM'da modelni doim ushlab turishning hech qanday narxi yo'q.
     OLLAMA_KEEP_ALIVE: str = "24h"
+    # Javob tagidagi "keyingi savol" takliflari (src/chat/usecases.py ->
+    # SuggestFollowupsUseCase). Har javobga bitta qisqa LLM chaqiruvi qo'shadi;
+    # GPU band bo'lsa o'chirib qo'yish mumkin.
+    FOLLOWUP_SUGGESTIONS_ENABLED: bool = True
+    # Tez-tez beriladigan savollar uchun javob keshi (src/chat/answer_cache.py).
+    # Bilim bazasi o'zgarsa kesh o'zi eskiradi; TTL — qo'shimcha xavfsizlik.
+    ANSWER_CACHE_ENABLED: bool = True
+    ANSWER_CACHE_TTL_HOURS: int = 12
 
     # Embedding (matn -> vektor). Same Ollama server, different model.
     EMBEDDING_MODEL: str = "bge-m3:567m"
@@ -207,6 +215,9 @@ class ScrapingConfig(BaseModel):
     # PROXY_URL=http://<proxy-ip>:<port>
     # Bo'sh bo'lsa, scraper proxy'siz to'g'ridan-to'g'ri ulanadi.
     PROXY_URL: str = ""
+    # Saytdan olingan hujjatlarni haftalik avtomatik qayta tekshirish
+    # (src/knowledge/rescrape.py). O'chirilsa — faqat qo'lda ishga tushadi.
+    RESCRAPE_ENABLED: bool = True
 
     model_config = ConfigDict(extra="ignore")
 
@@ -318,6 +329,11 @@ class AppConfig(BaseModel):
     # o'chirilganda fayllar yo'qoladi. Fayllar statik mount orqali emas,
     # faqat huquq tekshiriladigan endpoint orqali beriladi.
     MEDIA_ROOT: str = "media"
+    # Zaxira nusxalar papkasi (docker-compose'da `backups` volume'i). Ichida
+    # postgres/ (pg_dump — alohida `backup` konteyneri yozadi) va qdrant/
+    # (snapshot — Celery vazifasi yozadi). Shuncha kundan eskilari o'chiriladi.
+    BACKUP_DIR: str = "/backups"
+    BACKUP_KEEP_DAYS: int = 14
     # Bitta skrinshot uchun cheklov (bayt). nginx client_max_body_size = 10m,
     # ya'ni bu limit undan past turishi kerak.
     REPORT_MAX_BYTES: int = 5 * 1024 * 1024

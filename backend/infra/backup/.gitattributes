@@ -1,0 +1,2 @@
+# Linux konteynerda ishlaydi — CRLF bilan sh ishlamaydi
+*.sh text eol=lf

@@ -15,6 +15,11 @@ class AuthRedisKeyBuilder:
     def used(self, user_id: str, jti: str) -> str:
         return f"used:{user_id}:{jti}"
 
+    def session_meta(self, user_id: str, session_id: str) -> str:
+        """Seans haqida: qurilma (User-Agent), IP, birinchi/oxirgi faollik.
+        "Faol seanslar" ro'yxati uchun (qara: auth/sessions.py)."""
+        return f"session-meta:{user_id}:{session_id}"
+
     def one_time_token(
         self,
         purpose: OneTimeTokenPurpose,
@@ -40,11 +45,15 @@ class AuthRedisKeyBuilder:
     def used_pattern(self, user_id: str) -> str:
         return f"used:{user_id}:*"
 
-    def all_user_patterns(self, user_id: str) -> tuple[str, str, str]:
+    def session_meta_pattern(self, user_id: str) -> str:
+        return f"session-meta:{user_id}:*"
+
+    def all_user_patterns(self, user_id: str) -> tuple[str, str, str, str]:
         return (
             self.access_pattern(user_id),
             self.refresh_pattern(user_id),
             self.used_pattern(user_id),
+            self.session_meta_pattern(user_id),
         )
 
     def session_key(

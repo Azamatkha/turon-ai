@@ -16,7 +16,9 @@ from celery_tasks.types import typed_shared_task
 from loggers import get_logger
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
+from src.core.redis.core import create_redis_client
 from src.core.utils.coroutine_runner import execute_coroutine_sync
+from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.rates_scraper import (
     RATES_TITLE,
@@ -26,9 +28,17 @@ from src.knowledge.rates_scraper import (
     render_rates,
 )
 from src.knowledge.scraper import fetch_html
+from src.main.config import config
 from src.knowledge.usecases import UploadKnowledgeUseCase
+from src.knowledge.rescrape import (
+    RESCRAPE_LAST_KEY,
+    RESCRAPE_RUNNING_KEY,
+    RescrapeKnowledgeUseCase,
+)
+from src.knowledge.validity import WARN_DAYS, expiry_events
 from src.notifications.enums import NotificationType
 from src.notifications.events import publish_new
+from src.user.enums import UserRole
 
 logger = get_logger(__name__)
 
@@ -175,3 +185,115 @@ async def _broadcast_rates_updated() -> None:
         )
     except Exception:
         logger.exception("Valyuta kursi bildirishnomasini yuborib bo'lmadi")
+
+
+# ---- Hujjatlarning amal qilish muddati ----
+
+
+@typed_shared_task(name="check_knowledge_validity")
+def check_knowledge_validity() -> str:
+    soon, expired = execute_coroutine_sync(coroutine=_check_knowledge_validity)
+    return f"expiring={len(soon)} expired={len(expired)}"
+
+
+async def _check_knowledge_validity() -> tuple[list[str], list[str]]:
+    """Muddati WARN_DAYS kundan keyin tugaydigan va bugun tugagan hujjatlar
+    haqida adminlarga BITTA bildirishnoma (har tur uchun).
+
+    Faqat aniq shu ikki kunda yuboriladi (validity.expiry_events) — har kuni
+    bir xil xabar takrorlanmaydi."""
+    store = QdrantStore()
+    if not await store.exists():
+        return [], []
+    soon, expired = expiry_events(await store.scroll_all_pages())
+    for kind, titles in (
+        (NotificationType.KNOWLEDGE_EXPIRING, soon),
+        (NotificationType.KNOWLEDGE_EXPIRED, expired),
+    ):
+        if titles:
+            await _notify_admins(
+                kind,
+                {"title": titles[0], "count": str(len(titles)), "days": str(WARN_DAYS)},
+            )
+    if soon or expired:
+        logger.info("Hujjat muddati: %d ta yaqin, %d ta tugagan", len(soon), len(expired))
+    return soon, expired
+
+
+async def _notify_admins(notification_type: str, params: dict[str, str]) -> None:
+    try:
+        async with local_async_session() as session:
+            uow: ApplicationUnitOfWork[RepositoryProtocol] = ApplicationUnitOfWork(
+                session
+            )
+            async with uow:
+                recipients = await uow.notifications.fan_out(
+                    uow.session,
+                    notification_type=notification_type,
+                    params=params,
+                    role=UserRole.ADMIN,
+                )
+                await uow.commit()
+        await publish_new(recipients)
+    except Exception:
+        logger.exception("Muddat bildirishnomasini yuborib bo'lmadi: %s", notification_type)
+
+
+# ---- Saytdan olingan hujjatlarni qayta tekshirish ----
+
+
+@typed_shared_task(name="rescrape_knowledge")
+def rescrape_knowledge(manual: bool = False) -> str:
+    # Avtomatik ishga tushish sozlamada o'chirilgan bo'lsa — faqat qo'lda
+    if not manual and not config.scraping.RESCRAPE_ENABLED:
+        return "disabled"
+    return execute_coroutine_sync(coroutine=_rescrape_knowledge)
+
+
+async def _rescrape_knowledge() -> str:
+    redis = create_redis_client(config.redis.dsn)
+    try:
+        # Bir vaqtda ikkita ishga tushmasin (qo'lda + jadval)
+        if not await redis.set(RESCRAPE_RUNNING_KEY, "1", nx=True, ex=3600):
+            return "already running"
+        started = get_utc_now()
+        store = QdrantStore()
+        async with httpx.AsyncClient() as http:
+            summary = await RescrapeKnowledgeUseCase(
+                embedder=OllamaEmbedder(http=http), store=store
+            ).execute()
+        await redis.set(
+            RESCRAPE_LAST_KEY,
+            json.dumps(
+                {
+                    "started_at": started.isoformat(),
+                    "finished_at": get_utc_now().isoformat(),
+                    "checked": summary.checked,
+                    "unchanged": summary.unchanged,
+                    "changed": summary.changed,
+                    "failed": [{"title": t, "error": e} for t, e in summary.failed],
+                },
+                ensure_ascii=False,
+            ),
+        )
+    finally:
+        await redis.delete(RESCRAPE_RUNNING_KEY)
+        await redis.aclose()
+
+    if summary.changed:
+        await _notify_admins(
+            NotificationType.KNOWLEDGE_UPDATED,
+            {"title": summary.changed[0], "count": str(len(summary.changed))},
+        )
+    if summary.failed:
+        await _notify_admins(
+            NotificationType.KNOWLEDGE_SOURCE_FAILED,
+            {"title": summary.failed[0][0], "count": str(len(summary.failed))},
+        )
+    logger.info(
+        "Qayta scraping: %d tekshirildi, %d o'zgardi, %d xato",
+        summary.checked,
+        len(summary.changed),
+        len(summary.failed),
+    )
+    return f"checked={summary.checked} changed={len(summary.changed)} failed={len(summary.failed)}"

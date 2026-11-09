@@ -1,6 +1,8 @@
 // Haqiqiy chat tarixi xizmati — backendga ulangan (/v1/chat).
 
 import { apiFetch, readApiError } from "./authService";
+import type { SourceRef, VoteFeedback } from "../types/chat";
+import { filenameFromDisposition } from "../utils/saveBlob";
 
 export interface ApiSession {
   id: string;
@@ -19,12 +21,14 @@ export interface ApiMessage {
   // Faqat assistant javobida; eski yozuvlarda null
   completion_tokens?: number | null;
   finish_reason?: string | null;
+  sources?: SourceRef[] | null;
 }
 
 // Assistant javobi bilan birga saqlanadigan token statistikasi
 export interface MessageStats {
   completionTokens: number;
   finishReason: string;
+  sources?: SourceRef[];
 }
 
 export interface ApiSessionDetail extends ApiSession {
@@ -32,6 +36,35 @@ export interface ApiSessionDetail extends ApiSession {
 }
 
 const readError = readApiError;
+
+// Chat tarixidan qidiruv (xabar matni + sarlavha, lotin va kirill yozuvida)
+export interface MessageSearchHit {
+  session_id: string;
+  session_title: string;
+  message_id: string;
+  role: "user" | "assistant";
+  snippet: string;
+  created_at: string;
+}
+
+export async function searchMessages(q: string): Promise<MessageSearchHit[]> {
+  const res = await apiFetch(`/v1/chat/search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) throw new Error(await readError(res, "Qidiruvda xatolik"));
+  return res.json();
+}
+
+// Suhbatni Word (.docx) faylga eksport — fayl nomi serverdan (Content-Disposition)
+export async function downloadSessionDocx(
+  sessionId: string,
+  lang: string
+): Promise<{ blob: Blob; filename: string }> {
+  const res = await apiFetch(
+    `/v1/chat/sessions/${encodeURIComponent(sessionId)}/export.docx?lang=${encodeURIComponent(lang)}`
+  );
+  if (!res.ok) throw new Error(await readError(res, "Eksportda xatolik"));
+  const filename = filenameFromDisposition(res.headers.get("content-disposition"), "Turon AI.docx");
+  return { blob: await res.blob(), filename };
+}
 
 export async function listSessions(): Promise<ApiSession[]> {
   const res = await apiFetch("/v1/chat/sessions");
@@ -91,6 +124,7 @@ export async function addMessage(
       ...(stats && {
         completion_tokens: stats.completionTokens,
         finish_reason: stats.finishReason || null,
+        ...(stats.sources?.length && { sources: stats.sources }),
       }),
     }),
   });
@@ -119,11 +153,16 @@ export async function deleteMessage(sessionId: string, messageId: string): Promi
 export async function voteMessage(
   sessionId: string,
   messageId: string,
-  vote: "up" | "down" | null
+  vote: "up" | "down" | null,
+  // Faqat dislike'da: sabab va ixtiyoriy izoh (admin ko'rib chiqadi)
+  feedback?: VoteFeedback
 ): Promise<ApiMessage> {
   const res = await apiFetch(`/v1/chat/sessions/${sessionId}/messages/${messageId}/vote`, {
     method: "PATCH",
-    body: JSON.stringify({ vote }),
+    body: JSON.stringify({
+      vote,
+      ...(vote === "down" && feedback && { reason: feedback.reason, comment: feedback.comment || null }),
+    }),
   });
   if (!res.ok) throw new Error(await readError(res, "Baholashda xatolik"));
   return res.json();

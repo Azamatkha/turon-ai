@@ -1,4 +1,5 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
+import MessageSearchResults from "./MessageSearchResults";
 import { createPortal } from "react-dom";
 import { RiDeleteBin5Fill, RiMore2Fill, RiPushpin2Fill, RiUnpinLine } from "react-icons/ri";
 import HButton from "../common/HButton";
@@ -33,6 +34,8 @@ interface SidebarProps {
   setSearch: (v: string) => void;
   searchPlaceholder: string;
   noResultsLabel: string;
+  // Xabarlar matnidan topilganlar bo'limi sarlavhasi
+  messagesSectionLabel: string;
   side: SideTokens;
   userName: string;
   userHandle: string;
@@ -64,7 +67,7 @@ function formatLastMessageTime(iso: string, todayLabel: string): string {
 export default function Sidebar({
   open, setOpen, newChat, newChatLabel, chats, activeId, setActiveId, onRemoveChat, onTogglePin,
   removeChatLabel, pinChatLabel, unpinChatLabel, moreOptionsLabel, pinnedSectionLabel, recentsSectionLabel, todayLabel,
-  search, setSearch, searchPlaceholder, noResultsLabel,
+  search, setSearch, searchPlaceholder, noResultsLabel, messagesSectionLabel,
   side, userName, userHandle, initial, openProfile,
   onLogout, profileLabel, openContacts, contactsLabel, openSupport, supportLabel, logoutLabel,
   platformsLabel,
@@ -291,7 +294,9 @@ export default function Sidebar({
           </div>
 
           <div className={styles.chatList} ref={listRef}>
-            {chats.length === 0 && (
+            {/* 2+ harfli qidiruvda "topilmadi" yozuvini MessageSearchResults
+                chiqaradi — xabarlar ichidan topilgan bo'lishi mumkin */}
+            {chats.length === 0 && search.trim().length < 2 && (
               <div className={styles.noResults} style={{ color: side.sub }}>{noResultsLabel}</div>
             )}
             {pinnedChats.length > 0 && (
@@ -306,6 +311,14 @@ export default function Sidebar({
             <div className={styles.chatGroupItems}>
               {recentChats.map((c) => renderRow(c))}
             </div>
+            <MessageSearchResults
+              query={search}
+              titleMatches={chats.length}
+              side={side}
+              label={messagesSectionLabel}
+              noResultsLabel={noResultsLabel}
+              onOpen={setActiveId}
+            />
           </div>
 
           <div

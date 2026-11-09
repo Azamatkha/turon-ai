@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import ConfigDict, Field, field_validator
 
 from src.core.schemas import (
@@ -151,3 +153,21 @@ class UserNewPassword(StrongPasswordValidationMixin, Base):
     """
 
     password: str
+
+
+class ActiveSessionView(Base):
+    """Faol seans (qurilma) — profildagi "Faol seanslar" ro'yxati uchun."""
+
+    session_id: str
+    # Qisqa nom: "Chrome · Windows", "Turon AI app · Android"; noma'lum bo'lsa ""
+    device: str
+    user_agent: str
+    ip: str
+    created_at: datetime | None = None
+    last_seen_at: datetime | None = None
+    # Shu so'rov yuborilgan seans (uni "chiqish" tugmasi yopadi)
+    current: bool = False
+
+
+class RevokeSessionsResult(Base):
+    revoked: int

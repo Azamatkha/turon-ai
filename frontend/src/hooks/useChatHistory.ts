@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { Chat, Msg, ThinkStep } from "../types/chat";
-import { askReply, askReplyStream } from "../services/chatBotService";
+import type { Chat, Msg, SourceRef, ThinkStep, VoteFeedback } from "../types/chat";
+import { askReply, askReplyStream, suggestFollowups } from "../services/chatBotService";
 import {
   listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle, pinSession,
 } from "../services/chatHistoryService";
@@ -129,6 +129,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
       const msgs: Msg[] = detail.messages.map((m) => ({
         id: m.id, role: m.role, text: m.content, time: m.created_at, vote: m.vote ?? null,
         interrupted: m.finish_reason === "interrupted",
+        ...(m.sources?.length && { sources: m.sources }),
         ...(m.role === "assistant" && m.completion_tokens != null && {
           debug: { finishReason: m.finish_reason ?? "", completionTokens: m.completion_tokens, maxTokens: 0 },
         }),
@@ -196,15 +197,20 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   const finalizeAssistant = (
     sessionId: string,
     tempId: string,
-    res: { text: string; finishReason: string; completionTokens: number; maxTokens: number }
+    res: { text: string; finishReason: string; completionTokens: number; maxTokens: number; sources?: SourceRef[] },
+    question: string
   ) => {
     const finalText = stripStrayFollowup(res.text);
+    // Xabar id'si DB'ga saqlangach almashadi — takliflar qaysi biri bilan
+    // kelsa ham shu xabarga yopishsin
+    let savedId: string | null = null;
     setActiveMsgs(sessionId, (m) =>
       m.map((x) =>
         x.id === tempId
           ? {
               ...x,
               text: finalText,
+              sources: res.sources,
               debug: {
                 finishReason: res.finishReason,
                 completionTokens: res.completionTokens,
@@ -224,11 +230,21 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
     addMessage(sessionId, "assistant", finalText, {
       completionTokens: res.completionTokens,
       finishReason: res.finishReason,
+      sources: res.sources,
     })
-      .then((saved) =>
-        setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)))
-      )
+      .then((saved) => {
+        savedId = saved.id;
+        setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)));
+      })
       .catch(() => {});
+    // "Keyingi savol" takliflari — javob ko'ringandan KEYIN, alohida so'rov
+    const titles = [...new Set((res.sources ?? []).map((x) => x.title))];
+    void suggestFollowups(question, finalText, titles).then((list) => {
+      if (!list.length) return;
+      setActiveMsgs(sessionId, (m) =>
+        m.map((x) => (x.id === tempId || (savedId && x.id === savedId) ? { ...x, suggestions: list } : x))
+      );
+    });
   };
 
   const respond = async (
@@ -286,7 +302,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
         }
       );
       ensureStarted();
-      finalizeAssistant(sessionId, tempId, res);
+      finalizeAssistant(sessionId, tempId, res, userText);
     } catch {
       // Foydalanuvchi to'xtatgan — xabar "To'xtatildi" belgisi bilan qoladi
       if (abort.signal.aborted) {
@@ -312,7 +328,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
       try {
         const res = await askReply(userText, history);
         ensureStarted();
-        finalizeAssistant(sessionId, tempId, res);
+        finalizeAssistant(sessionId, tempId, res, userText);
       } catch {
         setThinking(false);
         setGenerating(false);
@@ -485,10 +501,10 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   };
 
   // Xabarga like/dislike — mahalliy holatni yangilab, DB ga saqlaymiz
-  const voteMsg = (messageId: string, vote: "up" | "down" | null) => {
+  const voteMsg = (messageId: string, vote: "up" | "down" | null, feedback?: VoteFeedback) => {
     if (!activeId) return;
     setActiveMsgs(activeId, (m) => m.map((x) => (x.id === messageId ? { ...x, vote } : x)));
-    voteMessage(activeId, messageId, vote).catch(() => {});
+    voteMessage(activeId, messageId, vote, feedback).catch(() => {});
   };
 
   const active = chats.find((c) => c.id === activeId) || { messages: [] as Msg[], title: "" };

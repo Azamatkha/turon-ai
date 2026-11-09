@@ -5,6 +5,19 @@ export type Role = "user" | "assistant";
 export type ThinkStep = "analyze" | "rates" | "employees" | "search" | "write";
 export const THINK_STEPS: readonly ThinkStep[] = ["analyze", "rates", "employees", "search", "write"];
 
+// Javob tayangan bilim bazasi hujjati (backend SourceRef)
+export interface SourceRef {
+  title: string;
+  score: number;
+}
+
+// Dislike sababi (backend VOTE_REASONS bilan bir xil)
+export type VoteReason = "wrong" | "outdated" | "incomplete" | "other";
+export interface VoteFeedback {
+  reason: VoteReason;
+  comment?: string;
+}
+
 export interface Msg {
   id: string;
   role: Role;
@@ -18,6 +31,10 @@ export interface Msg {
   thought?: { steps: ThinkStep[]; seconds: number };
   // Foydalanuvchi "To'xtatish"ni bosgan (bazada finish_reason="interrupted")
   interrupted?: boolean;
+  // Javob qaysi hujjatlarga tayangani — javob tagida chip bo'lib ko'rinadi
+  sources?: SourceRef[];
+  // "Keyingi savol" takliflari — faqat shu sessiyada, bazaga saqlanmaydi
+  suggestions?: string[];
 }
 
 export interface Chat {

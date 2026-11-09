@@ -49,12 +49,13 @@ const MONTHS_MORTGAGE: FieldConfig = { min: 6, max: 240, step: 6 };
 // Omonat: 1 oydan 60 oygacha.
 const MONTHS_DEP: FieldConfig = { min: 1, max: 60, step: 1 };
 // Foiz: 2 xonali kasr (21.99 kabi) — kiritishda erkin, slayder 0.1 qadam.
-// Foiz: 2 xonali kasr (21.99). Oddiy kreditda eng past stavka 20% — bankda
-// undan arzon iste'mol krediti yo'q. Ipoteka/avtokreditda (imtiyozli dasturlar)
-// va omonatda bunday chegara qo'yilmaydi.
-const RATE_CREDIT: FieldConfig = { min: 20, max: 50, step: 0.1 };
+// Foiz: 2 xonali kasr (21.99). Oddiy kreditda eng past stavka 14%.
+// Ipoteka/avtokreditda (imtiyozli dasturlar) va omonatda bunday chegara qo'yilmaydi.
+const RATE_CREDIT: FieldConfig = { min: 14, max: 50, step: 0.1 };
 const RATE_OTHER: FieldConfig = { min: 0, max: 50, step: 0.1 };
-// Oddiy kredit/omonat summasi: 100 mln gacha. Ipoteka narxi: 500 mln gacha.
+// Oddiy kredit summasi: 1 mln dan 200 mln gacha. Omonat: 100 mln gacha.
+// Ipoteka narxi: 500 mln gacha.
+const CREDIT_AMOUNT: FieldConfig = { min: 1_000_000, max: 200_000_000, step: 1_000_000 };
 const AMOUNT: FieldConfig = { min: 100_000, max: 100_000_000, step: 100_000 };
 const PRICE: FieldConfig = { min: 1_000_000, max: 500_000_000, step: 1_000_000 };
 
@@ -167,7 +168,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
   const cardBg = "var(--tu-glass-bg-soft)";
   const monthsCfg =
     mode === "deposit" ? MONTHS_DEP : mode === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
-  // Oddiy kreditda eng past stavka 20%
+  // Oddiy kreditda eng past stavka 14%
   const rateCfg = mode === "credit" ? RATE_CREDIT : RATE_OTHER;
   const isLoan = mode === "credit" || mode === "mortgage";
   const cur = s.calcCurrency;
@@ -177,9 +178,12 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
     if (m === mode) return;
     const cfg = m === "deposit" ? MONTHS_DEP : m === "mortgage" ? MONTHS_MORTGAGE : MONTHS_CREDIT;
     setMonths((v) => clamp(Math.round(v / cfg.step) * cfg.step || cfg.min, cfg.min, cfg.max));
-    // Oddiy kreditga o'tilsa — stavka 20% dan past bo'lib qolmasin
+    // Oddiy kreditga o'tilsa — stavka 14% dan past bo'lib qolmasin
     const rc = m === "credit" ? RATE_CREDIT : RATE_OTHER;
     setRate((v) => clamp(v, rc.min, rc.max));
+    // Summa kredit va omonatda umumiy — yangi rejim oralig'iga keltiramiz
+    const ac = m === "credit" ? CREDIT_AMOUNT : AMOUNT;
+    setAmount((v) => clamp(v, ac.min, ac.max));
     setMode(m);
   };
 
@@ -386,7 +390,7 @@ export default function CalculatorModal({ tk, isDark, s, onClose }: CalculatorMo
         )}
 
         <div className={styles.fields} key={mode}>
-          {mode === "credit" && numField(s.calcCreditAmount, amount, setAmount, AMOUNT, cur)}
+          {mode === "credit" && numField(s.calcCreditAmount, amount, setAmount, CREDIT_AMOUNT, cur)}
           {mode === "deposit" && numField(s.calcDepositAmount, amount, setAmount, AMOUNT, cur)}
           {mode === "mortgage" && (
             <>

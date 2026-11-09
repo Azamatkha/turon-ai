@@ -8,10 +8,13 @@ import {
   type KnowledgeDetail,
 } from "../../services/knowledgeService";
 import { useModalA11y } from "../../hooks/useModalA11y";
+import KnowledgeValidityEditor from "./KnowledgeValidityEditor";
 import styles from "./KnowledgeDetailView.module.css";
 
 interface Props {
   title: string;
+  // Amal qilish muddati (ro'yxatdan keladi — detail endpointi uni bermaydi)
+  validUntil?: string;
   onBack: () => void;
   onChanged: () => void; // ro'yxatni yangilash uchun
   t: AdminStrings;
@@ -29,7 +32,7 @@ function stripTitlePrefix(text: string, title: string): string {
 }
 
 // Bitta ma'lumotning to'liq sahifasi: ko'rish + tahrirlash + o'chirish.
-export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin }: Props) {
+export default function KnowledgeDetailView({ title, validUntil = "", onBack, onChanged, t: admin }: Props) {
   const [detail, setDetail] = useState<KnowledgeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -129,6 +132,7 @@ export default function KnowledgeDetailView({ title, onBack, onChanged, t: admin
       ) : detail ? (
         <>
           <div className={styles.title}>{detail.title}</div>
+          <KnowledgeValidityEditor title={detail.title} validUntil={validUntil} t={admin} onSaved={onChanged} />
           <div className={styles.chunks}>
             {detail.chunks.map((c) => (
               <div key={c.chunk_index} className={styles.chunk}>

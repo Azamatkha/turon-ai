@@ -3,6 +3,7 @@ from typing import Any
 from uuid import UUID
 
 from src.core.schemas import Base
+from src.system.schemas import ComponentStatusView
 
 
 class DeptStat(Base):
@@ -77,3 +78,88 @@ class FaceIdLogView(Base):
 class FaceIdLogPageView(Base):
     items: list[FaceIdLogView]
     total: int
+
+
+class DislikedAnswerView(Base):
+    """Dislike olgan bitta bot javobi — admin ko'rib chiqishi uchun."""
+
+    id: UUID
+    session_id: UUID
+    created_at: datetime
+    question: str | None = None
+    answer: str
+    # [{"title": ..., "score": ...}] — javob tayangan hujjatlar
+    sources: list[dict[str, Any]] | None = None
+    reason: str | None = None
+    comment: str | None = None
+    reviewed: bool = False
+    user_name: str
+    username: str
+    session_title: str = ""
+
+
+class DislikedAnswerPageView(Base):
+    items: list[DislikedAnswerView]
+    total: int
+
+
+class ReviewDislikedModel(Base):
+    reviewed: bool = True
+
+
+class QuestionStatItem(Base):
+    """Bir xil savollar guruhi."""
+
+    question: str
+    count: int
+    users: int
+    last_asked: datetime
+
+
+class QuestionSummary(Base):
+    total: int
+    no_info: int
+    errors: int
+    # O'rtacha javob vaqti (ms) va jami token — LLM yuklamasini kuzatish uchun
+    avg_duration_ms: int
+    total_tokens: int
+
+
+class QuestionAnalyticsView(Base):
+    days: int
+    summary: QuestionSummary
+    top: list[QuestionStatItem]
+    unanswered: list[QuestionStatItem]
+
+
+class HourlyPoint(Base):
+    hour: datetime
+    questions: int
+    errors: int
+    no_info: int
+    avg_ms: int
+
+
+class LlmMetrics(Base):
+    """So'nggi `hours` soatdagi bot ishlashi (question_logs'dan)."""
+
+    hours: int
+    questions: int
+    errors: int
+    no_info: int
+    tokens: int
+    p50_ms: int
+    p95_ms: int
+    max_ms: int
+    hourly: list[HourlyPoint]
+    # Javob keshi — bugun (Toshkent): keshdan berilgan / modeldan olib keshlangan
+    cache_hits_today: int = 0
+    cache_misses_today: int = 0
+
+
+class SystemStatusView(Base):
+    # "ok" | "degraded" | "down"
+    status: str
+    checked_at: datetime
+    components: list[ComponentStatusView]
+    llm: LlmMetrics

@@ -1,0 +1,263 @@
+/* Yoqmagan javoblar — FaceIdLogsView / ReportsView uslubida, kartochkalar */
+
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.hint {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.refreshBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.total {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.empty {
+  padding: 40px 16px;
+  border: 1px dashed var(--adm-border-2);
+  border-radius: 14px;
+  text-align: center;
+  color: var(--adm-text-muted-2);
+  font-size: 14.5px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  padding: 16px 18px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+}
+
+.cardDone {
+  opacity: 0.65;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.user {
+  font-weight: 600;
+  color: var(--adm-text-strong);
+}
+
+.handle {
+  margin-left: 6px;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+}
+
+.reason {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.done {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(5, 150, 105, 0.1);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  color: #059669;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.date {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--adm-text-muted);
+}
+
+.question {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--adm-text-strong);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.answer {
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.answerClamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.more {
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--adm-accent, #4059be);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.comment {
+  padding: 8px 10px;
+  border-left: 3px solid var(--adm-danger-border);
+  border-radius: 6px;
+  background: var(--adm-card-alt);
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.source {
+  max-width: 320px;
+  padding: 3px 10px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 999px;
+  background: var(--adm-card-alt);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noSources {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--adm-text-muted-2);
+}
+
+.cardFoot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.reviewBtn,
+.reopenBtn {
+  padding: 7px 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reviewBtn {
+  border: none;
+  background: #059669;
+  color: #fff;
+}
+
+.reopenBtn {
+  border: 1px solid var(--adm-border-2);
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+}
+
+.reviewBtn:disabled,
+.reopenBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .date {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap {
+    transition: none;
+  }
+}

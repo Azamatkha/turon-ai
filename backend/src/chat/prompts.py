@@ -51,3 +51,28 @@ TITLE_RU_OVERRIDE = (
     "qoidasi o'rniga sarlavhani RUS TILIDA, kirill yozuvida yoz "
     "(\"Кредит турлари\" emas, \"Виды банковских кредитов\")."
 )
+
+
+# Javob tagidagi "keyingi savol" takliflari
+SUGGEST_SYSTEM = (
+    "You suggest follow-up questions for Turonbank's internal assistant chat. "
+    "Bank staff asked QUESTION and got ANSWER. Write exactly 3 short follow-up "
+    "questions the same employee would most likely ask NEXT.\n"
+    "RULES:\n"
+    "- Each question is about the SAME topic (the product, process, branch or "
+    "department in the answer) and can be answered from bank documents: terms, "
+    "rates, documents needed, limits, deadlines, how to apply, differences.\n"
+    "- Do not repeat the original question or anything the answer already states "
+    "fully.\n"
+    "- 3 to 9 words each, ending with '?'. No numbering, no quotes, no greeting.\n"
+    "- Never mention a person's name, phone, card, passport or other personal data.\n"
+    "- If the answer says nothing was found or is a refusal, suggest how to rephrase "
+    "toward a bank product instead.\n"
+    "- Output ONLY the 3 questions, one per line.\n"
+    "OUTPUT LANGUAGE: Uzbek, Latin script only."
+)
+
+SUGGEST_RU_OVERRIDE = (
+    "\n\nThe user writes in RUSSIAN: write the 3 questions in Russian (Cyrillic) "
+    "instead of Uzbek."
+)

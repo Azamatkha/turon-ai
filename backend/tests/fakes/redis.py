@@ -113,6 +113,52 @@ class InMemoryRedis:
             return -1
         return max(0, int(expires_at - _now()))
 
+    async def incr(self, key: str | bytes) -> int:
+        key_norm = _normalize_key(key)
+        self._purge_expired(key_norm)
+        value = int(self._store.get(key_norm) or 0) + 1
+        self._store[key_norm] = str(value)
+        return value
+
+    # ---- Hash (seans meta-ma'lumoti uchun: src/user/auth/sessions.py) ----
+
+    def _hash(self, key: str | bytes) -> dict[str, str]:
+        key_norm = _normalize_key(key)
+        self._purge_expired(key_norm)
+        current = self._store.get(key_norm)
+        if not isinstance(current, dict):
+            current = {}
+            self._store[key_norm] = current  # type: ignore[assignment]
+        return current
+
+    async def hset(
+        self, key: str | bytes, field: str | None = None, value: Any = None,
+        mapping: dict[str, Any] | None = None,
+    ) -> int:
+        h = self._hash(key)
+        items = dict(mapping or {})
+        if field is not None:
+            items[field] = value
+        added = sum(1 for f in items if f not in h)
+        h.update({f: _normalize_value(v) for f, v in items.items()})
+        return added
+
+    async def hsetnx(self, key: str | bytes, field: str, value: Any) -> int:
+        h = self._hash(key)
+        if field in h:
+            return 0
+        h[field] = _normalize_value(value)
+        return 1
+
+    async def hgetall(self, key: str | bytes) -> dict[str, str]:
+        key_norm = _normalize_key(key)
+        self._purge_expired(key_norm)
+        current = self._store.get(key_norm)
+        return dict(current) if isinstance(current, dict) else {}
+
+    def pipeline(self, transaction: bool = True) -> "_InMemoryPipeline":
+        return _InMemoryPipeline(self)
+
     async def scan(
         self,
         cursor: int = 0,
@@ -190,3 +236,32 @@ class InMemoryRedis:
 
     async def aclose(self) -> None:
         self.closed = True
+
+
+class _InMemoryPipeline:
+    """redis.asyncio pipeline'ining soddalashtirilgan nusxasi: buyruqlar
+    navbatga yig'iladi va `execute()` da ketma-ket bajariladi."""
+
+    def __init__(self, redis: InMemoryRedis) -> None:
+        self._redis = redis
+        self._calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+
+    def __getattr__(self, name: str) -> Any:
+        def queue(*args: Any, **kwargs: Any) -> "_InMemoryPipeline":
+            self._calls.append((name, args, kwargs))
+            return self
+
+        return queue
+
+    async def execute(self) -> list[Any]:
+        results = []
+        for name, args, kwargs in self._calls:
+            results.append(await getattr(self._redis, name)(*args, **kwargs))
+        self._calls.clear()
+        return results
+
+    async def __aenter__(self) -> "_InMemoryPipeline":
+        return self
+
+    async def __aexit__(self, *exc: Any) -> None:
+        self._calls.clear()

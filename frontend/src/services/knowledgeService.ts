@@ -26,6 +26,24 @@ export interface KnowledgeItem {
   preview: string;
   // Yuklangan vaqti (ISO). Eski yozuvlarda bo'lmasligi mumkin — bo'sh satr.
   uploaded_at?: string;
+  // Amal qilish muddati "YYYY-MM-DD"; muddatsiz bo'lsa bo'sh satr
+  valid_until?: string;
+  // Matni aynan bir xil boshqa hujjatlar (dublikat)
+  duplicates?: string[];
+}
+
+// Saytdan qayta tekshirish (backend/src/knowledge/rescrape.py)
+export interface RescrapeStatus {
+  enabled: boolean;
+  running: boolean;
+  last?: {
+    started_at: string;
+    finished_at: string;
+    checked: number;
+    unchanged: number;
+    changed: string[];
+    failed: { title: string; error: string }[];
+  } | null;
 }
 
 export interface KnowledgeChunk {
@@ -75,6 +93,15 @@ export async function deleteKnowledge(title: string): Promise<void> {
     { method: "DELETE" }
   );
   if (!res.ok) throw new Error(await readError(res, "O'chirishda xatolik"));
+}
+
+// Amal qilish muddati: sana ("YYYY-MM-DD") yoki null — muddatsiz
+export async function setKnowledgeValidity(title: string, validUntil: string | null): Promise<void> {
+  const res = await apiFetch("/v1/admin/knowledge/validity", {
+    method: "PATCH",
+    body: JSON.stringify({ title, valid_until: validUntil }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Muddatni saqlashda xatolik"));
 }
 
 // Ma'lumotni tahrirlash (eskisini o'chirib, yangi matnni qayta yozadi)
@@ -169,4 +196,16 @@ export async function uploadFile(title: string, file: File): Promise<UploadResul
   });
   if (!res.ok) throw new Error(await readError(res, "Yuklashda xatolik"));
   return res.json();
+}
+
+export async function getRescrapeStatus(): Promise<RescrapeStatus> {
+  const res = await apiFetch("/v1/admin/knowledge/rescrape");
+  if (!res.ok) throw new Error(await readError(res, "Holatni olishda xatolik"));
+  return res.json();
+}
+
+// Fon vazifasi navbatga qo'yiladi — natija bildirishnoma va holat orqali keladi
+export async function runRescrape(): Promise<void> {
+  const res = await apiFetch("/v1/admin/knowledge/rescrape", { method: "POST" });
+  if (!res.ok) throw new Error(await readError(res, "Tekshiruvni boshlab bo'lmadi"));
 }

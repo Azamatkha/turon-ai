@@ -19,6 +19,12 @@ import ApiDocsView from "../components/admin/ApiDocsView";
 import GuidesAdminView from "../components/admin/GuidesAdminView";
 import ReportsView from "../components/admin/ReportsView";
 import FaceIdLogsView from "../components/admin/FaceIdLogsView";
+import DislikedAnswersView from "../components/admin/DislikedAnswersView";
+import QuestionsView from "../components/admin/QuestionsView";
+import AuditLogsView from "../components/admin/AuditLogsView";
+import BackupsView from "../components/admin/BackupsView";
+import SystemView from "../components/admin/SystemView";
+import { listDislikedAnswers } from "../services/feedbackService";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
@@ -39,6 +45,11 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   dashboard: "dashboard",
   users: "users",
   reports: "reports",
+  disliked: "disliked-answers",
+  questions: "questions",
+  audit: "audit",
+  backups: "backups",
+  system: "system",
   faceIdLogs: "face-id-logs",
   knowledgeList: "knowledge",
   pdfUpload: "documents",
@@ -49,6 +60,11 @@ const PATH_TO_VIEW: Record<string, AdminView> = {
   dashboard: "dashboard",
   users: "users",
   reports: "reports",
+  "disliked-answers": "disliked",
+  questions: "questions",
+  audit: "audit",
+  backups: "backups",
+  system: "system",
   "face-id-logs": "faceIdLogs",
   knowledge: "knowledgeList",
   documents: "pdfUpload",
@@ -110,6 +126,8 @@ export default function AdminPage() {
   const [navCollapsed, setNavCollapsed] = useState(false);
   // Sidebar'dagi "yangi murojaatlar" belgisi
   const [newReportsCount, setNewReportsCount] = useState(0);
+  // Ko'rib chiqilmagan yoqmagan javoblar soni (yon paneldagi belgi)
+  const [dislikedCount, setDislikedCount] = useState(0);
   // Ro'yxat yuklash/rol o'zgartirish/o'chirish kabi amallar uchun umumiy xato banneri
   const [pageError, setPageError] = useState("");
 
@@ -173,6 +191,11 @@ export default function AdminPage() {
       .catch(() => {
         /* huquqi yo'q yoki tarmoq xatosi — belgi ko'rinmaydi */
       });
+    listDislikedAnswers({ size: 1 })
+      .then((d) => setDislikedCount(d.total))
+      .catch(() => {
+        /* huquqi yo'q yoki tarmoq xatosi — belgi ko'rinmaydi */
+      });
   }, []);
 
   useEffect(() => {
@@ -185,6 +208,11 @@ export default function AdminPage() {
   const onUsers = view === "users";
   const onReports = view === "reports";
   const onFaceIdLogs = view === "faceIdLogs";
+  const onDisliked = view === "disliked";
+  const onQuestions = view === "questions";
+  const onAudit = view === "audit";
+  const onBackups = view === "backups";
+  const onSystem = view === "system";
   const onKnowledgeList = view === "knowledgeList";
   const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
@@ -347,6 +375,7 @@ export default function AdminPage() {
         setView={setView}
         usersCount={users.length}
         newReportsCount={newReportsCount}
+        dislikedCount={dislikedCount}
         collapsed={navCollapsed}
         t={t}
       />
@@ -390,6 +419,11 @@ export default function AdminPage() {
           {onReports && (
             <ReportsView mounted={mounted} t={t} onCountsChange={setNewReportsCount} />
           )}
+          {onSystem && <SystemView mounted={mounted} t={t} />}
+          {onBackups && <BackupsView mounted={mounted} t={t} />}
+          {onAudit && <AuditLogsView mounted={mounted} t={t} />}
+          {onQuestions && <QuestionsView mounted={mounted} t={t} />}
+          {onDisliked && <DislikedAnswersView mounted={mounted} t={t} onCountChange={setDislikedCount} />}
           {onFaceIdLogs && <FaceIdLogsView mounted={mounted} t={t} />}
           {onGuides && <GuidesAdminView mounted={mounted} t={t} />}
           {onApiDocs && <ApiDocsView />}

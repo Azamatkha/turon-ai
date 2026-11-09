@@ -56,6 +56,8 @@ from src.user.auth.dependencies import get_current_user
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
 from src.main.config import config
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 
 router = APIRouter()
@@ -149,9 +151,12 @@ async def create_guide(
     data: CreateEdoGuideModel,
     current_user: EditSettingsUser,
     use_case: Annotated[CreateGuideUseCase, Depends(get_create_guide_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> EdoGuideView:
     """Admin: yuklangan videodan yo'riqnoma yaratadi (MP4, 200 MB gacha)."""
-    return await use_case.execute(data=data, created_by=current_user.id)
+    result = await use_case.execute(data=data, created_by=current_user.id)
+    await audit.log(current_user, AuditAction.GUIDE_CREATE, "guide", result.id, result.title)
+    return result
 
 
 @admin_router.patch("/{guide_id}", response_model=EdoGuideView)
@@ -162,9 +167,12 @@ async def update_guide(
         User, Depends(require_permission(Permission.EDIT_SETTINGS))
     ],
     use_case: Annotated[UpdateGuideUseCase, Depends(get_update_guide_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> EdoGuideView:
     """Admin: yo'riqnoma sarlavhasini o'zgartiradi."""
-    return await use_case.execute(guide_id=guide_id, data=data)
+    result = await use_case.execute(guide_id=guide_id, data=data)
+    await audit.log(current_user, AuditAction.GUIDE_UPDATE, "guide", guide_id, result.title)
+    return result
 
 
 @admin_router.delete("/{guide_id}", status_code=204)
@@ -174,6 +182,8 @@ async def delete_guide(
         User, Depends(require_permission(Permission.EDIT_SETTINGS))
     ],
     use_case: Annotated[DeleteGuideUseCase, Depends(get_delete_guide_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> None:
     """Admin: yo'riqnomani va uning video faylini o'chiradi."""
     await use_case.execute(guide_id=guide_id)
+    await audit.log(current_user, AuditAction.GUIDE_DELETE, "guide", guide_id)

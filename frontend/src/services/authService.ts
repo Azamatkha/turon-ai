@@ -127,15 +127,37 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
       headers: { ...baseHeaders, ...authHeaders(), ...(init.headers || {}) },
     });
 
+  const hadSession = isAuthenticated();
   let res = await doFetch();
+  let refreshUnavailable = false;
   if (res.status === 401 && getRefreshToken()) {
     const outcome = await refreshOnce();
     if (outcome === "ok") res = await doFetch();
     // Tarmoq/5xx/429 — sessiya tugagani emas: tokenlar qoladi, keyingi so'rov qayta urinadi
     else if (outcome === "rejected") clearStorage();
+    else refreshUnavailable = true;
+  }
+  // Sessiya tugadi (refresh ham rad etildi) — "401" xatosini ko'rsatmay,
+  // to'g'ridan-to'g'ri umumiy login sahifasiga o'tamiz. Chaqiruvchiga hech
+  // narsa qaytmaydi (promise osilib qoladi) — sahifa baribir almashadi va
+  // ekranda bir lahza ham xato yozuvi chiqmaydi.
+  if (res.status === 401 && hadSession && !refreshUnavailable && path !== LOGOUT_PATH) {
+    redirectToLogin();
+    return new Promise<Response>(() => {});
   }
   if (res.status === 403 && path !== "/v1/users/me") void recheckVerification();
   return res;
+}
+
+const LOGOUT_PATH = "/v1/users/auth/logout";
+
+// Bir nechta so'rov bir vaqtda 401 olsa — faqat bitta yo'naltirish
+let redirectingToLogin = false;
+function redirectToLogin(): void {
+  if (redirectingToLogin) return;
+  redirectingToLogin = true;
+  clearStorage();
+  window.location.assign(PORTAL_LOGIN_URL);
 }
 
 // Admin userning tasdiqini olib tashlasa, brauzerdagi saqlangan profil hali
@@ -398,4 +420,37 @@ export async function changePassword(newPassword: string): Promise<void> {
       res.status,
     );
   }
+}
+// ---- Faol seanslar — /v1/users/auth/sessions ----
+
+export interface ActiveSession {
+  session_id: string;
+  // "Chrome · Windows", "Turon AI app · Android"; noma'lum bo'lsa ""
+  device: string;
+  user_agent: string;
+  ip: string;
+  created_at?: string | null;
+  last_seen_at?: string | null;
+  // Shu brauzerdagi seans
+  current: boolean;
+}
+
+export async function listActiveSessions(): Promise<ActiveSession[]> {
+  const res = await apiFetch("/v1/users/auth/sessions");
+  if (!res.ok) throw new Error(await readApiError(res, "Seanslarni olishda xatolik"));
+  return res.json();
+}
+
+export async function revokeSession(sessionId: string): Promise<void> {
+  const res = await apiFetch(`/v1/users/auth/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Seansni yopib bo'lmadi"));
+}
+
+// Joriy brauzerdan tashqari hamma qurilmalardan chiqish; nechta yopilganini qaytaradi
+export async function revokeOtherSessions(): Promise<number> {
+  const res = await apiFetch("/v1/users/auth/sessions/revoke-others", { method: "POST" });
+  if (!res.ok) throw new Error(await readApiError(res, "Seanslarni yopib bo'lmadi"));
+  return ((await res.json()) as { revoked: number }).revoked;
 }

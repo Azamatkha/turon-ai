@@ -3,13 +3,22 @@ import { RiContactsBook2Line, RiCopperCoinLine, RiGlobalLine, RiHandCoinLine, Ri
 import { MdCurrencyExchange, MdOutlineCreditCard, MdOutlineLocationOn, MdOutlineSavings } from "react-icons/md";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
-import type { Msg, ThemeTokens, ThinkStep } from "../../types/chat";
+import type { Msg, ThemeTokens, ThinkStep, VoteFeedback } from "../../types/chat";
+import DislikeFeedback from "./DislikeFeedback";
 import ThoughtLine from "./ThoughtLine";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
+
+// Manba chiplari: bir hujjatning bir nechta bo'lagi kelishi mumkin — sarlavha
+// bo'yicha takrorsiz, ko'pi bilan 4 tasi
+const MAX_SOURCE_CHIPS = 4;
+function uniqueSources(m: Msg): string[] {
+  if (!m.sources?.length) return [];
+  return [...new Set(m.sources.map((x) => x.title.trim()).filter(Boolean))].slice(0, MAX_SOURCE_CHIPS);
+}
 
 // Bo'sh holatdagi taklif chiplarining ikonkalari.
 //
@@ -71,7 +80,7 @@ interface MessageAreaProps {
   tk: ThemeTokens;
   isDark: boolean;
   s: ChatStaticStrings;
-  onVote?: (id: string, vote: "up" | "down" | null) => void;
+  onVote?: (id: string, vote: "up" | "down" | null, feedback?: VoteFeedback) => void;
 }
 
 type Vote = "up" | "down";
@@ -80,6 +89,8 @@ export default function MessageArea({
   scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, liveSteps, onRegenerate, onEditResend, tk, isDark, s, onVote,
 }: MessageAreaProps) {
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
+  // Kod/jadval nusxalash tugmalari interfeys tilida
+  const contentLabels = { copy: s.copy, copied: s.copied, copyTable: s.copyTable };
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // Tahrirlanayotgan foydalanuvchi xabari (id) va uning matni
   const [editId, setEditId] = useState<string | null>(null);
@@ -126,9 +137,24 @@ export default function MessageArea({
     });
   };
 
-  // Bosilgan bahoni qayta bossa — bekor qiladi (toggle)
-  const vote = (id: string, v: Vote, current: Vote | null | undefined) =>
-    onVote?.(id, current === v ? null : v);
+  // Dislike sababi paneli qaysi xabarda ochiq va "rahmat" yozuvi qaysida
+  const [feedbackId, setFeedbackId] = useState<string | null>(null);
+  const [thanksId, setThanksId] = useState<string | null>(null);
+
+  // Bosilgan bahoni qayta bossa — bekor qiladi (toggle). Dislike darhol
+  // saqlanadi, so'ng sabab so'raladi (majburiy emas).
+  const vote = (id: string, v: Vote, current: Vote | null | undefined) => {
+    const next = current === v ? null : v;
+    onVote?.(id, next);
+    setThanksId(null);
+    setFeedbackId(next === "down" ? id : null);
+  };
+  const submitFeedback = (id: string, feedback: VoteFeedback) => {
+    onVote?.(id, "down", feedback);
+    setFeedbackId(null);
+    setThanksId(id);
+    setTimeout(() => setThanksId((x) => (x === id ? null : x)), 2500);
+  };
 
   return (
     // role="log" + aria-live="polite" — bot javobi kelganda ekran o'quvchisi
@@ -282,7 +308,24 @@ export default function MessageArea({
                   )}
                   {!!m.text && (
                     <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(25, 48, 112,.04)" }}>
-                      <MessageContent text={m.text} />
+                      <MessageContent text={m.text} labels={contentLabels} />
+                    </div>
+                  )}
+                  {/* Javob qaysi hujjatlarga tayangani — yozib bo'lingach ko'rinadi */}
+                  {!isStreaming && !!m.text && uniqueSources(m).length > 0 && (
+                    <div className={styles.sources} style={{ color: tk.muted }}>
+                      <span className={styles.sourcesLabel}>{s.sourcesLabel}:</span>
+                      {uniqueSources(m).map((title) => (
+                        <span
+                          key={title}
+                          className={styles.sourceChip}
+                          style={{ border: "1px solid " + tk.cardBorder, color: tk.strong, background: tk.card }}
+                          title={title}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                          <span className={styles.sourceTitle}>{title}</span>
+                        </span>
+                      ))}
                     </div>
                   )}
                   {m.interrupted && (
@@ -336,7 +379,8 @@ export default function MessageArea({
                           size={13}
                           style={{ color: m.debug.finishReason === "length" ? "#DC2626" : (isDark ? PRIMARY_ON_DARK : ACCENT) }}
                         />
-                        {m.debug.completionTokens} token
+                        {/* Keshdan berilgan javob — model chaqirilmagan (backend finish_reason="cached") */}
+                        {m.debug.finishReason === "cached" ? s.answerFromCache : `${m.debug.completionTokens} token`}
                       </span>
                     )}
                     {!isStreaming && m.time && (
@@ -344,6 +388,37 @@ export default function MessageArea({
                         {fmtTime(m.time)}
                       </span>
                     )}
+                    </div>
+                  )}
+                  {/* "Keyingi savol" takliflari — faqat oxirgi javobda, yozish tugagach */}
+                  {isLast && !generating && !thinking && !!m.suggestions?.length && (
+                    <div className={styles.followups} aria-label={s.followupLabel}>
+                      <span className={styles.followupLabel} style={{ color: tk.muted }}>{s.followupLabel}</span>
+                      {m.suggestions.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          className={styles.followupChip}
+                          style={{ border: "1px solid " + tk.cardBorder, color: tk.strong, background: tk.card }}
+                          onClick={() => onSuggestionClick(q)}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {feedbackId === m.id && v === "down" && (
+                    <DislikeFeedback
+                      s={s}
+                      tk={tk}
+                      accent={accent}
+                      onSubmit={(reason, comment) => submitFeedback(m.id, { reason, comment })}
+                      onClose={() => setFeedbackId(null)}
+                    />
+                  )}
+                  {thanksId === m.id && (
+                    <div className={styles.feedbackThanks} style={{ color: tk.muted }} role="status">
+                      {s.dislikeThanks}
                     </div>
                   )}
                 </div>

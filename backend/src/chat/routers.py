@@ -16,14 +16,21 @@ suhbatini ko'rib/o'zgartirib bo'lmaydi (get_single user_id bilan filtrlanadi).
 """
 
 import json
+import re
+import time
 from collections.abc import AsyncIterator
 from typing import Annotated, Any
+from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response, StreamingResponse
+
+from redis.asyncio import Redis
 
 from loggers import get_logger
+from src.chat.answer_cache import cached_answer_stream
+from src.core.redis.dependencies import get_redis_client
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
@@ -44,6 +51,9 @@ from src.translator.usecases import TranslatorUseCase, get_translator_use_case
 from src.user.auth.dependencies import get_current_user, get_user_id_from_token
 from src.user.models import User
 from src.chat.schemas import (
+    MessageSearchHit,
+    SuggestFollowupsRequest,
+    SuggestFollowupsResult,
     AddMessageModel,
     CreateSessionModel,
     GenerateTitleRequest,
@@ -56,6 +66,14 @@ from src.chat.schemas import (
     VoteMessageModel,
 )
 from src.chat.usecases import (
+    ExportSessionDocxUseCase,
+    get_export_session_docx_use_case,
+    SearchMessagesUseCase,
+    get_search_messages_use_case,
+    SuggestFollowupsUseCase,
+    get_suggest_followups_use_case,
+    QuestionLogEntry,
+    log_question,
     AddMessageUseCase,
     LoadHistoryUseCase,
     CreateSessionUseCase,
@@ -117,6 +135,69 @@ async def generate_title(
 ) -> GenerateTitleResult:
     """Birinchi xabar matnidan Qwen orqali qisqa suhbat sarlavhasi yasaydi."""
     return await use_case.execute(text=data.text)
+
+
+# Keyingi savol takliflari — har javobdan keyin bitta qisqa chaqiruv
+SUGGEST_RATE_LIMIT = RateLimiter(times=30, minutes=1, identifier=get_user_id_from_token)
+
+
+@router.post(
+    "/suggest",
+    response_model=SuggestFollowupsResult,
+    dependencies=[Depends(SUGGEST_RATE_LIMIT)],
+)
+async def suggest_followups(
+    data: SuggestFollowupsRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[SuggestFollowupsUseCase, Depends(get_suggest_followups_use_case)],
+) -> SuggestFollowupsResult:
+    """Javob tagidagi 3 ta "keyingi savol" taklifi (bo'sh ro'yxat ham bo'lishi mumkin)."""
+    return await use_case.execute(data)
+
+
+DOCX_MEDIA_TYPE = (
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
+
+
+@router.get("/sessions/{session_id}/export.docx")
+async def export_session_docx(
+    session_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[
+        ExportSessionDocxUseCase, Depends(get_export_session_docx_use_case)
+    ],
+    lang: Annotated[str, Query(pattern="^(uz|uz_cyrl|ru)$")] = "uz",
+) -> Response:
+    """Suhbatni Word (.docx) faylga yuklab olish. PDF frontendda — brauzer
+    chop etish oynasi orqali (kirill shriftlari bilan muammo bo'lmasin)."""
+    result = await use_case.execute(
+        user_id=current_user.id, session_id=session_id, lang=lang
+    )
+    # Kirill/lotin nom buzilmasin — RFC 5987 (filename*), eski mijozlarga ASCII
+    ascii_stem = re.sub(r"[^A-Za-z0-9._-]+", "_", result.filename[:-5]).strip("._")
+    ascii_name = f"{ascii_stem if re.search(r'[A-Za-z0-9]', ascii_stem) else 'chat'}.docx"
+    return Response(
+        content=result.content,
+        media_type=DOCX_MEDIA_TYPE,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{ascii_name}"; '
+                f"filename*=UTF-8''{quote(result.filename)}"
+            )
+        },
+    )
+
+
+@router.get("/search", response_model=list[MessageSearchHit])
+async def search_messages(
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[SearchMessagesUseCase, Depends(get_search_messages_use_case)],
+    q: Annotated[str, Query(min_length=1, max_length=100)],
+) -> list[MessageSearchHit]:
+    """Chat tarixidan qidirish: xabar matni va suhbat sarlavhasi bo'yicha
+    (lotin va kirill yozuvida). Faqat joriy foydalanuvchining suhbatlari."""
+    return await use_case.execute(user_id=current_user.id, q=q)
 
 
 @router.get("/sessions", response_model=list[SessionView])
@@ -230,6 +311,8 @@ async def vote_message(
         session_id=session_id,
         message_id=message_id,
         vote=data.vote,
+        reason=data.reason,
+        comment=data.comment,
     )
 
 
@@ -294,6 +377,7 @@ async def ask_stream(
         LoadHistoryUseCase, Depends(get_load_history_use_case)
     ],
     translator: Annotated[TranslatorUseCase, Depends(get_translator_use_case)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> StreamingResponse:
     """Xuddi /ask kabi, lekin javobni token-token (SSE oqim) qaytaradi —
     frontend real vaqtda matn va token sonini ko'rsatishi uchun."""
@@ -302,14 +386,18 @@ async def ask_stream(
     # bilmasdi.
     step = await translator.prepare(current_user.id, data.session_id, data.question)
     events: AsyncIterator[dict[str, Any]]
+    answer_use_case: AnswerQuestionUseCase | None = None
     if step is not None:
         events = translator.stream(step)
     else:
-        use_case = AnswerQuestionUseCase(
+        answer_use_case = AnswerQuestionUseCase(
             embedder=embedder, store=store, ai_client=ai_client
         )
         history = await _resolve_history(data, current_user, history_use_case)
-        events = use_case.execute_stream(question=data.question, history=history)
+        # Kesh qatlami: birinchi savol, xavfsiz niyatlar (qara: answer_cache.py)
+        events = cached_answer_stream(
+            answer_use_case, data.question, history, redis_client
+        )
 
     async def event_stream() -> AsyncIterator[str]:
         # Xatoning O'ZI faqat log'ga tushadi.
@@ -329,22 +417,50 @@ async def ask_stream(
                 "urinib ko'ring."
             ),
         }
+        started = time.monotonic()
+        outcome = "answered"
+        tokens = 0
+        sources_count = 0
         try:
             async for ev in events:
+                if ev.get("type") == "done":
+                    tokens = int(ev.get("completion_tokens") or 0)
+                    sources_count = len(ev.get("sources") or [])
                 # Bosqich hodisalari faqat so'ragan mijozga (qara: with_status)
                 if ev.get("type") == "status" and not data.with_status:
                     continue
                 yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
         except InfrastructureException as exc:
+            outcome = "error"
             # Kutilgan xato (Ollama o'chiq, model topilmadi, timeout) — BITTA
             # qator. Sabab xabarning o'zida ("Ollama modeli topilmadi: ...");
             # 80 qatorli httpx traceback'i hech narsa qo'shmasdi.
             logger.error("Javob oqimi uzildi: %s | %r", exc, data.question[:200])
             yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
         except Exception:  # noqa: BLE001 - oqim uzilsa, klientga xabar beramiz
+            outcome = "error"
             # Kutilmagan xato — bu yerda traceback haqiqatan kerak
             logger.exception("Javob oqimi uzildi: %r", data.question[:200])
             yield f"data: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
+        # Savollar statistikasi — faqat bot javoblari (tarjima rejimi emas).
+        # Foydalanuvchi "To'xtatish"ni bossa generator shu yergacha yetmaydi
+        # va yozuv qo'shilmaydi: javob oxirigacha bo'lmagan.
+        if answer_use_case is not None:
+            # "no_info" (bazada topilmadi) yoki "blocked" (prompt-injection)
+            if outcome != "error" and answer_use_case.last_outcome != "answered":
+                outcome = answer_use_case.last_outcome
+            await log_question(
+                QuestionLogEntry(
+                    user_id=current_user.id,
+                    question=data.question,
+                    intent=answer_use_case.last_intent,
+                    outcome=outcome,
+                    top_score=answer_use_case.last_top_score,
+                    sources_count=sources_count,
+                    completion_tokens=tokens,
+                    duration_ms=int((time.monotonic() - started) * 1000),
+                )
+            )
 
     return StreamingResponse(
         event_stream(),

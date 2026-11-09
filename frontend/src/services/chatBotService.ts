@@ -1,5 +1,5 @@
 import { apiFetch } from "./authService";
-import { THINK_STEPS, type ThinkStep } from "../types/chat";
+import { THINK_STEPS, type SourceRef, type ThinkStep } from "../types/chat";
 
 // Xatolik yoki javob bo'lmaganda ko'rsatiladigan zaxira matn
 const FALLBACK =
@@ -22,6 +22,8 @@ export interface AskResult {
   finishReason: string;
   completionTokens: number;
   maxTokens: number;
+  // Javob tayangan hujjatlar (umumiy savollarda bo'sh)
+  sources: SourceRef[];
 }
 
 // Oqim (SSE) hodisasi — backend token-token yuboradigan bo'laklar
@@ -33,6 +35,7 @@ interface StreamEvent {
   finish_reason?: string;
   max_tokens?: number;
   message?: string;
+  sources?: SourceRef[];
 }
 
 // Oqimli (streaming) javob: backend token-token yuboradi. `onDelta` har bir
@@ -61,6 +64,7 @@ export async function askReplyStream(
   let completionTokens = 0;
   let finishReason = "";
   let maxTokens = 0;
+  let sources: SourceRef[] = [];
 
   for (;;) {
     const { done, value } = await reader.read();
@@ -92,13 +96,14 @@ export async function askReplyStream(
         completionTokens = ev.completion_tokens ?? 0;
         finishReason = ev.finish_reason ?? "";
         maxTokens = ev.max_tokens ?? 0;
+        sources = Array.isArray(ev.sources) ? ev.sources : [];
       } else if (ev.type === "error") {
         throw new Error(ev.message ?? "stream error");
       }
     }
   }
 
-  return { text: full || FALLBACK, finishReason, completionTokens, maxTokens };
+  return { text: full || FALLBACK, finishReason, completionTokens, maxTokens, sources };
 }
 
 // Haqiqiy javob: savol + oldingi suhbat (history) ni backend RAG endpointiga yuboradi
@@ -111,7 +116,7 @@ export async function askReply(
       method: "POST",
       body: JSON.stringify({ question, history }),
     });
-    if (!res.ok) return { text: FALLBACK, finishReason: "", completionTokens: 0, maxTokens: 0 };
+    if (!res.ok) return { text: FALLBACK, finishReason: "", completionTokens: 0, maxTokens: 0, sources: [] };
     const data = await res.json();
     const answer = (data?.answer as string | undefined)?.trim();
     return {
@@ -119,8 +124,32 @@ export async function askReply(
       finishReason: (data?.finish_reason as string | undefined) ?? "",
       completionTokens: (data?.completion_tokens as number | undefined) ?? 0,
       maxTokens: (data?.max_tokens as number | undefined) ?? 0,
+      sources: Array.isArray(data?.sources) ? (data.sources as SourceRef[]) : [],
     };
   } catch {
-    return { text: FALLBACK, finishReason: "", completionTokens: 0, maxTokens: 0 };
+    return { text: FALLBACK, finishReason: "", completionTokens: 0, maxTokens: 0, sources: [] };
   }
 }
+
+// Javob tagidagi 3 ta "keyingi savol" taklifi. Ixtiyoriy: xato bo'lsa bo'sh
+// ro'yxat (chat buzilmasin). Javob oqimidan keyin alohida so'raladi.
+export async function suggestFollowups(
+  question: string,
+  answer: string,
+  sources: string[] = []
+): Promise<string[]> {
+  try {
+    const res = await apiFetch("/v1/chat/suggest", {
+      method: "POST",
+      body: JSON.stringify({ question, answer: answer.slice(0, 20000), sources: sources.slice(0, 10) }),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { suggestions?: unknown };
+    return Array.isArray(data.suggestions)
+      ? data.suggestions.filter((x): x is string => typeof x === "string").slice(0, 3)
+      : [];
+  } catch {
+    return [];
+  }
+}
+

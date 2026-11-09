@@ -4,6 +4,8 @@ import FilterSelect from "./FilterSelect";
 import type { AdminStrings } from "../../types/i18n";
 import { employeeStats, listKnowledge, uploadEmployees, uploadEmployeesJson, type KnowledgeItem } from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
+import RescrapePanel from "./RescrapePanel";
+import { fmtIsoDate, validityState } from "../../utils/knowledgeValidity";
 import styles from "./KnowledgeListView.module.css";
 
 interface KnowledgeListViewProps {
@@ -30,6 +32,8 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("title");
+  // Faqat muddati o'tgan / yaqinlashgan hujjatlar
+  const [onlyStale, setOnlyStale] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [empUploading, setEmpUploading] = useState(false);
   const [empMsg, setEmpMsg] = useState<string | null>(null);
@@ -101,11 +105,19 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
     load();
   }, []);
 
+  // Muddati o'tgan yoki 7 kun ichida tugaydiganlar
+  const isStale = (it: KnowledgeItem) => {
+    const st = validityState(it.valid_until);
+    return st === "expired" || st === "soon";
+  };
+  const staleCount = items.filter(isStale).length;
+
   // Ma'lumot tanlansa — to'liq sahifa (modal emas)
   if (selected) {
     return (
       <KnowledgeDetailView
         title={selected}
+        validUntil={items.find((i) => i.title === selected)?.valid_until ?? ""}
         onBack={() => setSelected(null)}
         onChanged={load}
         t={admin}
@@ -116,6 +128,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const q = search.trim().toLowerCase();
   const visible = items
     .filter((it) => !q || it.title.toLowerCase().includes(q) || it.preview.toLowerCase().includes(q))
+    .filter((it) => !onlyStale || isStale(it))
     .sort((a, b) => {
       if (sortKey === "chunks") return b.chunks - a.chunks;
       if (sortKey === "newest") return ts(b.uploaded_at) - ts(a.uploaded_at);
@@ -176,6 +189,8 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         </div>
       </div>
 
+      <RescrapePanel t={admin} onFinished={load} />
+
       {empMsg && (
         <div className={styles.empBanner} onClick={() => setEmpMsg(null)}>{empMsg}</div>
       )}
@@ -198,6 +213,16 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
               { value: "oldest", label: admin.knowledgeSortOldest },
             ]}
           />
+          {staleCount > 0 && (
+            <button
+              type="button"
+              className={`${styles.staleBtn} ${onlyStale ? styles.staleBtnOn : ""}`}
+              aria-pressed={onlyStale}
+              onClick={() => setOnlyStale((v) => !v)}
+            >
+              {admin.knowledgeValidityFilter(staleCount)}
+            </button>
+          )}
         </div>
       )}
 
@@ -224,7 +249,20 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
                 <span className={styles.badge}>{admin.knowledgeChunks(it.chunks)}</span>
               </div>
               {it.preview && <div className={styles.preview}>{it.preview}…</div>}
-              <div className={styles.lang}>{it.lang.toUpperCase()}</div>
+              <div className={styles.cardFoot}>
+                <span className={styles.lang}>{it.lang.toUpperCase()}</span>
+                {it.duplicates && it.duplicates.length > 0 && (
+                  <span className={`${styles.validity} ${styles.vSoon}`} title={it.duplicates.join("\n")}>
+                    {admin.knowledgeDuplicate(it.duplicates.length)}
+                  </span>
+                )}
+                {it.valid_until && (() => {
+                  const st = validityState(it.valid_until);
+                  const cls = st === "expired" ? styles.vExpired : st === "soon" ? styles.vSoon : styles.vOk;
+                  const label = st === "expired" ? admin.knowledgeValidityExpired : admin.knowledgeValidityUntil;
+                  return <span className={`${styles.validity} ${cls}`}>{label} {fmtIsoDate(it.valid_until)}</span>;
+                })()}
+              </div>
             </button>
           ))}
         </div>

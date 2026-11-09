@@ -61,6 +61,8 @@ services:
       # Foydalanuvchi yuklagan fayllar (murojaat skrinshotlari) konteyner
       # o'chirilganda yo'qolmasligi uchun alohida volume'da turadi.
       - app-media:/app/media
+      # Zaxira nusxalar — admin panel ro'yxatni ko'rsatadi (faqat o'qish)
+      - ${BACKUP_HOST_DIR:-../backups}:/backups:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,6 +84,9 @@ services:
       TZ: ${LOCAL_TIMEZONE}
     command: python -m celery -A celery_tasks.main worker --pool=solo --loglevel=info -E
     restart: unless-stopped
+    volumes:
+      # Qdrant snapshot shu yerga yoziladi (src/backup/services.py)
+      - ${BACKUP_HOST_DIR:-../backups}:/backups
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -184,6 +189,37 @@ services:
         limits:
           cpus: '1'
           memory: 1G
+
+  # Postgres zaxira nusxasi: har kuni BACKUP_HOUR:00 da pg_dump.
+  # Ilova obrazidagi pg_dump (15) PostgreSQL 18 serverni dump qila olmaydi,
+  # shuning uchun allaqachon yig'ilgan postgres obrazidan foydalanamiz —
+  # yangi obraz yuklab olinmaydi.
+  backup:
+    container_name: template-backup
+    image: template-postgres:18
+    restart: unless-stopped
+    entrypoint: ["sh", "/scripts/pg_backup.sh"]
+    environment:
+      TZ: ${LOCAL_TIMEZONE}
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      BACKUP_HOUR: ${BACKUP_HOUR:-2}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backup/pg_backup.sh:/scripts/pg_backup.sh:ro
+      - ${BACKUP_HOST_DIR:-../backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   qdrant:
     container_name: template-qdrant

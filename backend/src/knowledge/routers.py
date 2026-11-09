@@ -25,17 +25,25 @@ from src.knowledge.schemas import (
     PdfUploadResult,
     QuestionRequest,
     ScrapeRequest,
+    KnowledgeValidityRequest,
+    RescrapeStatusView,
     UpdateKnowledgeRequest,
     UploadResult,
     UploadTextRequest,
 )
 from src.main.config import config
+from src.knowledge.rescrape import (
+    RescrapeStatusUseCase,
+    TriggerRescrapeUseCase,
+    get_rescrape_status_use_case,
+)
 from src.knowledge.usecases import (
     AnswerQuestionUseCase,
     DeleteKnowledgeUseCase,
     GetKnowledgeDetailUseCase,
     ListKnowledgeUseCase,
     ScrapeUrlUseCase,
+    SetKnowledgeValidityUseCase,
     UpdateKnowledgeUseCase,
     UploadEmployeesUseCase,
     UploadKnowledgeUseCase,
@@ -49,6 +57,8 @@ from src.notifications.usecases import (
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
 from src.user.enums import UserRole
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 
 router = APIRouter()
@@ -90,9 +100,11 @@ async def delete_knowledge(
         User, Depends(require_permission(Permission.EDIT_SETTINGS))
     ],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> SuccessResponse:
     """Admin: bitta sarlavha ostidagi barcha bo'laklarni o'chiradi."""
     await DeleteKnowledgeUseCase(store=store).execute(title=title)
+    await audit.log(current_user, AuditAction.KNOWLEDGE_DELETE, "knowledge", target_label=title)
     return SuccessResponse(success=True)
 
 
@@ -107,14 +119,67 @@ async def update_knowledge(
     broadcast: Annotated[
         BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
     ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> UploadResult:
     """Admin: ma'lumotni tahrirlash (eski bo'laklarni o'chirib, qayta yozadi)."""
     use_case = UpdateKnowledgeUseCase(embedder=embedder, store=store)
     result = await use_case.execute(
         old_title=data.old_title, title=data.title, text=data.text
     )
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_UPDATE, "knowledge", target_label=data.title,
+        details={"old_title": data.old_title, "chars": len(data.text)},
+    )
     await _notify_knowledge_updated(broadcast, data.title)
     return result
+
+
+@router.get("/rescrape", response_model=RescrapeStatusView)
+async def rescrape_status(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[RescrapeStatusUseCase, Depends(get_rescrape_status_use_case)],
+) -> RescrapeStatusView:
+    """Admin: saytdan qayta tekshiruv holati va oxirgi natijasi."""
+    return await use_case.execute()
+
+
+@router.post("/rescrape", status_code=202)
+async def run_rescrape(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> None:
+    """Admin: saytdan olingan hujjatlarni hoziroq qayta tekshirish (fon vazifasi).
+
+    Faqat o'zgargan sahifalar qayta yoziladi; natija bildirishnoma bo'lib keladi."""
+    TriggerRescrapeUseCase().execute()
+    await audit.log(current_user, AuditAction.KNOWLEDGE_RESCRAPE, "knowledge", target_label="*")
+
+
+@router.patch("/validity", response_model=SuccessResponse)
+async def set_knowledge_validity(
+    data: KnowledgeValidityRequest,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> SuccessResponse:
+    """Admin: hujjatning amal qilish muddati (null — muddatsiz).
+
+    Muddati o'tgan hujjat o'chirilmaydi: qidiruvda pastroq turadi va bot
+    "ma'lumot eskirgan bo'lishi mumkin" deb ogohlantiradi."""
+    await SetKnowledgeValidityUseCase(store=store).execute(
+        title=data.title, valid_until=data.valid_until
+    )
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_VALIDITY, "knowledge", target_label=data.title,
+        details={"valid_until": data.valid_until},
+    )
+    return SuccessResponse(success=True)
 
 
 @router.get("/detail", response_model=KnowledgeDetail)
@@ -158,10 +223,15 @@ async def upload_knowledge(
     broadcast: Annotated[
         BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
     ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> UploadResult:
     """Admin: matnni bo'laklarga bo'lib, embed qilib, sarlavha bilan Qdrant'ga yozadi."""
     use_case = UploadKnowledgeUseCase(embedder=embedder, store=store)
     result = await use_case.execute(title=data.title, text=data.text)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_UPLOAD, "knowledge", target_label=data.title,
+        details={"chars": len(data.text)},
+    )
     await _notify_knowledge_updated(broadcast, data.title)
     return result
 
@@ -177,6 +247,7 @@ async def upload_pdf(
     broadcast: Annotated[
         BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
     ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
     file: Annotated[UploadFile, File()],
     title: Annotated[str, Form()] = "",
 ) -> PdfUploadResult:
@@ -198,6 +269,10 @@ async def upload_pdf(
     result = await use_case.execute(
         file_bytes=content, filename=file.filename or "", title=title
     )
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_PDF, "knowledge", target_label=result.title,
+        details={"filename": file.filename or "", "bytes": len(content)},
+    )
     await _notify_knowledge_updated(broadcast, result.title)
     return result
 
@@ -212,6 +287,7 @@ async def upload_employees(
     broadcast: Annotated[
         BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
     ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
     file: Annotated[UploadFile, File()],
 ) -> UploadResult:
     """Admin: xodimlar Excel (.xlsx) faylini o'qib, har xodimni alohida
@@ -219,6 +295,10 @@ async def upload_employees(
     content = await read_upload_limited(file, config.app.KNOWLEDGE_MAX_BYTES)
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     result = await use_case.execute(file_bytes=content)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_EMPLOYEES, "knowledge",
+        target_label="Xodimlar ro'yxati", details={"filename": file.filename or ""},
+    )
     await _notify_knowledge_updated(broadcast, "Xodimlar ro'yxati")
     return result
 
@@ -262,12 +342,17 @@ async def upload_employees_json(
     broadcast: Annotated[
         BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
     ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> UploadResult:
     """Admin: xodimlarni tayyor JSON ro'yxati orqali yozadi (Excel'siz —
     openpyxl kerak emas). Body: [{department, division, position, fish, ip, phone}, ...]."""
     records = [r.model_dump() for r in data]
     use_case = UploadEmployeesUseCase(embedder=embedder, store=store)
     result = await use_case.execute_records(records=records)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_EMPLOYEES, "knowledge",
+        target_label="Xodimlar ro'yxati", details={"records": len(records)},
+    )
     await _notify_knowledge_updated(broadcast, "Xodimlar ro'yxati")
     return result
 
@@ -283,9 +368,11 @@ async def scrape_url(
     broadcast: Annotated[
         BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
     ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
 ) -> UploadResult:
     """Admin test: bitta URL'ni ochib, toza matnini ajratib, Qdrant'ga yozadi."""
     use_case = ScrapeUrlUseCase(embedder=embedder, store=store)
     result = await use_case.execute(url=data.url)
+    await audit.log(current_user, AuditAction.KNOWLEDGE_SCRAPE, "knowledge", target_label=data.url)
     await _notify_knowledge_updated(broadcast, data.url)
     return result

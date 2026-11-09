@@ -77,6 +77,86 @@
   font-style: italic;
 }
 
+/* Dislike sababi yuborilgandan keyingi qisqa "rahmat" */
+.feedbackThanks {
+  margin-top: 6px;
+  font-size: 12.5px;
+}
+
+/* "Keyingi savol" takliflari */
+.followups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  animation: followupIn 0.25s ease-out;
+}
+
+.followupLabel {
+  flex: 1 1 100%;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.followupChip {
+  max-width: 100%;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.followupChip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 48, 112, 0.12);
+}
+
+@keyframes followupIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .followups { animation: none; }
+  .followupChip { transition: none; }
+}
+
+/* Javob tagidagi manba chiplari */
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.sourcesLabel {
+  font-weight: 600;
+}
+
+.sourceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 260px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.sourceTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* =====================
    Containers
    ===================== */

@@ -32,6 +32,7 @@ celery_app.conf.update(
         "src.core.email_service.tasks",
         "src.knowledge.tasks",
         "src.notifications.tasks",
+        "src.backup.tasks",
     ],
     timezone="UTC",
     enable_utc=True,
@@ -57,5 +58,24 @@ celery_app.conf.beat_schedule = {
     "cleanup_old_notifications_daily": {
         "task": "cleanup_old_notifications",
         "schedule": crontab(minute=30, hour=3),
+    },
+    # Bilim bazasi (Qdrant) zaxira nusxasi — har kecha 02:30 Toshkent
+    # (= 21:30 UTC). Postgres nusxasini alohida `backup` konteyneri 02:00 da
+    # oladi (infra/backup/pg_backup.sh).
+    # Bilim bazasi hujjatlarining muddati — har kuni 09:00 Toshkent (04:00 UTC):
+    # 7 kun qolganda va muddat tugagan kuni adminlarga bildirishnoma.
+    "check_knowledge_validity_daily": {
+        "task": "check_knowledge_validity",
+        "schedule": crontab(minute=0, hour=4),
+    },
+    # Saytdan olingan hujjatlarni qayta tekshirish — har dushanba 06:00
+    # Toshkent (01:00 UTC). Faqat o'zgargan sahifalar qayta yoziladi.
+    "rescrape_knowledge_weekly": {
+        "task": "rescrape_knowledge",
+        "schedule": crontab(minute=0, hour=1, day_of_week="mon"),
+    },
+    "backup_qdrant_nightly": {
+        "task": "backup_qdrant",
+        "schedule": crontab(minute=30, hour=21),
     },
 }

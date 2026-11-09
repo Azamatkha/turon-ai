@@ -1,0 +1,112 @@
+/* Hujjat sahifasidagi "Amal qilish muddati" bloki */
+
+.box {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.label {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.state {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.none,
+.okState {
+  background: var(--adm-card-alt);
+  color: var(--adm-text-muted);
+}
+
+.soon {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.expired {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.date {
+  height: 40px;
+  padding: 0 12px;
+  border: 1.6px solid var(--adm-border-input);
+  border-radius: 10px;
+  background: var(--adm-input-bg);
+  color: var(--adm-text-strong);
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.saveBtn,
+.clearBtn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveBtn {
+  border: none;
+  background: var(--adm-accent);
+  color: #fff;
+}
+
+.clearBtn {
+  border: 1px solid var(--adm-border-2);
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+}
+
+.saveBtn:disabled,
+.clearBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ok {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-success);
+}
+
+.err {
+  margin-top: 8px;
+  font-size: 13.5px;
+  color: var(--adm-danger);
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--adm-text-muted-2);
+}

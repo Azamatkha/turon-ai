@@ -1,0 +1,278 @@
+/* Tizim holati — komponentlar, bot ko'rsatkichlari, soatbay grafik */
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.bannerOk {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+}
+
+.bannerWarn {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.bannerDown {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.checked {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+}
+
+.refreshBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.components {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.comp {
+  padding: 13px 15px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 12px;
+  background: var(--adm-card);
+}
+
+.compBad {
+  border-color: var(--adm-danger-border);
+}
+
+.compHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compDot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.dotOk {
+  background: var(--adm-success);
+}
+
+.dotWarn {
+  background: var(--adm-info);
+}
+
+.dotBad {
+  background: var(--adm-danger);
+}
+
+.compName {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.compMs {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--adm-text-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.compDetail {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--adm-text-body);
+  word-break: break-word;
+}
+
+.compNote {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.sectionTitle {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+}
+
+.chart {
+  padding: 16px 18px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+}
+
+.chartHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.chartTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--adm-text-muted);
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  margin-left: 8px;
+  border-radius: 3px;
+}
+
+.swQ {
+  background: var(--adm-accent);
+}
+
+.swE {
+  background: var(--adm-danger);
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 4px;
+  height: 170px;
+}
+
+.barCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.barTrack {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 4px;
+  background: var(--adm-card-alt);
+}
+
+.barQ {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  border-radius: 4px 4px 0 0;
+  background: var(--adm-accent);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  transition: height 0.3s ease;
+}
+
+.barE {
+  width: 100%;
+  background: var(--adm-danger);
+}
+
+.barLabel {
+  font-size: 10.5px;
+  color: var(--adm-text-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  .barCol:nth-child(odd) .barLabel {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap,
+  .barQ {
+    transition: none;
+  }
+}

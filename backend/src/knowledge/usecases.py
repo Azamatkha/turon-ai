@@ -1,5 +1,6 @@
 import json
 import math
+from datetime import date
 import re
 from collections.abc import AsyncIterator
 from itertools import chain, zip_longest
@@ -10,6 +11,9 @@ from anyio import to_thread
 from loggers import get_logger
 from src.core.ai.embeddings import OllamaEmbedder
 from src.core.utils.datetime_utils import get_utc_now
+from src.core.ai.guard import looks_like_injection, mask_pii
+from src.knowledge.validity import is_expired, penalize_expired
+from src.knowledge.rescrape import find_duplicates, group_by_title
 from src.core.utils.uzbek_script import (
     StreamingScriptFixer,
     StreamingTransliterator,
@@ -42,7 +46,9 @@ from src.knowledge.prompts import (
     EMPLOYEE_SYSTEM,
     HISTORY_SYSTEM,
     LANGUAGE_SYSTEM,
+    INJECTION_REPLY,
     NO_INFO_REPLY,
+    SECURITY_RULES,
     OFF_TOPIC_REPLY,
     OTHER_BANK_REPLY,
     PDF_CLEAN_SYSTEM,
@@ -776,6 +782,32 @@ def _bot_reply(decision: Route, history: list[ChatTurn] | None, lang: ReplyLang)
     return _router_reply(decision.reply, lang)
 
 
+def _guard_input(
+    question: str, history: list[ChatTurn] | None
+) -> tuple[str, list[ChatTurn] | None, bool]:
+    """Modelga ketishdan oldin: savol va foydalanuvchining oldingi
+    xabarlaridagi PII maskalanadi; savolda ochiq prompt-injection bo'lsa
+    `blocked=True` (javob modelsiz qaytariladi).
+
+    Faqat JORIY savol injection uchun tekshiriladi — tarixdagi eski xabar
+    tufayli butun suhbat bloklanib qolmasin (tarix baribir SECURITY_RULES
+    ostida "ma'lumot" sifatida o'qiladi)."""
+    if looks_like_injection(question):
+        logger.warning("Prompt-injection urinishi bloklandi: %r", question[:200])
+        return question, history, True
+    masked, kinds = mask_pii(question)
+    if kinds:
+        logger.info("Savolda PII maskalandi: %s", ",".join(kinds))
+    if history:
+        history = [
+            ChatTurn(role=t.role, content=mask_pii(t.content)[0])
+            if t.role == "user"
+            else t
+            for t in history
+        ]
+    return masked, history, False
+
+
 def _with_lang(system: str, lang: ReplyLang) -> str:
     """Ruscha savolda system prompt oxiriga til almashtirish blokini qo'shadi
     (qara: prompts.RU_REPLY_OVERRIDE).
@@ -783,11 +815,13 @@ def _with_lang(system: str, lang: ReplyLang) -> str:
     Til savollarida (LANGUAGE_SYSTEM) blok BOSHQA: umumiysi "butun javobni
     ruscha yoz" deydi va tarjimaga berilgan ruscha matn o'zbekchaga emas,
     yana ruschaga "tarjima" bo'lib qaytardi (qara: RU_LANGUAGE_OVERRIDE)."""
+    # Xavfsizlik qoidasi har doim ENG OXIRIDA — model oxirgi ko'rsatmaga
+    # ko'proq quloq soladi (qara: prompts.SECURITY_RULES)
     if lang != "ru":
-        return system
+        return system + SECURITY_RULES
     if system is LANGUAGE_SYSTEM:
-        return system + RU_LANGUAGE_OVERRIDE
-    return system + RU_REPLY_OVERRIDE
+        return system + RU_LANGUAGE_OVERRIDE + SECURITY_RULES
+    return system + RU_REPLY_OVERRIDE + SECURITY_RULES
 
 
 def _blind_employee_guess(decision: Route | None, question: str) -> bool:
@@ -1420,10 +1454,19 @@ class ScrapeUrlUseCase:
         # Qayta scrape qilinganda avvalgi bo'laklarni o'chiramiz — deterministic ID
         # bir xil chunk_index'larni ustiga yozadi, lekin chunk soni kamaysa
         # ortiqcha eski bo'laklar qolib ketmasligi uchun avval tozalaymiz.
+        # Amal qilish muddati (admin qo'ygan) qayta yuklashda saqlanadi.
+        _, valid_until = await UpdateKnowledgeUseCase(
+            embedder=self.embedder, store=self.store
+        )._existing_meta(title)
         await self.store.delete_by_title(title)
         return await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
-        ).execute(title=title, text=text, source_url=url)
+        ).execute(
+            title=title,
+            text=text,
+            source_url=url,
+            extra_payload={"valid_until": valid_until} if valid_until else None,
+        )
 
     async def _unique_title(self, title: str, url: str) -> str:
         """Boshqa (turli source_url'ga tegishli) yozuv bilan sarlavha
@@ -1466,6 +1509,7 @@ class ListKnowledgeUseCase:
                     "lang": str(payload.get("lang", "")),
                     "preview": "",
                     "uploaded_at": "",
+                    "valid_until": "",
                 },
             )
             group["chunks"] += 1
@@ -1476,7 +1520,12 @@ class ListKnowledgeUseCase:
             at = str(payload.get("uploaded_at", ""))
             if at > str(group["uploaded_at"]):
                 group["uploaded_at"] = at
+            if payload.get("valid_until") and not group["valid_until"]:
+                group["valid_until"] = str(payload["valid_until"])[:10]
 
+        # Matni AYNAN bir xil hujjatlar (bir sahifa ikki marta turli sarlavha
+        # bilan yuklangan) — botga bir xil kontekst ikki marta tushadi
+        duplicates = find_duplicates(group_by_title(payloads))
         return [
             KnowledgeItem(
                 title=title,
@@ -1484,6 +1533,8 @@ class ListKnowledgeUseCase:
                 lang=data["lang"],
                 preview=data["preview"],
                 uploaded_at=data["uploaded_at"],
+                valid_until=data["valid_until"],
+                duplicates=duplicates.get(title, []),
             )
             for title, data in grouped.items()
         ]
@@ -1538,20 +1589,43 @@ class UpdateKnowledgeUseCase:
         #     yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" ro'yxatidan
         #     yo'qolardi (sarlavhasi tahrirlangan «Meros» shunday yo'qolgan);
         #  2) javob oxiridagi "Batafsil: <havola>" qatori ham chiqmay qolardi.
-        source_url = await self._existing_source_url(old_title)
+        # Amal qilish muddati ham saqlanadi — tahrir uni o'chirib yubormasin
+        source_url, valid_until = await self._existing_meta(old_title)
         await self.store.delete_by_title(old_title)
         return await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
-        ).execute(title=title, text=text, source_url=source_url)
+        ).execute(
+            title=title,
+            text=text,
+            source_url=source_url,
+            extra_payload={"valid_until": valid_until} if valid_until else None,
+        )
 
-    async def _existing_source_url(self, old_title: str) -> str:
-        """Tahrirlanayotgan yozuvning havolasi (bo'lmasa — bo'sh satr)."""
+    async def _existing_meta(self, old_title: str) -> tuple[str, str]:
+        """Tahrirlanayotgan yozuvning (havolasi, valid_until) — bo'lmasa bo'sh."""
         if not await self.store.exists():
-            return ""
+            return "", ""
+        source_url = valid_until = ""
         for payload in await self.store.scroll_all_pages():
-            if str(payload.get("title", "")) == old_title and payload.get("source_url"):
-                return str(payload["source_url"])
-        return ""
+            if str(payload.get("title", "")) != old_title:
+                continue
+            source_url = source_url or str(payload.get("source_url") or "")
+            valid_until = valid_until or str(payload.get("valid_until") or "")
+        return source_url, valid_until
+
+
+class SetKnowledgeValidityUseCase:
+    """Hujjatning amal qilish muddatini o'rnatadi yoki olib tashlaydi."""
+
+    def __init__(self, store: QdrantStore) -> None:
+        self.store = store
+
+    async def execute(self, title: str, valid_until: date | None) -> None:
+        if not await self.store.search_by_field("title", title, limit=1):
+            raise InstanceNotFoundException("Ma'lumot topilmadi")
+        await self.store.set_payload_by_title(
+            title, {"valid_until": valid_until.isoformat() if valid_until else None}
+        )
 
 
 # Keng savolda TURKUMNI emas, savolning o'zini bildiruvchi so'zlar — turkum
@@ -2297,6 +2371,11 @@ class AnswerQuestionUseCase:
         self.ai_client = ai_client
         # Savolni javobdan OLDIN tushunadigan bosqich (o'ylash shu yerda yoqiq)
         self.router = QuestionRouter(ai_client)
+        # Oxirgi execute_stream natijasi — savollar statistikasi (question_logs)
+        # uchun. Router oqim tugagach o'qiydi; javob oqimiga aralashmaydi.
+        self.last_intent: str | None = None
+        self.last_outcome: str = "answered"
+        self.last_top_score: float | None = None
         # Bitta so'rov davomidagi baza keshi (_scroll_points)
         self._points: list[dict[str, Any]] | None = None
         # Bilim bazasining qaysi tilidagi hujjatlardan javob beriladi: ruscha
@@ -2955,8 +3034,9 @@ class AnswerQuestionUseCase:
             if ru_top >= self.MIN_SCORE and ru_top >= uz_top - self.RU_PREFER_MARGIN:
                 logger.info("Ruscha hujjatlardan javob (ru %.3f, uz %.3f)", ru_top, uz_top)
                 ru_lexical = await self._lexical_results(question, ru=True)
-                return _merge_results(ru_results, ru_lexical), ru_lexical
-        return _merge_results(uz_results, uz_lexical), uz_lexical
+                return penalize_expired(_merge_results(ru_results, ru_lexical)), ru_lexical
+        # Muddati o'tgan hujjatlar yangilaridan keyin turadi (knowledge/validity.py)
+        return penalize_expired(_merge_results(uz_results, uz_lexical)), uz_lexical
 
     async def _lexical_results(
         self, query: str, ru: bool = False
@@ -3136,6 +3216,12 @@ class AnswerQuestionUseCase:
             title = payload.get("title", "")
             source_url = payload.get("source_url", "")
             header = f"[{title}]\nSOURCE_URL: {source_url}" if source_url else f"[{title}]"
+            if is_expired(payload):
+                header += (
+                    f"\nNOTE: this document was valid until {payload.get('valid_until')}; "
+                    "say in your answer that the information may be outdated and "
+                    "should be confirmed."
+                )
             block = f"{header}\n{payload.get('chunk_text', '')}"
             # Byudjet tugasa qolgan bo'laklar tashlab yuboriladi — ular
             # baribir eng uzoq (eng kam mos) natijalar.
@@ -3209,7 +3295,27 @@ class AnswerQuestionUseCase:
           search    — bilim bazasidan qidiruv;
           write     — model javob yozmoqda.
         Tayyor (modelsiz) javoblarda faqat "analyze" bo'ladi."""
+        self.last_intent = None
+        self.last_outcome = "answered"
+        self.last_top_score = None
         yield {"type": "status", "step": "analyze"}
+        # Himoya: PII maskalanadi, ochiq prompt-injection modelga umuman
+        # bormaydi (qara: src/core/ai/guard.py)
+        question, history, blocked = _guard_input(question, history)
+        if blocked:
+            self.last_outcome = "blocked"
+            yield {
+                "type": "delta",
+                "text": _localize(INJECTION_REPLY, detect_reply_lang(question, history)),
+            }
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
         # Javob tili — savol (raqamga almashtirilishidan OLDIN) qaysi tilda
         # yozilganiga qarab: o'zbek lotin / o'zbek kirill / rus. AI o'zbekcha
         # javobni hamisha lotincha yozadi, kirill kerak bo'lsa shu yerda
@@ -3271,6 +3377,7 @@ class AnswerQuestionUseCase:
         # hisoblagichi shu sonni ko'rsatadi — ilgari 0 yuborilardi va frontend
         # hisoblagichni umuman yashirardi ("goh chiqadi, goh chiqmaydi").
         router_tokens = decision.tokens if decision is not None else 0
+        self.last_intent = decision.intent.value if decision is not None else None
 
         # Salomlashish yoki bot haqidagi savol — bazaga umuman bormaymiz
         if decision is not None and decision.intent in (
@@ -3481,6 +3588,8 @@ class AnswerQuestionUseCase:
                 canned = (
                     EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
                 )
+                if kind == "none":
+                    self.last_outcome = "no_info"
                 yield {"type": "delta", "text": _localize(canned, lang)}
                 yield {
                     "type": "done",
@@ -3589,6 +3698,7 @@ class AnswerQuestionUseCase:
                 ]
 
         top_score = results[0][1] if results else 0.0
+        self.last_top_score = round(top_score, 3) if results else None
         # Ballar logda: chegarani (RAG_MIN_SCORE) taxmin bilan emas, real
         # raqamlarga qarab sozlash uchun.
         logger.info(
@@ -3601,6 +3711,8 @@ class AnswerQuestionUseCase:
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
+            # Bazada topilmadi — admin "javobsiz savollar" ro'yxatiga tushadi
+            self.last_outcome = "no_info"
             text = _localize(NO_INFO_REPLY, lang)
             yield {"type": "delta", "text": text}
             yield {
@@ -3679,6 +3791,14 @@ class AnswerQuestionUseCase:
     async def execute(
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AnswerResult:
+        # Himoya — stream yo'li bilan bir xil (qara: _guard_input)
+        question, history, blocked = _guard_input(question, history)
+        if blocked:
+            return AnswerResult(
+                answer=_localize(INJECTION_REPLY, detect_reply_lang(question, history)),
+                sources=[],
+                finish_reason="stop",
+            )
         # Javob tili — stream yo'li bilan bir xil (o'zbek lotin/kirill, rus)
         lang = detect_reply_lang(question, history)
         # Ruscha savolga ruscha hujjatlar (bo'lsa) — katalog va qidiruv shunga qaraydi

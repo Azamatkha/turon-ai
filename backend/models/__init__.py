@@ -12,6 +12,8 @@ from src.user.models import LoginEvent as LoginEvent
 from src.user.models import FaceIdSignatureLog as FaceIdSignatureLog
 from src.chat.models import ChatSession as ChatSession
 from src.chat.models import ChatMessage as ChatMessage
+from src.chat.models import QuestionLog as QuestionLog
+from src.audit.models import AuditLog as AuditLog
 from src.notifications.models import Notification as Notification
 from src.reports.models import UserReport as UserReport
 from src.guides.models import EdoGuide as EdoGuide

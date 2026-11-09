@@ -90,3 +90,146 @@
 .table td:last-child {
   border-right: none;
 }
+
+/* Raqamli ro'yxat */
+.content ol {
+  margin: 6px 0;
+  padding-left: 22px;
+}
+
+.hr {
+  margin: 12px 0;
+  border: none;
+  border-top: 1px solid rgba(127, 148, 168, 0.28);
+}
+
+/* ---- Inline kod ---- */
+.inlineCode {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(127, 148, 168, 0.16);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+/* ---- Kod bloki ---- */
+.codeBlock {
+  margin: 10px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(127, 148, 168, 0.28);
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.codeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px 5px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+}
+
+.codeLang {
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-transform: lowercase;
+}
+
+.pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre;
+  word-break: normal;
+}
+
+.tokKeyword {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.tokString {
+  color: #86efac;
+}
+
+.tokNumber {
+  color: #fcd34d;
+}
+
+.tokComment {
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Nusxalash tugmasi (kod va jadval) */
+.copyBtn {
+  padding: 3px 9px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.copyBtn:hover {
+  opacity: 1;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+/* ---- Jadval qo'shimchalari ---- */
+.tableBlock {
+  margin: 10px 0;
+}
+
+.tableBlock .tableWrap {
+  margin: 0;
+}
+
+.tableTools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.tableTools .copyBtn {
+  color: inherit;
+  opacity: 0.65;
+}
+
+/* Zebra — uzun jadvalda qatorni ko'z bilan kuzatish oson */
+.table tbody tr:nth-child(even) td {
+  background: rgba(127, 148, 168, 0.06);
+}
+
+.table tbody tr:hover td {
+  background: rgba(64, 89, 190, 0.07);
+}
+
+/* Son ustunlari o'ngga — xonalar ustma-ust tushadi */
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* PDF (chop etish)da tugmalar kerak emas, kod foni oq */
+@media print {
+  .copyBtn,
+  .tableTools {
+    display: none;
+  }
+
+  .codeBlock {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+}

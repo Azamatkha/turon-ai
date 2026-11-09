@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database.repositories import BaseRepository
 from src.core.database.uow.abstract import R, RepositoryProtocol
 from src.core.database.uow.sqlalchemy import RepositoryInstance, SQLAlchemyUnitOfWork
-from src.chat.repositories import ChatMessageRepository, ChatSessionRepository
+from src.audit.repositories import AuditLogRepository
+from src.chat.repositories import (
+    ChatMessageRepository,
+    ChatSessionRepository,
+    QuestionLogRepository,
+)
 from src.guides.repositories import EdoGuideRepository
 from src.notifications.repositories import NotificationRepository
 from src.reports.repositories import UserReportRepository
@@ -73,6 +78,16 @@ class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
     def chat_messages(self) -> ChatMessageRepository:
         """Get the ChatMessageRepository."""
         return self._get_repository(ChatMessageRepository)
+
+    @property
+    def question_logs(self) -> QuestionLogRepository:
+        """Get the QuestionLogRepository."""
+        return self._get_repository(QuestionLogRepository)
+
+    @property
+    def audit_logs(self) -> AuditLogRepository:
+        """Get the AuditLogRepository."""
+        return self._get_repository(AuditLogRepository)
 
     @property
     def login_events(self) -> LoginEventRepository:
