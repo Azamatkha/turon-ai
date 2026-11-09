@@ -36,5 +36,9 @@ export const login: LoginStrings = {
   unverifiedLogout: "Выйти",
   unverifiedQrTelegram: "Отсканируйте QR-код",
   unverifiedQrApp: "QR-код для скачивания мобильного приложения",
+  unverifiedVideoNudge: "Сначала посмотрите короткую инструкцию",
+  unverifiedVideoPlay: "Смотреть инструкцию",
+  unverifiedVideoReplay: "Посмотреть ещё раз",
+  unverifiedVideoEnded: "Теперь скачайте приложение по QR-коду и пройдите верификацию",
   platforms: "Платформы",
 };

@@ -37,5 +37,9 @@ export const login: LoginStrings = {
   unverifiedLogout: "Чиқиш",
   unverifiedQrTelegram: "QR кодни сканерланг",
   unverifiedQrApp: "Мобил иловани юклаб олиш учун QR код",
+  unverifiedVideoNudge: "Аввал қисқа қўлланмани кўринг",
+  unverifiedVideoPlay: "Қўлланмани кўриш",
+  unverifiedVideoReplay: "Қайта кўриш",
+  unverifiedVideoEnded: "Энди QR код орқали иловани юклаб олинг ва верификациядан ўтинг",
   platforms: "Платформалар",
 };

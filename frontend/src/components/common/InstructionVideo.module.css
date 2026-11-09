@@ -1,0 +1,171 @@
+/* Verifikatsiya qo'llanmasi videosi (403 / tasdiqlanmagan sahifa) */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* "Videoni ko'ring" — gradient yaltirash + pastga sakrovchi strelka */
+.nudge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(64, 89, 190, 0.1);
+  color: #4059BE;
+  font-size: 15px;
+  font-weight: 700;
+  animation: nudgeIn 0.6s ease both, nudgeWiggle 2.6s ease-in-out 1.2s infinite;
+  transition: opacity 0.3s ease;
+}
+
+.nudgeHidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.nudgeText {
+  background: linear-gradient(90deg, #193070 0%, #4059BE 35%, #8aa0ff 50%, #4059BE 65%, #193070 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2.4s linear infinite;
+}
+
+.nudgeArrow {
+  display: inline-flex;
+  animation: arrowBounce 1.2s ease-in-out infinite;
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0d1b3d;
+  box-shadow: 0 10px 28px rgba(25, 48, 112, 0.18);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #0d1b3d;
+}
+
+/* Play / qayta ko'rish qatlami */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: none;
+  padding: 16px;
+  background: linear-gradient(160deg, rgba(25, 48, 112, 0.55), rgba(13, 27, 61, 0.75));
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  animation: fadeIn 0.35s ease both;
+}
+
+.overlay:focus-visible {
+  outline: 3px solid #8aa0ff;
+  outline-offset: -3px;
+}
+
+.playBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4059BE, #193070);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s ease;
+}
+
+.overlay:hover .playBtn {
+  transform: scale(1.08);
+}
+
+/* Boshlanishdan oldin — tugma atrofida to'lqin halqalar */
+.pulse::before,
+.pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(138, 160, 255, 0.8);
+  animation: ring 2s ease-out infinite;
+}
+
+.pulse::after {
+  animation-delay: 1s;
+}
+
+.playLabel {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.endedText {
+  font-size: 14px;
+  opacity: 0.85;
+  max-width: 300px;
+  line-height: 1.4;
+}
+
+@keyframes ring {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+
+@keyframes arrowBounce {
+  0%, 100% { transform: translateY(-2px); }
+  50% { transform: translateY(4px); }
+}
+
+@keyframes nudgeIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes nudgeWiggle {
+  0%, 80%, 100% { transform: scale(1); }
+  85% { transform: scale(1.06); }
+  90% { transform: scale(0.98); }
+  95% { transform: scale(1.03); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge,
+  .nudgeText,
+  .nudgeArrow,
+  .pulse::before,
+  .pulse::after,
+  .overlay {
+    animation: none;
+  }
+}

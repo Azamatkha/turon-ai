@@ -38,6 +38,10 @@ export interface LoginStrings {
   // 403 sahifasidagi QR kodlar sarlavhalari
   unverifiedQrTelegram: string;
   unverifiedQrApp: string;
+  unverifiedVideoNudge: string;
+  unverifiedVideoPlay: string;
+  unverifiedVideoReplay: string;
+  unverifiedVideoEnded: string;
   // Login sahifasidagi "Platformalar" tugmasi (portaldagi platformalar sahifasi)
   platforms: string;
 }

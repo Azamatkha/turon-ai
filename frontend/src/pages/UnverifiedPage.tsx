@@ -1,7 +1,11 @@
 import { useLang } from "../hooks/useLang";
 import { chatStaticDict, loginDict } from "../locales";
 import { logout, PORTAL_LOGIN_URL } from "../services/authService";
+import InstructionVideo from "../components/common/InstructionVideo";
 import NotFoundPage, { type QrItem } from "./NotFoundPage";
+
+// Verifikatsiya qo'llanmasi — public/videos/ da; BASE_URL (/chat/) bilan birga
+const VIDEO_SRC = `${import.meta.env.BASE_URL}videos/verification.mp4`;
 
 // Mobil ilovani yuklab olish havolasi. Hozircha noma'lum — bo'sh bo'lsa
 // ikkinchi QR ko'rsatilmaydi. Havola aniq bo'lgach shu yerga yoziladi.
@@ -50,6 +54,15 @@ export default function UnverifiedPage() {
       actionLabel={t.unverifiedLogout}
       onAction={onLogout}
       qrCodes={qrCodes}
+      aside={
+        <InstructionVideo
+          src={VIDEO_SRC}
+          nudge={t.unverifiedVideoNudge}
+          playLabel={t.unverifiedVideoPlay}
+          replayLabel={t.unverifiedVideoReplay}
+          endedText={t.unverifiedVideoEnded}
+        />
+      }
       support={{
         phoneLabel: S.supportHint,
         phone: S.supportNumber,

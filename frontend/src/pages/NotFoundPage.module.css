@@ -215,6 +215,51 @@
   text-transform: uppercase;
 }
 
+/* Matn + QR va video — bitta oq qutida yonma-yon (tor ekranda ustma-ust) */
+.panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 400px) minmax(0, 560px);
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 1040px;
+  box-sizing: border-box;
+  margin-top: 18px;
+  padding: 28px 32px;
+  border-radius: 24px;
+  border: 1px solid #E2E8F0;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 44px rgba(25, 48, 112, 0.1);
+  animation: fadeUp 0.5s ease both;
+  animation-delay: 0.6s;
+}
+
+.panelMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.panelAside {
+  min-width: 0;
+}
+
+/* Qutining ichida QR o'z animatsiyasini takrorlamasin */
+.panel .qrList {
+  animation: none;
+}
+
+@media (max-width: 860px) {
+  .panel {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 20px 16px;
+    gap: 24px;
+  }
+}
+
 /* Logo — chap yuqori, asosiy tugma — chap pastki burchakda */
 .cornerLogo {
   position: absolute;
@@ -244,7 +289,8 @@
   .headlineWord,
   .headlineWord:hover,
   .support,
-  .qrList {
+  .qrList,
+  .panel {
     animation: none;
   }
 }

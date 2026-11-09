@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import DotField from "../components/DotField";
@@ -33,6 +33,8 @@ interface Props {
   support?: SupportContacts;
   // Berilsa — telefon bilan skanerlash uchun QR kodlar (yordam raqamidan tepada)
   qrCodes?: QrItem[];
+  // Berilsa — matn va QR bilan bitta qutiga, yon tomonga qo'yiladi (masalan, qo'llanma video)
+  aside?: ReactNode;
 }
 
 export interface QrItem {
@@ -60,7 +62,39 @@ export default function NotFoundPage({
   onAction,
   support,
   qrCodes,
+  aside,
 }: Props) {
+  const messageEl = (
+    <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 440, lineHeight: 1.5 }}>
+      {message}
+    </div>
+  );
+
+  // QR kodlar — matn ostida, yordam raqamidan tepada (kompyuterida Telegram yo'q xodimlar telefon bilan skanerlaydi)
+  const qrEl =
+    qrCodes && qrCodes.length > 0 ? (
+      <div className={styles.qrList}>
+        {qrCodes.map((qr) => (
+          // Telefon bilan skanerlanadi, kompyuterda esa bosilsa havola yangi
+          // oynada ochiladi (Telegram/yuklab olish sahifasi)
+          <a key={qr.value} href={qr.value} target="_blank" rel="noopener noreferrer" className={`${styles.qrCard} ${styles.qrLink}`}>
+            <span className={styles.qrTitle}>{qr.title}</span>
+            <QRCodeSVG
+              value={qr.value}
+              size={200}
+              level="H"
+              marginSize={0}
+              fgColor="#000000"
+              bgColor="#FFFFFF"
+              title={qr.title}
+              imageSettings={qr.logo ? { src: qr.logo, height: 46, width: 46, excavate: true } : undefined}
+            />
+            {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
+          </a>
+        ))}
+      </div>
+    ) : null;
+
   return (
     <div
       style={{
@@ -125,32 +159,20 @@ export default function NotFoundPage({
           ))}
         </h1>
       )}
-      <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 440, lineHeight: 1.5 }}>
-        {message}
-      </div>
-
-      {/* QR kodlar — matn ostida, yordam raqamidan tepada (kompyuterida Telegram yo'q xodimlar telefon bilan skanerlaydi) */}
-      {qrCodes && qrCodes.length > 0 && (
-        <div className={styles.qrList}>
-          {qrCodes.map((qr) => (
-            // Telefon bilan skanerlanadi, kompyuterda esa bosilsa havola yangi
-            // oynada ochiladi (Telegram/yuklab olish sahifasi)
-            <a key={qr.value} href={qr.value} target="_blank" rel="noopener noreferrer" className={`${styles.qrCard} ${styles.qrLink}`}>
-              <span className={styles.qrTitle}>{qr.title}</span>
-              <QRCodeSVG
-                value={qr.value}
-                size={200}
-                level="H"
-                marginSize={0}
-                fgColor="#000000"
-                bgColor="#FFFFFF"
-                title={qr.title}
-                imageSettings={qr.logo ? { src: qr.logo, height: 46, width: 46, excavate: true } : undefined}
-              />
-              {qr.caption && <span className={styles.qrCaption}>{qr.caption}</span>}
-            </a>
-          ))}
+      {aside ? (
+        // Matn + QR (chapda) va qo'shimcha blok (o'ngda, masalan video) — bitta qutida
+        <div className={styles.panel}>
+          <div className={styles.panelMain}>
+            {messageEl}
+            {qrEl}
+          </div>
+          <div className={styles.panelAside}>{aside}</div>
         </div>
+      ) : (
+        <>
+          {messageEl}
+          {qrEl}
+        </>
       )}
 
       {support && (

@@ -36,5 +36,9 @@ export const login: LoginStrings = {
   unverifiedLogout: "Chiqish",
   unverifiedQrTelegram: "QR kodni skanerlang",
   unverifiedQrApp: "Mobil ilovani yuklab olish uchun QR kod",
+  unverifiedVideoNudge: "Avval qisqa qo‘llanmani ko‘ring",
+  unverifiedVideoPlay: "Qo‘llanmani ko‘rish",
+  unverifiedVideoReplay: "Qayta ko‘rish",
+  unverifiedVideoEnded: "Endi QR kod orqali ilovani yuklab oling va verifikatsiyadan o‘ting",
   platforms: "Platformalar",
 };
