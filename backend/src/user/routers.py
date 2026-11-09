@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.core.database.session import get_session
 from src.core.limiter.depends import RateLimiter
 from src.core.schemas import SuccessResponse
@@ -17,8 +19,6 @@ from src.user.auth.permissions.enum import Permission
 from src.user.auth.routers import router as auth_router
 from src.user.auth.schemas import UserNewPassword
 from src.user.dependencies import get_user_service
-from src.audit.actions import AuditAction
-from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 from src.user.schemas import (
     AdminCreateUserModel,
@@ -35,7 +35,15 @@ from src.user.schemas import (
 from src.user.services import UserService
 from src.user.usecases.admin_create_user import (
     AdminCreateUserUseCase,
-    get_admin_create_user_use_case
+    get_admin_create_user_use_case,
+)
+from src.user.usecases.admin_delete_user import (
+    AdminDeleteUserUseCase,
+    get_admin_delete_user_use_case,
+)
+from src.user.usecases.admin_update_user import (
+    AdminUpdateUserUseCase,
+    get_admin_update_user_use_case,
 )
 from src.user.usecases.directory import DirectoryUseCase, get_directory_use_case
 from src.user.usecases.list_users import ListUsersUseCase, get_list_users_use_case
@@ -45,19 +53,11 @@ from src.user.usecases.update_contacts import (
 )
 from src.user.usecases.update_own_profile import (
     UpdateOwnProfileUseCase,
-    get_update_own_profile_use_case
+    get_update_own_profile_use_case,
 )
 from src.user.usecases.update_password import (
     UpdateUserPasswordUseCase,
-    get_update_user_password_use_case
-)
-from src.user.usecases.admin_update_user import (
-    AdminUpdateUserUseCase,
-    get_admin_update_user_use_case
-)
-from src.user.usecases.admin_delete_user import (
-    AdminDeleteUserUseCase,
-    get_admin_delete_user_use_case
+    get_update_user_password_use_case,
 )
 from src.user.usecases.verification import (
     SaveEmploymentUseCase,

@@ -4,6 +4,8 @@ Admin statistika endpointi.
 SWAGGER'DA TEKSHIRISH:
 1) admin bilan login qiling, "Authorize" ga tokenni kiriting.
 2) GET /v1/admin/stats -> jami userlar/suhbatlar/xabarlar + bo'limlar ulushi.
+9) GET /v1/admin/flagged-questions -> xavfli so'rovlar va so'kinishlar
+   (yashirin so'rovlar ham — router modeli ma'nosidan aniqlaydi).
 8) GET /v1/admin/system -> komponentlar holati (Postgres, Redis, Qdrant,
    Ollama, RabbitMQ, Celery) + so'nggi 24 soatda bot ishlashi (p50/p95).
 7) GET /v1/admin/backups -> zaxira nusxalar holati va fayllar;
@@ -27,6 +29,7 @@ from src.admin.schemas import (
     DashboardStatsView,
     DislikedAnswerPageView,
     FaceIdLogPageView,
+    FlaggedQuestionPageView,
     QuestionAnalyticsView,
     ReviewDislikedModel,
     SystemStatusView,
@@ -35,28 +38,30 @@ from src.admin.usecases import (
     DashboardStatsUseCase,
     ListDislikedAnswersUseCase,
     ListFaceIdLogsUseCase,
+    ListFlaggedQuestionsUseCase,
     QuestionAnalyticsUseCase,
     ReviewDislikedAnswerUseCase,
     SystemStatusUseCase,
     get_dashboard_stats_use_case,
     get_list_disliked_answers_use_case,
     get_list_face_id_logs_use_case,
+    get_list_flagged_questions_use_case,
     get_question_analytics_use_case,
     get_review_disliked_answer_use_case,
     get_system_status_use_case,
 )
-from src.user.auth.permissions.checker import require_permission
-from src.user.auth.permissions.enum import Permission
 from src.audit.actions import AuditAction
 from src.audit.schemas import AuditLogPageView
-from src.backup.schemas import BackupOverviewView
-from src.backup.usecases import BackupOverviewUseCase, TriggerQdrantBackupUseCase
 from src.audit.usecases import (
     AuditRecorder,
     ListAuditLogsUseCase,
     get_audit_recorder,
     get_list_audit_logs_use_case,
 )
+from src.backup.schemas import BackupOverviewView
+from src.backup.usecases import BackupOverviewUseCase, TriggerQdrantBackupUseCase
+from src.user.auth.permissions.checker import require_permission
+from src.user.auth.permissions.enum import Permission
 from src.user.models import User
 
 router = APIRouter()
@@ -175,3 +180,16 @@ async def system_status(
 ) -> SystemStatusView:
     """Tizim holati: komponentlar va bot ishlash ko'rsatkichlari."""
     return await use_case.execute()
+
+
+@router.get("/flagged-questions", response_model=FlaggedQuestionPageView)
+async def list_flagged_questions(
+    current_user: Annotated[User, Depends(require_permission(Permission.VIEW_LOGS))],
+    use_case: Annotated[
+        ListFlaggedQuestionsUseCase, Depends(get_list_flagged_questions_use_case)
+    ],
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> FlaggedQuestionPageView:
+    """Xavfli so'rovlar va so'kinishlar — kim, qachon, nima yozgan."""
+    return await use_case.execute(page=page, size=size)

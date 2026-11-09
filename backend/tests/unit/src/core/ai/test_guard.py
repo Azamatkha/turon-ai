@@ -2,7 +2,6 @@ import pytest
 
 from src.core.ai.guard import looks_like_injection, mask_pii
 
-
 # ---- PII ----
 
 

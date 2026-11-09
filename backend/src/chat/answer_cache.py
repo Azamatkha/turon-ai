@@ -16,10 +16,10 @@ Kalit: model + javob tili + normallashtirilgan savol + bilim bazasi
 versiyasi. Baza o'zgarsa versiya oshadi — eski javoblar ishlatilmaydi.
 """
 
-import hashlib
-import json
 from collections.abc import AsyncIterator
 from datetime import timedelta
+import hashlib
+import json
 from typing import Any
 
 from redis.asyncio import Redis

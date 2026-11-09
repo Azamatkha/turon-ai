@@ -7,9 +7,9 @@ modellar ro'yxati), Celery'ga bitta ping.
 """
 
 import asyncio
-import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+import time
 
 import httpx
 from redis.asyncio import Redis

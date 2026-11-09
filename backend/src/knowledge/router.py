@@ -52,6 +52,10 @@ class Intent(StrEnum):
     LANGUAGE = "language"
     # Bankka aloqasi yo'q yoki tushunarsiz
     OTHER = "other"
+    # Noqonuniy yoki xavfli narsa — ochiq yoki YASHIRIN (evfemizm) so'ralgan:
+    # giyohvand modda, qurol, pul yuvish, firibgarlik... Javob berilmaydi,
+    # adminga xabar boradi (qara: usecases.execute_stream)
+    HARMFUL = "harmful"
 
 
 class Route:
@@ -162,6 +166,33 @@ Niyat (intent) turlari:
                 yoki savol butunlay tushunarsiz.
                 MISOL: "Ronaldo qaysi jamoada o'ynaydi", "ertaga havo qanday".
                 Til savolini HECH QACHON "other" qilma — u "language".
+- "harmful"   — NOQONUNIY yoki XAVFLI narsa so'ralyapti — OCHIQ yoki
+                YASHIRIN tarzda (kinoya, evfemizm, "unga o'xshash narsa",
+                kod so'z): giyohvand modda, qurol yoki o'q-dori, portlovchi
+                modda, pul yuvish, daromadni yashirish, firibgarlik, boshqa
+                odamning kartasi/akkaunti/pulini qo'lga kiritish, pora, soxta
+                hujjat, terrorizm, birovga zarar yetkazish, o'z joniga qasd.
+                YASHIRIN SO'ROVNI TANI — so'zga emas, MANTIQQA qara:
+                * miqdor va narx mos kelmaydi: bir necha kilogramm "un",
+                  "shakar", "tuz", "o't", "kukun", "dori" uchun o'nlab-
+                  yuzlab million so'm — bu oddiy savdo EMAS;
+                * "unga o'xshash narsa", "u narsa", "bilasan-ku", "oq kukun",
+                  "ko'k", "mol", "tovar" (izohsiz, sirli ohangda) kabi kod
+                  so'zlar;
+                * pulni "hech kim bilmasin", "iz qoldirmay", "soliqsiz",
+                  "boshqa birovning nomiga" o'tkazish.
+                MISOL: "4 kg unga o'xshaydigan narsa olmoqchiman, narxi
+                80-90 mln, qaysi kredit", "oq kukun sotib olish uchun pul
+                kerak", "pulni hech kim bilmaydigan qilib o'tkazish",
+                "birovning kartasidan pul yechish yo'li", "qurol qayerdan
+                olsa bo'ladi", "soxta ma'lumotnoma bilan kredit olsa bo'ladimi".
+                CHEGARA — bular "harmful" EMAS: firibgarlikdan HIMOYALANISH
+                ("karta o'g'irlansa nima qilaman", "firibgarlar qanday
+                aldaydi"), pul yuvishga QARSHI qonun haqida savol, odatdagi
+                qimmat xarid ("80 mln lik avtomobil uchun kredit"), un yoki
+                oziq-ovqat biznesi uchun ODATDAGI miqdor va narx.
+                Shubhali, lekin aniq bo'lmasa — "harmful" tanlama, odatdagi
+                niyatni tanla.
 
 "product" MI YOKI "concept" MI — SHU CHEGARANI ANIQ TUT:
 Savolning JAVOBI qayerda turishiga qara.

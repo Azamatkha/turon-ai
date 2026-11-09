@@ -100,6 +100,9 @@ export interface ChatStaticStrings {
   notifKnowledgeExpiring: string;
   notifKnowledgeExpired: string;
   notifKnowledgeSourceFailed: string;
+  // Xavfli so'rov / so'kinish (faqat adminga)
+  notifSafetyHarmful: string;
+  notifSafetyProfanity: string;
   notifTimeNow: string;
   notifMinAgo: (m: number) => string;
   notifHourAgo: (h: number) => string;
@@ -612,6 +615,16 @@ export interface AdminStrings {
   systemChartTitle: string;
   // Bugun keshdan berilgan javoblar
   systemStatCache: string;
+  // Xavfli so'rovlar
+  safetyNav: string;
+  safetyHint: string;
+  safetyLoadError: string;
+  safetyEmpty: string;
+  safetyKindAll: string;
+  safetyKindHarmful: string;
+  safetyKindProfanity: string;
+  safetyColKind: string;
+  safetyColQuestion: string;
   systemCheckedAt: (time: string) => string;
   knowledgeNav: string;
   pdfNav: string;

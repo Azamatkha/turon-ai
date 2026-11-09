@@ -24,6 +24,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse
 
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.core.errors.exceptions import NotAcceptableException
 from src.core.storage.media import resolve_media_path
 from src.reports.enums import ReportKind
@@ -48,8 +50,6 @@ from src.reports.usecases import (
 from src.user.auth.dependencies import get_current_user
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
-from src.audit.actions import AuditAction
-from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 
 router = APIRouter()

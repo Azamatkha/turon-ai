@@ -16,8 +16,8 @@ Vaqtinchalik fayllar `edo_guides/tmp/` da; tashlab ketilgan yuklashlar
 (24 soatdan eski) keyingi yuklash boshlanganda o'chiriladi.
 """
 
-import time
 from pathlib import Path
+import time
 from uuid import UUID, uuid4
 
 import anyio

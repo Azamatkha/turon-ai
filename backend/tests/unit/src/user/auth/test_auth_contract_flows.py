@@ -2,28 +2,23 @@ from dataclasses import dataclass
 
 from fastapi import Request
 import pytest
-from starlette.datastructures import URL
 
 from src.core.errors.exceptions import UnauthorizedException
-from src.core.schemas import SuccessResponse, TokenModel
-from src.user.auth.dependencies import get_access_by_refresh_token, get_current_user
+from src.core.schemas import TokenModel
+from src.user.auth.dependencies import (
+    get_access_by_refresh_token,
+    get_current_user,
+    get_current_user_allow_unverified,
+)
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
     LoginTokenModel,
     LoginUserModel,
-    ResetPasswordModel,
-    SendResetPasswordRequestModel,
 )
 from src.user.auth.usecases.get_access_by_refresh import (
     get_tokens_by_refresh_user_use_case,
 )
 from src.user.auth.usecases.login import get_login_user_use_case
-from src.user.auth.usecases.reset_password_confirm import (
-    get_reset_password_confirm_use_case,
-)
-from src.user.auth.usecases.reset_password_request import (
-    get_reset_password_request_use_case,
-)
 from src.user.models import User
 from tests.factories.token_factory import build_refresh_payload
 from tests.factories.user_factory import build_user
@@ -36,11 +31,6 @@ from tests.helpers.providers import ProvideValue
 class TokenState:
     access_token: str | None = None
     refresh_token: str | None = None
-
-
-@dataclass
-class ResetPasswordState:
-    token: str | None = None
 
 
 class LoginUseCaseFake:
@@ -112,28 +102,6 @@ class AccessTokenDependency:
         return f"Bearer {token}"
 
 
-class ResetPasswordRequestUseCaseFake:
-    def __init__(self, state: ResetPasswordState, token: str):
-        self._state = state
-        self._token = token
-
-    async def execute(
-        self, data: SendResetPasswordRequestModel, request_base_url: URL
-    ) -> SuccessResponse:
-        self._state.token = self._token
-        return SuccessResponse(success=True)
-
-
-class ResetPasswordConfirmUseCaseFake:
-    def __init__(self, state: ResetPasswordState):
-        self._state = state
-
-    async def execute(self, data: ResetPasswordModel) -> SuccessResponse:
-        if data.token != self._state.token:
-            raise ValueError("Reset token mismatch")
-        return SuccessResponse(success=True)
-
-
 @pytest.fixture(autouse=True)
 def disable_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
@@ -175,16 +143,24 @@ async def test_login_refresh_access_flow(
     )
     dependency_overrides.set(get_access_by_refresh_token, refresh_dependency)
     dependency_overrides.set(get_current_user, access_dependency)
+    # /me tasdiqlanmagan userga ham ochiq — u shu dependency orqali ishlaydi
+    dependency_overrides.set(get_current_user_allow_unverified, access_dependency)
 
     login_response = await async_client.post(
         "/v1/users/auth/login",
-        json={"email": "user@example.com", "password": "StrongPass1!"},
+        json={"username": "user", "password": "StrongPass1!"},
     )
 
     assert login_response.status_code == 200
+    # Tasdiqlangan user: tokenlar to'la, Face-ID maydonlari (token, p12) bo'sh
     assert login_response.json() == {
         "access_token": "access-1",
         "refresh_token": "refresh-1",
+        "is_verified": True,
+        "success": True,
+        "token": "",
+        "p12Base64": "",
+        "p12Password": "",
     }
 
     refresh_response = await async_client.post(
@@ -207,40 +183,3 @@ async def test_login_refresh_access_flow(
     assert me_response.json()["id"] == str(user.id)
 
 
-@pytest.mark.asyncio
-async def test_reset_password_flow(
-    async_client,
-    dependency_overrides: DependencyOverrides,
-) -> None:
-    """
-    Given: reset request use case issues a token and confirm use case validates it.
-    When: reset request and reset confirm endpoints are called with matching token data.
-    Then: both endpoints return success and the issued token is accepted by confirm flow.
-    """
-    state = ResetPasswordState()
-    request_use_case = ResetPasswordRequestUseCaseFake(state, token="reset-token")
-    confirm_use_case = ResetPasswordConfirmUseCaseFake(state)
-
-    dependency_overrides.set(
-        get_reset_password_request_use_case, ProvideValue(request_use_case)
-    )
-    dependency_overrides.set(
-        get_reset_password_confirm_use_case, ProvideValue(confirm_use_case)
-    )
-
-    request_response = await async_client.post(
-        "/v1/users/auth/password/reset",
-        json={"email": "user@example.com"},
-    )
-
-    assert request_response.status_code == 200
-    assert request_response.json() == {"success": True}
-    assert state.token == "reset-token"
-
-    confirm_response = await async_client.put(
-        "/v1/users/auth/password/reset/confirm",
-        json={"token": state.token, "password": "StrongPass1!"},
-    )
-
-    assert confirm_response.status_code == 200
-    assert confirm_response.json() == {"success": True}

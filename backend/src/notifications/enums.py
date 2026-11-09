@@ -20,6 +20,8 @@ class NotificationType(StrEnum):
     KNOWLEDGE_EXPIRED = "knowledge_expired"
     # Avtomatik qayta scraping: ba'zi sahifalar ochilmadi — adminlarga
     KNOWLEDGE_SOURCE_FAILED = "knowledge_source_failed"
+    # Xavfli so'rov yoki so'kinish aniqlandi — adminlarga (chat/usecases.py)
+    SAFETY_FLAGGED = "safety_flagged"
 
     @classmethod
     def values(cls) -> set[str]:

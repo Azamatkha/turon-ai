@@ -49,6 +49,8 @@ export const chatStatic: ChatStaticStrings = {
   notifKnowledgeExpiring: "Hujjat muddati 7 kundan keyin tugaydi",
   notifKnowledgeExpired: "Hujjat muddati tugadi — yangilang",
   notifKnowledgeSourceFailed: "Saytdagi sahifa ochilmadi — hujjat yangilanmadi",
+  notifSafetyHarmful: "Xavfli so‘rov aniqlandi",
+  notifSafetyProfanity: "So‘kinish bilan yozilgan xabar",
   notifTimeNow: "Hozir",
   notifMinAgo: (m: number) => `${m} daq oldin`,
   notifHourAgo: (h: number) => `${h} soat oldin`,

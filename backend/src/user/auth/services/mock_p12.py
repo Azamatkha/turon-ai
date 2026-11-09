@@ -9,8 +9,8 @@ Haqiqiy CA ulanganda shu modul almashtiriladi, javob formati o'zgarmaydi.
 """
 
 import base64
-import secrets
 from datetime import UTC, datetime, timedelta
+import secrets
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization

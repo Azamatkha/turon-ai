@@ -10,12 +10,12 @@ Bot javoblaridagi markdown'ning asosiy qismi o'giriladi: `#` sarlavhalar,
 `-`/`*`/`1.` ro'yxatlar, `**qalin**`, `[matn](havola)` va `|` jadvallar.
 """
 
-import io
-import re
-import zipfile
 from dataclasses import dataclass
 from datetime import datetime
+import io
+import re
 from xml.sax.saxutils import escape
+import zipfile
 
 _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 

@@ -3,32 +3,34 @@ from uuid import UUID
 
 from fastapi import Depends
 
-from src.core.database.session import get_unit_of_work
-from src.core.errors.exceptions import InstanceNotFoundException
-from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
-from src.core.utils.datetime_utils import get_utc_now
-from src.chat.answer_cache import cache_stats_today
-from src.system.dependencies import get_readiness_service
-from src.system.readiness import ReadinessService, overall_status
-from src.user.auth.services.gsi_signature import summarize_claims
 from src.admin.schemas import (
+    ComponentStatusView,
     DashboardStatsView,
     DeptStat,
     DislikedAnswerPageView,
     DislikedAnswerView,
-    ComponentStatusView,
+    FaceIdLogPageView,
+    FaceIdLogView,
+    FlaggedQuestionPageView,
+    FlaggedQuestionView,
     HourlyPoint,
     LlmMetrics,
     QuestionAnalyticsView,
-    SystemStatusView,
     QuestionStatItem,
     QuestionSummary,
-    FaceIdLogPageView,
-    FaceIdLogView,
     RecentActivityItem,
+    SystemStatusView,
     TopUserStat,
     WeeklyPoint,
 )
+from src.chat.answer_cache import cache_stats_today
+from src.core.database.session import get_unit_of_work
+from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
+from src.core.errors.exceptions import InstanceNotFoundException
+from src.core.utils.datetime_utils import get_utc_now
+from src.system.dependencies import get_readiness_service
+from src.system.readiness import ReadinessService, overall_status
+from src.user.auth.services.gsi_signature import summarize_claims
 
 # Hafta kunlari qisqartmalari (Dushanba=0 ... Yakshanba=6)
 WEEKDAY_LABELS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"]
@@ -342,3 +344,34 @@ def get_system_status_use_case(
     readiness: ReadinessService = Depends(get_readiness_service),
 ) -> SystemStatusUseCase:
     return SystemStatusUseCase(uow=uow, readiness=readiness)
+
+
+class ListFlaggedQuestionsUseCase:
+    """Xavfli so'rovlar va so'kinishlar ro'yxati (savol matni maskalangan)."""
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(self, page: int = 1, size: int = 50) -> FlaggedQuestionPageView:
+        async with self.uow as uow:
+            rows, total = await uow.question_logs.list_flagged(uow.session, page=page, size=size)
+        return FlaggedQuestionPageView(
+            items=[
+                FlaggedQuestionView(
+                    id=log.id,
+                    created_at=log.created_at,
+                    kind=log.intent or "harmful",
+                    question=log.question,
+                    username=username,
+                    user_name=name,
+                )
+                for log, username, name in rows
+            ],
+            total=total,
+        )
+
+
+def get_list_flagged_questions_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> ListFlaggedQuestionsUseCase:
+    return ListFlaggedQuestionsUseCase(uow=uow)

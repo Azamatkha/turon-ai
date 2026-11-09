@@ -27,10 +27,20 @@ class FakeUserRepository:
         return self._user
 
 
+class FakeLoginEventsRepository:
+    """Login muvaffaqiyatli bo'lsa "login" hodisasi yoziladi (So'nggi faollik)."""
+
+    def __init__(self) -> None:
+        self.create = AsyncMock()
+
+
 def build_uow(user: User | None, session: FakeAsyncSession) -> FakeUnitOfWork:
     return FakeUnitOfWork(
         session=session,
-        repositories={"users": FakeUserRepository(user)},
+        repositories={
+            "users": FakeUserRepository(user),
+            "login_events": FakeLoginEventsRepository(),
+        },
     )
 
 
@@ -57,7 +67,7 @@ async def test_login_rehashes_password_when_needed(
 
     use_case = LoginUserUseCase(uow=uow, redis_client=fake_redis)
     result = await use_case.execute(
-        LoginUserModel(email="user@example.com", password="plain-pass")
+        LoginUserModel(username="user", password="plain-pass")
     )
 
     assert result.access_token == "access"
@@ -95,7 +105,7 @@ async def test_login_does_not_rehash_when_not_needed(
 
     use_case = LoginUserUseCase(uow=uow, redis_client=fake_redis)
     result = await use_case.execute(
-        LoginUserModel(email="user@example.com", password="plain-pass")
+        LoginUserModel(username="user", password="plain-pass")
     )
 
     assert result.access_token == "access"
@@ -123,7 +133,7 @@ async def test_login_returns_unified_error_for_missing_user_and_uses_dummy_hash(
 
     with pytest.raises(InstanceProcessingException, match=INVALID_CREDENTIALS_MESSAGE):
         await use_case.execute(
-            LoginUserModel(email="missing@example.com", password="plain-pass")
+            LoginUserModel(username="missing", password="plain-pass")
         )
 
     verify_mock.assert_awaited_once_with(
@@ -153,7 +163,7 @@ async def test_login_returns_unified_error_for_wrong_password(
 
     with pytest.raises(InstanceProcessingException, match=INVALID_CREDENTIALS_MESSAGE):
         await use_case.execute(
-            LoginUserModel(email="user@example.com", password="wrong-pass")
+            LoginUserModel(username="user", password="wrong-pass")
         )
 
     verify_mock.assert_awaited_once_with("wrong-pass", user.password_hash)
@@ -168,7 +178,8 @@ async def test_login_returns_unified_error_for_wrong_password(
 @pytest.mark.parametrize(
     ("user", "expected_log_fragment"),
     [
-        (build_user(is_verified=False), "not verified"),
+        # Tasdiqlanmagan user bu yerda YO'Q: u xato olmaydi — login unga
+        # Face-ID uchun token + p12 beradi (mobilda verifikatsiyani davom ettirsin)
         (build_user(is_verified=True, is_active=False), "is blocked"),
     ],
 )
@@ -189,7 +200,7 @@ async def test_login_returns_unified_error_for_account_state_failures(
 
     with pytest.raises(InstanceProcessingException, match=INVALID_CREDENTIALS_MESSAGE):
         await use_case.execute(
-            LoginUserModel(email="user@example.com", password="plain-pass")
+            LoginUserModel(username="user", password="plain-pass")
         )
 
     verify_mock.assert_awaited_once_with("plain-pass", user.password_hash)

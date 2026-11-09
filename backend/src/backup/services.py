@@ -11,9 +11,9 @@ ilova obrazidagi pg_dump esa 15-versiya — eski pg_dump yangi serverni
 dump qilishdan bosh tortadi.
 """
 
-import time
 from datetime import UTC, datetime
 from pathlib import Path
+import time
 
 import httpx
 

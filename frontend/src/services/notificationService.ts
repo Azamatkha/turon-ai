@@ -4,7 +4,7 @@ import { apiFetch, ApiError, readApiError } from "./authService";
 
 export interface ApiNotification {
   id: string;
-  // "knowledge_updated" | "rates_updated" | "report_new" | "knowledge_expiring" | "knowledge_expired"
+  // "knowledge_updated" | "rates_updated" | "report_new" | "knowledge_expiring" | "knowledge_expired" | "safety_flagged"
   type: string;
   // Matnga qo'yiladigan qiymatlar, masalan { title: "Kredit siyosati" }
   params: Record<string, string>;

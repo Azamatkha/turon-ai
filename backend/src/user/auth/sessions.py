@@ -7,9 +7,9 @@ yangilanadi (dependencies.get_current_user_with_session), shuning uchun
 login oqimlarining (parol, EDO, Turon ID, mobil) hech biriga tegilmagan.
 """
 
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import re
 
 from fastapi import Request
 from redis.asyncio import Redis

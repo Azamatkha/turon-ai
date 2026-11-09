@@ -7,7 +7,10 @@ import pytest
 from src.core.database.session import get_session
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.schemas import SuccessResponse
-from src.user.auth.dependencies import get_current_user
+from src.user.auth.dependencies import (
+    get_current_user,
+    get_current_user_allow_unverified,
+)
 from src.user.dependencies import get_user_service
 from src.user.enums import UserRole
 from src.user.usecases.update_password import get_update_user_password_use_case
@@ -49,7 +52,8 @@ async def test_get_user_profile(
     dependency_overrides: DependencyOverrides,
 ) -> None:
     user = build_user()
-    dependency_overrides.set(get_current_user, ProvideValue(user))
+    # /me tasdiqlanmagan userga ham ochiq (mobil verifikatsiya shu orqali o'tadi)
+    dependency_overrides.set(get_current_user_allow_unverified, ProvideValue(user))
 
     response = await async_client.get("/v1/users/me")
 

@@ -1,8 +1,8 @@
 from io import BytesIO
 from pathlib import Path
 
-from PIL import Image
 from fastapi import UploadFile
+from PIL import Image
 import pytest
 from starlette.datastructures import Headers
 

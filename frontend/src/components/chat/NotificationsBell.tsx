@@ -34,6 +34,8 @@ function titleFor(n: ApiNotification, s: ChatStaticStrings): string {
       return s.notifKnowledgeExpired;
     case "knowledge_source_failed":
       return s.notifKnowledgeSourceFailed;
+    case "safety_flagged":
+      return n.params?.kind === "profanity" ? s.notifSafetyProfanity : s.notifSafetyHarmful;
     default:
       return s.notifications;
   }
@@ -55,6 +57,9 @@ function bodyFor(n: ApiNotification, s: ChatStaticStrings): string {
  *  Ikkalasi ham faqat adminga keladi: murojaat — o'sha murojaat ochiladi,
  *  "ma'lumotlar yangilandi" — bilim bazasi ro'yxati. */
 function linkFor(n: ApiNotification): string | null {
+  if (n.type === "safety_flagged") {
+    return "/admin/safety";
+  }
   if (n.type === "report_new" && n.entity_id) {
     return `/admin/reports?report=${n.entity_id}`;
   }

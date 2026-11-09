@@ -287,3 +287,21 @@ export async function getSystemStatus(): Promise<SystemStatus> {
   if (!res.ok) throw new Error(await readError(res, "Tizim holatini olishda xatolik"));
   return res.json();
 }
+
+// ---- Xavfli so'rovlar — /v1/admin/flagged-questions ----
+
+export interface FlaggedQuestion {
+  id: string;
+  created_at: string;
+  // "harmful" — noqonuniy/xavfli (yashirin ham), "profanity" — so'kinish
+  kind: "harmful" | "profanity" | string;
+  question: string;
+  username?: string | null;
+  user_name: string;
+}
+
+export async function listFlaggedQuestions(size = 100): Promise<{ items: FlaggedQuestion[]; total: number }> {
+  const res = await apiFetch(`/v1/admin/flagged-questions?size=${size}`);
+  if (!res.ok) throw new Error(await readError(res, "Ro'yxatni olishda xatolik"));
+  return res.json();
+}

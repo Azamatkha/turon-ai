@@ -7,10 +7,10 @@ yoziladi (embedding qimmat: o'zgarmagan sahifaga model chaqirilmaydi).
 Sarlavha, havola va amal qilish muddati saqlanadi.
 """
 
+from dataclasses import dataclass, field
 import hashlib
 import json
 import re
-from dataclasses import dataclass, field
 from typing import Any
 
 from fastapi import Depends

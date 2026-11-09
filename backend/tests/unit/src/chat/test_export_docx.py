@@ -1,10 +1,10 @@
-import io
-import zipfile
 from datetime import UTC, datetime
+import io
 from types import SimpleNamespace
 from typing import Any
 from uuid import uuid4
 from xml.dom import minidom
+import zipfile
 
 import pytest
 

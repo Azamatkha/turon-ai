@@ -11,7 +11,10 @@ from bs4 import BeautifulSoup
 import httpx
 import trafilatura
 
-from src.core.errors.exceptions import InfrastructureException, InstanceProcessingException
+from src.core.errors.exceptions import (
+    InfrastructureException,
+    InstanceProcessingException,
+)
 from src.main.config import config
 
 # Sahifadagi fayl-yuklash / video vidjetlaridan qolgan "chalasoz" qatorlar —

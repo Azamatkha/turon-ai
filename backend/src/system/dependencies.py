@@ -1,5 +1,5 @@
-import httpx
 from fastapi import Depends
+import httpx
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -47,6 +47,8 @@ export const chatStatic: ChatStaticStrings = {
   notifKnowledgeExpiring: "Ҳужжат муддати 7 кундан кейин тугайди",
   notifKnowledgeExpired: "Ҳужжат муддати тугади — янгиланг",
   notifKnowledgeSourceFailed: "Сайтдаги саҳифа очилмади — ҳужжат янгиланмади",
+  notifSafetyHarmful: "Хавфли сўров аниқланди",
+  notifSafetyProfanity: "Сўкиниш билан ёзилган хабар",
   notifTimeNow: "Ҳозир",
   notifMinAgo: (m: number) => `${m} дақ олдин`,
   notifHourAgo: (h: number) => `${h} соат олдин`,

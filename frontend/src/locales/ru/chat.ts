@@ -46,6 +46,8 @@ export const chatStatic: ChatStaticStrings = {
   notifKnowledgeExpiring: "Срок документа истекает через 7 дней",
   notifKnowledgeExpired: "Срок документа истёк — обновите",
   notifKnowledgeSourceFailed: "Страница сайта не открылась — документ не обновлён",
+  notifSafetyHarmful: "Обнаружен опасный запрос",
+  notifSafetyProfanity: "Сообщение с ругательствами",
   notifTimeNow: "Сейчас",
   notifMinAgo: (m: number) => `${m} мин назад`,
   notifHourAgo: (h: number) => `${h} ч назад`,

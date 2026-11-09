@@ -33,7 +33,6 @@ def test_placeholders_are_stable_and_valid_looking() -> None:
 
 
 def test_placeholder_email_passes_the_chat_email_validator() -> None:
-    from pydantic import TypeAdapter
-    from pydantic import EmailStr
+    from pydantic import EmailStr, TypeAdapter
 
     assert TypeAdapter(EmailStr).validate_python(placeholder_email(SUB))

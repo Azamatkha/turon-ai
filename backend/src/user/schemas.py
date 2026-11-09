@@ -5,14 +5,13 @@ from uuid import UUID
 from pydantic import EmailStr, Field, field_validator
 
 from src.core.schemas import Base
-from src.user.enums import UserRole
-from src.user.auth.schemas import CreateUserModel, normalize_department
 from src.core.validations import (
     IP_NUMBER_VALIDATOR,
     USERNAME_VALIDATOR,
     UZ_PHONE_VALIDATOR,
 )
-
+from src.user.auth.schemas import CreateUserModel, normalize_department
+from src.user.enums import UserRole
 
 PHONE_ERROR = "Telefon raqami +998 va 9 ta raqamdan iborat bo'lsin (masalan +998 99 123 45 67)"
 IP_NUMBER_ERROR = "IP raqam 1-4 xonali son bo'lsin (masalan 1036)"

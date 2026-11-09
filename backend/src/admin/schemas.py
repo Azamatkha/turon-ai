@@ -163,3 +163,18 @@ class SystemStatusView(Base):
     checked_at: datetime
     components: list[ComponentStatusView]
     llm: LlmMetrics
+
+
+class FlaggedQuestionView(Base):
+    id: UUID
+    created_at: datetime
+    # "harmful" — noqonuniy/xavfli (router), "profanity" — so'kinish (lug'at)
+    kind: str
+    question: str
+    username: str | None = None
+    user_name: str = ""
+
+
+class FlaggedQuestionPageView(Base):
+    items: list[FlaggedQuestionView]
+    total: int

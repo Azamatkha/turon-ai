@@ -1,7 +1,7 @@
 import base64
+from collections.abc import AsyncIterator
 import json
 import time
-from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx

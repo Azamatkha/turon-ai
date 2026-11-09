@@ -5,9 +5,9 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from src.chat.models import ChatMessage, ChatSession, QuestionLog
 from src.core.database.repositories import BaseRepository, SoftDeleteRepository
 from src.core.utils.datetime_utils import get_utc_now
-from src.chat.models import ChatMessage, ChatSession, QuestionLog
 from src.user.models import User
 
 
@@ -280,3 +280,25 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
         ).where(self.model.created_at >= since, self.model.outcome != "error")
         r = (await session.execute(query)).one()
         return int(r[0] or 0), int(r[1] or 0), int(r[2] or 0)
+
+    async def list_flagged(
+        self, session: AsyncSession, page: int = 1, size: int = 50
+    ) -> tuple[list[tuple[QuestionLog, str | None, str]], int]:
+        """Xavfli deb belgilangan so'rovlar (outcome="flagged"), yangisidan.
+        Har qator: (yozuv, login, F.I.Sh.). User o'chirilgan bo'lsa — None."""
+        cond = self.model.outcome == "flagged"
+        total = int(
+            (await session.execute(select(func.count()).select_from(self.model).where(cond))).scalar_one()
+        )
+        query = (
+            select(self.model, User.username, User.first_name, User.last_name)
+            .outerjoin(User, User.id == self.model.user_id)
+            .where(cond)
+            .order_by(self.model.created_at.desc())
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        rows = (await session.execute(query)).all()
+        return [
+            (r[0], r[1], f"{r[2] or ''} {r[3] or ''}".strip()) for r in rows
+        ], total

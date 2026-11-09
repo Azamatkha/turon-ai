@@ -24,6 +24,7 @@ import QuestionsView from "../components/admin/QuestionsView";
 import AuditLogsView from "../components/admin/AuditLogsView";
 import BackupsView from "../components/admin/BackupsView";
 import SystemView from "../components/admin/SystemView";
+import SafetyView from "../components/admin/SafetyView";
 import { listDislikedAnswers } from "../services/feedbackService";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
@@ -50,6 +51,7 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   audit: "audit",
   backups: "backups",
   system: "system",
+  safety: "safety",
   faceIdLogs: "face-id-logs",
   knowledgeList: "knowledge",
   pdfUpload: "documents",
@@ -65,6 +67,7 @@ const PATH_TO_VIEW: Record<string, AdminView> = {
   audit: "audit",
   backups: "backups",
   system: "system",
+  safety: "safety",
   "face-id-logs": "faceIdLogs",
   knowledge: "knowledgeList",
   documents: "pdfUpload",
@@ -213,6 +216,7 @@ export default function AdminPage() {
   const onAudit = view === "audit";
   const onBackups = view === "backups";
   const onSystem = view === "system";
+  const onSafety = view === "safety";
   const onKnowledgeList = view === "knowledgeList";
   const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
@@ -419,6 +423,7 @@ export default function AdminPage() {
           {onReports && (
             <ReportsView mounted={mounted} t={t} onCountsChange={setNewReportsCount} />
           )}
+          {onSafety && <SafetyView mounted={mounted} t={t} />}
           {onSystem && <SystemView mounted={mounted} t={t} />}
           {onBackups && <BackupsView mounted={mounted} t={t} />}
           {onAudit && <AuditLogsView mounted={mounted} t={t} />}

@@ -14,22 +14,13 @@ from src.user.auth.dependencies import (
 )
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.routers import router
-from src.user.auth.schemas import LoginTokenModel
+from src.user.auth.schemas import LoginTokenModel, RegisterTokenModel
 from src.user.auth.usecases.get_access_by_refresh import (
     get_tokens_by_refresh_user_use_case,
 )
 from src.user.auth.usecases.login import get_login_user_use_case
 from src.user.auth.usecases.logout import get_logout_use_case
 from src.user.auth.usecases.register import get_register_use_case
-from src.user.auth.usecases.resend_verification import get_send_verification_use_case
-from src.user.auth.usecases.reset_password_confirm import (
-    get_reset_password_confirm_use_case,
-)
-from src.user.auth.usecases.reset_password_request import (
-    get_reset_password_request_use_case,
-)
-from src.user.auth.usecases.verify_email import get_verify_email_use_case
-from src.user.schemas import UserProfileViewModel
 from tests.factories.token_factory import build_refresh_payload
 from tests.factories.user_factory import build_user
 from tests.helpers.limiter import noop_rate_limiter
@@ -73,24 +64,23 @@ async def test_register_endpoint(
     async_client,
     dependency_overrides: DependencyOverrides,
 ) -> None:
-    user = build_user()
-    result = UserProfileViewModel.model_validate(user)
+    # Ro'yxatdan o'tish faqat mobil ilovadan: login + parol. Javob — Face-ID
+    # verifikatsiyasi uchun token va client p12 (mobil kutgan camelCase kalitlar)
+    result = RegisterTokenModel(access_token="a", p12_base64="p12", p12_password="pw")
     dependency_overrides.set(get_register_use_case, ProvideValue(FakeUseCase(result)))
 
     response = await async_client.post(
         "/v1/users/auth/register",
-        json={
-            "first_name": "John",
-            "last_name": "Doe",
-            "email": "john@example.com",
-            "username": "john_doe",
-            "phone_number": "+1234567890",
-            "password": "StrongPass1!",
-        },
+        json={"username": "john_doe", "password": "StrongPass1!"},
     )
 
     assert response.status_code == 201
-    assert response.json()["email"] == user.email
+    assert response.json() == {
+        "success": True,
+        "accessToken": "a",
+        "p12Base64": "p12",
+        "p12Password": "pw",
+    }
 
 
 @pytest.mark.asyncio
@@ -103,7 +93,7 @@ async def test_login_endpoint(
 
     response = await async_client.post(
         "/v1/users/auth/login",
-        json={"email": "user@example.com", "password": "StrongPass1!"},
+        json={"username": "user", "password": "StrongPass1!"},
     )
 
     assert response.status_code == 200
@@ -199,94 +189,3 @@ async def test_logout_endpoint_can_terminate_all_sessions(
     )
 
 
-@pytest.mark.asyncio
-async def test_send_verification_email_endpoint(
-    async_client,
-    dependency_overrides: DependencyOverrides,
-) -> None:
-    dependency_overrides.set(
-        get_send_verification_use_case,
-        ProvideValue(FakeUseCase(SuccessResponse(success=True))),
-    )
-
-    response = await async_client.post(
-        "/v1/users/auth/verification-email",
-        json={"email": "user@example.com"},
-    )
-
-    assert response.status_code == 200
-    assert response.json() == {"success": True}
-
-
-@pytest.mark.asyncio
-async def test_verify_email_endpoint(
-    async_client,
-    dependency_overrides: DependencyOverrides,
-) -> None:
-    dependency_overrides.set(
-        get_verify_email_use_case,
-        ProvideValue(FakeUseCase(SuccessResponse(success=True))),
-    )
-
-    response = await async_client.get("/v1/users/auth/verify", params={"token": "t"})
-
-    assert response.status_code == 200
-    assert response.json() == {"success": True}
-
-
-@pytest.mark.asyncio
-async def test_reset_password_request_endpoint(
-    async_client,
-    dependency_overrides: DependencyOverrides,
-) -> None:
-    dependency_overrides.set(
-        get_reset_password_request_use_case,
-        ProvideValue(FakeUseCase(SuccessResponse(success=True))),
-    )
-
-    response = await async_client.post(
-        "/v1/users/auth/password/reset",
-        json={"email": "user@example.com"},
-    )
-
-    assert response.status_code == 200
-    assert response.json() == {"success": True}
-
-
-@pytest.mark.asyncio
-async def test_reset_password_confirm_endpoint(
-    async_client,
-    dependency_overrides: DependencyOverrides,
-) -> None:
-    dependency_overrides.set(
-        get_reset_password_confirm_use_case,
-        ProvideValue(FakeUseCase(SuccessResponse(success=True))),
-    )
-
-    response = await async_client.put(
-        "/v1/users/auth/password/reset/confirm",
-        json={"token": "t", "password": "StrongPass1!"},
-    )
-
-    assert response.status_code == 200
-    assert response.json() == {"success": True}
-
-
-def test_reset_password_request_route_has_rate_limit() -> None:
-    route = _get_auth_route(path="/password/reset", method="POST")
-
-    rate_limiters = _get_route_rate_limiters(route)
-
-    assert len(rate_limiters) == 1
-    assert rate_limiters[0].times == 3
-    assert rate_limiters[0].milliseconds == 15 * 60_000
-
-
-def test_reset_password_confirm_route_has_rate_limit() -> None:
-    route = _get_auth_route(path="/password/reset/confirm", method="PUT")
-
-    rate_limiters = _get_route_rate_limiters(route)
-
-    assert len(rate_limiters) == 1
-    assert rate_limiters[0].times == 5
-    assert rate_limiters[0].milliseconds == 15 * 60_000

@@ -4,7 +4,6 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.utils.datetime_utils import get_utc_now
-
 from src.user.dependencies import get_user_repository
 from src.user.repositories import UserRepository
 from src.user.schemas import UserAdminListItem

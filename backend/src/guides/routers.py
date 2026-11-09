@@ -25,6 +25,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import FileResponse
 
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.core.errors.exceptions import PayloadTooLargeException
 from src.core.storage.media import resolve_media_path
 from src.guides.schemas import (
@@ -38,26 +40,24 @@ from src.guides.usecases import (
     AppendGuideChunkUseCase,
     CancelGuideUploadUseCase,
     CreateGuideUseCase,
-    StartGuideUploadUseCase,
     DeleteGuideUseCase,
     GetGuideVideoUseCase,
     ListGuidesUseCase,
+    StartGuideUploadUseCase,
     UpdateGuideUseCase,
     get_append_guide_chunk_use_case,
     get_cancel_guide_upload_use_case,
     get_create_guide_use_case,
-    get_start_guide_upload_use_case,
     get_delete_guide_use_case,
     get_guide_video_use_case,
     get_list_guides_use_case,
+    get_start_guide_upload_use_case,
     get_update_guide_use_case,
 )
+from src.main.config import config
 from src.user.auth.dependencies import get_current_user
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
-from src.main.config import config
-from src.audit.actions import AuditAction
-from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 
 router = APIRouter()

@@ -4,8 +4,8 @@ from uuid import uuid4
 import pytest
 
 from src.core.errors.exceptions import UnauthorizedException
-from src.guides.storage import looks_like_mp4 as _looks_like_mp4
 from src.guides import video_token
+from src.guides.storage import looks_like_mp4 as _looks_like_mp4
 from src.guides.usecases import GetGuideVideoUseCase
 from tests.fakes.db import FakeAsyncSession, FakeUnitOfWork
 

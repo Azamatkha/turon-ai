@@ -10,12 +10,6 @@ from src.core.errors.exceptions import (
     UnauthorizedException,
 )
 from src.core.storage.media import delete_media
-from src.guides.storage import (
-    append_chunk,
-    cancel_upload,
-    finalize_upload,
-    start_upload,
-)
 from src.guides.models import EdoGuide
 from src.guides.schemas import (
     CreateEdoGuideModel,
@@ -23,6 +17,12 @@ from src.guides.schemas import (
     GuideUploadChunkView,
     GuideUploadStartView,
     UpdateEdoGuideModel,
+)
+from src.guides.storage import (
+    append_chunk,
+    cancel_upload,
+    finalize_upload,
+    start_upload,
 )
 from src.guides.video_token import is_valid_video_token, make_video_token
 from src.main.config import config

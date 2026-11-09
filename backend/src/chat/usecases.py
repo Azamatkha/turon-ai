@@ -1,11 +1,28 @@
-import re
 from dataclasses import dataclass
 from datetime import timedelta
+import re
 from uuid import UUID
 
 from fastapi import Depends
 
 from loggers import get_logger
+from src.chat.export_docx import ExportMessage, build_chat_docx
+from src.chat.prompts import (
+    SUGGEST_RU_OVERRIDE,
+    SUGGEST_SYSTEM,
+    TITLE_RU_OVERRIDE,
+    TITLE_SYSTEM,
+)
+from src.chat.schemas import (
+    AddMessageModel,
+    GenerateTitleResult,
+    MessageSearchHit,
+    MessageView,
+    SessionDetailView,
+    SessionView,
+    SuggestFollowupsRequest,
+    SuggestFollowupsResult,
+)
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.guard import looks_like_injection, mask_pii
 from src.core.ai.interfaces import BaseAIClient
@@ -15,26 +32,12 @@ from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.schemas import SuccessResponse
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.uzbek_script import to_cyrillic, to_latin
-from src.chat.export_docx import ExportMessage, build_chat_docx
-from src.chat.prompts import (
-    SUGGEST_RU_OVERRIDE,
-    SUGGEST_SYSTEM,
-    TITLE_RU_OVERRIDE,
-    TITLE_SYSTEM,
-)
-from src.main.config import config
 from src.knowledge.lang import detect_reply_lang
 from src.knowledge.schemas import ChatTurn
-from src.chat.schemas import (
-    MessageSearchHit,
-    SuggestFollowupsRequest,
-    SuggestFollowupsResult,
-    AddMessageModel,
-    GenerateTitleResult,
-    MessageView,
-    SessionDetailView,
-    SessionView,
-)
+from src.main.config import config
+from src.notifications.enums import NotificationType
+from src.notifications.usecases import BroadcastNotificationUseCase
+from src.user.enums import UserRole
 
 logger = get_logger(__name__)
 
@@ -671,3 +674,31 @@ def get_export_session_docx_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> ExportSessionDocxUseCase:
     return ExportSessionDocxUseCase(uow=uow)
+
+
+# ---- Xavfli so'rovlar: adminga bildirishnoma ----
+
+# Bildirishnomada savolning shuncha belgisi ko'rinadi (to'liq matn — admin panelda)
+_FLAG_SNIPPET = 120
+
+
+async def notify_safety_flag(username: str, question: str, kind: str) -> None:
+    """Xavfli so'rov / so'kinish haqida ADMINLARGA bildirishnoma.
+
+    Javob oqimi tugagach chaqiriladi — o'z sessiyasi bilan (log_question kabi).
+    Shaxsiy ma'lumot (karta, JShShIR) bildirishnomaga ham maskalangan holda
+    tushadi. Xato bo'lsa faqat log: foydalanuvchi javobi buzilmasin.
+    """
+    snippet = " ".join(mask_pii(question)[0].split())
+    if len(snippet) > _FLAG_SNIPPET:
+        snippet = snippet[:_FLAG_SNIPPET].rstrip() + "…"
+    try:
+        async with async_session() as session:
+            uow = await get_uow(session)
+            await BroadcastNotificationUseCase(uow).execute(
+                NotificationType.SAFETY_FLAGGED,
+                params={"title": f"@{username}: {snippet}", "kind": kind},
+                role=UserRole.ADMIN,
+            )
+    except Exception:  # noqa: BLE001
+        logger.exception("Xavfli so'rov haqida bildirishnoma yuborilmadi")

@@ -15,27 +15,74 @@ suhbatini ko'rib/o'zgartirib bo'lmaydi (get_single user_id bilan filtrlanadi).
 ─────────────────────────────────────────────────────────────────────────────
 """
 
+from collections.abc import AsyncIterator
 import json
 import re
 import time
-from collections.abc import AsyncIterator
 from typing import Annotated, Any
 from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response, StreamingResponse
-
 from redis.asyncio import Redis
 
 from loggers import get_logger
 from src.chat.answer_cache import cached_answer_stream
-from src.core.redis.dependencies import get_redis_client
+from src.chat.schemas import (
+    AddMessageModel,
+    CreateSessionModel,
+    GenerateTitleRequest,
+    GenerateTitleResult,
+    MessageSearchHit,
+    MessageView,
+    PinSessionModel,
+    RenameSessionModel,
+    SessionDetailView,
+    SessionView,
+    SuggestFollowupsRequest,
+    SuggestFollowupsResult,
+    VoteMessageModel,
+)
+from src.chat.usecases import (
+    AddMessageUseCase,
+    CreateSessionUseCase,
+    DeleteMessageUseCase,
+    DeleteSessionUseCase,
+    ExportSessionDocxUseCase,
+    GenerateTitleUseCase,
+    GetSessionUseCase,
+    ListSessionsUseCase,
+    LoadHistoryUseCase,
+    PinSessionUseCase,
+    QuestionLogEntry,
+    RenameSessionUseCase,
+    SearchMessagesUseCase,
+    SuggestFollowupsUseCase,
+    VoteMessageUseCase,
+    get_add_message_use_case,
+    get_create_session_use_case,
+    get_delete_message_use_case,
+    get_delete_session_use_case,
+    get_export_session_docx_use_case,
+    get_generate_title_use_case,
+    get_get_session_use_case,
+    get_list_sessions_use_case,
+    get_load_history_use_case,
+    get_pin_session_use_case,
+    get_rename_session_use_case,
+    get_search_messages_use_case,
+    get_suggest_followups_use_case,
+    get_vote_message_use_case,
+    log_question,
+    notify_safety_flag,
+)
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
 from src.core.errors.exceptions import InfrastructureException
 from src.core.limiter.depends import RateLimiter
+from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import SuccessResponse
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
@@ -50,53 +97,6 @@ from src.knowledge.usecases import AnswerQuestionUseCase
 from src.translator.usecases import TranslatorUseCase, get_translator_use_case
 from src.user.auth.dependencies import get_current_user, get_user_id_from_token
 from src.user.models import User
-from src.chat.schemas import (
-    MessageSearchHit,
-    SuggestFollowupsRequest,
-    SuggestFollowupsResult,
-    AddMessageModel,
-    CreateSessionModel,
-    GenerateTitleRequest,
-    GenerateTitleResult,
-    MessageView,
-    PinSessionModel,
-    RenameSessionModel,
-    SessionDetailView,
-    SessionView,
-    VoteMessageModel,
-)
-from src.chat.usecases import (
-    ExportSessionDocxUseCase,
-    get_export_session_docx_use_case,
-    SearchMessagesUseCase,
-    get_search_messages_use_case,
-    SuggestFollowupsUseCase,
-    get_suggest_followups_use_case,
-    QuestionLogEntry,
-    log_question,
-    AddMessageUseCase,
-    LoadHistoryUseCase,
-    CreateSessionUseCase,
-    DeleteMessageUseCase,
-    DeleteSessionUseCase,
-    GenerateTitleUseCase,
-    GetSessionUseCase,
-    ListSessionsUseCase,
-    PinSessionUseCase,
-    RenameSessionUseCase,
-    VoteMessageUseCase,
-    get_add_message_use_case,
-    get_create_session_use_case,
-    get_delete_message_use_case,
-    get_delete_session_use_case,
-    get_generate_title_use_case,
-    get_get_session_use_case,
-    get_list_sessions_use_case,
-    get_load_history_use_case,
-    get_pin_session_use_case,
-    get_rename_session_use_case,
-    get_vote_message_use_case,
-)
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -363,7 +363,24 @@ async def ask(
         embedder=embedder, store=store, ai_client=ai_client
     )
     history = await _resolve_history(data, current_user, history_use_case)
-    return await use_case.execute(question=data.question, history=history)
+    started = time.monotonic()
+    result = await use_case.execute(question=data.question, history=history)
+    # Mobil shu yo'ldan keladi — xavfli so'rov u yerda ham qayd etilsin
+    if use_case.last_outcome == "flagged" and use_case.last_flag:
+        await log_question(
+            QuestionLogEntry(
+                user_id=current_user.id,
+                question=data.question,
+                intent=use_case.last_flag,
+                outcome="flagged",
+                top_score=None,
+                sources_count=0,
+                completion_tokens=result.completion_tokens,
+                duration_ms=int((time.monotonic() - started) * 1000),
+            )
+        )
+        await notify_safety_flag(current_user.username, data.question, use_case.last_flag)
+    return result
 
 
 @router.post("/ask/stream", dependencies=[Depends(ASK_RATE_LIMIT)])
@@ -461,6 +478,11 @@ async def ask_stream(
                     duration_ms=int((time.monotonic() - started) * 1000),
                 )
             )
+            # Xavfli so'rov yoki so'kinish — adminga xabar
+            if outcome == "flagged" and answer_use_case.last_flag:
+                await notify_safety_flag(
+                    current_user.username, data.question, answer_use_case.last_flag
+                )
 
     return StreamingResponse(
         event_stream(),

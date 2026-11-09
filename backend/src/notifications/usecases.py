@@ -37,6 +37,7 @@ NOTIFICATION_NOT_FOUND = "Bildirishnoma topilmadi"
 #   REPORT_NEW    — har murojaat alohida voqea, qo'shib yuborish noto'g'ri.
 COALESCE_WINDOWS: dict[str, timedelta] = {
     NotificationType.KNOWLEDGE_UPDATED.value: timedelta(minutes=10),
+    NotificationType.SAFETY_FLAGGED.value: timedelta(minutes=10),
 }
 
 

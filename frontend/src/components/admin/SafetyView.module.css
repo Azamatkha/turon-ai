@@ -1,0 +1,173 @@
+/* Xavfli so'rovlar — Audit jurnali jadvali uslubida */
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.hint {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.refreshBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.total {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.card {
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 150px 200px 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--adm-border);
+  font-size: 14px;
+  color: var(--adm-text-body);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.headRow {
+  background: var(--adm-card-alt);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.date {
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.user {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  color: var(--adm-text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.handle {
+  font-size: 12.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeDanger {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.badgeWarn {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.question {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--adm-text-strong);
+}
+
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .headRow {
+    display: none;
+  }
+
+  .question {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap {
+    transition: none;
+  }
+}

@@ -13,16 +13,20 @@ from src.user.auth.dependencies import (
 from src.user.auth.jwt_payload_schema import JWTPayload
 from src.user.auth.schemas import (
     ActiveSessionView,
-    RevokeSessionsResult,
     CheckFaceTokenModel,
     LoginTokenModel,
     LoginUserModel,
     LogoutRequestModel,
-    TuronIdSignInModel,
     RegisterTokenModel,
     RegisterUserModel,
+    RevokeSessionsResult,
     SaveSignatureModel,
+    TuronIdSignInModel,
     UserVerifiedModel,
+)
+from src.user.auth.turon_id.usecase import (
+    TuronIdSignInUseCase,
+    get_turon_id_sign_in_use_case,
 )
 from src.user.auth.usecases.check_face_token import (
     CheckFaceTokenUseCase,
@@ -38,6 +42,11 @@ from src.user.auth.usecases.get_access_by_refresh import (
 )
 from src.user.auth.usecases.login import LoginUserUseCase, get_login_user_use_case
 from src.user.auth.usecases.logout import LogoutUseCase, get_logout_use_case
+from src.user.auth.usecases.register import RegisterUseCase, get_register_use_case
+from src.user.auth.usecases.save import (
+    SaveSignatureUseCase,
+    get_save_signature_use_case,
+)
 from src.user.auth.usecases.sessions import (
     ListActiveSessionsUseCase,
     RevokeOtherSessionsUseCase,
@@ -45,15 +54,6 @@ from src.user.auth.usecases.sessions import (
     get_list_active_sessions_use_case,
     get_revoke_other_sessions_use_case,
     get_revoke_session_use_case,
-)
-from src.user.auth.usecases.register import RegisterUseCase, get_register_use_case
-from src.user.auth.usecases.save import (
-    SaveSignatureUseCase,
-    get_save_signature_use_case,
-)
-from src.user.auth.turon_id.usecase import (
-    TuronIdSignInUseCase,
-    get_turon_id_sign_in_use_case,
 )
 from src.user.models import User
 

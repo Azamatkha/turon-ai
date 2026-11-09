@@ -4,6 +4,9 @@ from fastapi import APIRouter, FastAPI
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
+from src.admin import routers as admin_routers
+from src.calculator import routers as calculator_routers
+from src.chat import routers as chat_routers
 from src.core.errors.exceptions import (
     AccessForbiddenException,
     CoreException,
@@ -36,9 +39,6 @@ from src.core.errors.handlers import (
     handle_unexpected_exception,
     handle_validation_error,
 )
-from src.admin import routers as admin_routers
-from src.calculator import routers as calculator_routers
-from src.chat import routers as chat_routers
 from src.guides import routers as guide_routers
 from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers

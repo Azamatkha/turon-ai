@@ -27,15 +27,15 @@ from src.knowledge.rates_scraper import (
     parse_rates_structured,
     render_rates,
 )
-from src.knowledge.scraper import fetch_html
-from src.main.config import config
-from src.knowledge.usecases import UploadKnowledgeUseCase
 from src.knowledge.rescrape import (
     RESCRAPE_LAST_KEY,
     RESCRAPE_RUNNING_KEY,
     RescrapeKnowledgeUseCase,
 )
+from src.knowledge.scraper import fetch_html
+from src.knowledge.usecases import UploadKnowledgeUseCase
 from src.knowledge.validity import WARN_DAYS, expiry_events
+from src.main.config import config
 from src.notifications.enums import NotificationType
 from src.notifications.events import publish_new
 from src.user.enums import UserRole

@@ -1,19 +1,24 @@
+from collections.abc import AsyncIterator
+from datetime import date
+from itertools import chain, zip_longest
 import json
 import math
-from datetime import date
 import re
-from collections.abc import AsyncIterator
-from itertools import chain, zip_longest
 from typing import Any
 
 from anyio import to_thread
 
 from loggers import get_logger
 from src.core.ai.embeddings import OllamaEmbedder
-from src.core.utils.datetime_utils import get_utc_now
 from src.core.ai.guard import looks_like_injection, mask_pii
-from src.knowledge.validity import is_expired, penalize_expired
-from src.knowledge.rescrape import find_duplicates, group_by_title
+from src.core.ai.interfaces import BaseAIClient
+from src.core.ai.safety import has_profanity
+from src.core.errors.exceptions import (
+    InfrastructureException,
+    InstanceNotFoundException,
+    InstanceProcessingException,
+)
+from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.uzbek_script import (
     StreamingScriptFixer,
     StreamingTransliterator,
@@ -21,51 +26,46 @@ from src.core.utils.uzbek_script import (
     to_cyrillic,
     to_latin,
 )
-from src.core.ai.interfaces import BaseAIClient
-from src.core.errors.exceptions import (
-    InfrastructureException,
-    InstanceNotFoundException,
-    InstanceProcessingException,
-)
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.chunking import chunk_text
 from src.knowledge.directory import users_by_ip, users_with_keywords
 from src.knowledge.employee_parser import parse_employees
+from src.knowledge.lang import ReplyLang, detect_reply_lang, is_russian_text
 from src.knowledge.pdf_extractor import (
     extract_pdf_text,
     join_pages,
     page_fallback_text,
     render_pdf_pages,
 )
-from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.prompts import (
     CAPABILITIES_REPLY,
     CONCEPT_SYSTEM,
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
     EMPLOYEE_SYSTEM,
+    HARMFUL_REPLY,
     HISTORY_SYSTEM,
-    LANGUAGE_SYSTEM,
     INJECTION_REPLY,
+    LANGUAGE_SYSTEM,
     NO_INFO_REPLY,
-    SECURITY_RULES,
     OFF_TOPIC_REPLY,
     OTHER_BANK_REPLY,
     PDF_CLEAN_SYSTEM,
-    RATES_SYSTEM,
-    PDF_VISION_SYSTEM,
     PDF_TITLE_SYSTEM,
+    PDF_VISION_SYSTEM,
+    PROFANITY_REPLY,
     QUERY_REWRITE_SYSTEM,
+    RATES_SYSTEM,
     RU_CANNED_REPLIES,
     RU_LANGUAGE_OVERRIDE,
     RU_REPLY_OVERRIDE,
+    SECURITY_RULES,
     SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
 )
-from src.knowledge.lang import ReplyLang, detect_reply_lang, is_russian_text
+from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
+from src.knowledge.rescrape import find_duplicates, group_by_title
 from src.knowledge.router import Intent, QuestionRouter, Route
-from src.main.config import config
-from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.schemas import (
     AnswerResult,
     ChatTurn,
@@ -76,6 +76,9 @@ from src.knowledge.schemas import (
     SourceRef,
     UploadResult,
 )
+from src.knowledge.scraper import extract_content, fetch_html
+from src.knowledge.validity import is_expired, penalize_expired
+from src.main.config import config
 
 logger = get_logger(__name__)
 
@@ -2376,6 +2379,8 @@ class AnswerQuestionUseCase:
         self.last_intent: str | None = None
         self.last_outcome: str = "answered"
         self.last_top_score: float | None = None
+        # "flagged" bo'lganda sabab: "harmful" (router) yoki "profanity" (lug'at)
+        self.last_flag: str | None = None
         # Bitta so'rov davomidagi baza keshi (_scroll_points)
         self._points: list[dict[str, Any]] | None = None
         # Bilim bazasining qaysi tilidagi hujjatlardan javob beriladi: ruscha
@@ -3279,6 +3284,14 @@ class AnswerQuestionUseCase:
 
         return prompt, sources
 
+    def _flag(self, kind: str) -> None:
+        """So'rov xavfli deb belgilandi: statistikada "flagged", sabab — `kind`.
+        Router (chat/routers.py) buni ko'rib, adminga bildirishnoma yuboradi."""
+        self.last_outcome = "flagged"
+        self.last_flag = kind
+        self.last_intent = kind
+        logger.warning("So'rov belgilandi (%s)", kind)
+
     async def execute_stream(
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AsyncIterator[dict[str, Any]]:
@@ -3298,6 +3311,7 @@ class AnswerQuestionUseCase:
         self.last_intent = None
         self.last_outcome = "answered"
         self.last_top_score = None
+        self.last_flag = None
         yield {"type": "status", "step": "analyze"}
         # Himoya: PII maskalanadi, ochiq prompt-injection modelga umuman
         # bormaydi (qara: src/core/ai/guard.py)
@@ -3307,6 +3321,21 @@ class AnswerQuestionUseCase:
             yield {
                 "type": "delta",
                 "text": _localize(INJECTION_REPLY, detect_reply_lang(question, history)),
+            }
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+        # So'kinish/haqorat — model chaqirilmaydi, adminga xabar boradi (router)
+        if has_profanity(question):
+            self._flag("profanity")
+            yield {
+                "type": "delta",
+                "text": _localize(PROFANITY_REPLY, detect_reply_lang(question, history)),
             }
             yield {
                 "type": "done",
@@ -3378,6 +3407,21 @@ class AnswerQuestionUseCase:
         # hisoblagichni umuman yashirardi ("goh chiqadi, goh chiqmaydi").
         router_tokens = decision.tokens if decision is not None else 0
         self.last_intent = decision.intent.value if decision is not None else None
+
+        # Xavfli/noqonuniy so'rov (yashirin bo'lsa ham — router MA'NOSINI
+        # baholaydi). Hech qanday qisqa yo'l (xodim, katalog) undan oldin
+        # turmasligi kerak — shuning uchun eng boshida.
+        if decision is not None and decision.intent is Intent.HARMFUL:
+            self._flag("harmful")
+            yield {"type": "delta", "text": _localize(HARMFUL_REPLY, lang)}
+            yield {
+                "type": "done",
+                "completion_tokens": router_tokens,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
 
         # Salomlashish yoki bot haqidagi savol — bazaga umuman bormaymiz
         if decision is not None and decision.intent in (
@@ -3792,10 +3836,20 @@ class AnswerQuestionUseCase:
         self, question: str, history: list[ChatTurn] | None = None
     ) -> AnswerResult:
         # Himoya — stream yo'li bilan bir xil (qara: _guard_input)
+        self.last_outcome = "answered"
+        self.last_flag = None
         question, history, blocked = _guard_input(question, history)
         if blocked:
+            self.last_outcome = "blocked"
             return AnswerResult(
                 answer=_localize(INJECTION_REPLY, detect_reply_lang(question, history)),
+                sources=[],
+                finish_reason="stop",
+            )
+        if has_profanity(question):
+            self._flag("profanity")
+            return AnswerResult(
+                answer=_localize(PROFANITY_REPLY, detect_reply_lang(question, history)),
                 sources=[],
                 finish_reason="stop",
             )
@@ -3840,6 +3894,16 @@ class AnswerQuestionUseCase:
         # Savolni TUSHUNISH — stream yo'li bilan bir xil mantiq
         decision = None if resolved else await self.router.classify(question, history)
         router_tokens = decision.tokens if decision is not None else 0
+        self.last_intent = decision.intent.value if decision is not None else None
+        if decision is not None and decision.intent is Intent.HARMFUL:
+            self._flag("harmful")
+            return AnswerResult(
+                answer=_localize(HARMFUL_REPLY, lang),
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=router_tokens,
+                max_tokens=self.MAX_TOKENS,
+            )
 
         if decision is not None and decision.intent in (
             Intent.SMALLTALK,

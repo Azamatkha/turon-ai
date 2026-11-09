@@ -14,9 +14,9 @@ Holat `chat_sessions.translate_lang` da turadi, shuning uchun rejim faqat
 Qdrant ham chaqirilmaydi — bank-bot mantiqiga umuman tegmaydi.
 """
 
-import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+import re
 from typing import Any
 from uuid import UUID
 

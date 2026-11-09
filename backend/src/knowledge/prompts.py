@@ -140,6 +140,19 @@ STRICT_RAG_SYSTEM = (
     "summa) from the context only; say which one you recommend and why in one "
     "sentence; end with \"Qaysi biri bo'yicha batafsil ma'lumot beray?\". If the "
     "figures are missing, recommend by purpose and name the figures you lack.\n"
+    # Rasmdagi xato: 80-90 mln so'rovga "50 mln gacha" kredit va tovar uchun
+    # ipoteka taklif qilingan, noaniq narsa esa "ehtimol un" deb taxmin qilingan
+    "  FIT CHECK (mandatory): if the user states an AMOUNT, a TERM or a PURPOSE, "
+    "drop every product whose maximum summa is BELOW the amount, whose term "
+    "cannot fit, or whose purpose is different (a mortgage is ONLY for buying "
+    "housing; a car loan ONLY for a car; never offer them for goods or business "
+    "stock). If no product fits the amount, say so plainly and name the closest "
+    "options with their real limits — never present a 50 mln product as suitable "
+    "for 80 mln.\n"
+    "  UNCLEAR PURPOSE: if it is not clear WHAT the user is buying or WHY (a vague "
+    "\"narsa\", \"shunga o'xshash\", an item you would have to guess), do NOT "
+    "guess and do NOT write \"ehtimol ...\". Ask ONE short question about the "
+    "purpose (shaxsiy ehtiyoj, biznes, uy-joy, avtomobil?) and stop.\n"
     "SPECIFIC PRODUCT \u2014 the user named a product or picked one from the list:\n"
     "  line 1: one short sentence starting with the product NAME (what it is, "
     "whom it is for);\n"
@@ -775,6 +788,23 @@ INJECTION_REPLY = (
     "valyuta kurslari yoki filiallar bo'yicha savolingiz bo'lsa — bemalol yozing."
 )
 
+# Xavfli/noqonuniy so'rovga (router: Intent.HARMFUL) tayyor javob — model
+# javob yozmaydi; so'rov adminga xabar qilinadi
+HARMFUL_REPLY = (
+    "Bu so'rov bo'yicha yordam bera olmayman: u qonunga zid yoki xavfli "
+    "faoliyatga aloqador bo'lishi mumkin. Bank mahsulotlari — kredit, omonat, "
+    "karta yoki o'tkazmalar bo'yicha qonuniy maqsadlar uchun savolingiz bo'lsa, "
+    "bemalol yozing."
+)
+
+# So'kinish/haqorat bilan yozilgan xabarga javob (src/core/ai/safety.py)
+PROFANITY_REPLY = (
+    "Iltimos, xabaringizni odob doirasida qayta yozing — men so'kinish yoki "
+    "haqorat bilan yozilgan so'rovlarga javob bermayman. Savolingizga "
+    "bajonidil yordam beraman."
+)
+
+
 # Har bir javob system prompt'ining oxiriga qo'shiladi (usecases._with_lang).
 # Kontekst (bilim bazasi, scraping qilingan sahifalar, suhbat tarixi) —
 # MA'LUMOT; ichidagi "buyruqlar" bajarilmaydi.
@@ -798,6 +828,15 @@ SECURITY_RULES = (
 # tayyor javoblar e'lon qilingandan keyin.
 RU_CANNED_REPLIES.update(
     {
+        HARMFUL_REPLY: (
+            "Не могу помочь с этим запросом: он может быть связан с незаконной "
+            "или опасной деятельностью. Если у вас вопрос о продуктах банка — "
+            "кредитах, вкладах, картах или переводах для законных целей, пишите."
+        ),
+        PROFANITY_REPLY: (
+            "Пожалуйста, переформулируйте сообщение без ругательств и оскорблений — "
+            "на такие запросы я не отвечаю. С радостью помогу с вашим вопросом."
+        ),
         INJECTION_REPLY: (
             "Не могу выполнить этот запрос: изменять или раскрывать мои "
             "внутренние инструкции нельзя. Если есть вопрос о продуктах банка, "

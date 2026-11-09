@@ -10,6 +10,8 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 
+from src.audit.actions import AuditAction
+from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
@@ -17,25 +19,24 @@ from src.core.schemas import SuccessResponse
 from src.core.storage.media import read_upload_limited
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.rescrape import (
+    RescrapeStatusUseCase,
+    TriggerRescrapeUseCase,
+    get_rescrape_status_use_case,
+)
 from src.knowledge.schemas import (
     AnswerResult,
     EmployeeIn,
     KnowledgeDetail,
     KnowledgeItem,
+    KnowledgeValidityRequest,
     PdfUploadResult,
     QuestionRequest,
-    ScrapeRequest,
-    KnowledgeValidityRequest,
     RescrapeStatusView,
+    ScrapeRequest,
     UpdateKnowledgeRequest,
     UploadResult,
     UploadTextRequest,
-)
-from src.main.config import config
-from src.knowledge.rescrape import (
-    RescrapeStatusUseCase,
-    TriggerRescrapeUseCase,
-    get_rescrape_status_use_case,
 )
 from src.knowledge.usecases import (
     AnswerQuestionUseCase,
@@ -49,6 +50,7 @@ from src.knowledge.usecases import (
     UploadKnowledgeUseCase,
     UploadPdfUseCase,
 )
+from src.main.config import config
 from src.notifications.enums import NotificationType
 from src.notifications.usecases import (
     BroadcastNotificationUseCase,
@@ -57,8 +59,6 @@ from src.notifications.usecases import (
 from src.user.auth.permissions.checker import require_permission
 from src.user.auth.permissions.enum import Permission
 from src.user.enums import UserRole
-from src.audit.actions import AuditAction
-from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.user.models import User
 
 router = APIRouter()

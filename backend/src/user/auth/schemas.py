@@ -9,7 +9,6 @@ from src.core.schemas import (
 )
 from src.core.validations import USERNAME_VALIDATOR
 
-
 # Bo'lim MAJBURIY: tanlanmasa shu qiymat qo'yiladi. Frontend ham shuni
 # ishlatadi (services/departments.ts -> DEFAULT_DEPARTMENT), lekin kafolat
 # shu yerda — API'ga to'g'ridan-to'g'ri murojaat qilinsa ham bo'sh o'tmaydi.

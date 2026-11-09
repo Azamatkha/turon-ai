@@ -79,7 +79,8 @@ class QuestionLog(Base, UUIDIDMixin, TimestampMixin):
     normalized: Mapped[str] = mapped_column(String(300), index=True)
     # Router aniqlagan niyat (product, employee, concept, ...) — bo'lmasa NULL
     intent: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    # "answered" | "no_info" (bazada topilmadi) | "blocked" (prompt-injection) | "error"
+    # "answered" | "no_info" (bazada topilmadi) | "blocked" (prompt-injection)
+    # | "flagged" (xavfli so'rov / so'kinish, intent'da sababi) | "error"
     outcome: Mapped[str] = mapped_column(String(20), index=True)
     top_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     sources_count: Mapped[int] = mapped_column(Integer, default=0)
