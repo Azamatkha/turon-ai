@@ -11,11 +11,6 @@ services:
         VITE_BASE_PATH: "/chat/"
         VITE_TURON_PORTAL_URL: "https://turon-ai.turonbank.uz"
     restart: always
-    volumes:
-      # Android ilova (TuronAI.apk) — git'da yo'q, serverda frontend/downloads/ ga
-      # qo'lda qo'yiladi. 403 sahifasidagi QR shu faylni /chat/app/TuronAI.apk dan yuklaydi.
-      # Yangi versiya: faylni almashtirish kifoya, qayta build kerak emas.
-      - ./downloads:/app/dist/chat/app:ro
     ports:
       - "127.0.0.1:3001:3001"
     networks:

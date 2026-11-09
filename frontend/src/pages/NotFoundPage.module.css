@@ -220,7 +220,7 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
   align-items: center;
   gap: 44px;
   width: 100%;
@@ -250,19 +250,6 @@
 /* Qutining ichida QR o'z animatsiyasini takrorlamasin */
 .panel .qrList {
   animation: none;
-  flex-wrap: nowrap;
-}
-
-/* Qutida ikki QR yonma-yon sig'ishi uchun karta biroz torroq */
-.panel .qrCard {
-  width: 236px;
-  padding: 14px 16px 16px;
-}
-
-@media (max-width: 560px) {
-  .panel .qrList {
-    flex-wrap: wrap;
-  }
 }
 
 @media (max-width: 860px) {
