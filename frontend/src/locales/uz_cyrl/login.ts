@@ -41,5 +41,7 @@ export const login: LoginStrings = {
   unverifiedVideoPlay: "Қўлланмани кўриш",
   unverifiedVideoReplay: "Қайта кўриш",
   unverifiedVideoEnded: "Энди QR кодни сканерланг ва бот орқали иловани юклаб олинг",
+  unverifiedTgBlockedTitle: "Бу компьютерда Telegram очилмайди",
+  unverifiedTgBlockedText: "QR кодни телефонингиз камераси билан сканерланг — бот телефонда очилади.",
   platforms: "Платформалар",
 };

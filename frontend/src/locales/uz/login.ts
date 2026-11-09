@@ -40,5 +40,7 @@ export const login: LoginStrings = {
   unverifiedVideoPlay: "Qo‘llanmani ko‘rish",
   unverifiedVideoReplay: "Qayta ko‘rish",
   unverifiedVideoEnded: "Endi QR kodni skanerlang va bot orqali ilovani yuklab oling",
+  unverifiedTgBlockedTitle: "Bu kompyuterda Telegram ochilmaydi",
+  unverifiedTgBlockedText: "QR kodni telefoningiz kamerasi bilan skanerlang — bot telefonda ochiladi.",
   platforms: "Platformalar",
 };

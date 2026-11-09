@@ -202,6 +202,91 @@
   outline-offset: 3px;
 }
 
+/* Sayt bloklangan bo'lsa — karta silkinadi va ustida maslahat pufakchasi chiqadi */
+.qrCard {
+  position: relative;
+}
+
+.qrShake {
+  animation: qrShake 0.5s ease;
+}
+
+.qrHint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 280px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #193070;
+  color: #fff;
+  text-align: left;
+  box-shadow: 0 14px 30px rgba(25, 48, 112, 0.3);
+  transform: translateX(-50%);
+  animation: hintIn 0.28s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+  cursor: default;
+}
+
+/* Pastga qaragan "dumcha" — kartaga ishora */
+.qrHint::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 8px solid transparent;
+  border-top-color: #193070;
+  transform: translateX(-50%);
+}
+
+.qrHintIcon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #8aa0ff;
+  animation: phoneBuzz 1.4s ease-in-out infinite;
+}
+
+.qrHintBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qrHintTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.qrHintText {
+  font-size: 12.5px;
+  line-height: 1.4;
+  opacity: 0.88;
+}
+
+@keyframes qrShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes hintIn {
+  from { opacity: 0; transform: translate(-50%, 8px) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes phoneBuzz {
+  0%, 60%, 100% { transform: rotate(0); }
+  70% { transform: rotate(-12deg); }
+  80% { transform: rotate(10deg); }
+  90% { transform: rotate(-6deg); }
+}
+
 .qrTitle {
   font-size: 13px;
   line-height: 1.35;
@@ -290,7 +375,10 @@
   .headlineWord:hover,
   .support,
   .qrList,
-  .panel {
+  .panel,
+  .qrShake,
+  .qrHint,
+  .qrHintIcon {
     animation: none;
   }
 }

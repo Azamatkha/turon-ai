@@ -1,4 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
+import { probeReachable } from "../utils/probeReachable";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import DotField from "../components/DotField";
@@ -45,6 +47,11 @@ export interface QrItem {
   // O'rtadagi logotip (data-URI). Xato tuzatish "H" darajada — logotip
   // QR'ning bir qismini yopsa ham skanerlanadi.
   logo?: string;
+  // Berilsa — sahifa ochilganda shu rasm yuklab ko'riladi (probeReachable).
+  // Yuklanmasa (sayt bloklangan), bosilganda havola ochilmaydi, o'rniga
+  // `blockedHint` pufakchasi chiqadi: "telefon bilan skanerlang".
+  probeUrl?: string;
+  blockedHint?: { title: string; text: string };
 }
 
 export interface SupportContacts {
@@ -64,6 +71,39 @@ export default function NotFoundPage({
   qrCodes,
   aside,
 }: Props) {
+  // QR havolasi shu kompyuterda ochiladimi: true/false, undefined — hali tekshirilmoqda
+  const [reachable, setReachable] = useState<Record<string, boolean>>({});
+  // Qaysi kartada "ochilmaydi" pufakchasi ko'rinib turibdi
+  const [hintFor, setHintFor] = useState<string | null>(null);
+  const hintTimer = useRef<number | undefined>(undefined);
+
+  const probeKey = (qrCodes ?? []).map((q) => q.probeUrl ?? "").join("|");
+  useEffect(() => {
+    let alive = true;
+    (qrCodes ?? []).forEach((qr) => {
+      if (!qr.probeUrl) return;
+      void probeReachable(qr.probeUrl).then((ok) => {
+        if (alive) setReachable((prev) => ({ ...prev, [qr.value]: ok }));
+      });
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [probeKey]);
+
+  useEffect(() => () => window.clearTimeout(hintTimer.current), []);
+
+  const onQrClick = (qr: QrItem) => (e: MouseEvent<HTMLAnchorElement>) => {
+    // Tekshirilmagan yoki ochiq — oddiy havola sifatida ishlaydi
+    if (!qr.probeUrl || reachable[qr.value] === true) return;
+    // Bloklangan (yoki hali javob yo'q) — bo'sh sahifa ochmaymiz, maslahat ko'rsatamiz
+    e.preventDefault();
+    setHintFor(qr.value);
+    window.clearTimeout(hintTimer.current);
+    hintTimer.current = window.setTimeout(() => setHintFor(null), 6000);
+  };
+
   const messageEl = (
     <div style={{ position: "relative", zIndex: 1, fontSize: 15.5, color: "#5b7180", maxWidth: 440, lineHeight: 1.5 }}>
       {message}
@@ -77,7 +117,25 @@ export default function NotFoundPage({
         {qrCodes.map((qr) => (
           // Telefon bilan skanerlanadi, kompyuterda esa bosilsa havola yangi
           // oynada ochiladi (Telegram/yuklab olish sahifasi)
-          <a key={qr.value} href={qr.value} target="_blank" rel="noopener noreferrer" className={`${styles.qrCard} ${styles.qrLink}`}>
+          <a
+            key={qr.value}
+            href={qr.value}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onQrClick(qr)}
+            className={`${styles.qrCard} ${styles.qrLink} ${hintFor === qr.value ? styles.qrShake : ""}`}
+          >
+            {hintFor === qr.value && qr.blockedHint && (
+              <span className={styles.qrHint} role="status">
+                <span className={styles.qrHintIcon} aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5" /><path d="M11 18h2" /></svg>
+                </span>
+                <span className={styles.qrHintBody}>
+                  <span className={styles.qrHintTitle}>{qr.blockedHint.title}</span>
+                  <span className={styles.qrHintText}>{qr.blockedHint.text}</span>
+                </span>
+              </span>
+            )}
             <span className={styles.qrTitle}>{qr.title}</span>
             <QRCodeSVG
               value={qr.value}

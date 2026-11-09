@@ -40,5 +40,7 @@ export const login: LoginStrings = {
   unverifiedVideoPlay: "Смотреть инструкцию",
   unverifiedVideoReplay: "Посмотреть ещё раз",
   unverifiedVideoEnded: "Теперь отсканируйте QR-код и скачайте приложение через бота",
+  unverifiedTgBlockedTitle: "Telegram недоступен на этом компьютере",
+  unverifiedTgBlockedText: "Отсканируйте QR-код камерой телефона — бот откроется на телефоне.",
   platforms: "Платформы",
 };

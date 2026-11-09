@@ -42,6 +42,8 @@ export interface LoginStrings {
   unverifiedVideoPlay: string;
   unverifiedVideoReplay: string;
   unverifiedVideoEnded: string;
+  unverifiedTgBlockedTitle: string;
+  unverifiedTgBlockedText: string;
   // Login sahifasidagi "Platformalar" tugmasi (portaldagi platformalar sahifasi)
   platforms: string;
 }

@@ -2,6 +2,7 @@ import { useLang } from "../hooks/useLang";
 import { chatStaticDict, loginDict } from "../locales";
 import { logout, PORTAL_LOGIN_URL } from "../services/authService";
 import InstructionVideo from "../components/common/InstructionVideo";
+import { TELEGRAM_PROBE_URL } from "../utils/probeReachable";
 import NotFoundPage, { type QrItem } from "./NotFoundPage";
 
 // Verifikatsiya qo'llanmasi — public/videos/ da; BASE_URL (/chat/) bilan birga
@@ -40,6 +41,9 @@ export default function UnverifiedPage() {
       value: `https://t.me/${S.supportTelegramBot}`,
       caption: `@${S.supportTelegramBot}`,
       logo: TELEGRAM_LOGO,
+      // Bank tarmog'ida Telegram yopiq — bosilganda bo'sh sahifa o'rniga maslahat chiqadi
+      probeUrl: TELEGRAM_PROBE_URL,
+      blockedHint: { title: t.unverifiedTgBlockedTitle, text: t.unverifiedTgBlockedText },
     },
   ];
   if (MOBILE_APP_DOWNLOAD_URL) {
