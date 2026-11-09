@@ -322,6 +322,18 @@ export async function fetchMe(): Promise<Me> {
   return storeMe(u);
 }
 
+// Tasdiqlanmagan sahifada: profil backend'dan qayta o'qiladi (localStorage'dagi
+// eski nusxa yangilanadi). User mobilda verifikatsiyadan o'tgan bo'lsa — true.
+// Busiz eski `is_verified:false` F5'dan keyin ham qolib, faqat qayta login yordam berardi.
+export async function recheckVerified(): Promise<boolean> {
+  if (!isAuthenticated()) return false;
+  try {
+    return (await fetchMe()).is_verified;
+  } catch {
+    return false;
+  }
+}
+
 // Chiqishdan keyin o'tiladigan sahifa — Turon AI portalining logini
 // (chatning o'z /login sahifasi emas)
 export const PORTAL_LOGIN_URL = "https://turon-ai.turonbank.uz/login";

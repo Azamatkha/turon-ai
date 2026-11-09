@@ -1,12 +1,16 @@
 import { useLang } from "../hooks/useLang";
 import { chatStaticDict, loginDict } from "../locales";
-import { logout, PORTAL_LOGIN_URL } from "../services/authService";
+import { useEffect } from "react";
+import { logout, PORTAL_LOGIN_URL, recheckVerified } from "../services/authService";
 import InstructionVideo from "../components/common/InstructionVideo";
 import { TELEGRAM_PROBE_URL } from "../utils/probeReachable";
 import NotFoundPage, { type QrItem } from "./NotFoundPage";
 
 // Verifikatsiya qo'llanmasi — public/videos/ da; BASE_URL (/chat/) bilan birga
 const VIDEO_SRC = `${import.meta.env.BASE_URL}videos/verification.mp4`;
+
+// Verifikatsiya holatini qayta tekshirish oralig'i
+const RECHECK_INTERVAL_MS = 10_000;
 
 // Mobil ilovani yuklab olish havolasi. Bo'sh — ikkinchi QR ko'rsatilmaydi:
 // sayt faqat ichki tarmoqda, telefon unga yetolmaydi; ilova bot orqali tarqatiladi.
@@ -27,6 +31,32 @@ const TELEGRAM_LOGO =
 export default function UnverifiedPage() {
   const { t, lang } = useLang(loginDict);
   const S = chatStaticDict[lang];
+
+  // User telefonda verifikatsiyadan o'tishi bilan sahifa o'zi chatga o'tsin:
+  // ochilganda darhol, keyin har 10 soniyada va vkladkaga qaytilganda tekshiriladi.
+  useEffect(() => {
+    let alive = true;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      const ok = await recheckVerified();
+      busy = false;
+      // RequireAuth yangilangan nusxani o'qib, chatni ochadi
+      if (ok && alive) window.location.reload();
+    };
+    void check();
+    const timer = window.setInterval(check, RECHECK_INTERVAL_MS);
+    const onVisible = () => void check();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, []);
 
   const onLogout = async () => {
     await logout();
