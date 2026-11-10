@@ -44,6 +44,7 @@ from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers
 from src.reports import routers as report_routers
 from src.system import routers as system_routers
+from src.telegram_bot import routers as telegram_bot_routers
 from src.tools import routers as tools_routers
 from src.user import routers as user_routers
 
@@ -146,6 +147,14 @@ def include_routers(app: FastAPI) -> None:
     v1_router.include_router(guide_routers.router, prefix="/guides", tags=["EDO Guides"])
     v1_router.include_router(
         guide_routers.admin_router, prefix="/admin/guides", tags=["EDO Guides"]
+    )
+    v1_router.include_router(
+        telegram_bot_routers.router, prefix="/telegram-bot", tags=["Telegram bot"]
+    )
+    v1_router.include_router(
+        telegram_bot_routers.admin_router,
+        prefix="/admin/telegram-bot",
+        tags=["Telegram bot"],
     )
 
     app.include_router(v1_router, prefix="/v1")

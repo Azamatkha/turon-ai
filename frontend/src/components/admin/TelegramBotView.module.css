@@ -1,0 +1,255 @@
+/* Telegram bot userlari — AuditLogsView jadvali uslubida */
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search {
+  flex: 0 1 300px;
+  min-width: 160px;
+  padding: 8px 12px;
+  border: 1px solid var(--adm-border-input, var(--adm-border-2));
+  border-radius: 10px;
+  background: var(--adm-input-bg, var(--adm-card));
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+}
+
+.refreshBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.total {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.card {
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 90px 1.3fr 150px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.headRow {
+  background: var(--adm-card-alt);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dataRow {
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--adm-text-body);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dataRow:hover {
+  background: var(--adm-hover);
+}
+
+.colUser {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--adm-text-strong);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: 12.5px;
+  color: var(--adm-text-muted-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colMuted {
+  font-size: 13.5px;
+  color: var(--adm-text-muted);
+}
+
+.colCount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pending {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.banned {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 14.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--adm-card-alt);
+}
+
+.pagerInfo {
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.pagerBtns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 8px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageBtnActive,
+.pageBtnActive:hover:not(:disabled) {
+  background: var(--adm-accent);
+  border-color: var(--adm-accent);
+  color: #fff;
+}
+
+.pageGap {
+  min-width: 20px;
+  text-align: center;
+  color: var(--adm-text-muted-2);
+}
+
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .headRow {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap {
+    transition: none;
+  }
+}

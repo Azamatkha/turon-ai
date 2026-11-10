@@ -93,6 +93,11 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, di
       badge: newReportsCount > 0 ? String(newReportsCount) : undefined,
     },
     {
+      id: "telegramBot",
+      label: admin.tgBotNav,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4z" /><path d="M22 2 11 13" /></svg>,
+    },
+    {
       id: "questions",
       label: admin.questionsNav,
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,

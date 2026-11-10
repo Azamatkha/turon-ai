@@ -24,6 +24,9 @@ class Permission(StrEnum):
     VIEW_REPORTS = "view_reports"
     MANAGE_REPORTS = "manage_reports"
 
+    # Telegram yordam boti ma'lumotlarini ko'rish
+    VIEW_TELEGRAM_BOT = "view_telegram_bot"
+
     # System permissions
     VIEW_LOGS = "view_logs"
     MANAGE_BACKUPS = "manage_backups"

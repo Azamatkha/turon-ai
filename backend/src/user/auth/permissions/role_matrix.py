@@ -21,6 +21,8 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         # User report permissions
         Permission.VIEW_REPORTS,
         Permission.MANAGE_REPORTS,
+        # Telegram bot
+        Permission.VIEW_TELEGRAM_BOT,
         # System permissions
         Permission.VIEW_LOGS,
         Permission.MANAGE_BACKUPS,
@@ -36,6 +38,8 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         Permission.VIEW_SETTINGS,
         # Murojaatlarni ko'ra oladi, lekin holatini o'zgartira olmaydi
         Permission.VIEW_REPORTS,
+        # Telegram bot murojaatlarini ham ko'ra oladi
+        Permission.VIEW_TELEGRAM_BOT,
     },
     # Viewer - read-only access to authorized resources
     UserRole.USER: {

@@ -19,6 +19,7 @@ import ApiDocsView from "../components/admin/ApiDocsView";
 import GuidesAdminView from "../components/admin/GuidesAdminView";
 import ReportsView from "../components/admin/ReportsView";
 import FaceIdLogsView from "../components/admin/FaceIdLogsView";
+import TelegramBotView from "../components/admin/TelegramBotView";
 import DislikedAnswersView from "../components/admin/DislikedAnswersView";
 import QuestionsView from "../components/admin/QuestionsView";
 import AuditLogsView from "../components/admin/AuditLogsView";
@@ -53,6 +54,7 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   system: "system",
   safety: "safety",
   faceIdLogs: "face-id-logs",
+  telegramBot: "telegram-bot",
   knowledgeList: "knowledge",
   pdfUpload: "documents",
   guides: "edo-guides",
@@ -69,6 +71,7 @@ const PATH_TO_VIEW: Record<string, AdminView> = {
   system: "system",
   safety: "safety",
   "face-id-logs": "faceIdLogs",
+  "telegram-bot": "telegramBot",
   knowledge: "knowledgeList",
   documents: "pdfUpload",
   "edo-guides": "guides",
@@ -211,6 +214,7 @@ export default function AdminPage() {
   const onUsers = view === "users";
   const onReports = view === "reports";
   const onFaceIdLogs = view === "faceIdLogs";
+  const onTelegramBot = view === "telegramBot";
   const onDisliked = view === "disliked";
   const onQuestions = view === "questions";
   const onAudit = view === "audit";
@@ -430,6 +434,7 @@ export default function AdminPage() {
           {onQuestions && <QuestionsView mounted={mounted} t={t} />}
           {onDisliked && <DislikedAnswersView mounted={mounted} t={t} onCountChange={setDislikedCount} />}
           {onFaceIdLogs && <FaceIdLogsView mounted={mounted} t={t} />}
+          {onTelegramBot && <TelegramBotView mounted={mounted} t={t} />}
           {onGuides && <GuidesAdminView mounted={mounted} t={t} />}
           {onApiDocs && <ApiDocsView />}
           {onUsers && (

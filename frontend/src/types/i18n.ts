@@ -474,6 +474,27 @@ export interface AdminStrings {
   reportCommentPh: string;
   reportSave: string;
   reportSaveError: string;
+  // Telegram yordam boti (userlar va yozishmalar, faqat o'qish)
+  tgBotNav: string;
+  tgBotTitle: string;
+  tgBotSearchPh: string;
+  tgBotEmpty: string;
+  tgBotLoadError: string;
+  tgBotColUser: string;
+  tgBotColPhone: string;
+  tgBotColLang: string;
+  tgBotColMessages: string;
+  tgBotColLast: string;
+  tgBotBanned: string;
+  tgBotNotRegistered: string;
+  tgBotPending: (n: number) => string;
+  tgBotChatTitle: string;
+  tgBotChatEmpty: string;
+  tgBotFromUser: string;
+  tgBotFromAdmin: string;
+  tgBotLoadOlder: string;
+  tgBotStatus: Record<string, string>;
+  tgBotContent: Record<string, string>;
   // Face-ID loglari (kelgan GSI signature'lar)
   faceLogsNav: string;
   faceLogsTitle: string;

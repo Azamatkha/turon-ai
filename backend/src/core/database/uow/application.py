@@ -14,6 +14,10 @@ from src.core.database.uow.sqlalchemy import RepositoryInstance, SQLAlchemyUnitO
 from src.guides.repositories import EdoGuideRepository
 from src.notifications.repositories import NotificationRepository
 from src.reports.repositories import UserReportRepository
+from src.telegram_bot.repositories import (
+    TelegramBotMessageRepository,
+    TelegramBotUserRepository,
+)
 from src.user.repositories import (
     FaceIdSignatureLogRepository,
     LoginEventRepository,
@@ -113,6 +117,16 @@ class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
     def edo_guides(self) -> EdoGuideRepository:
         """Get the EdoGuideRepository."""
         return self._get_repository(EdoGuideRepository)
+
+    @property
+    def telegram_bot_users(self) -> TelegramBotUserRepository:
+        """Get the TelegramBotUserRepository."""
+        return self._get_repository(TelegramBotUserRepository)
+
+    @property
+    def telegram_bot_messages(self) -> TelegramBotMessageRepository:
+        """Get the TelegramBotMessageRepository."""
+        return self._get_repository(TelegramBotMessageRepository)
 
     # Add more repository properties as needed
 

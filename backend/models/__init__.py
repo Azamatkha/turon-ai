@@ -17,3 +17,5 @@ from src.audit.models import AuditLog as AuditLog
 from src.notifications.models import Notification as Notification
 from src.reports.models import UserReport as UserReport
 from src.guides.models import EdoGuide as EdoGuide
+from src.telegram_bot.models import TelegramBotUser as TelegramBotUser
+from src.telegram_bot.models import TelegramBotMessage as TelegramBotMessage

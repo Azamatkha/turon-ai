@@ -290,6 +290,17 @@ class TuronIdConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class TelegramBotConfig(BaseModel):
+    """Telegram yordam boti (aihelp) o'z ma'lumotlarini push qiladi.
+
+    Bot `X-Bot-Key` headerida shu kalitni yuboradi. Bo'sh bo'lsa sync endpoint yopiq.
+    """
+
+    TELEGRAM_BOT_API_KEY: str = ""
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class AppConfig(BaseModel):
     VERSION: str
     DEBUG: bool = False
@@ -400,6 +411,7 @@ class Config(BaseModel):
     edo_login: EdoLoginConfig = EdoLoginConfig()
     certificate: CertificateConfig = CertificateConfig()
     turon_id: TuronIdConfig = TuronIdConfig()
+    telegram_bot: TelegramBotConfig = TelegramBotConfig()
 
     model_config = ConfigDict(extra="ignore")
 
@@ -438,6 +450,7 @@ def get_settings() -> Config:
         edo_login=EdoLoginConfig(**merged_env),
         certificate=CertificateConfig(**merged_env),
         turon_id=TuronIdConfig(**merged_env),
+        telegram_bot=TelegramBotConfig(**merged_env),
     )
 
 
