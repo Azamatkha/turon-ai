@@ -29,7 +29,7 @@ from src.core.utils.uzbek_script import (
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge import web_search
 from src.knowledge.chunking import chunk_text
-from src.knowledge.directory import users_by_ip, users_with_keywords
+from src.knowledge.directory import users_by_ip, users_with_ip, users_with_keywords
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.lang import ReplyLang, detect_reply_lang, is_russian_text
 from src.knowledge.pdf_extractor import (
@@ -58,6 +58,7 @@ from src.knowledge.prompts import (
     PROFANITY_REPLY,
     QUERY_REWRITE_SYSTEM,
     RAG_WEB_ADDENDUM,
+    RATES_PANEL_HINT,
     RATES_SYSTEM,
     RU_CANNED_REPLIES,
     RU_LANGUAGE_OVERRIDE,
@@ -178,6 +179,17 @@ def _words(s: str) -> list[str]:
     return re.findall(r"[0-9a-zа-яёўқғҳ]+", s.lower())
 
 
+# Ism solishtirishda apostrof so'zni BO'LMASLIGI kerak. Aks holda
+# "o'zbekiston" -> "zbekiston", "Navro'zbek" -> "navro" + "zbek" bo'lib,
+# "zbek" prefiksi tasodifan mos kelardi va "O'zbekiston Respublikasi
+# Konstitutsiyasi" savoliga xodim kontakti qaytarilardi.
+_NAME_APOS_RE = re.compile("['‘’ʻʼ`´]")
+
+
+def _drop_apos(s: str) -> str:
+    return _NAME_APOS_RE.sub("", s)
+
+
 def _name_norm(token: str) -> str:
     """Ism-familiyani solishtirish uchun normallashtiradi. O'zbek ismlari
     transliteratsiyasida X va H ko'pincha almashtiriladi ("Xamdamboyev" /
@@ -217,7 +229,9 @@ def _own_name_tokens(fish: str) -> list[str]:
             continue
         kept.append(w)
     return [
-        t for t in _words(" ".join(kept)) if len(t) >= 3 and t not in _NAME_STOP
+        t
+        for t in _words(_drop_apos(" ".join(kept)))
+        if len(t) >= 3 and t not in _NAME_STOP
     ]
 
 
@@ -403,7 +417,7 @@ def _name_query_tokens(q_lower: str) -> list[str]:
         s
         for s in (
             _strip_uz_suffix(t)
-            for t in _words(q_lower)
+            for t in _words(_drop_apos(q_lower))
             if len(t) >= 4 and t not in _QUERY_STOP
         )
         if len(s) >= 4 and s not in _QUERY_STOP
@@ -2846,6 +2860,15 @@ class AnswerQuestionUseCase:
         # Xodimlarni doc_type filtri bilan TO'LIQ sahifalab olamiz — 5000'lik
         # scroll_all cheklovi kolleksiya kattalashganda xodimlarni "yo'qotib"
         # qo'yardi (shuning uchun bir xil savol goh topib, goh topmasdi).
+        q_lower = question.lower()
+        # 1-MANBA: xodimlarning o'zi kiritgan raqamlar ro'yxati (users jadvali).
+        # U vektor bazadagi yuklangan fayldan yangiroq. Xuddi shu qoidalar
+        # (raqam -> bo'lim -> ism) bilan qidiriladi; topilmasa vektor bazaga.
+        users = await users_with_ip()
+        by_number = _match_by_number(users, q_lower)
+        if by_number:
+            return "answer", by_number[:60]
+
         # ASOSIY YO'L: filtrsiz to'liq sahifalab olib, Python'da ajratamiz.
         # Ilgari bu yerda Qdrant payload filtri (scroll_by_field) ishlatilardi —
         # lekin xodim qidiruvi ishlamay qolgani shunga ishora qilmoqda, chunki
@@ -2857,13 +2880,12 @@ class AnswerQuestionUseCase:
             # Strukturaviy maydonlar yo'q — xodimlarni MATNDAN ajratib olamiz.
             # Ma'lumot qanday yuklangan bo'lishidan qat'i nazar ishlaydi.
             emps = _employees_from_payloads(all_points)
-        if not emps:
+        if not emps and not users:
             # Ro'yxat baribir bo'sh — hech bo'lmasa raqam bo'yicha ANIQ
             # payload qidiruvini sinab ko'ramiz.
-            direct = await self._lookup_by_ip_field(question.lower())
+            direct = await self._lookup_by_ip_field(q_lower)
             return ("answer", direct[:60]) if direct else None
 
-        q_lower = question.lower()
         # Eng kuchli signal: savoldagi raqam biror xodimning IP/telefoniga aniq
         # mos kelsa — bu direktoriya so'rovi. Katalog-title bostiruvidan OLDIN
         # tekshiramiz, aks holda yalang'och "2206" mahsulot RAG'iga ketib qolardi.
@@ -2890,7 +2912,10 @@ class AnswerQuestionUseCase:
             if _mentions_catalog_title(q_lower, sorted(t for t in titles if t)):
                 return None
 
-        matched = _match_employees(emps, q_lower)
+        # Avval users ro'yxatidan, keyin vektor bazadagi xodimlardan
+        matched = _match_employees(users, q_lower) if users else []
+        if not matched and emps:
+            matched = _match_employees(emps, q_lower)
         if matched:
             # Javobni endi kod tuzadi (model emas), shuning uchun token cheklovi
             # yo'q — katta bo'lim ham to'liq chiqadi.
@@ -3037,6 +3062,15 @@ class AnswerQuestionUseCase:
         if not table:
             return None
         calc = _rates_calculation(q, data, wanted_codes, wanted_channels)
+        hint = _localize(RATES_PANEL_HINT, lang)
+        if not wanted_codes and not wanted_channels and not calc:
+            # Umumiy savol ("valyuta kursi") — model 2-3 valyutani qisqa aytib
+            # qo'yardi. Bunda hisob ham, tanlov ham yo'q: kodning o'zi asosiy
+            # kanal (ayirboshlash shoxobchasi) bo'yicha BARCHA valyutalarni
+            # beradi, qolgan kanallar uchun kurs oynasiga yo'llaymiz.
+            first = data["channels"][0].get("key")
+            full = self._rates_table(data, set(), {first} if first else set())
+            return (full or table) + hint, 0
         facts = f"{calc}\n\n{table}" if calc else table
 
         convo = _format_history(
@@ -3054,7 +3088,7 @@ class AnswerQuestionUseCase:
             )
         except InfrastructureException as exc:
             logger.warning("Kurs javobi: model ishlamadi (%s) — jadval beriladi", exc)
-            return facts, 0
+            return facts + hint, 0
 
         text = gen.text.strip()
         allowed = _numbers_in(facts) | _numbers_in(question) | _numbers_in(search_query)
@@ -3067,8 +3101,8 @@ class AnswerQuestionUseCase:
                 sorted(stray)[:5],
                 gen.finish_reason,
             )
-            return facts, gen.completion_tokens
-        return text, gen.completion_tokens
+            return facts + hint, gen.completion_tokens
+        return text + hint, gen.completion_tokens
 
     async def _scroll_points(self) -> list[dict[str, Any]]:
         """Bazadagi barcha bo'laklar — bitta so'rov davomida BIR MARTA o'qiladi.
@@ -3874,6 +3908,10 @@ class AnswerQuestionUseCase:
             # Javobni KOD tuzadi — model chaqirilmaydi. Model ro'yxatni
             # yarmida to'xtatib qo'ygan (16 tadan 8 tasi) va oldinroq soxta
             # xodimlarni to'qigan edi.
+            # Xodim javobi keshlanmaydi: intent "employee" CACHEABLE emas.
+            # Router savolni "concept" degan bo'lsa ham kontakt keshga
+            # tushib, keyin boshqa savolga ham shu javob qaytib qolardi.
+            self.last_intent = Intent.EMPLOYEE.value
             emp_text = _format_employee_answer(emps)
             yield {
                 "type": "delta",
@@ -4351,6 +4389,10 @@ class AnswerQuestionUseCase:
                     max_tokens=self.MAX_TOKENS,
                 )
             # Stream yo'li bilan bir xil: javobni kod tuzadi, model chaqirilmaydi.
+            # Xodim javobi keshlanmaydi: intent "employee" CACHEABLE emas.
+            # Router savolni "concept" degan bo'lsa ham kontakt keshga
+            # tushib, keyin boshqa savolga ham shu javob qaytib qolardi.
+            self.last_intent = Intent.EMPLOYEE.value
             emp_text = _format_employee_answer(emps)
             return AnswerResult(
                 answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,

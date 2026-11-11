@@ -932,6 +932,18 @@ RATES_SYSTEM = (
 )
 
 
+# Har bir valyuta javobi oxiriga — yangi xodimlar chatdagi kurs oynasini
+# bilmaydi, u yerda kurslar kanallar bo'yicha qulayroq jadvalda.
+RATES_PANEL_HINT = (
+    "\n\nBarcha kurslarni (ilova va bankomat kurslari, o'zgarishlar bilan) "
+    "qulay jadvalda ko'rish uchun: «Qo'shimcha yordamchilar» → «Valyuta kurslari»."
+)
+RU_CANNED_REPLIES[RATES_PANEL_HINT] = (
+    "\n\nВсе курсы (в приложении и банкоматах, с изменениями) удобной таблицей: "
+    "«Дополнительные помощники» → «Курсы валют»."
+)
+
+
 # ---- Veb-qidiruv zaxirasi (bazada topilmaganda, faqat ruxsat etilgan saytlar) ----
 
 # Model sahifalarda javob topmasa AYNAN shu so'zni yozadi — kod uni ushlab,

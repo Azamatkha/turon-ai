@@ -12,6 +12,7 @@ Oqim (SSE) yo'lida FastAPI dependency sessiyasi javob tugashidan oldin
 yopilishi mumkin, shuning uchun har so'rov o'zining qisqa sessiyasini ochadi.
 """
 
+import time
 from typing import Any
 
 from loggers import get_logger
@@ -46,6 +47,31 @@ async def users_by_ip(ip_numbers: set[str]) -> list[dict[str, Any]]:
         logger.exception("Ma'lumotnomadan IP bo'yicha qidiruv xatosi")
         return []
     return [_to_record(u) for u in users]
+
+
+_USERS_TTL_SECONDS = 60.0
+_users_cache: tuple[float, list[dict[str, Any]]] | None = None
+
+
+async def users_with_ip() -> list[dict[str, Any]]:
+    """IP raqamli barcha xodimlar (xodim qidiruvining BIRINCHI manbasi).
+
+    Har savolda ishlaydi, shuning uchun 60 soniya xotirada saqlanadi —
+    xodim raqamini o'zgartirsa, bir daqiqada botga ham yetib boradi.
+    Xato bo'lsa — bo'sh (vektor bazaga o'tiladi)."""
+    global _users_cache
+    now = time.monotonic()
+    if _users_cache is not None and now - _users_cache[0] < _USERS_TTL_SECONDS:
+        return _users_cache[1]
+    try:
+        async with async_session() as session:
+            users = await UserRepository().directory_with_ip(session)
+    except Exception:  # noqa: BLE001
+        logger.exception("Ma'lumotnomani o'qib bo'lmadi")
+        return []
+    records = [_to_record(u) for u in users]
+    _users_cache = (now, records)
+    return records
 
 
 async def users_with_keywords() -> list[tuple[list[str], dict[str, Any]]]:
