@@ -41,6 +41,7 @@ from src.knowledge.pdf_extractor import (
 from src.knowledge.prompts import (
     CAPABILITIES_REPLY,
     CONCEPT_SYSTEM,
+    CONCEPT_WEB_ADDENDUM,
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
     EMPLOYEE_SYSTEM,
@@ -63,6 +64,7 @@ from src.knowledge.prompts import (
     SECURITY_RULES,
     SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
+    WEB_LOOKUP_TOKEN,
     WEB_NOT_FOUND_TOKEN,
     WEB_NOTE,
     WEB_RAG_SYSTEM,
@@ -839,6 +841,11 @@ def _web_prompt(question: str, hits: list["web_search.WebHit"]) -> str:
 
 def _web_sources(hits: list["web_search.WebHit"]) -> list[SourceRef]:
     return [SourceRef(title=h.title, score=0.0, url=h.url, kind="web") for h in hits]
+
+
+def _is_web_lookup(text: str) -> bool:
+    """Concept javobi "internetdan qidir" signalimi (NEEDS_WEB)."""
+    return text.strip().strip(".").upper().startswith(WEB_LOOKUP_TOKEN)
 
 
 def _is_web_not_found(text: str) -> bool:
@@ -3673,6 +3680,13 @@ class AnswerQuestionUseCase:
             prompt, system, max_toks = self._no_search_call(
                 decision.intent, question, history
             )
+            # Joriy/tekshiriladigan fakt (bugungi stavka, soliq, qonun) —
+            # model to'qimaydi, NEEDS_WEB deydi va kod internetdan qidiradi.
+            web_ok = decision.intent is Intent.CONCEPT and _web_eligible(
+                decision, question
+            )
+            if web_ok:
+                system = system + CONCEPT_WEB_ADDENDUM
             # Kirillga o'girilmaydigan javobda aralash alifboli so'zni
             # ("молияiy") tuzatamiz. Kirillga o'girilganda kerak emas —
             # u yerda matn baribir bir alifboga keltiriladi. Ruscha javobda
@@ -3681,6 +3695,10 @@ class AnswerQuestionUseCase:
             tr = StreamingTransliterator() if want_cyrillic else None
             sf = StreamingScriptFixer() if lang == "uz" else None
             lf = _ConceptLineFilter()
+            # web_ok bo'lsa javob boshini ushlab turamiz: NEEDS_WEB
+            # foydalanuvchiga chiqmasin
+            head = "" if web_ok else None
+            needs_web = False
             yield {"type": "status", "step": "write"}
             async for ev in self.ai_client.stream_generate(
                 prompt,
@@ -3688,6 +3706,27 @@ class AnswerQuestionUseCase:
                 temperature=self.TEMPERATURE,
                 max_tokens=max_toks,
             ):
+                if head is not None and ev.get("type") in ("delta", "done"):
+                    if ev.get("type") == "delta":
+                        head += ev["text"]
+                        if len(head.strip()) <= len(WEB_LOOKUP_TOKEN):
+                            continue
+                    if _is_web_lookup(head):
+                        needs_web = True
+                        break
+                    # Oddiy javob — ushlangan bosh qismi odatdagi yo'ldan o'tadi
+                    if ev.get("type") == "delta":
+                        ev = {**ev, "text": head}
+                    elif head:
+                        ev = dict(ev)
+                        lf_head = lf.feed(head)
+                        if tr is not None:
+                            lf_head = tr.feed(lf_head)
+                        elif sf is not None:
+                            lf_head = sf.feed(lf_head)
+                        if lf_head:
+                            yield {"type": "delta", "text": lf_head}
+                    head = None
                 if ev.get("type") == "delta":
                     text = lf.feed(ev["text"])
                     if tr is not None:
@@ -3715,6 +3754,21 @@ class AnswerQuestionUseCase:
                         int(ev.get("completion_tokens", 0)) + router_tokens
                     )
                 yield ev
+            if needs_web:
+                async for ev in self._web_stream(
+                    question, decision, lang, want_cyrillic, router_tokens
+                ):
+                    yield ev
+                if self.last_outcome != "web":
+                    self.last_outcome = "no_info"
+                    yield {"type": "delta", "text": _localize(NO_INFO_REPLY, lang)}
+                    yield {
+                        "type": "done",
+                        "completion_tokens": router_tokens,
+                        "finish_reason": "stop",
+                        "max_tokens": self.MAX_TOKENS,
+                        "sources": [],
+                    }
             return
 
         # Valyuta kursi — faktlarni kod, javobni model yozadi (_rates_reply)
@@ -4137,12 +4191,31 @@ class AnswerQuestionUseCase:
             prompt, system, max_toks = self._no_search_call(
                 decision.intent, question, history
             )
+            web_ok = decision.intent is Intent.CONCEPT and _web_eligible(
+                decision, question
+            )
+            if web_ok:
+                system = system + CONCEPT_WEB_ADDENDUM
             gen = await self.ai_client.generate_text_with_usage(
                 prompt,
                 system_prompt=_with_lang(system, lang),
                 temperature=self.TEMPERATURE,
                 max_tokens=max_toks,
             )
+            if web_ok and _is_web_lookup(gen.text):
+                web = await self._web_answer(
+                    question, decision, lang, want_cyrillic, router_tokens
+                )
+                if web is not None:
+                    return web
+                self.last_outcome = "no_info"
+                return AnswerResult(
+                    answer=_localize(NO_INFO_REPLY, lang),
+                    sources=[],
+                    finish_reason="stop",
+                    completion_tokens=router_tokens,
+                    max_tokens=self.MAX_TOKENS,
+                )
             text = _clean_concept_answer(gen.text)
             if want_cyrillic:
                 text = to_cyrillic(text)

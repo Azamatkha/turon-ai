@@ -194,3 +194,71 @@ async def test_no_pages_falls_back(enabled: None, monkeypatch: pytest.MonkeyPatc
     text, _ = await _run(uc, "Markaziy bank stavkasi hozir qancha?")
     assert uc.last_outcome == "no_info"
     assert text == NO_INFO_REPLY
+
+
+# ---- Umumiy (concept) savol: model NEEDS_WEB desa — internetdan ----
+
+
+def _concept_uc(monkeypatch: pytest.MonkeyPatch, ai: _FakeAI) -> AnswerQuestionUseCase:
+    uc = _uc(monkeypatch, ai)
+
+    async def classify(question: str, history: Any = None) -> Route:
+        return Route(intent=Intent.CONCEPT, search_query="markaziy bank asosiy stavkasi")
+
+    monkeypatch.setattr(uc.router, "classify", classify)
+    return uc
+
+
+class _TwoStepAI(_FakeAI):
+    """1-chaqiruv (concept) — NEEDS_WEB, 2-chaqiruv (veb sahifalar) — javob."""
+
+    def __init__(self, first: str, second: str) -> None:
+        super().__init__(first)
+        self.replies = [first, second]
+
+    async def stream_generate(self, prompt: str, **kw: Any) -> Any:
+        reply = self.replies[min(len(self.prompts), 1)]
+        self.prompts.append(prompt)
+        for i in range(0, len(reply), 3):
+            yield {"type": "delta", "text": reply[i : i + 3]}
+        yield {"type": "done", "completion_tokens": 5, "finish_reason": "stop"}
+
+
+@pytest.mark.asyncio
+async def test_concept_needs_web_goes_online(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_search(q: str) -> list[WebHit]:
+        return [HIT]
+
+    monkeypatch.setattr(web_search, "search", fake_search)
+    ai = _TwoStepAI("NEEDS_WEB", "Asosiy stavka yillik 13,5 foiz [1].")
+    uc = _concept_uc(monkeypatch, ai)
+    text, done = await _run(uc, "Markaziy bankning asosiy stavkasi hozir qancha?")
+    assert "NEEDS_WEB" not in text
+    assert uc.last_outcome == "web"
+    assert text.startswith(WEB_NOTE)
+    assert done["sources"][0]["kind"] == "web"
+
+
+@pytest.mark.asyncio
+async def test_concept_normal_answer_untouched(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def boom(q: str) -> list[WebHit]:
+        raise AssertionError("internetga chiqmasligi kerak edi")
+
+    monkeypatch.setattr(web_search, "search", boom)
+    answer = "Inflyatsiya — narxlarning umumiy darajasi oshishi."
+    uc = _concept_uc(monkeypatch, _FakeAI(answer))
+    text, _ = await _run(uc, "Inflyatsiya nima?")
+    assert text == answer
+    assert uc.last_outcome == "answered"
+
+
+@pytest.mark.asyncio
+async def test_concept_needs_web_but_nothing_found(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def nothing(q: str) -> list[WebHit]:
+        return []
+
+    monkeypatch.setattr(web_search, "search", nothing)
+    uc = _concept_uc(monkeypatch, _FakeAI("NEEDS_WEB"))
+    text, _ = await _run(uc, "Markaziy bankning asosiy stavkasi hozir qancha?")
+    assert text == NO_INFO_REPLY
+    assert uc.last_outcome == "no_info"

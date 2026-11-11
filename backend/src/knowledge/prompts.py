@@ -969,3 +969,19 @@ RU_CANNED_REPLIES[WEB_NOTE] = (
     "Эти сведения не из внутренней базы банка — они найдены на официальных "
     "сайтах. Перед важным решением откройте источник и проверьте.\n\n"
 )
+
+# Umumiy (concept) savolga qo'shiladi — faqat veb-qidiruv yoqilgan bo'lsa.
+# Model joriy/tekshiriladigan faktni o'zi to'qimasdan, shu so'z bilan kodga
+# "internetdan qidir" deydi (qara: usecases, concept yo'li).
+WEB_LOOKUP_TOKEN = "NEEDS_WEB"
+CONCEPT_WEB_ADDENDUM = (
+    "\n\nWEB LOOKUP IS AVAILABLE: the system can look the answer up on official "
+    "Uzbek websites (Central Bank, legislation, government, tax). If the question "
+    "is kind (2) — a CURRENT or CHECKABLE fact such as today's policy/refinancing "
+    "rate, a current tax rate or limit, what a law or regulation says, official "
+    "statistics, dates of official meetings — do NOT tell the user to visit a "
+    "website. Instead reply with exactly one word: "
+    f"{WEB_LOOKUP_TOKEN}. Nothing else.\n"
+    "Do NOT use it for kind (1) explanations, and NEVER for questions about "
+    "other banks (apply the OTHER BANKS rule)."
+)
