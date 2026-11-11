@@ -15,9 +15,32 @@ import styles from "./MessageArea.module.css";
 // Manba chiplari: bir hujjatning bir nechta bo'lagi kelishi mumkin — sarlavha
 // bo'yicha takrorsiz, ko'pi bilan 4 tasi
 const MAX_SOURCE_CHIPS = 4;
-function uniqueSources(m: Msg): string[] {
+interface SourceChip {
+  title: string;
+  // Veb manba: havola (yangi tabda ochiladi) va domen nomi
+  url?: string;
+  domain?: string;
+}
+function uniqueSources(m: Msg): SourceChip[] {
   if (!m.sources?.length) return [];
-  return [...new Set(m.sources.map((x) => x.title.trim()).filter(Boolean))].slice(0, MAX_SOURCE_CHIPS);
+  const seen = new Set<string>();
+  const out: SourceChip[] = [];
+  for (const x of m.sources) {
+    const title = x.title.trim();
+    const key = x.url || title;
+    if (!title || seen.has(key)) continue;
+    seen.add(key);
+    let domain: string | undefined;
+    if (x.kind === "web" && x.url) {
+      try {
+        domain = new URL(x.url).hostname.replace(/^www\./, "");
+      } catch {
+        domain = undefined;
+      }
+    }
+    out.push(domain ? { title, url: x.url ?? undefined, domain } : { title });
+  }
+  return out.slice(0, MAX_SOURCE_CHIPS);
 }
 
 // Bo'sh holatdagi taklif chiplarining ikonkalari.
@@ -315,17 +338,32 @@ export default function MessageArea({
                   {!isStreaming && !!m.text && uniqueSources(m).length > 0 && (
                     <div className={styles.sources} style={{ color: tk.muted }}>
                       <span className={styles.sourcesLabel}>{s.sourcesLabel}:</span>
-                      {uniqueSources(m).map((title) => (
-                        <span
-                          key={title}
-                          className={styles.sourceChip}
-                          style={{ border: "1px solid " + tk.cardBorder, color: tk.strong, background: tk.card }}
-                          title={title}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                          <span className={styles.sourceTitle}>{title}</span>
-                        </span>
-                      ))}
+                      {uniqueSources(m).map((src, i) =>
+                        src.url ? (
+                          <a
+                            key={src.url}
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${styles.sourceChip} ${styles.sourceLink}`}
+                            style={{ border: "1px solid " + tk.cardBorder, color: tk.strong, background: tk.card }}
+                            title={`${src.title} — ${src.url}`}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                            <span className={styles.sourceTitle}>[{i + 1}] {src.domain}</span>
+                          </a>
+                        ) : (
+                          <span
+                            key={src.title}
+                            className={styles.sourceChip}
+                            style={{ border: "1px solid " + tk.cardBorder, color: tk.strong, background: tk.card }}
+                            title={src.title}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                            <span className={styles.sourceTitle}>{src.title}</span>
+                          </span>
+                        ),
+                      )}
                     </div>
                   )}
                   {m.interrupted && (

@@ -2,13 +2,16 @@ export type Role = "user" | "assistant";
 
 // Backend oqimidagi bosqichlar ({"type":"status","step":...}) —
 // backend/src/knowledge/usecases.py execute_stream bilan bir xil
-export type ThinkStep = "analyze" | "rates" | "employees" | "search" | "write";
-export const THINK_STEPS: readonly ThinkStep[] = ["analyze", "rates", "employees", "search", "write"];
+export type ThinkStep = "analyze" | "rates" | "employees" | "search" | "web" | "write";
+export const THINK_STEPS: readonly ThinkStep[] = ["analyze", "rates", "employees", "search", "web", "write"];
 
 // Javob tayangan bilim bazasi hujjati (backend SourceRef)
 export interface SourceRef {
   title: string;
   score: number;
+  // Veb-qidiruv manbasi (bazada topilmaganda, ruxsat etilgan saytdan)
+  url?: string | null;
+  kind?: "kb" | "web";
 }
 
 // Dislike sababi (backend VOTE_REASONS bilan bir xil)

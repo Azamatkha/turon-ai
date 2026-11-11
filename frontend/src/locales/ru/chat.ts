@@ -171,6 +171,7 @@ export const chatStatic: ChatStaticStrings = {
     rates: "Получает курсы валют",
     employees: "Ищет в списке сотрудников",
     search: "Ищет в базе знаний",
+    web: "Ищет на официальных сайтах",
     write: "Пишет ответ",
   },
   interrupted: "Остановлено",

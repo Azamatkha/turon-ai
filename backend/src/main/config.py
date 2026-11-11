@@ -222,6 +222,34 @@ class ScrapingConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class WebSearchConfig(BaseModel):
+    """Bazada javob topilmasa — ruxsat etilgan saytlardan qidirish.
+
+    Qidiruv o'z serverimizdagi SearXNG orqali (src/knowledge/web_search.py).
+    Natija faqat ALLOWED_DOMAINS dagi saytlardan olinadi; bazaga avtomatik
+    qo'shilmaydi — admin "Savollar tahlili"dan o'zi qo'shadi.
+    """
+
+    WEB_SEARCH_ENABLED: bool = False
+    SEARXNG_URL: str = "http://searxng:8080"
+    # Vergul bilan: "cbu.uz,lex.uz,turonbank.uz". Subdomenlar ham ruxsat.
+    WEB_SEARCH_ALLOWED_DOMAINS: str = "cbu.uz,lex.uz,turonbank.uz,gov.uz,mf.uz,soliq.uz"
+    WEB_SEARCH_MAX_RESULTS: int = 3
+    WEB_SEARCH_TIMEOUT_SECONDS: float = 8.0
+    # Bir sahifadan modelga beriladigan matn chegarasi (belgi)
+    WEB_SEARCH_PAGE_CHARS: int = 3000
+
+    model_config = ConfigDict(extra="ignore")
+
+    @property
+    def allowed_domains(self) -> list[str]:
+        return [
+            d.strip().lower().lstrip(".")
+            for d in self.WEB_SEARCH_ALLOWED_DOMAINS.split(",")
+            if d.strip()
+        ]
+
+
 class EmployeeApiConfig(BaseModel):
     # Xodimlar bazasi (EDO): PINFL bo'yicha xodimni tekshiradi
     EMPLOYEE_API_URL: str = "https://edo.turonbank.uz/api/is-user"
@@ -407,6 +435,7 @@ class Config(BaseModel):
     ai: AIConfig
     qdrant: QdrantConfig
     scraping: ScrapingConfig
+    web_search: WebSearchConfig = WebSearchConfig()
     employee_api: EmployeeApiConfig = EmployeeApiConfig()
     edo_login: EdoLoginConfig = EdoLoginConfig()
     certificate: CertificateConfig = CertificateConfig()
@@ -446,6 +475,7 @@ def get_settings() -> Config:
         ai=AIConfig(**merged_env),
         qdrant=QdrantConfig(**merged_env),
         scraping=ScrapingConfig(**merged_env),
+        web_search=WebSearchConfig(**merged_env),
         employee_api=EmployeeApiConfig(**merged_env),
         edo_login=EdoLoginConfig(**merged_env),
         certificate=CertificateConfig(**merged_env),

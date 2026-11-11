@@ -1,0 +1,35 @@
+# SearXNG — Turon-AI veb-qidiruv zaxirasi uchun (src/knowledge/web_search.py).
+# Faqat ichki tarmoqda (app-network) ishlaydi, tashqariga port ochilmaydi.
+# Domen cheklovi BACKEND'da (WEB_SEARCH_ALLOWED_DOMAINS) — bu yerda emas.
+use_default_settings: true
+
+general:
+  instance_name: "turon-ai-search"
+
+server:
+  # Haqiqiy qiymat .env dagi SEARXNG_SECRET dan (docker-compose orqali)
+  secret_key: "change-me"
+  limiter: false
+  image_proxy: false
+
+search:
+  safe_search: 1
+  # Backend JSON formatda so'raydi
+  formats:
+    - html
+    - json
+
+# Bank tarmog'ida tashqariga faqat korporativ proksi orqali chiqiladi —
+# kerak bo'lsa izohni oching va manzilni yozing (SCRAPING PROXY_URL bilan bir xil):
+# outgoing:
+#   proxies:
+#     all://:
+#       - http://<proxy-ip>:<port>
+
+engines:
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    disabled: false

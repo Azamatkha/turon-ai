@@ -178,3 +178,19 @@ class FlaggedQuestionView(Base):
 class FlaggedQuestionPageView(Base):
     items: list[FlaggedQuestionView]
     total: int
+
+
+class WebAnswerView(Base):
+    """Bazada yo'q, ruxsat etilgan saytdan javob berilgan savol."""
+
+    id: UUID
+    created_at: datetime
+    question: str
+    source_urls: list[str] = []
+    username: str | None = None
+    user_name: str = ""
+
+
+class WebAnswerPageView(Base):
+    items: list[WebAnswerView]
+    total: int

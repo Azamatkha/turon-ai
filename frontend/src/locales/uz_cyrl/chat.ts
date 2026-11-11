@@ -172,6 +172,7 @@ export const chatStatic: ChatStaticStrings = {
     rates: "Валюта курсларини олмоқда",
     employees: "Ходимлар рўйхатидан қидирмоқда",
     search: "Билим базасидан қидирмоқда",
+    web: "Расмий сайтлардан қидирмоқда",
     write: "Жавоб ёзмоқда",
   },
   interrupted: "Тўхтатилди",

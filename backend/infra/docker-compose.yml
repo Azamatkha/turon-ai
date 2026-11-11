@@ -243,6 +243,29 @@ services:
           cpus: '1'
           memory: 1G
 
+  # Veb-qidiruv zaxirasi (bazada javob topilmasa — ruxsat etilgan saytlar).
+  # "websearch" profilida: oddiy `up` da ishga tushmaydi va obraz yuklanmaydi.
+  # Yoqish: docker compose --profile websearch up -d searxng  +  .env da
+  # WEB_SEARCH_ENABLED=true. Port tashqariga ochilmaydi — app `searxng:8080`.
+  searxng:
+    container_name: template-searxng
+    # Ishlagach aniq tegga mahkamlang (qdrant kabi)
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    profiles: ["websearch"]
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-change-me}
+      SEARXNG_BASE_URL: http://searxng:8080/
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
 volumes:
   qdrant-data:
     name: turon-ai-app-qdrant-data

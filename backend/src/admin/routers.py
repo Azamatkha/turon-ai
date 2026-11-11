@@ -5,6 +5,7 @@ SWAGGER'DA TEKSHIRISH:
 1) admin bilan login qiling, "Authorize" ga tokenni kiriting.
 2) GET /v1/admin/stats -> jami userlar/suhbatlar/xabarlar + bo'limlar ulushi.
 9) GET /v1/admin/flagged-questions -> xavfli so'rovlar va so'kinishlar
+10) GET /v1/admin/web-answers -> internetdan javob berilgan savollar
    (yashirin so'rovlar ham — router modeli ma'nosidan aniqlaydi).
 8) GET /v1/admin/system -> komponentlar holati (Postgres, Redis, Qdrant,
    Ollama, RabbitMQ, Celery) + so'nggi 24 soatda bot ishlashi (p50/p95).
@@ -33,12 +34,14 @@ from src.admin.schemas import (
     QuestionAnalyticsView,
     ReviewDislikedModel,
     SystemStatusView,
+    WebAnswerPageView,
 )
 from src.admin.usecases import (
     DashboardStatsUseCase,
     ListDislikedAnswersUseCase,
     ListFaceIdLogsUseCase,
     ListFlaggedQuestionsUseCase,
+    ListWebAnswersUseCase,
     QuestionAnalyticsUseCase,
     ReviewDislikedAnswerUseCase,
     SystemStatusUseCase,
@@ -46,6 +49,7 @@ from src.admin.usecases import (
     get_list_disliked_answers_use_case,
     get_list_face_id_logs_use_case,
     get_list_flagged_questions_use_case,
+    get_list_web_answers_use_case,
     get_question_analytics_use_case,
     get_review_disliked_answer_use_case,
     get_system_status_use_case,
@@ -192,4 +196,15 @@ async def list_flagged_questions(
     size: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> FlaggedQuestionPageView:
     """Xavfli so'rovlar va so'kinishlar — kim, qachon, nima yozgan."""
+    return await use_case.execute(page=page, size=size)
+
+
+@router.get("/web-answers", response_model=WebAnswerPageView)
+async def list_web_answers(
+    current_user: Annotated[User, Depends(require_permission(Permission.VIEW_LOGS))],
+    use_case: Annotated[ListWebAnswersUseCase, Depends(get_list_web_answers_use_case)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> WebAnswerPageView:
+    """Bazada yo'q, ruxsat etilgan saytlardan javob berilgan savollar."""
     return await use_case.execute(page=page, size=size)

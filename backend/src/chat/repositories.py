@@ -286,7 +286,13 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
     ) -> tuple[list[tuple[QuestionLog, str | None, str]], int]:
         """Xavfli deb belgilangan so'rovlar (outcome="flagged"), yangisidan.
         Har qator: (yozuv, login, F.I.Sh.). User o'chirilgan bo'lsa — None."""
-        cond = self.model.outcome == "flagged"
+        return await self.list_by_outcome(session, "flagged", page=page, size=size)
+
+    async def list_by_outcome(
+        self, session: AsyncSession, outcome: str, page: int = 1, size: int = 50
+    ) -> tuple[list[tuple[QuestionLog, str | None, str]], int]:
+        """Berilgan natijali yozuvlar (flagged, web, ...), yangisidan."""
+        cond = self.model.outcome == outcome
         total = int(
             (await session.execute(select(func.count()).select_from(self.model).where(cond))).scalar_one()
         )

@@ -646,6 +646,15 @@ export interface AdminStrings {
   safetyKindProfanity: string;
   safetyColKind: string;
   safetyColQuestion: string;
+  // Internetdan (ruxsat etilgan saytlardan) javoblar
+  webNav: string;
+  webHint: string;
+  webLoadError: string;
+  webEmpty: string;
+  webColSources: string;
+  webAddToKb: string;
+  webAdded: string;
+  webAddError: string;
   systemCheckedAt: (time: string) => string;
   knowledgeNav: string;
   pdfNav: string;

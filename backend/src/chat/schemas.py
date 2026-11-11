@@ -23,6 +23,9 @@ class SourceItem(Base):
 
     title: str = Field(..., max_length=500)
     score: float = 0.0
+    # Veb-qidiruvdan olingan manba: havola va kind="web"
+    url: str | None = Field(None, max_length=1000)
+    kind: str = Field("kb", max_length=10)
 
 
 class MessageView(Base):

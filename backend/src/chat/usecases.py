@@ -69,6 +69,8 @@ class QuestionLogEntry:
     sources_count: int
     completion_tokens: int
     duration_ms: int
+    # Veb-qidiruv javobi bo'lsa — sahifa havolalari
+    source_urls: list[str] | None = None
 
 
 async def log_question(entry: QuestionLogEntry) -> None:
@@ -99,6 +101,7 @@ async def log_question(entry: QuestionLogEntry) -> None:
                         "sources_count": entry.sources_count,
                         "completion_tokens": entry.completion_tokens,
                         "duration_ms": entry.duration_ms,
+                        "source_urls": entry.source_urls or None,
                     },
                 )
                 await uow.commit()

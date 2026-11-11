@@ -151,6 +151,16 @@
   line-height: 1.4;
 }
 
+/* Veb manba — bosiladigan havola */
+.sourceLink {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sourceLink:hover {
+  text-decoration: underline;
+}
+
 .sourceTitle {
   overflow: hidden;
   text-overflow: ellipsis;

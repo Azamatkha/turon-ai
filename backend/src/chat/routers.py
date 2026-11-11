@@ -380,6 +380,21 @@ async def ask(
             )
         )
         await notify_safety_flag(current_user.username, data.question, use_case.last_flag)
+    # Veb-qidiruvdan javob — admin "bazaga qo'shish" uchun qayd etiladi
+    elif use_case.last_outcome == "web":
+        await log_question(
+            QuestionLogEntry(
+                user_id=current_user.id,
+                question=data.question,
+                intent=use_case.last_intent,
+                outcome="web",
+                top_score=use_case.last_top_score,
+                sources_count=len(result.sources),
+                completion_tokens=result.completion_tokens,
+                duration_ms=int((time.monotonic() - started) * 1000),
+                source_urls=[s.url for s in result.sources if s.url],
+            )
+        )
     return result
 
 
@@ -438,11 +453,17 @@ async def ask_stream(
         outcome = "answered"
         tokens = 0
         sources_count = 0
+        web_urls: list[str] = []
         try:
             async for ev in events:
                 if ev.get("type") == "done":
                     tokens = int(ev.get("completion_tokens") or 0)
                     sources_count = len(ev.get("sources") or [])
+                    web_urls = [
+                        str(s["url"])
+                        for s in ev.get("sources") or []
+                        if isinstance(s, dict) and s.get("kind") == "web" and s.get("url")
+                    ]
                 # Bosqich hodisalari faqat so'ragan mijozga (qara: with_status)
                 if ev.get("type") == "status" and not data.with_status:
                     continue
@@ -476,6 +497,7 @@ async def ask_stream(
                     sources_count=sources_count,
                     completion_tokens=tokens,
                     duration_ms=int((time.monotonic() - started) * 1000),
+                    source_urls=web_urls or None,
                 )
             )
             # Xavfli so'rov yoki so'kinish — adminga xabar

@@ -27,6 +27,7 @@ from src.core.utils.uzbek_script import (
     to_latin,
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge import web_search
 from src.knowledge.chunking import chunk_text
 from src.knowledge.directory import users_by_ip, users_with_keywords
 from src.knowledge.employee_parser import parse_employees
@@ -62,6 +63,9 @@ from src.knowledge.prompts import (
     SECURITY_RULES,
     SMALLTALK_FALLBACK_REPLY,
     STRICT_RAG_SYSTEM,
+    WEB_NOT_FOUND_TOKEN,
+    WEB_NOTE,
+    WEB_RAG_SYSTEM,
 )
 from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.rescrape import find_duplicates, group_by_title
@@ -809,6 +813,36 @@ def _guard_input(
             for t in history
         ]
     return masked, history, False
+
+
+# Veb-qidiruvga faqat bank faktiga oid niyatlar boradi. Xodim (shaxsiy
+# ma'lumot), suhbat tarixi, salomlashish, soha tashqarisi — hech qachon.
+_WEB_INTENTS = frozenset({Intent.PRODUCT, Intent.RATES, Intent.BRANCH, Intent.CONCEPT})
+
+
+def _web_eligible(decision: Route | None, question: str) -> bool:
+    if not config.web_search.WEB_SEARCH_ENABLED:
+        return False
+    if decision is None or decision.intent not in _WEB_INTENTS:
+        return False
+    if _has_employee_intent(question.lower()) or _is_meaningless_query(question):
+        return False
+    return True
+
+
+def _web_prompt(question: str, hits: list["web_search.WebHit"]) -> str:
+    pages = "\n\n".join(
+        f"[{i}] {h.title} ({h.url})\n{h.text}" for i, h in enumerate(hits, 1)
+    )
+    return f"PAGES:\n{pages}\n\nSAVOL: {question}"
+
+
+def _web_sources(hits: list["web_search.WebHit"]) -> list[SourceRef]:
+    return [SourceRef(title=h.title, score=0.0, url=h.url, kind="web") for h in hits]
+
+
+def _is_web_not_found(text: str) -> bool:
+    return text.strip().strip(".").upper().startswith(WEB_NOT_FOUND_TOKEN)
 
 
 def _with_lang(system: str, lang: ReplyLang) -> str:
@@ -3284,6 +3318,115 @@ class AnswerQuestionUseCase:
 
         return prompt, sources
 
+    def _web_query(self, question: str, decision: Route | None) -> str:
+        # Tashqariga xom savol emas — router tozalagan qidiruv so'rovi
+        if decision is not None and len(decision.search_query.strip()) >= 3:
+            return decision.search_query
+        return question
+
+    async def _web_stream(
+        self,
+        question: str,
+        decision: Route | None,
+        lang: ReplyLang,
+        want_cyrillic: bool,
+        router_tokens: int,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Bazada topilmadi — ruxsat etilgan saytlardan javob.
+
+        Javob berilsa `last_outcome = "web"`. Sahifa topilmasa yoki model
+        NOT_FOUND desa — hech qanday delta yubormaydi (chaqiruvchi odatdagi
+        "ma'lumot topilmadi"ni qaytaradi)."""
+        yield {"type": "status", "step": "web"}
+        hits = await web_search.search(self._web_query(question, decision))
+        if not hits:
+            return
+        sources = _web_sources(hits)
+        src_dump = [s.model_dump() for s in sources]
+        tr = StreamingTransliterator() if want_cyrillic else None
+        sf = StreamingScriptFixer() if lang == "uz" else None
+
+        def conv(text: str) -> str:
+            if tr is not None:
+                return tr.feed(text)
+            if sf is not None:
+                return sf.feed(text)
+            return text
+
+        # Boshidagi bir necha belgini ushlab turamiz: model NOT_FOUND yozsa,
+        # foydalanuvchiga hech narsa chiqmasin.
+        buf = ""
+        decided = False
+        yield {"type": "status", "step": "write"}
+        async for ev in self.ai_client.stream_generate(
+            _web_prompt(question, hits),
+            system_prompt=_with_lang(WEB_RAG_SYSTEM, lang),
+            temperature=self.TEMPERATURE,
+            max_tokens=self.MAX_TOKENS,
+        ):
+            if ev.get("type") == "delta":
+                if decided:
+                    yield {**ev, "text": conv(ev["text"])}
+                    continue
+                buf += ev["text"]
+                if len(buf.strip()) < len(WEB_NOT_FOUND_TOKEN) + 2:
+                    continue
+                if _is_web_not_found(buf):
+                    logger.info("Veb sahifalarda javob yo'q: %r", question[:120])
+                    return
+                decided = True
+                self.last_outcome = "web"
+                yield {"type": "delta", "text": _localize(WEB_NOTE, lang)}
+                yield {"type": "delta", "text": conv(buf)}
+            elif ev.get("type") == "done":
+                if not decided:
+                    if not buf.strip() or _is_web_not_found(buf):
+                        return
+                    self.last_outcome = "web"
+                    yield {"type": "delta", "text": _localize(WEB_NOTE, lang)}
+                    yield {"type": "delta", "text": conv(buf)}
+                rest = tr.flush() if tr is not None else sf.flush() if sf is not None else ""
+                if rest:
+                    yield {"type": "delta", "text": rest}
+                ev["max_tokens"] = self.MAX_TOKENS
+                ev["sources"] = src_dump
+                ev["completion_tokens"] = int(ev.get("completion_tokens", 0)) + router_tokens
+                yield ev
+
+    async def _web_answer(
+        self,
+        question: str,
+        decision: Route | None,
+        lang: ReplyLang,
+        want_cyrillic: bool,
+        router_tokens: int,
+    ) -> AnswerResult | None:
+        """`_web_stream` ning oqimsiz (mobil /ask) varianti."""
+        hits = await web_search.search(self._web_query(question, decision))
+        if not hits:
+            return None
+        gen = await self.ai_client.generate_text_with_usage(
+            _web_prompt(question, hits),
+            system_prompt=_with_lang(WEB_RAG_SYSTEM, lang),
+            temperature=self.TEMPERATURE,
+            max_tokens=self.MAX_TOKENS,
+        )
+        text = gen.text.strip()
+        if not text or _is_web_not_found(text):
+            return None
+        if want_cyrillic:
+            text = to_cyrillic(text)
+        elif lang == "uz":
+            text = fix_mixed_script(text)
+        self.last_outcome = "web"
+        return AnswerResult(
+            answer=_localize(WEB_NOTE, lang) + text,
+            sources=_web_sources(hits),
+            finish_reason=gen.finish_reason,
+            completion_tokens=gen.completion_tokens + router_tokens,
+            max_tokens=gen.max_tokens,
+        )
+
     def _flag(self, kind: str) -> None:
         """So'rov xavfli deb belgilandi: statistikada "flagged", sabab — `kind`.
         Router (chat/routers.py) buni ko'rib, adminga bildirishnoma yuboradi."""
@@ -3755,6 +3898,14 @@ class AnswerQuestionUseCase:
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
+            # Bazada topilmadi — ruxsat etilgan saytlardan qidirib ko'ramiz
+            if _web_eligible(decision, question):
+                async for ev in self._web_stream(
+                    question, decision, lang, want_cyrillic, router_tokens
+                ):
+                    yield ev
+                if self.last_outcome == "web":
+                    return
             # Bazada topilmadi — admin "javobsiz savollar" ro'yxatiga tushadi
             self.last_outcome = "no_info"
             text = _localize(NO_INFO_REPLY, lang)
@@ -4145,6 +4296,13 @@ class AnswerQuestionUseCase:
         # Leksik moslik topilgan bo'lsa — cosine ball past bo'lsa ham javobni
         # kesmaymiz: bo'lak ichida savoldagi so'zlar aynan uchragan.
         if not results or (top_score < self.MIN_SCORE and not lexical):
+            if _web_eligible(decision, question):
+                web = await self._web_answer(
+                    question, decision, lang, want_cyrillic, router_tokens
+                )
+                if web is not None:
+                    return web
+            self.last_outcome = "no_info"
             return AnswerResult(
                 answer=_localize(NO_INFO_REPLY, lang),
                 sources=[],

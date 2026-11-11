@@ -305,3 +305,19 @@ export async function listFlaggedQuestions(size = 100): Promise<{ items: Flagged
   if (!res.ok) throw new Error(await readError(res, "Ro'yxatni olishda xatolik"));
   return res.json();
 }
+
+// Bazada yo'q, ruxsat etilgan saytdan javob berilgan savollar
+export interface WebAnswer {
+  id: string;
+  created_at: string;
+  question: string;
+  source_urls: string[];
+  username?: string | null;
+  user_name: string;
+}
+
+export async function listWebAnswers(size = 100): Promise<{ items: WebAnswer[]; total: number }> {
+  const res = await apiFetch(`/v1/admin/web-answers?size=${size}`);
+  if (!res.ok) throw new Error(await readError(res, "Ro'yxatni olishda xatolik"));
+  return res.json();
+}

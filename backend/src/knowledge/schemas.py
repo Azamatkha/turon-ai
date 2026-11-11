@@ -128,6 +128,9 @@ class RatesResult(Base):
 class SourceRef(Base):
     title: str      # javob qaysi hujjatdan olindi
     score: float    # o'xshashlik bahosi (0..1)
+    # Veb-qidiruv manbasi: sahifa havolasi va kind="web" (bazadagisi "kb")
+    url: str | None = None
+    kind: str = "kb"
 
 
 class AnswerResult(Base):

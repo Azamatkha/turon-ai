@@ -80,10 +80,13 @@ class QuestionLog(Base, UUIDIDMixin, TimestampMixin):
     # Router aniqlagan niyat (product, employee, concept, ...) — bo'lmasa NULL
     intent: Mapped[str | None] = mapped_column(String(30), nullable=True)
     # "answered" | "no_info" (bazada topilmadi) | "blocked" (prompt-injection)
-    # | "flagged" (xavfli so'rov / so'kinish, intent'da sababi) | "error"
+    # | "flagged" (xavfli so'rov / so'kinish, intent'da sababi)
+    # | "web" (bazada yo'q, ruxsat etilgan saytdan javob berildi) | "error"
     outcome: Mapped[str] = mapped_column(String(20), index=True)
     top_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     sources_count: Mapped[int] = mapped_column(Integer, default=0)
     completion_tokens: Mapped[int] = mapped_column(Integer, default=0)
     # Savol kelgandan javob tugaguncha (ms)
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
+    # outcome="web" bo'lsa — javob olingan sahifalar (admin bazaga qo'shishi uchun)
+    source_urls: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)

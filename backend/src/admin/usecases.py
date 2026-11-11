@@ -21,6 +21,8 @@ from src.admin.schemas import (
     RecentActivityItem,
     SystemStatusView,
     TopUserStat,
+    WebAnswerPageView,
+    WebAnswerView,
     WeeklyPoint,
 )
 from src.chat.answer_cache import cache_stats_today
@@ -369,6 +371,42 @@ class ListFlaggedQuestionsUseCase:
             ],
             total=total,
         )
+
+
+class ListWebAnswersUseCase:
+    """Internetdan (ruxsat etilgan saytlardan) javob berilgan savollar.
+
+    Admin shu ro'yxatdan sahifani bilim bazasiga qo'shadi — keyingi safar
+    javob bazadan keladi."""
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(self, page: int = 1, size: int = 50) -> WebAnswerPageView:
+        async with self.uow as uow:
+            rows, total = await uow.question_logs.list_by_outcome(
+                uow.session, "web", page=page, size=size
+            )
+        return WebAnswerPageView(
+            items=[
+                WebAnswerView(
+                    id=log.id,
+                    created_at=log.created_at,
+                    question=log.question,
+                    source_urls=list(log.source_urls or []),
+                    username=username,
+                    user_name=name,
+                )
+                for log, username, name in rows
+            ],
+            total=total,
+        )
+
+
+def get_list_web_answers_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> ListWebAnswersUseCase:
+    return ListWebAnswersUseCase(uow=uow)
 
 
 def get_list_flagged_questions_use_case(
