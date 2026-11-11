@@ -50,6 +50,7 @@ class OllamaClient(BaseAIClient):
         self.model = config.ai.OLLAMA_MODEL
         self.num_ctx = config.ai.OLLAMA_NUM_CTX
         self.min_num_ctx = config.ai.OLLAMA_MIN_NUM_CTX
+        self.send_num_ctx = config.ai.OLLAMA_SEND_NUM_CTX
         self.keep_alive = config.ai.OLLAMA_KEEP_ALIVE
         self.timeout = config.ai.TIMEOUT_SECONDS
         self.default_temperature = config.ai.DEFAULT_TEMPERATURE
@@ -108,6 +109,54 @@ class OllamaClient(BaseAIClient):
         self._ctx_cache = (chosen, now)
         return chosen
 
+    async def _options(self, temperature: float | None, max_tokens: int) -> dict[str, Any]:
+        """So'rov `options` bloki. num_ctx faqat OLLAMA_SEND_NUM_CTX=True
+        bo'lsa qo'shiladi — aks holda Ollama serverdagi sozlamani ishlatadi."""
+        opts: dict[str, Any] = {
+            "temperature": (
+                temperature if temperature is not None else self.default_temperature
+            ),
+            "num_predict": max_tokens,
+        }
+        if self.send_num_ctx:
+            # Qiymat yuklangan modelga moslashadi (qara: _resolve_num_ctx)
+            opts["num_ctx"] = await self._resolve_num_ctx()
+        else:
+            await self._warn_small_server_ctx()
+        return opts
+
+    async def _warn_small_server_ctx(self) -> None:
+        """num_ctx yuborilmaganda: serverdagi oyna promptlarimizga yetadimi.
+        /api/ps natijasi keshlanadi (CTX_CACHE_TTL), ogohlantirish faqat qiymat
+        o'zgarganda yoziladi."""
+        now = time.monotonic()
+        if self._ctx_cache and now - self._ctx_cache[1] < self.CTX_CACHE_TTL:
+            return
+        loaded = 0
+        try:
+            resp = await self.http.get(
+                f"{self.base_url}/api/ps", timeout=self.CTX_PROBE_TIMEOUT
+            )
+            if resp.status_code == 200:
+                for m in resp.json().get("models") or []:
+                    if self.model in (m.get("name"), m.get("model")):
+                        loaded = int(m.get("context_length") or 0)
+                        break
+        except (httpx.HTTPError, ValueError, TypeError):
+            pass
+        self._ctx_cache = (loaded, now)
+        if loaded and loaded != self._last_logged_ctx:
+            log = logger.warning if loaded < self.min_num_ctx else logger.info
+            log(
+                "Ollama server num_ctx: %d (minimum kerak: %d)%s",
+                loaded,
+                self.min_num_ctx,
+                " — KICHIK: promptlar kesiladi, serverda OLLAMA_CONTEXT_LENGTH ni oshiring"
+                if loaded < self.min_num_ctx
+                else "",
+            )
+            self._last_logged_ctx = loaded
+
     @staticmethod
     def _build_messages(
         prompt: str, system_prompt: str | None
@@ -143,18 +192,7 @@ class OllamaClient(BaseAIClient):
             "think": think,
             # Model VRAM'dan tushirilmasin (qara: config.ai.OLLAMA_KEEP_ALIVE)
             "keep_alive": self.keep_alive,
-            "options": {
-                "temperature": (
-                    temperature
-                    if temperature is not None
-                    else self.default_temperature
-                ),
-                "num_predict": max_tokens,
-                # Kontekst oynasini aniq belgilaymiz — aks holda Ollama standart
-                # 2048'da RAG kontekst + system prompt'ni oldidan kesib tashlaydi.
-                # Qiymat yuklangan modelga moslashadi (qara: _resolve_num_ctx).
-                "num_ctx": await self._resolve_num_ctx(),
-            },
+            "options": await self._options(temperature, max_tokens),
         }
         # JSON sxema berilsa — Ollama chiqishni STRUKTURA bo'yicha majburlaydi.
         # Ilgari sxema qabul qilinardi-yu, so'rovga umuman qo'shilmasdi: model
@@ -243,15 +281,7 @@ class OllamaClient(BaseAIClient):
             "stream": True,
             "think": False,
             "keep_alive": self.keep_alive,
-            "options": {
-                "temperature": (
-                    temperature
-                    if temperature is not None
-                    else self.default_temperature
-                ),
-                "num_predict": max_tokens,
-                "num_ctx": await self._resolve_num_ctx(),
-            },
+            "options": await self._options(temperature, max_tokens),
         }
         try:
             async with self.http.stream(
