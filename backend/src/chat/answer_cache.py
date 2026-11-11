@@ -20,6 +20,7 @@ from collections.abc import AsyncIterator
 from datetime import timedelta
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from redis.asyncio import Redis
@@ -29,6 +30,7 @@ from src.chat.usecases import normalize_question
 from src.core.ai.guard import mask_pii
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.version import get_kb_version
+from src.knowledge import prompts as _prompts, usecases as _usecases
 from src.knowledge.lang import detect_reply_lang
 from src.knowledge.schemas import ChatTurn
 from src.knowledge.usecases import AnswerQuestionUseCase
@@ -37,10 +39,29 @@ from src.main.config import config
 logger = get_logger(__name__)
 
 CACHEABLE_INTENTS = frozenset({"product", "concept", "branch"})
-# Javob mantig'i yoki promptlar jiddiy o'zgarsa — versiyani oshiring:
-# eski keshlangan javoblar o'z-o'zidan ishlatilmay qoladi.
-# v2: veb-qidiruv (concept savoli "cbu.uz'ni tekshiring" deb keshlangan edi)
 KEY_PREFIX = "answer-cache:v2"
+
+
+def _code_fingerprint() -> str:
+    """Promptlar va javob mantig'i fayllarining qisqa xeshi.
+
+    Kesh kalitiga kiradi: prompt yoki javob kodi o'zgarib deploy qilinsa,
+    eski keshlangan javoblar O'Z-O'ZIDAN ishlatilmay qoladi. Ilgari versiyani
+    qo'lda oshirish kerak edi va unutilsa, yangi kod chiqqandan keyin ham
+    eski ("cbu.uz'ni tekshiring", "topilmadi") javoblar keshdan qaytardi."""
+    h = hashlib.sha256()
+    for mod in (_prompts, _usecases):
+        try:
+            h.update(Path(str(mod.__file__)).read_bytes())
+        except OSError:
+            h.update(str(mod).encode())
+    return h.hexdigest()[:10]
+
+
+_FINGERPRINT = _code_fingerprint()
+# Bazada topilmagan javob keshlanmaydi: bazaga hujjat qo'shilsa yoki saytdan
+# topilsa, keyingi safar to'g'ri javob chiqishi kerak.
+_NOT_FOUND_MARKERS = ("topilmadi", "топилмади", "не найден")
 STATS_PREFIX = "answer-cache:stats"
 # Keshdan javob "oqim" bo'lib keladi — frontend odatdagidek ko'rsatsin
 _REPLAY_CHUNK = 400
@@ -63,7 +84,7 @@ async def cache_key(redis: Redis, question: str, lang: str) -> str | None:
     # Veb-qidiruv yoqilishi/o'chirilishi javobni o'zgartiradi — kalitga kiradi
     web = int(config.web_search.WEB_SEARCH_ENABLED)
     digest = hashlib.sha256(f"{config.ai.OLLAMA_MODEL}|{lang}|web{web}|{norm}".encode()).hexdigest()[:32]
-    return f"{KEY_PREFIX}:{version}:{digest}"
+    return f"{KEY_PREFIX}:{_FINGERPRINT}:{version}:{digest}"
 
 
 async def _count(redis: Redis, kind: str) -> None:
@@ -138,6 +159,7 @@ async def cached_answer_stream(
         and use_case.last_intent in CACHEABLE_INTENTS
         and done.get("finish_reason") == "stop"
         and text.strip()
+        and not any(m in text.lower() for m in _NOT_FOUND_MARKERS)
     ):
         try:
             await redis.set(
