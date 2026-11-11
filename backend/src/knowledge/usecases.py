@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator
-from datetime import date
+from datetime import date, timedelta
 from itertools import chain, zip_longest
 import json
 import math
@@ -57,6 +57,7 @@ from src.knowledge.prompts import (
     PDF_VISION_SYSTEM,
     PROFANITY_REPLY,
     QUERY_REWRITE_SYSTEM,
+    RAG_WEB_ADDENDUM,
     RATES_SYSTEM,
     RU_CANNED_REPLIES,
     RU_LANGUAGE_OVERRIDE,
@@ -836,7 +837,9 @@ def _web_prompt(question: str, hits: list["web_search.WebHit"]) -> str:
     pages = "\n\n".join(
         f"[{i}] {h.title} ({h.url})\n{h.text}" for i, h in enumerate(hits, 1)
     )
-    return f"PAGES:\n{pages}\n\nSAVOL: {question}"
+    # Bugungi sana — model eski press-relizni "hozirgi" deb bermasin
+    today = (get_utc_now() + timedelta(hours=5)).date().isoformat()
+    return f"TODAY: {today}\n\nPAGES:\n{pages}\n\nSAVOL: {question}"
 
 
 def _web_sources(hits: list["web_search.WebHit"]) -> list[SourceRef]:
@@ -4030,6 +4033,14 @@ class AnswerQuestionUseCase:
             )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
+        # Bazadan bo'laklar topildi, lekin ular savolga umuman javob bermasa
+        # (masalan bazada yo'q mahsulot) — model NEEDS_WEB deydi va javob
+        # ruxsat etilgan saytlardan (turonbank.uz ham) olinadi.
+        web_ok = system is STRICT_RAG_SYSTEM and _web_eligible(decision, question)
+        if web_ok:
+            system = system + RAG_WEB_ADDENDUM
+        head: str | None = "" if web_ok else None
+        needs_web = False
         src_dump = [{"title": s.title, "score": s.score} for s in sources]
         # Aralash alifboli so'zni tuzatish — concept yo'lidagi bilan bir xil
         # sabab: model bitta so'z ichida kirill va lotinni aralashtirib
@@ -4044,6 +4055,23 @@ class AnswerQuestionUseCase:
             temperature=self.TEMPERATURE,
             max_tokens=max_toks,
         ):
+            # Javob boshini ushlab turamiz: NEEDS_WEB foydalanuvchiga chiqmasin
+            if head is not None and ev.get("type") in ("delta", "done"):
+                if ev.get("type") == "delta":
+                    head += ev["text"]
+                    if len(head.strip()) <= len(WEB_LOOKUP_TOKEN):
+                        continue
+                if _is_web_lookup(head):
+                    needs_web = True
+                    break
+                if ev.get("type") == "delta":
+                    ev = {**ev, "text": head}
+                elif head:
+                    yield {
+                        "type": "delta",
+                        "text": tr.feed(head) if tr is not None else sf.feed(head) if sf is not None else head,
+                    }
+                head = None
             if ev.get("type") == "delta":
                 if tr is not None:
                     ev = {**ev, "text": tr.feed(ev["text"])}
@@ -4064,6 +4092,21 @@ class AnswerQuestionUseCase:
                     int(ev.get("completion_tokens", 0)) + router_tokens
                 )
             yield ev
+        if needs_web:
+            async for ev in self._web_stream(
+                question, decision, lang, want_cyrillic, router_tokens
+            ):
+                yield ev
+            if self.last_outcome != "web":
+                self.last_outcome = "no_info"
+                yield {"type": "delta", "text": _localize(NO_INFO_REPLY, lang)}
+                yield {
+                    "type": "done",
+                    "completion_tokens": router_tokens,
+                    "finish_reason": "stop",
+                    "max_tokens": self.MAX_TOKENS,
+                    "sources": [],
+                }
 
     async def execute(
         self, question: str, history: list[ChatTurn] | None = None
@@ -4430,6 +4473,9 @@ class AnswerQuestionUseCase:
             )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
+        web_ok = system is STRICT_RAG_SYSTEM and _web_eligible(decision, question)
+        if web_ok:
+            system = system + RAG_WEB_ADDENDUM
 
         gen = await self.ai_client.generate_text_with_usage(
             prompt,
@@ -4437,6 +4483,20 @@ class AnswerQuestionUseCase:
             temperature=self.TEMPERATURE,
             max_tokens=max_toks,
         )
+        if web_ok and _is_web_lookup(gen.text):
+            web = await self._web_answer(
+                question, decision, lang, want_cyrillic, router_tokens
+            )
+            if web is not None:
+                return web
+            self.last_outcome = "no_info"
+            return AnswerResult(
+                answer=_localize(NO_INFO_REPLY, lang),
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=router_tokens,
+                max_tokens=self.MAX_TOKENS,
+            )
 
         answer = _dedupe_source_links(_strip_stray_followup(gen.text.strip()))
         if want_cyrillic:

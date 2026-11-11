@@ -262,3 +262,46 @@ async def test_concept_needs_web_but_nothing_found(enabled: None, monkeypatch: p
     text, _ = await _run(uc, "Markaziy bankning asosiy stavkasi hozir qancha?")
     assert text == NO_INFO_REPLY
     assert uc.last_outcome == "no_info"
+
+
+# ---- Bazadan bo'lak topildi, lekin javob bermaydi: model NEEDS_WEB ----
+
+
+def _rag_uc(monkeypatch: pytest.MonkeyPatch, ai: _FakeAI) -> AnswerQuestionUseCase:
+    uc = _uc(monkeypatch, ai)
+
+    async def some_results(*a: Any, **kw: Any) -> Any:
+        return [({"title": "Avtokredit", "chunk_text": "x"}, 0.9)], []
+
+    async def assemble(*a: Any, **kw: Any) -> Any:
+        return "PROMPT", []
+
+    monkeypatch.setattr(uc, "_search_chunks", some_results)
+    monkeypatch.setattr(uc, "_assemble", assemble)
+    return uc
+
+
+@pytest.mark.asyncio
+async def test_rag_irrelevant_context_goes_online(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_search(q: str) -> list[WebHit]:
+        return [HIT]
+
+    monkeypatch.setattr(web_search, "search", fake_search)
+    uc = _rag_uc(monkeypatch, _TwoStepAI("NEEDS_WEB", "Yuridik shaxslarga kreditlar bor [1]."))
+    text, done = await _run(uc, "Yuridik shaxslar uchun qanday kreditlar bor")
+    assert "NEEDS_WEB" not in text
+    assert uc.last_outcome == "web"
+    assert done["sources"][0]["kind"] == "web"
+
+
+@pytest.mark.asyncio
+async def test_rag_normal_answer_untouched(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def boom(q: str) -> list[WebHit]:
+        raise AssertionError("internetga chiqmasligi kerak edi")
+
+    monkeypatch.setattr(web_search, "search", boom)
+    answer = "Avtokredit yillik 24 foiz."
+    uc = _rag_uc(monkeypatch, _FakeAI(answer))
+    text, _ = await _run(uc, "Avtokredit foizi qancha")
+    assert text == answer
+    assert uc.last_outcome == "answered"
