@@ -1849,6 +1849,26 @@ _GENERIC_TITLE_WORDS = frozenset(
     "bank",
     "banki",
     "turonbank",
+    # Yordamchi so'zlar: o'zi hech narsani anglatmaydi. "Markaziy bank qaysi
+    # banklar BILAN hamkorlik qiladi" savoli «Biz bilan bog'lanish» sahifasiga
+    # qisman mos kelib, bot "shu sahifa haqidami?" deb so'rab qolgan edi.
+    "bilan",
+    "biz",
+    "siz",
+    "uchun",
+    "haqida",
+    "orqali",
+    "yicha",
+    "qanday",
+    "qaysi",
+    "qancha",
+    "nima",
+    "kabi",
+    "yoki",
+    "lanish",
+    "dlya",
+    "kak",
+    "chto",
 }
 
 
@@ -2596,8 +2616,16 @@ class AnswerQuestionUseCase:
                     # To'liqroq nom ustun ("Tez pul mikroqarz" > "Mikroqarz")
                     if len(title) > exact_len:
                         exact, exact_len = title, len(title)
-                elif any(t not in _GENERIC_TITLE_WORDS for t in common):
-                    partial.append(title)
+                else:
+                    # Qisman moslik faqat nomning O'ZIGA XOS qismi TO'LIQ
+                    # aytilganda: "meros" -> «Meros omonati» (yetishmagani
+                    # faqat turkum so'zi). Ilgari BITTA tasodifiy so'z yetardi:
+                    # "...banklar BILAN hamkorlik" -> «Biz bilan bog'lanish»,
+                    # "tez" -> «Tez pul mikroqarz» — bot savol ma'nosini
+                    # tashlab, o'sha sahifa haqida so'rab qolardi.
+                    distinct = [t for t in toks if t not in _GENERIC_TITLE_WORDS]
+                    if distinct and all(t in qwords for t in distinct):
+                        partial.append(title)
         # Bittadan ko'p bo'lsa ham chegaradan ortig'i kerak emas: chaqiruvchi
         # faqat "nechta" ekanini biladi va ko'p bo'lsa aniqlashtirmaydi.
         return exact, partial[: _CLARIFY_MAX_OPTIONS + 1]

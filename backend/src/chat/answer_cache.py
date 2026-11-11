@@ -37,7 +37,10 @@ from src.main.config import config
 logger = get_logger(__name__)
 
 CACHEABLE_INTENTS = frozenset({"product", "concept", "branch"})
-KEY_PREFIX = "answer-cache:v1"
+# Javob mantig'i yoki promptlar jiddiy o'zgarsa — versiyani oshiring:
+# eski keshlangan javoblar o'z-o'zidan ishlatilmay qoladi.
+# v2: veb-qidiruv (concept savoli "cbu.uz'ni tekshiring" deb keshlangan edi)
+KEY_PREFIX = "answer-cache:v2"
 STATS_PREFIX = "answer-cache:stats"
 # Keshdan javob "oqim" bo'lib keladi — frontend odatdagidek ko'rsatsin
 _REPLAY_CHUNK = 400
@@ -57,7 +60,9 @@ async def cache_key(redis: Redis, question: str, lang: str) -> str | None:
     if len(norm) < 3:
         return None
     version = await get_kb_version(redis)
-    digest = hashlib.sha256(f"{config.ai.OLLAMA_MODEL}|{lang}|{norm}".encode()).hexdigest()[:32]
+    # Veb-qidiruv yoqilishi/o'chirilishi javobni o'zgartiradi — kalitga kiradi
+    web = int(config.web_search.WEB_SEARCH_ENABLED)
+    digest = hashlib.sha256(f"{config.ai.OLLAMA_MODEL}|{lang}|web{web}|{norm}".encode()).hexdigest()[:32]
     return f"{KEY_PREFIX}:{version}:{digest}"
 
 
