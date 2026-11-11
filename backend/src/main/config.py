@@ -184,8 +184,14 @@ class AIConfig(BaseModel):
     # SHART: serverdagi oyna OLLAMA_MIN_NUM_CTX dan kichik bo'lmasin — aks
     # holda Ollama promptning boshini (system prompt) jimgina kesadi. Kichik
     # bo'lsa logga ogohlantirish yoziladi.
-    # True — eski xatti-harakat (num_ctx yuklangan modelga moslab yuboriladi).
-    OLLAMA_SEND_NUM_CTX: bool = False
+    # True — num_ctx YUKLANGAN modelning oynasiga moslab yuboriladi (qara:
+    # _resolve_num_ctx) — amalda bu ham "serverdagi qiymat", lekin model
+    # qayta yuklanmaydi.
+    # DIQQAT (2026-11-11): False'da yuborilmagan num_ctx o'rniga Ollama
+    # serverning standart qiymatini qo'yadi; yuklangan model boshqa oyna bilan
+    # tursa (boshqa mijoz yuborgan), model qayta yuklanib (~60 s) router
+    # timeout bo'ldi. False faqat BARCHA mijozlar num_ctx yubormaganda xavfsiz.
+    OLLAMA_SEND_NUM_CTX: bool = True
     # Model oxirgi so'rovdan keyin VRAM'da qancha turadi. Ollama standarti
     # atigi 5 daqiqa: 9 daqiqa jimlikdan keyin model tushirilib, keyingi
     # savolda 27B modelni qayta yuklash router timeout'idan (20 s) uzoq
