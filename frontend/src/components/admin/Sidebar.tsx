@@ -1,12 +1,11 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import HButton from "../common/HButton";
 import Logo from "../common/Logo";
 import { PRIMARY, getSideTokens } from "../chat/theme";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { AdminView } from "../../types/admin";
 import type { AdminStrings } from "../../types/i18n";
-import { fetchMe, logout, platformsUrl, type Me } from "../../services/authService";
+import { fetchMe, goToLogin, logout, platformsUrl, type Me } from "../../services/authService";
 import styles from "./Sidebar.module.css";
 
 // "Platformalar" ikonkasi — chat sidebar'idagi bilan bir xil (portal tugmasi SVG'si)
@@ -39,7 +38,6 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ view, setView, usersCount, newReportsCount, dislikedCount = 0, collapsed, t: admin }: SidebarProps) {
-  const navigate = useNavigate();
   // Ranglar chat sidebar'i bilan AYNAN bir manbadan (`chat/theme.ts`) keladi —
   // ikki panel bir xil ko'rinishi kerak, faqat ichidagi funksiyalar farq qiladi.
   const { theme } = useTheme();
@@ -59,8 +57,8 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, di
   }, [menuOpen]);
 
   useEffect(() => {
-    fetchMe().then(setMe).catch(() => navigate("/login"));
-  }, [navigate]);
+    fetchMe().then(setMe).catch(() => goToLogin());
+  }, []);
 
   const meName = me?.full_name || "Admin";
   const meHandle = me ? "@" + me.username : "";
@@ -71,7 +69,7 @@ export default function Sidebar({ view, setView, usersCount, newReportsCount, di
 
   const doLogout = async () => {
     await logout();
-    navigate("/login");
+    goToLogin();
   };
 
   const navItems: NavItem[] = [

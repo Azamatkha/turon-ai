@@ -5,7 +5,7 @@ import { useChatHistory } from "../hooks/useChatHistory";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useTheme } from "../contexts/ThemeContext";
 import { chatDict, chatStaticDict } from "../locales";
-import { fetchMe, logout, PORTAL_LOGIN_URL, type Me } from "../services/authService";
+import { fetchMe, goToLogin, logout, PORTAL_LOGIN_URL, type Me } from "../services/authService";
 import { getThemeTokens, getSideTokens } from "../components/chat/theme";
 import Sidebar, { SW, COLL } from "../components/chat/Sidebar";
 import SidebarToggle from "../components/chat/SidebarToggle";
@@ -67,8 +67,8 @@ export default function ChatPage() {
         }
         if (!me.ip_number && !shown) setPromptMe(me);
       })
-      .catch(() => navigate("/login"));
-  }, [navigate]);
+      .catch(() => goToLogin());
+  }, []);
   const closeContactsPrompt = useCallback(() => setPromptMe(null), []);
 
   // URL → holat: manzildagi sessionId (to'g'ridan-to'g'ri link yoki refresh) faol suhbatga aylanadi

@@ -739,6 +739,7 @@ export interface AdminStrings {
   allDepts: string;
   // Foydalanuvchilar sahifasidagi holat filtri (onlayn/oflayn) — "hammasi" varianti
   allStatuses: string;
+  verifiedFilter: string;
   password: string;
   nameLoginRequired: string;
   passTooShort: string;

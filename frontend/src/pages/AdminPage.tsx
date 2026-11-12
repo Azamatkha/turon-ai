@@ -100,6 +100,15 @@ const mapUser = (u: ApiUser): AdminUser => ({
   keywords: u.keywords ?? [],
 });
 
+type UserFilter = "" | AdminStatus | "verified" | "unverified";
+
+function matchesFilter(u: AdminUser, f: UserFilter): boolean {
+  if (!f) return true;
+  if (f === "verified") return u.verified;
+  if (f === "unverified") return !u.verified;
+  return u.status === f;
+}
+
 export default function AdminPage() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
@@ -129,7 +138,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [dept, setDept] = useState("");
   // Holat filtri: "" — hammasi, aks holda faqat Online yoki Offline
-  const [statusFilter, setStatusFilter] = useState<"" | AdminStatus>("");
+  // Holat filtri: onlayn/oflayn yoki tasdiqlangan/tasdiqlanmagan
+  const [statusFilter, setStatusFilter] = useState<UserFilter>("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [allDepts, setAllDepts] = useState<string[]>([]); // filter uchun barqaror ro'yxat
   const [navCollapsed, setNavCollapsed] = useState(false);
@@ -455,18 +465,20 @@ export default function AdminPage() {
                 />
                 <FilterSelect
                   value={statusFilter}
-                  onChange={(v) => setStatusFilter(v as "" | AdminStatus)}
+                  onChange={(v) => setStatusFilter(v as UserFilter)}
                   options={[
                     { value: "", label: t.allStatuses },
                     { value: "Online", label: t.statusLabel.Online },
                     { value: "Offline", label: t.statusLabel.Offline },
+                    { value: "verified", label: t.verifiedFilter },
+                    { value: "unverified", label: t.unverifiedBadge },
                   ]}
                 />
               </div>
               {/* key: qidiruv, bo'lim yoki holat o'zgarsa jadval 1-sahifadan boshlanadi */}
               <UsersTable
                 key={`${search}|${dept}|${statusFilter}`}
-                users={statusFilter ? users.filter((u) => u.status === statusFilter) : users} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
+                users={users.filter((u) => matchesFilter(u, statusFilter))} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
             </>
           )}
         </div>

@@ -434,6 +434,7 @@ export const admin: AdminStrings = {
   selectLanguage: "Выбрать язык",
   allDepts: "Все департаменты",
   allStatuses: "Все статусы",
+  verifiedFilter: "Подтверждённые",
   password: "Пароль",
   nameLoginRequired: "Имя и логин не должны быть пустыми.",
   passTooShort: "Пароль должен содержать не менее 4 символов.",

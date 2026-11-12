@@ -435,6 +435,7 @@ export const admin: AdminStrings = {
   selectLanguage: "Тилни танлаш",
   allDepts: "Барча департаментлар",
   allStatuses: "Барча ҳолатлар",
+  verifiedFilter: "Тасдиқланган",
   password: "Парол",
   nameLoginRequired: "Исм ва логин бўш бўлмаслиги керак.",
   passTooShort: "Парол камида 4 та белгидан иборат бўлсин.",

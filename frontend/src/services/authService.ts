@@ -157,7 +157,7 @@ function redirectToLogin(): void {
   if (redirectingToLogin) return;
   redirectingToLogin = true;
   clearStorage();
-  window.location.assign(PORTAL_LOGIN_URL);
+  goToLogin();
 }
 
 // Admin userning tasdiqini olib tashlasa, brauzerdagi saqlangan profil hali
@@ -359,6 +359,14 @@ export async function recheckVerified(): Promise<boolean> {
 // Chiqishdan keyin o'tiladigan sahifa — Turon AI portalining logini
 // (chatning o'z /login sahifasi emas)
 export const PORTAL_LOGIN_URL = "https://turon-ai.turonbank.uz/login";
+
+// Login qilinmagan / sessiya tugagan foydalanuvchini login'ga jo'natadi.
+// Prod'da — portal logini; chatning o'z sahifasi (/chat/login) faqat manzilni
+// qo'lda yozganda ochiladi. Lokal `npm run dev` da portal yo'q — o'z /login.
+export function goToLogin(): void {
+  if (import.meta.env.DEV) window.location.assign(`${import.meta.env.BASE_URL}login`);
+  else window.location.replace(PORTAL_LOGIN_URL);
+}
 
 export async function logout(): Promise<void> {
   try {
