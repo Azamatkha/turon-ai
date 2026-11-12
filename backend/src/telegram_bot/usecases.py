@@ -7,6 +7,7 @@ from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.telegram_bot.models import TelegramBotUser
+from src.telegram_bot.repositories import TgUserFilter, TgUserSort
 from src.telegram_bot.schemas import (
     BotSyncRequest,
     BotSyncResult,
@@ -74,11 +75,21 @@ class ListTgUsersUseCase:
         self.uow = uow
 
     async def execute(
-        self, search: str | None = None, page: int = 1, size: int = 20
+        self,
+        search: str | None = None,
+        page: int = 1,
+        size: int = 20,
+        status: TgUserFilter | None = None,
+        sort: TgUserSort = "joined",
     ) -> TgUserPage:
         async with self.uow as uow:
             rows, total = await uow.telegram_bot_users.list_with_counts(
-                uow.session, search=search, page=page, size=size
+                uow.session,
+                search=search,
+                page=page,
+                size=size,
+                status=status,
+                sort=sort,
             )
             return TgUserPage(
                 items=[_to_user_view(u, count, pending) for u, count, pending in rows],

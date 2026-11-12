@@ -45,11 +45,18 @@ export interface TgMessagePage {
   total: number;
 }
 
+// Filtr: javob kutayotgan / ro'yxatdan o'tgan / o'tmagan / bloklangan
+export type TgUserFilter = "" | "pending" | "registered" | "unregistered" | "banned";
+// Saralash: botga kirgan vaqti (standart) yoki oxirgi murojaat
+export type TgUserSort = "joined" | "last_message";
+
 export async function listTgUsers(
-  opts: { search?: string; page?: number; size?: number } = {}
+  opts: { search?: string; page?: number; size?: number; status?: TgUserFilter; sort?: TgUserSort } = {}
 ): Promise<TgUserPage> {
   const q = new URLSearchParams();
   if (opts.search?.trim()) q.set("search", opts.search.trim());
+  if (opts.status) q.set("status", opts.status);
+  if (opts.sort) q.set("sort", opts.sort);
   if (opts.page != null) q.set("page", String(opts.page));
   if (opts.size != null) q.set("size", String(opts.size));
   const qs = q.toString();

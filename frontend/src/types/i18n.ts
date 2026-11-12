@@ -485,6 +485,12 @@ export interface AdminStrings {
   tgBotColLang: string;
   tgBotColMessages: string;
   tgBotColLast: string;
+  tgBotColJoined: string;
+  tgBotFilterAll: string;
+  tgBotFilterPending: string;
+  tgBotFilterRegistered: string;
+  tgBotSortJoined: string;
+  tgBotSortLast: string;
   tgBotBanned: string;
   tgBotNotRegistered: string;
   tgBotPending: (n: number) => string;

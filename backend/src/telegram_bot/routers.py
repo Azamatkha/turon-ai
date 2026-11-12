@@ -24,6 +24,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from src.telegram_bot.dependencies import verify_bot_key
+from src.telegram_bot.repositories import TgUserFilter, TgUserSort
 from src.telegram_bot.schemas import (
     BotSyncRequest,
     BotSyncResult,
@@ -66,9 +67,15 @@ async def list_tg_users(
     search: Annotated[str | None, Query(max_length=100)] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
+    status: TgUserFilter | None = None,
+    sort: TgUserSort = "joined",
 ) -> TgUserPage:
-    """Admin: bot userlari (ism, username yoki telefon bo'yicha qidiruv)."""
-    return await use_case.execute(search=search, page=page, size=size)
+    """Admin: bot userlari. Qidiruv: ism, username, telefon yoki Telegram ID.
+    Filtr: javob kutayotgan / ro'yxatdan o'tgan / o'tmagan / bloklangan.
+    Saralash: botga kirgan vaqti (standart) yoki oxirgi murojaat."""
+    return await use_case.execute(
+        search=search, page=page, size=size, status=status, sort=sort
+    )
 
 
 @admin_router.get("/users/{user_id}/messages", response_model=TgMessagePage)

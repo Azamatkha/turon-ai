@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import TelegramBotChatModal from "./TelegramBotChatModal";
-import { listTgUsers, type ApiTgUser } from "../../services/telegramBotService";
+import FilterSelect from "./FilterSelect";
+import {
+  listTgUsers,
+  type ApiTgUser,
+  type TgUserFilter,
+  type TgUserSort,
+} from "../../services/telegramBotService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./TelegramBotView.module.css";
 
@@ -46,6 +52,8 @@ export default function TelegramBotView({ mounted, t: admin }: TelegramBotViewPr
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<TgUserFilter>("");
+  const [sort, setSort] = useState<TgUserSort>("joined");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<ApiTgUser | null>(null);
@@ -62,7 +70,7 @@ export default function TelegramBotView({ mounted, t: admin }: TelegramBotViewPr
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listTgUsers({ search: query, page, size: PAGE_SIZE });
+      const data = await listTgUsers({ search: query, page, size: PAGE_SIZE, status, sort });
       setItems(data.items);
       setTotal(data.total);
       setErr(null);
@@ -73,7 +81,7 @@ export default function TelegramBotView({ mounted, t: admin }: TelegramBotViewPr
     } finally {
       setLoading(false);
     }
-  }, [query, page, admin.tgBotLoadError]);
+  }, [query, page, status, sort, admin.tgBotLoadError]);
 
   useEffect(() => {
     void load();
@@ -93,6 +101,31 @@ export default function TelegramBotView({ mounted, t: admin }: TelegramBotViewPr
           placeholder={admin.tgBotSearchPh}
           aria-label={admin.tgBotSearchPh}
         />
+        <FilterSelect
+          value={status}
+          onChange={(v) => {
+            setStatus(v as TgUserFilter);
+            setPage(1);
+          }}
+          options={[
+            { value: "", label: admin.tgBotFilterAll },
+            { value: "pending", label: admin.tgBotFilterPending },
+            { value: "registered", label: admin.tgBotFilterRegistered },
+            { value: "unregistered", label: admin.tgBotNotRegistered },
+            { value: "banned", label: admin.tgBotBanned },
+          ]}
+        />
+        <FilterSelect
+          value={sort}
+          onChange={(v) => {
+            setSort(v as TgUserSort);
+            setPage(1);
+          }}
+          options={[
+            { value: "joined", label: admin.tgBotSortJoined },
+            { value: "last_message", label: admin.tgBotSortLast },
+          ]}
+        />
         <button type="button" className={styles.refreshBtn} onClick={() => void load()} disabled={loading}>
           {admin.faceLogsRefresh}
         </button>
@@ -107,6 +140,7 @@ export default function TelegramBotView({ mounted, t: admin }: TelegramBotViewPr
           <span>{admin.tgBotColPhone}</span>
           <span>{admin.tgBotColLang}</span>
           <span>{admin.tgBotColMessages}</span>
+          <span>{admin.tgBotColJoined}</span>
           <span>{admin.tgBotColLast}</span>
         </div>
 
@@ -140,6 +174,7 @@ export default function TelegramBotView({ mounted, t: admin }: TelegramBotViewPr
                 <span className={`${styles.badge} ${styles.pending}`}>{admin.tgBotPending(u.pending_count)}</span>
               )}
             </span>
+            <span className={styles.colMuted}>{fmtDate(u.first_seen_at)}</span>
             <span className={styles.colMuted}>{fmtDate(u.last_message_at)}</span>
           </button>
         ))}

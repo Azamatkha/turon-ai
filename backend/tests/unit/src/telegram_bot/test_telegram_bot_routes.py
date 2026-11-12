@@ -152,7 +152,34 @@ async def test_admin_lists_tg_users(
     payload = response.json()
     assert payload["total"] == 1
     assert payload["items"][0]["pending_count"] == 1
-    use_case.execute.assert_awaited_once_with(search="ali", page=2, size=20)
+    use_case.execute.assert_awaited_once_with(
+        search="ali", page=2, size=20, status=None, sort="joined"
+    )
+
+
+@pytest.mark.asyncio
+async def test_admin_lists_tg_users_with_filter_and_sort(
+    async_client, dependency_overrides: DependencyOverrides
+) -> None:
+    dependency_overrides.set(
+        get_current_user, ProvideValue(build_user(role=UserRole.ADMIN))
+    )
+    use_case = FakeUseCase(TgUserPage(items=[], total=0))
+    dependency_overrides.set(get_list_tg_users_use_case, ProvideValue(use_case))
+
+    response = await async_client.get(
+        "/v1/admin/telegram-bot/users",
+        params={"status": "pending", "sort": "last_message"},
+    )
+
+    assert response.status_code == 200
+    use_case.execute.assert_awaited_once_with(
+        search=None, page=1, size=20, status="pending", sort="last_message"
+    )
+    bad = await async_client.get(
+        "/v1/admin/telegram-bot/users", params={"status": "nimadir"}
+    )
+    assert bad.status_code == 422
 
 
 @pytest.mark.asyncio

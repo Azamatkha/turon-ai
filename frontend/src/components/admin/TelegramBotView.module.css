@@ -80,7 +80,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 2fr 1fr 90px 1.3fr 150px;
+  grid-template-columns: 2fr 1fr 80px 1.3fr 140px 140px;
   align-items: center;
   gap: 12px;
   width: 100%;
