@@ -312,7 +312,7 @@ async def employee_stats(
 ) -> dict[str, Any]:
     """Diagnostika: bazada xodim (doc_type=employee) nuqtalari bor-yo'qligini
     va bo'limlar bo'yicha sonini ko'rsatadi."""
-    recs = await store.scroll_all_records(limit=10000)
+    recs = await store.scroll_all_records()
     emps = [p for _, p in recs if p.get("doc_type") == "employee"]
     depts: dict[str, int] = {}
     for p in emps:

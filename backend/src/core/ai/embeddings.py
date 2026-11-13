@@ -23,12 +23,14 @@ class OllamaEmbedder:
         self.timeout = config.ai.TIMEOUT_SECONDS
         self.http = http
 
-    async def embed(self, text: str) -> list[float]:
-        """Return the embedding vector for a single piece of text."""
+    # Bitta so'rovda yuboriladigan matnlar soni (yuklashda ishlatiladi).
+    BATCH_SIZE = 32
+
+    async def _request(self, payload_input: str | list[str]) -> list[list[float]]:
         try:
             resp = await self.http.post(
                 f"{self.base_url}/v1/embeddings",
-                json={"model": self.model, "input": text},
+                json={"model": self.model, "input": payload_input},
                 timeout=self.timeout,
             )
         except httpx.HTTPError as exc:
@@ -44,12 +46,36 @@ class OllamaEmbedder:
 
         data: dict[str, Any] = resp.json()
         try:
-            vector: list[float] = data["data"][0]["embedding"]
-        except (KeyError, IndexError, TypeError) as exc:
+            items = sorted(data["data"], key=lambda d: d.get("index", 0))
+            vectors: list[list[float]] = [item["embedding"] for item in items]
+        except (KeyError, IndexError, TypeError, AttributeError) as exc:
             raise InfrastructureException(
                 f"Unexpected embedding response: {str(data)[:200]}"
             ) from exc
-        return vector
+        return vectors
+
+    async def embed(self, text: str) -> list[float]:
+        """Return the embedding vector for a single piece of text."""
+        vectors = await self._request(text)
+        if not vectors:
+            raise InfrastructureException("Unexpected embedding response: empty")
+        return vectors[0]
+
+    async def embed_many(self, texts: list[str]) -> list[list[float]]:
+        """Ko'p matnni BATCH qilib vektorga o'giradi (tartib saqlanadi).
+
+        Yuklashda har bo'lak uchun alohida HTTP so'rov o'rniga BATCH_SIZE
+        tadan yuboriladi — katta PDF/xodimlar ro'yxati ancha tez yoziladi."""
+        out: list[list[float]] = []
+        for start in range(0, len(texts), self.BATCH_SIZE):
+            batch = texts[start : start + self.BATCH_SIZE]
+            vectors = await self._request(batch)
+            if len(vectors) != len(batch):
+                raise InfrastructureException(
+                    f"Embedding: {len(batch)} ta matnga {len(vectors)} ta vektor qaytdi"
+                )
+            out.extend(vectors)
+        return out
 
 
 async def get_embedder(

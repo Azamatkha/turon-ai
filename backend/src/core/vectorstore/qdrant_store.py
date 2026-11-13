@@ -5,6 +5,7 @@ so this is safe to construct at startup even if Qdrant is not up yet.
 """
 
 import hashlib
+import logging
 from typing import Any
 from uuid import UUID
 
@@ -14,13 +15,22 @@ from qdrant_client.models import (
     FieldCondition,
     Filter,
     MatchValue,
+    PayloadSchemaType,
     PointIdsList,
     PointStruct,
+    Range,
     VectorParams,
 )
 
 from src.core.vectorstore.version import bump_kb_version
 from src.main.config import config
+
+logger = logging.getLogger(__name__)
+
+# Filtr ishlatiladigan payload maydonlari. Indekssiz Qdrant har filtrda butun
+# kolleksiyani skan qiladi — baza kattalashgani sari sekinlashadi.
+_KEYWORD_INDEXES = ("title", "lang", "ip", "doc_type")
+_INTEGER_INDEXES = ("chunk_index",)
 
 
 class QdrantStore:
@@ -30,6 +40,7 @@ class QdrantStore:
             port=config.qdrant.QDRANT_PORT,
         )
         self.collection = config.qdrant.QDRANT_COLLECTION
+        self._indexes_ready = False
 
     async def ensure_collection(self, dim: int) -> None:
         """Create the collection (size=dim, cosine) if it does not exist yet."""
@@ -37,6 +48,34 @@ class QdrantStore:
             await self.client.create_collection(
                 collection_name=self.collection,
                 vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+            )
+        await self.ensure_payload_indexes()
+
+    async def ensure_payload_indexes(self) -> None:
+        """Filtr maydonlariga payload indeks qo'yadi (idempotent: indeks bor
+        bo'lsa Qdrant hech narsa qilmaydi). Xato bo'lsa faqat logga yoziladi —
+        indekssiz ham filtrlar ishlaydi, faqat sekinroq."""
+        if self._indexes_ready:
+            return
+        try:
+            if not await self.client.collection_exists(self.collection):
+                return
+            for field in _KEYWORD_INDEXES:
+                await self.client.create_payload_index(
+                    collection_name=self.collection,
+                    field_name=field,
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
+            for field in _INTEGER_INDEXES:
+                await self.client.create_payload_index(
+                    collection_name=self.collection,
+                    field_name=field,
+                    field_schema=PayloadSchemaType.INTEGER,
+                )
+            self._indexes_ready = True
+        except Exception:
+            logger.warning(
+                "Qdrant payload indekslarini yaratib bo'lmadi", exc_info=True
             )
 
     @staticmethod
@@ -130,18 +169,48 @@ class QdrantStore:
         return out
 
     async def scroll_all_records(
-        self, limit: int = 5000
+        self, page: int = 1000
     ) -> list[tuple[Any, dict[str, Any]]]:
-        """Return (point_id, payload) for all points — id o'chirish uchun kerak."""
+        """Return (point_id, payload) for ALL points — id o'chirish uchun kerak.
+
+        Sahifalab o'qiladi: ilgari bitta `limit` bilan olinardi va kolleksiya
+        undan oshsa qolgan nuqtalar JIM tushib qolardi (eski yozuvlar
+        o'chirilmay, dublikat bo'lib qolardi)."""
         if not await self.exists():
             return []
-        records, _ = await self.client.scroll(
+        out: list[tuple[Any, dict[str, Any]]] = []
+        offset: Any = None
+        while True:
+            records, offset = await self.client.scroll(
+                collection_name=self.collection,
+                limit=page,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            out.extend((r.id, dict(r.payload or {})) for r in records)
+            if offset is None:
+                break
+        return out
+
+    async def delete_stale_chunks(self, title: str, keep: int) -> None:
+        """Sarlavhaning `chunk_index >= keep` bo'laklarini o'chiradi.
+
+        ID `title + chunk_index`dan yasaladi, shuning uchun qayta yuklashda
+        dastlabki bo'laklar ustiga yoziladi. Lekin yangi matn QISQAROQ bo'lsa,
+        eski matnning "dumi" bazada qolib, javobga eskirgan ma'lumot bo'lib
+        aralashardi."""
+        if not await self.exists():
+            return
+        await self.client.delete(
             collection_name=self.collection,
-            limit=limit,
-            with_payload=True,
-            with_vectors=False,
+            points_selector=Filter(
+                must=[
+                    FieldCondition(key="title", match=MatchValue(value=title)),
+                    FieldCondition(key="chunk_index", range=Range(gte=keep)),
+                ]
+            ),
         )
-        return [(r.id, dict(r.payload or {})) for r in records]
 
     async def delete_ids(self, ids: list[Any]) -> None:
         """Delete points by their ids (payload-filtr indeksiga bog'liq emas)."""

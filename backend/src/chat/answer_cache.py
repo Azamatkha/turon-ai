@@ -30,7 +30,11 @@ from src.chat.usecases import normalize_question
 from src.core.ai.guard import mask_pii
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.version import get_kb_version
-from src.knowledge import prompts as _prompts, usecases as _usecases
+from src.knowledge import (
+    answer_helpers as _helpers,
+    prompts as _prompts,
+    usecases as _usecases,
+)
 from src.knowledge.lang import detect_reply_lang
 from src.knowledge.schemas import ChatTurn
 from src.knowledge.usecases import AnswerQuestionUseCase
@@ -50,7 +54,7 @@ def _code_fingerprint() -> str:
     qo'lda oshirish kerak edi va unutilsa, yangi kod chiqqandan keyin ham
     eski ("cbu.uz'ni tekshiring", "topilmadi") javoblar keshdan qaytardi."""
     h = hashlib.sha256()
-    for mod in (_prompts, _usecases):
+    for mod in (_prompts, _usecases, _helpers):
         try:
             h.update(Path(str(mod.__file__)).read_bytes())
         except OSError:

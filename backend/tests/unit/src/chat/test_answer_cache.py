@@ -17,6 +17,7 @@ class _FakeUseCase:
         self.last_intent: str | None = None
         self.last_outcome = "answered"
         self.last_top_score: float | None = None
+        self.last_verdict: str | None = None
 
     async def execute_stream(self, question: str, history: Any) -> Any:
         self.calls += 1

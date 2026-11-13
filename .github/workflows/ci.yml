@@ -1,7 +1,7 @@
 # Turon-AI CI: har push (main) va pull request'da backend testlari hamda
 # frontend typecheck + build.
 #
-# BLOKLAYDIGANLAR: pytest, tsc, vite build — ular yiqilsa CI qizil.
+# BLOKLAYDIGANLAR: pytest, tsc, vitest, vite build — ular yiqilsa CI qizil.
 # BLOKLAMAYDIGANLAR: ruff va eslint (continue-on-error). Sababi: kodda
 # avvaldan qolgan lint xatolari bor; ular tozalangach `continue-on-error`
 # qatorlarini olib tashlang — shunda lint ham majburiy bo'ladi.
@@ -74,6 +74,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Testlar (vitest)
+        run: npm test
 
       - name: ESLint (hozircha bloklamaydi)
         continue-on-error: true

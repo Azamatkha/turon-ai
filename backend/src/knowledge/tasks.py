@@ -62,7 +62,7 @@ async def _scrape_exchange_rates() -> str:
     async with httpx.AsyncClient() as http:
         embedder = OllamaEmbedder(http=http)
 
-        existing = await store.scroll_all_records(limit=10000)
+        existing = await store.scroll_all_records()
         stale = [(pid, p) for pid, p in existing if p.get("title") == RATES_TITLE]
         old_text = _join_chunks([p for _, p in stale])
         # Oldingi strukturali kurslar — bugungi kurs kechagisiga nisbatan
