@@ -16,10 +16,12 @@ Tekshiruvchi YIQILSA (timeout, Ollama xatosi) javob to'xtatilmaydi —
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 from loggers import get_logger
 from src.core.ai.interfaces import BaseAIClient
+from src.core.utils.datetime_utils import get_utc_now
 from src.knowledge.schemas import ChatTurn
 
 logger = get_logger(__name__)
@@ -49,6 +51,8 @@ VERIFY_SYSTEM = """You are a strict quality reviewer for the internal AI assista
 
 Decide whether the DRAFT ANSWER may be shown to the employee.
 
+DATES: the prompt starts with TODAY (Tashkent date). Your own training knowledge is OLDER than today. A date up to TODAY is NOT "future" and NOT a hallucination just because you have not heard of it. Never reject an answer because a date, rate, decision or event is unknown to you — judge facts ONLY against the CONTEXT. The CONTEXT may be knowledge-base blocks or freshly fetched official web PAGES; treat web PAGES as up-to-date truth.
+
 Return verdict "wrong" ONLY for a real defect:
 1. OFF-TARGET: the answer addresses a different question or topic than the one asked. Examples: the user asks about plans to open new branches, but the answer is just a list of existing branches; the user asks who is responsible for a system, but the answer is a list of unrelated products; the user asks about one product, but the answer describes another product.
 1a. WRONG SUBJECT: the question is about another organization or entity (the Central Bank of Uzbekistan / "Markaziy bank" / "ЦБ", another bank, a ministry, a law, a payment system) but the answer talks about Turonbank itself — or the other way round.
@@ -64,7 +68,9 @@ Return verdict "ok" when:
 - the answer addresses what was asked, even if short or not exhaustive;
 - the answer honestly says the information was not found;
 - the answer is a relevant clarifying question (e.g. offers options that match the user's words);
-- the user's message is a follow-up (a number choosing from a previous list, "yes", "more details") and the answer fits the conversation.
+- the user's message is a follow-up (a number choosing from a previous list, "yes", "more details") and the answer fits the conversation;
+- there is no CONTEXT (a general-knowledge answer) and the answer is a sensible on-topic explanation — you cannot verify such facts, so do not reject them unless they are clearly absurd or off-topic;
+- the question asks for news/latest events and the answer reports the most recent items found in the web PAGES (with their dates), even if they are not from today.
 Do NOT nitpick style, length, formatting or language. Do NOT mark "wrong" because you personally do not know a Turonbank fact — judge facts only against the CONTEXT.
 
 "problem": if "wrong" — one short sentence in English naming exactly what is wrong and what the user actually asked for. If "ok" — empty string.
@@ -104,7 +110,8 @@ def build_verify_prompt(
     interpreted: str | None = None,
     context: str | None = None,
 ) -> str:
-    parts: list[str] = []
+    today = (get_utc_now() + timedelta(hours=5)).date().isoformat()
+    parts: list[str] = [f"TODAY: {today}"]
     tail = _history_tail(history)
     if tail:
         parts.append(f"RECENT CONVERSATION:\n{tail}")

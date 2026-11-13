@@ -65,6 +65,7 @@ from src.knowledge.prompts import (
     RU_REPLY_OVERRIDE,
     SECURITY_RULES,
     SMALLTALK_FALLBACK_REPLY,
+    VERIFY_FAILED_REPLY,
     STRICT_RAG_SYSTEM,
     WEB_LOOKUP_TOKEN,
     WEB_NOT_FOUND_TOKEN,
@@ -3476,9 +3477,13 @@ class AnswerQuestionUseCase:
         buf = ""
         decided = False
         yield {"type": "status", "step": "write"}
+        web_prompt = _web_prompt(question, hits)
+        # Tekshiruvchi javobni shu sahifalarga solishtiradi (o'z eski
+        # bilimiga emas)
+        self._last_context = web_prompt
         async for ev in self.ai_client.stream_generate(
-            _web_prompt(question, hits),
-            system_prompt=_with_lang(WEB_RAG_SYSTEM, lang),
+            web_prompt,
+            system_prompt=self._system(WEB_RAG_SYSTEM, lang),
             temperature=self.TEMPERATURE,
             max_tokens=self.MAX_TOKENS,
         ):
@@ -3665,7 +3670,7 @@ class AnswerQuestionUseCase:
                         self.last_verdict_note = f"{first_problem} | {v2.problem}"
                         self.last_outcome = "no_info"
                         lang = detect_reply_lang(question, history)
-                        self._buf_text = _localize(NO_INFO_REPLY, lang)
+                        self._buf_text = _localize(VERIFY_FAILED_REPLY, lang)
                         if self._buf_done is not None:
                             self._buf_done = {**self._buf_done, "sources": []}
 

@@ -550,6 +550,16 @@ RU_LANGUAGE_OVERRIDE = (
 # ruscha savolga o'zbekcha javob qaytadi.
 RU_CANNED_REPLIES: dict[str, str] = {}
 
+# Javob tekshiruvdan IKKI marta o'tmadi (qara: verifier.py) — noto'g'ri javob
+# o'rniga. NO_INFO_REPLY'dan farqi: "mahsulot/filial nomini yozing" degan
+# maslahat bu yerda o'rinsiz (savol tushunilgan, ishonchli manba topilmagan).
+VERIFY_FAILED_REPLY = (
+    "Bu savolga ishonchli javob topa olmadim — noto'g'ri ma'lumot bermaslik "
+    "uchun taxminiy javob yozmayapman. Savolni aniqroq yozib ko'ring yoki "
+    f"yordam xizmatiga murojaat qiling: {SUPPORT_PHONE} yoki Telegram bot — "
+    f"{SUPPORT_BOT_URL}"
+)
+
 
 # Xodimlar (telefon/IP ma'lumotnoma) uchun alohida rejim — mahsulot katalogisiz.
 EMPLOYEE_SYSTEM = (
@@ -860,6 +870,12 @@ RU_CANNED_REPLIES.update(
             "* Справочник внутренних номеров.\n"
             "* Инструкция по ЭДО (видео).\n\n"
             "Пишите вопрос на узбекском или русском языке."
+        ),
+        VERIFY_FAILED_REPLY: (
+            "Не удалось найти надёжный ответ на этот вопрос — чтобы не дать "
+            "неверную информацию, я не пишу ответ наугад. Попробуйте уточнить "
+            f"вопрос или обратитесь в службу поддержки: {SUPPORT_PHONE} или "
+            f"Telegram-бот — {SUPPORT_BOT_URL}"
         ),
         NO_INFO_REPLY: (
             "По этому вопросу информация не найдена. Попробуйте сформулировать "

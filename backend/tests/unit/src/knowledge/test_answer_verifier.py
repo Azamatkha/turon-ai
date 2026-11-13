@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from src.knowledge import usecases as uc_mod
-from src.knowledge.prompts import NO_INFO_REPLY
+from src.knowledge.prompts import VERIFY_FAILED_REPLY
 from src.knowledge.usecases import AnswerQuestionUseCase
 from src.knowledge.verifier import Verdict, build_verify_prompt
 
@@ -95,7 +95,7 @@ async def test_twice_rejected_gives_honest_not_found(monkeypatch: pytest.MonkeyP
         [Verdict(False, "p1", 1), Verdict(False, "p2", 1)],
     )
     text, _, done = await _run(uc)
-    assert text == NO_INFO_REPLY
+    assert text == VERIFY_FAILED_REPLY
     assert done["sources"] == []
     assert uc.last_verdict == "failed"
     assert uc.last_outcome == "no_info"
@@ -139,3 +139,8 @@ async def test_retry_uses_source_named_by_verifier(monkeypatch: pytest.MonkeyPat
     text, _, _ = await _run(uc)
     assert text == "Markaziy bank..."
     assert uc._test_routes == [None, "general_knowledge"]  # type: ignore[attr-defined]
+
+
+def test_verify_prompt_starts_with_today() -> None:
+    """Model o'z bilimidan yangiroq sanani "kelajak/to'qima" deb rad etmasin."""
+    assert build_verify_prompt("savol", "javob").startswith("TODAY: ")
