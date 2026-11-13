@@ -69,7 +69,6 @@ from src.knowledge.prompts import (
     STRICT_RAG_SYSTEM,
     WEB_LOOKUP_TOKEN,
     WEB_NOT_FOUND_TOKEN,
-    WEB_NOTE,
     WEB_RAG_SYSTEM,
 )
 from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
@@ -3499,14 +3498,24 @@ class AnswerQuestionUseCase:
                     return
                 decided = True
                 self.last_outcome = "web"
-                yield {"type": "delta", "text": _localize(WEB_NOTE, lang)}
+                # Manba foydalanuvchiga matn bilan emas — "Manbalar"
+                # chiplarida (havolalar) ko'rinadi; logda esa shu yerda
+                logger.info(
+                    "Javob internetdan: %r <- %s",
+                    question[:120],
+                    ", ".join(h.url for h in hits),
+                )
                 yield {"type": "delta", "text": conv(buf)}
             elif ev.get("type") == "done":
                 if not decided:
                     if not buf.strip() or _is_web_not_found(buf):
                         return
                     self.last_outcome = "web"
-                    yield {"type": "delta", "text": _localize(WEB_NOTE, lang)}
+                    logger.info(
+                        "Javob internetdan: %r <- %s",
+                        question[:120],
+                        ", ".join(h.url for h in hits),
+                    )
                     yield {"type": "delta", "text": conv(buf)}
                 rest = tr.flush() if tr is not None else sf.flush() if sf is not None else ""
                 if rest:
@@ -3542,8 +3551,11 @@ class AnswerQuestionUseCase:
         elif lang == "uz":
             text = fix_mixed_script(text)
         self.last_outcome = "web"
+        logger.info(
+            "Javob internetdan: %r <- %s", question[:120], ", ".join(h.url for h in hits)
+        )
         return AnswerResult(
-            answer=_localize(WEB_NOTE, lang) + text,
+            answer=text,
             sources=_web_sources(hits),
             finish_reason=gen.finish_reason,
             completion_tokens=gen.completion_tokens + router_tokens,

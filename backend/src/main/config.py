@@ -255,10 +255,12 @@ class WebSearchConfig(BaseModel):
     SEARXNG_URL: str = "http://searxng:8080"
     # Vergul bilan: "cbu.uz,lex.uz,turonbank.uz". Subdomenlar ham ruxsat.
     WEB_SEARCH_ALLOWED_DOMAINS: str = "cbu.uz,lex.uz,turonbank.uz,gov.uz,mf.uz,soliq.uz"
-    WEB_SEARCH_MAX_RESULTS: int = 3
+    # Ko'proq sahifa — to'liqroq javob (bitta sahifa ochilmasa ham qolganlari bor)
+    WEB_SEARCH_MAX_RESULTS: int = 5
     WEB_SEARCH_TIMEOUT_SECONDS: float = 8.0
     # Bir sahifadan modelga beriladigan matn chegarasi (belgi)
-    WEB_SEARCH_PAGE_CHARS: int = 3000
+    # 65k kontekstda 5 x 8000 belgi (~12k token) bemalol sig'adi
+    WEB_SEARCH_PAGE_CHARS: int = 8000
 
     model_config = ConfigDict(extra="ignore")
 

@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from src.knowledge import web_search
-from src.knowledge.prompts import NO_INFO_REPLY, WEB_NOTE
+from src.knowledge.prompts import NO_INFO_REPLY
 from src.knowledge.router import Intent, Route
 from src.knowledge.usecases import AnswerQuestionUseCase, _web_eligible
 from src.knowledge.web_search import WebHit, build_query, is_allowed_url
@@ -165,7 +165,7 @@ async def test_web_answer_when_kb_empty(enabled: None, monkeypatch: pytest.Monke
     uc = _uc(monkeypatch, ai)
     text, done = await _run(uc, "Markaziy bank stavkasi hozir qancha?")
     assert uc.last_outcome == "web"
-    assert text.startswith(WEB_NOTE)
+    assert not text.startswith("Bu ma'lumot bankning")  # ogohlantirish yo'q
     assert "13,5 foiz [1]" in text
     assert done["sources"][0]["url"] == HIT.url
     assert done["sources"][0]["kind"] == "web"
@@ -235,7 +235,7 @@ async def test_concept_needs_web_goes_online(enabled: None, monkeypatch: pytest.
     text, done = await _run(uc, "Markaziy bankning asosiy stavkasi hozir qancha?")
     assert "NEEDS_WEB" not in text
     assert uc.last_outcome == "web"
-    assert text.startswith(WEB_NOTE)
+    assert not text.startswith("Bu ma'lumot bankning")  # ogohlantirish yo'q
     assert done["sources"][0]["kind"] == "web"
 
 
