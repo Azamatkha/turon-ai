@@ -73,6 +73,7 @@ function HoverRow({ user, last, index, onChangeRole, onToggleVerified, onDelete,
         </div>
       </div>
       <span className={styles.deptCell}>{displayDept(u.dept, lang)}</span>
+      <span className={styles.deptCell}>{u.position || "—"}</span>
       <span className={styles.cellCenter}><span className={styles.rolePill} style={{ color: roleColor[u.role].c, background: roleColor[u.role].bg }}>{admin.roleLabel[u.role]}</span></span>
       <span className={styles.cellCenter}><span className={styles.statusPill} style={{ color: statusColor[u.status].c, background: statusColor[u.status].bg }}><span className={styles.statusDot} style={{ background: statusColor[u.status].c }} />{admin.statusLabel[u.status]}</span></span>
       <button data-tip={admin.more} aria-label={admin.more} className={styles.moreBtn} onClick={() => setMenu((m) => !m)}>
@@ -141,7 +142,7 @@ export default function UsersTable({ users, search, onChangeRole, onToggleVerifi
   return (
     <div className={styles.table}>
       <div className={styles.headRow}>
-        <span>{admin.tableUser}</span><span>{admin.tableDept}</span><span>{admin.tableRole}</span><span>{admin.tableStatus}</span><span />
+        <span>{admin.tableUser}</span><span>{admin.tableDept}</span><span>{admin.positionLabel}</span><span>{admin.tableRole}</span><span>{admin.tableStatus}</span><span />
       </div>
       {pageUsers.map((u, i) => (
         <HoverRow key={u.id} user={u} last={i === pageUsers.length - 1} index={i} onChangeRole={onChangeRole} onToggleVerified={onToggleVerified} onDelete={onDelete} onEdit={setEditing} admin={admin} lang={lang} />

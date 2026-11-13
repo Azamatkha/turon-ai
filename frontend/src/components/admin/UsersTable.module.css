@@ -15,7 +15,7 @@
 
 .headRow {
   display: grid;
-  grid-template-columns: 2.2fr 1.3fr 1fr 1fr 40px;
+  grid-template-columns: 2fr 1.3fr 1.2fr 0.8fr 0.8fr 40px;
   gap: 16px;
   padding: 14px 22px;
   border-bottom: 1px solid var(--adm-border-3);
@@ -30,7 +30,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 2.2fr 1.3fr 1fr 1fr 40px;
+  grid-template-columns: 2fr 1.3fr 1.2fr 0.8fr 0.8fr 40px;
   gap: 16px;
   padding: 13px 22px;
   transition: background 0.15s ease;
@@ -252,7 +252,7 @@
 @media (max-width: 560px) {
   .headRow,
   .row {
-    min-width: 600px;
+    min-width: 720px;
     font-size: var(--tu-text-sm);
   }
 
