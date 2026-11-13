@@ -79,7 +79,7 @@ export const chatStatic: ChatStaticStrings = {
   miniApps: "Qo‘shimcha yordamchilar",
   convTitle: "PDF’ga aylantirish",
   convDrop: "Faylni shu yerga tashlang yoki bosib tanlang",
-  convHint: "Word, Excel, PowerPoint — bittadan. Rasmlar (JPG, PNG…) — 20 tagacha, bitta PDF bo‘ladi. Jami 9 MB gacha.",
+  convHint: "Word, Excel, PowerPoint — bittadan. Rasmlar (JPG, PNG, HEIC…) — 20 tagacha, bitta PDF bo‘ladi. Jami 9 MB gacha.",
   convSubmit: "PDF’ga aylantirish",
   convConverting: "O‘girilmoqda…",
   convDone: "Tayyor! PDF yuklab olindi.",

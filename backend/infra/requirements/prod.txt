@@ -106,6 +106,8 @@ openpyxl==3.1.5
     # via -r base.in  (qo'lda qo'shildi; Excel .xlsx xodimlar faylini o'qish uchun)
 pillow==12.3.0
     # via -r base.in  (qo'lda qo'shildi; skanerlangan PDF -> matn/OCR uchun)
+pillow-heif==1.8.1
+    # via -r base.in  (qo'lda qo'shildi; iPhone .heic rasmlari -> PDF)
 pymupdf==1.28.0
     # via -r base.in  (qo'lda qo'shildi; skanerlangan PDF -> matn/OCR uchun)
 pytesseract==0.3.13

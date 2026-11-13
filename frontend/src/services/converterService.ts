@@ -5,7 +5,7 @@
 import { apiFetch } from "./authService";
 
 // Backend bilan bir xil ro'yxat (src/tools/pdf_convert.py)
-export const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff"];
+export const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff", "heic", "heif", "hif", "avif", "gif"];
 export const OFFICE_EXTS = ["doc", "docx", "odt", "rtf", "xls", "xlsx", "ods", "ppt", "pptx", "odp"];
 export const MAX_IMAGES = 20;
 // Jami hajm (backend: config.app.CONVERT_MAX_BYTES)

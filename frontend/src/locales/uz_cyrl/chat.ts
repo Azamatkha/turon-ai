@@ -77,7 +77,7 @@ export const chatStatic: ChatStaticStrings = {
   miniApps: "Қўшимча ёрдамчилар",
   convTitle: "PDF’га айлантириш",
   convDrop: "Файлни шу ерга ташланг ёки босиб танланг",
-  convHint: "Word, Excel, PowerPoint — биттадан. Расмлар (JPG, PNG…) — 20 тагача, битта PDF бўлади. Жами 9 МБ гача.",
+  convHint: "Word, Excel, PowerPoint — биттадан. Расмлар (JPG, PNG, HEIC…) — 20 тагача, битта PDF бўлади. Жами 9 МБ гача.",
   convSubmit: "PDF’га айлантириш",
   convConverting: "Ўгирилмоқда…",
   convDone: "Тайёр! PDF юклаб олинди.",

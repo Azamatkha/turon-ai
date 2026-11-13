@@ -1,7 +1,7 @@
 """
 Boshqa formatlarni PDF'ga o'girish.
 
-* Rasmlar (JPG/PNG/WEBP/BMP/TIFF) — `pymupdf` bilan: har rasm A4 sahifaga
+* Rasmlar (JPG/PNG/WEBP/BMP/TIFF/HEIC/AVIF/GIF) — `pymupdf` bilan: har rasm A4 sahifaga
   joylanadi (keng rasm — albom sahifa), bir nechta rasm bitta PDF bo'ladi.
 * Ofis hujjatlari (Word/Excel/PowerPoint/ODF/RTF) — backend image'iga
   o'rnatilgan LibreOffice (`soffice --headless --convert-to pdf`) bilan.
@@ -20,6 +20,7 @@ import tempfile
 import uuid
 
 from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 import pymupdf
 
 from loggers import get_logger
@@ -30,7 +31,15 @@ from src.core.errors.exceptions import (
 
 logger = get_logger(__name__)
 
-IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff"}
+# iPhone rasmlari (.heic/.heif) — Pillow o'zi o'qimaydi, pillow-heif plagini
+# ochuvchini ro'yxatdan o'tkazadi. Keyin ular JPEG'ga o'girilib PDF'ga tushadi.
+register_heif_opener()
+
+# iPhone: heic/heif/hif (kamera), jpg, png (skrinshot), avif, gif
+IMAGE_EXTS = {
+    "jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff",
+    "heic", "heif", "hif", "avif", "gif",
+}
 OFFICE_EXTS = {
     "doc", "docx", "odt", "rtf",   # matn
     "xls", "xlsx", "ods",          # jadval

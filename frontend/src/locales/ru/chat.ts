@@ -76,7 +76,7 @@ export const chatStatic: ChatStaticStrings = {
   miniApps: "Дополнительные помощники",
   convTitle: "Конвертировать в PDF",
   convDrop: "Перетащите файл сюда или нажмите, чтобы выбрать",
-  convHint: "Word, Excel, PowerPoint — по одному. Изображения (JPG, PNG…) — до 20, объединяются в один PDF. Всего до 9 МБ.",
+  convHint: "Word, Excel, PowerPoint — по одному. Изображения (JPG, PNG, HEIC…) — до 20, объединяются в один PDF. Всего до 9 МБ.",
   convSubmit: "Конвертировать в PDF",
   convConverting: "Конвертация…",
   convDone: "Готово! PDF загружен.",
