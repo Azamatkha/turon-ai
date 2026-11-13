@@ -761,6 +761,9 @@ export interface AdminStrings {
   // Foydalanuvchilar sahifasidagi holat filtri (onlayn/oflayn) — "hammasi" varianti
   allStatuses: string;
   verifiedFilter: string;
+  branchAll: string;
+  branchHeadOffice: string;
+  branchNone: string;
   password: string;
   nameLoginRequired: string;
   passTooShort: string;

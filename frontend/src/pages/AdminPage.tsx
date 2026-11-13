@@ -32,6 +32,7 @@ import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
 import ScrapeModal, { type ScrapeProgress } from "../components/admin/ScrapeModal";
 import FilterSelect from "../components/admin/FilterSelect";
+import { HEAD_OFFICE, NO_BRANCH, userBranch } from "../utils/branch";
 import SidebarToggle from "../components/chat/SidebarToggle";
 import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
@@ -137,6 +138,8 @@ export default function AdminPage() {
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [dept, setDept] = useState("");
+  // Filial — departament/lavozim matnidan ajratiladi (utils/branch.ts)
+  const [branch, setBranch] = useState("");
   // Holat filtri: "" — hammasi, aks holda faqat Online yoki Offline
   // Holat filtri: onlayn/oflayn yoki tasdiqlangan/tasdiqlanmagan
   const [statusFilter, setStatusFilter] = useState<UserFilter>("");
@@ -384,6 +387,27 @@ export default function AdminPage() {
     }
   };
 
+  // Holat filtridan o'tgan userlar; filial ro'yxatidagi sonlar ham shulardan —
+  // masalan "Tasdiqlangan" tanlansa, har filialdan nechtasi o'tgani ko'rinadi.
+  const statusUsers = users.filter((u) => matchesFilter(u, statusFilter));
+  const branchCounts = new Map<string, number>();
+  for (const u of statusUsers) {
+    const b = userBranch(u.dept, u.position);
+    branchCounts.set(b, (branchCounts.get(b) ?? 0) + 1);
+  }
+  const branchLabel = (b: string) =>
+    b === HEAD_OFFICE ? t.branchHeadOffice : b === NO_BRANCH ? t.branchNone : b;
+  const branchOptions = [
+    { value: "", label: `${t.branchAll} (${statusUsers.length})` },
+    ...[...branchCounts.entries()]
+      .sort(([a], [b]) => {
+        // Bosh ofis tepada, "ko'rsatilmagan" oxirida, filiallar alifbo bo'yicha
+        const rank = (x: string) => (x === HEAD_OFFICE ? 0 : x === NO_BRANCH ? 2 : 1);
+        return rank(a) - rank(b) || a.localeCompare(b);
+      })
+      .map(([b, n]) => ({ value: b, label: `${branchLabel(b)} (${n})` })),
+  ];
+
   return (
     <div className={styles.page}>
       {/* Fon — statik CSS gradienti (AdminPage.module.css).
@@ -464,6 +488,11 @@ export default function AdminPage() {
                   ]}
                 />
                 <FilterSelect
+                  value={branch}
+                  onChange={setBranch}
+                  options={branchOptions}
+                />
+                <FilterSelect
                   value={statusFilter}
                   onChange={(v) => setStatusFilter(v as UserFilter)}
                   options={[
@@ -477,8 +506,8 @@ export default function AdminPage() {
               </div>
               {/* key: qidiruv, bo'lim yoki holat o'zgarsa jadval 1-sahifadan boshlanadi */}
               <UsersTable
-                key={`${search}|${dept}|${statusFilter}`}
-                users={users.filter((u) => matchesFilter(u, statusFilter))} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
+                key={`${search}|${dept}|${branch}|${statusFilter}`}
+                users={statusUsers.filter((u) => !branch || userBranch(u.dept, u.position) === branch)} search={search} onChangeRole={onChangeRoleUser} onToggleVerified={onToggleVerifiedUser} onDelete={onDeleteUser} onUpdate={onUpdateUser} t={t} lang={lang} />
             </>
           )}
         </div>
