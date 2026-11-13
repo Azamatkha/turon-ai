@@ -315,8 +315,13 @@ class AnswerLogUseCase:
                     verdict=log.verdict,
                     verdict_note=log.verdict_note,
                     duration_ms=log.duration_ms,
+                    full_name=full_name,
+                    top_score=log.top_score,
+                    sources_count=log.sources_count or 0,
+                    completion_tokens=log.completion_tokens or 0,
+                    source_urls=list(log.source_urls or []),
                 )
-                for log, username, answer in rows
+                for log, username, answer, full_name in rows
             ],
             total=total,
             page=page,

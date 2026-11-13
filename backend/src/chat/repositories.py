@@ -241,12 +241,12 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
         search: str | None = None,
         page: int = 1,
         size: int = 30,
-    ) -> tuple[list[tuple[QuestionLog, str | None, str | None]], int]:
+    ) -> tuple[list[tuple[QuestionLog, str | None, str | None, str | None]], int]:
         """Savol + bot javobi jurnali, yangisidan eskisiga — admin bot to'g'ri
         javob berayaptimi, ko'zi bilan tekshirishi uchun.
 
         `verdict="rejected"` — tekshiruvchi rad etganlar (fixed + failed).
-        Har qator: (yozuv, xodim logini, javob).
+        Har qator: (yozuv, xodim logini, javob, xodim F.I.Sh.).
 
         Javob ustuni keyin qo'shilgan — eski yozuvlarda NULL. Ular uchun javob
         chat tarixidan olinadi: shu xodimning yozuv vaqtiga eng yaqin (±2 daq)
@@ -284,17 +284,27 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
         if search and search.strip():
             like = f"%{search.strip()}%"
             conds.append(
-                or_(self.model.question.ilike(like), self.model.answer.ilike(like))
+                or_(
+                    self.model.question.ilike(like),
+                    self.model.answer.ilike(like),
+                    User.username.ilike(like),
+                )
             )
         total = int(
             (
                 await session.execute(
-                    select(func.count()).select_from(self.model).where(*conds)
+                    select(func.count())
+                    .select_from(self.model)
+                    .outerjoin(User, self.model.user_id == User.id)
+                    .where(*conds)
                 )
             ).scalar_one()
         )
+        full_name = func.nullif(
+            func.concat_ws(" ", User.last_name, User.first_name), ""
+        )
         query = (
-            select(self.model, User.username, answer_col)
+            select(self.model, User.username, answer_col, full_name)
             .outerjoin(User, self.model.user_id == User.id)
             .where(*conds)
             .order_by(self.model.created_at.desc())
@@ -302,7 +312,7 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
             .limit(size)
         )
         result = await session.execute(query)
-        return [(r[0], r[1], r[2]) for r in result.all()], total
+        return [(r[0], r[1], r[2], r[3]) for r in result.all()], total
 
     async def verdict_counts(
         self, session: AsyncSession, days: int = 30

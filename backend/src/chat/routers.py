@@ -380,19 +380,26 @@ async def ask(
             )
         )
         await notify_safety_flag(current_user.username, data.question, use_case.last_flag)
-    # Veb-qidiruvdan javob — admin "bazaga qo'shish" uchun qayd etiladi
-    elif use_case.last_outcome == "web":
+    else:
+        # Mobil savollari ham "Savollar tahlili" jurnaliga tushsin — ilgari
+        # faqat veb javoblar yozilardi, oddiy javoblarni admin ko'rmasdi.
+        # Javob shakli (mijozga qaytadigan `result`) o'zgarmaydi.
+        is_web = use_case.last_outcome == "web"
         await log_question(
             QuestionLogEntry(
                 user_id=current_user.id,
                 question=data.question,
                 intent=use_case.last_intent,
-                outcome="web",
+                outcome=use_case.last_outcome,
                 top_score=use_case.last_top_score,
                 sources_count=len(result.sources),
                 completion_tokens=result.completion_tokens,
                 duration_ms=int((time.monotonic() - started) * 1000),
-                source_urls=[s.url for s in result.sources if s.url],
+                # Veb manbalar — admin "bazaga qo'shish" uchun ko'radi
+                source_urls=[s.url for s in result.sources if s.url] if is_web else None,
+                answer=result.answer or None,
+                verdict=getattr(use_case, "last_verdict", None),
+                verdict_note=getattr(use_case, "last_verdict_note", None),
             )
         )
     return result

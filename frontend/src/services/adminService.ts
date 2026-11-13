@@ -199,6 +199,12 @@ export interface AnswerLogItem {
   verdict?: AnswerVerdict | null;
   verdict_note?: string | null;
   duration_ms: number;
+  // Javobni tekshirish uchun qo'shimcha ma'lumot
+  full_name?: string | null;
+  top_score?: number | null;
+  sources_count?: number;
+  completion_tokens?: number;
+  source_urls?: string[];
 }
 
 export interface AnswerLogPage {

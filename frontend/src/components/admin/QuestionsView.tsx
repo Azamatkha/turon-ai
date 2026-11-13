@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AnswerLogPanel from "./AnswerLogPanel";
 import FilterSelect from "./FilterSelect";
 import StatCard, { type StatDef } from "./StatCard";
@@ -24,9 +24,13 @@ const icon = (path: React.ReactNode) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
 );
 
-// Savollar tahlili: eng ko'p so'ralgan va bazada javob topilmagan savollar.
-// Javobsizlar ro'yxati — bilim bazasiga nima qo'shish kerakligining ro'yxati.
+type Tab = "log" | "stats";
+
+// Savollar tahlili. Asosiy yorliq — BARCHA savollar va bot javoblari jurnali
+// (javob to'g'riligini tekshirish uchun). "Statistika" yorlig'ida — umumiy
+// ko'rsatkichlar, eng ko'p so'ralgan va bazada javob topilmagan savollar.
 export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps) {
+  const [tab, setTab] = useState<Tab>("log");
   const [days, setDays] = useState<number>(30);
   const [data, setData] = useState<QuestionAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +38,11 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
   // Pastdagi "savol + javob" jurnali: qidiruv va qayta yuklash belgisi
   const [logSearch, setLogSearch] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
-  const logRef = useRef<HTMLElement>(null);
 
-  // Ro'yxatdagi savolni bossa — jurnal shu savol bilan filtrlanadi
+  // Statistikadagi savolni bossa — jurnal shu savol bilan ochiladi
   const showAnswers = (question: string) => {
     setLogSearch(question);
-    logRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTab("log");
   };
 
   const load = useCallback(async () => {
@@ -55,9 +58,10 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
     }
   }, [days, admin.questionsLoadError]);
 
+  // Statistika faqat o'z yorlig'i ochilganda yuklanadi
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (tab === "stats") void load();
+  }, [load, tab]);
 
   const sm = data?.summary;
   const fmt = (n: number) => n.toLocaleString();
@@ -140,38 +144,62 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
   return (
     <div className={mounted ? `${styles.wrap} ${styles.in}` : styles.wrap}>
       <div className={styles.toolbar}>
-        <FilterSelect
-          value={String(days)}
-          onChange={(v) => setDays(Number(v))}
-          options={PERIODS.map((p) => ({ value: String(p), label: admin.questionsPeriod(p) }))}
+        <div className={styles.tabs} role="tablist">
+          {(["log", "stats"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={tab === k}
+              className={`${styles.tab} ${tab === k ? styles.tabActive : ""}`}
+              onClick={() => setTab(k)}
+            >
+              {k === "log" ? admin.questionsTabLog : admin.questionsTabStats}
+            </button>
+          ))}
+        </div>
+        <div className={styles.toolbarRight}>
+          <FilterSelect
+            value={String(days)}
+            onChange={(v) => setDays(Number(v))}
+            options={PERIODS.map((p) => ({ value: String(p), label: admin.questionsPeriod(p) }))}
+          />
+          <button
+            type="button"
+            className={styles.refreshBtn}
+            onClick={() => {
+              if (tab === "stats") void load();
+              else setReloadKey((k) => k + 1);
+            }}
+            disabled={tab === "stats" && loading}
+          >
+            {admin.faceLogsRefresh}
+          </button>
+        </div>
+      </div>
+
+      {tab === "log" ? (
+        <AnswerLogPanel
+          days={days}
+          t={admin}
+          search={logSearch}
+          onSearchChange={setLogSearch}
+          reloadKey={reloadKey}
         />
-        <button type="button" className={styles.refreshBtn} onClick={() => {
-            void load();
-            setReloadKey((k) => k + 1);
-          }} disabled={loading}>
-          {admin.faceLogsRefresh}
-        </button>
-      </div>
+      ) : (
+        <>
+          {err && <div className={styles.error}>{err}</div>}
 
-      {err && <div className={styles.error}>{err}</div>}
+          <div className={styles.statGrid}>
+            {stats.map((s) => <StatCard key={s.label} {...s} />)}
+          </div>
 
-      <div className={styles.statGrid}>
-        {stats.map((s) => <StatCard key={s.label} {...s} />)}
-      </div>
-
-      <div className={styles.columns}>
-        {list(admin.questionsUnansweredTitle, admin.questionsUnansweredHint, data?.unanswered ?? [], true)}
-        {list(admin.questionsTopTitle, admin.questionsTopHint, data?.top ?? [], false)}
-      </div>
-
-      <AnswerLogPanel
-        ref={logRef}
-        days={days}
-        t={admin}
-        search={logSearch}
-        onSearchChange={setLogSearch}
-        reloadKey={reloadKey}
-      />
+          <div className={styles.columns}>
+            {list(admin.questionsUnansweredTitle, admin.questionsUnansweredHint, data?.unanswered ?? [], true)}
+            {list(admin.questionsTopTitle, admin.questionsTopHint, data?.top ?? [], false)}
+          </div>
+        </>
+      )}
     </div>
   );
 }

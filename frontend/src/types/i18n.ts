@@ -602,6 +602,22 @@ export interface AdminStrings {
   answersMissing: string;
   answersVerdict: Record<"ok" | "fixed" | "failed" | "unchecked" | "cached", string>;
   answersVerdictSummary: (ok: number, fixed: number, failed: number) => string;
+  questionsTabLog: string;
+  questionsTabStats: string;
+  answersCount: (n: number) => string;
+  answersAllOutcomes: string;
+  answersAllVerdicts: string;
+  answersFilterOk: string;
+  answersOutcome: Record<"answered" | "no_info" | "web" | "flagged" | "blocked" | "error", string>;
+  answersSelectHint: string;
+  answersKeysHint: string;
+  answersUser: string;
+  answersTime: string;
+  answersDuration: string;
+  answersTokens: string;
+  answersIntent: string;
+  answersScore: string;
+  answersSources: string;
   // Audit jurnali
   auditNav: string;
   auditLoadError: string;

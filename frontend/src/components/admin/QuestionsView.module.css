@@ -1,4 +1,4 @@
-/* Savollar tahlili — Dashboard kartalari + ikki ustunli ro'yxat */
+/* Savollar tahlili — yorliqlar: savol-javoblar jurnali | statistika */
 
 .wrap {
   max-width: 1400px;
@@ -18,8 +18,46 @@
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.toolbarRight {
+  display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.tabs {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 12px;
+  background: var(--adm-card);
+}
+
+.tab {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--adm-text-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover:not(.tabActive) {
+  color: var(--adm-text-body);
+}
+
+.tabActive {
+  background: var(--adm-accent-bg);
+  color: var(--adm-accent);
 }
 
 .refreshBtn {

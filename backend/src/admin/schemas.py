@@ -146,6 +146,12 @@ class AnswerLogItem(Base):
     verdict: str | None
     verdict_note: str | None
     duration_ms: int
+    # Qo'shimcha (eski mijozlar e'tibor bermaydi): javobni tekshirishda kerak
+    full_name: str | None = None
+    top_score: float | None = None
+    sources_count: int = 0
+    completion_tokens: int = 0
+    source_urls: list[str] = []
 
 
 class AnswerLogPageView(Base):
