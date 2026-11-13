@@ -454,8 +454,11 @@ async def ask_stream(
         tokens = 0
         sources_count = 0
         web_urls: list[str] = []
+        answer_text = ""
         try:
             async for ev in events:
+                if ev.get("type") == "delta":
+                    answer_text += str(ev.get("text") or "")
                 if ev.get("type") == "done":
                     tokens = int(ev.get("completion_tokens") or 0)
                     sources_count = len(ev.get("sources") or [])
@@ -498,6 +501,9 @@ async def ask_stream(
                     completion_tokens=tokens,
                     duration_ms=int((time.monotonic() - started) * 1000),
                     source_urls=web_urls or None,
+                    answer=answer_text or None,
+                    verdict=getattr(answer_use_case, "last_verdict", None),
+                    verdict_note=getattr(answer_use_case, "last_verdict_note", None),
                 )
             )
             # Xavfli so'rov yoki so'kinish — adminga xabar

@@ -2,8 +2,8 @@ export type Role = "user" | "assistant";
 
 // Backend oqimidagi bosqichlar ({"type":"status","step":...}) —
 // backend/src/knowledge/usecases.py execute_stream bilan bir xil
-export type ThinkStep = "analyze" | "rates" | "employees" | "search" | "web" | "write";
-export const THINK_STEPS: readonly ThinkStep[] = ["analyze", "rates", "employees", "search", "web", "write"];
+export type ThinkStep = "analyze" | "rates" | "employees" | "search" | "web" | "write" | "verify" | "rewrite";
+export const THINK_STEPS: readonly ThinkStep[] = ["analyze", "rates", "employees", "search", "web", "write", "verify", "rewrite"];
 
 // Javob tayangan bilim bazasi hujjati (backend SourceRef)
 export interface SourceRef {

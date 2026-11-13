@@ -86,6 +86,7 @@ from src.knowledge.schemas import (
 )
 from src.knowledge.scraper import extract_content, fetch_html
 from src.knowledge.validity import is_expired, penalize_expired
+from src.knowledge.verifier import verify_answer
 from src.main.config import config
 
 logger = get_logger(__name__)
@@ -1763,6 +1764,35 @@ def _region_of(text: str) -> tuple[str, str, str]:
     return _region_key(m.group(1)), _admin_level(m.group(2)), m.group(1)
 
 
+# Filiallar RO'YXATI / joylashuvi so'ralganda uchraydigan so'z o'zaklari.
+# Savolda bulardan, hudud nomidan va _BROAD_QUESTION_STOPWORDS dan boshqa
+# mazmunli so'z bo'lsa — bu ro'yxat so'rovi emas.
+_BRANCH_LIST_STEMS = (
+    "filial", "bxm", "bank", "xizmat", "markaz", "ofis", "royxat", "joylash",
+    "manzil", "qayer", "hudud", "viloyat", "shahar", "shahr", "tuman", "nechta",
+    "soni", "barcha", "hamma", "korsat",
+)
+
+
+def _branch_other_topic(q: str, items: list[tuple[str, str]]) -> bool:
+    """Filial so'zi bor savol ro'yxatdan BOSHQA narsani so'rayaptimi.
+
+    "Toshkentdagi filiallar", "filiallar ro'yxati", "Samarqand viloyatida
+    qaysi BXM joylashgan" — ro'yxat (False). "Filiallar tarmog'ini
+    kengaytirish bo'yicha yangi rejalari qanday" — boshqa mavzu (True):
+    ilgari bunga 60+ filial ro'yxati qaytarilgan edi."""
+    regions = {_region_of(f"{t} {x}")[0] for t, x in items} - {""}
+    for w in _words(q.replace("'", "")):
+        if len(w) < 4 or w in _BROAD_QUESTION_STOPWORDS:
+            continue
+        if w.startswith(_BRANCH_LIST_STEMS):
+            continue
+        if any(_region_key(w).startswith(r[:5]) for r in regions):
+            continue
+        return True
+    return False
+
+
 def _question_region(question: str, known: set[str]) -> tuple[str, str]:
     """Savolda qaysi hudud so'ralganini aniqlaydi: (kalit, daraja).
 
@@ -2052,7 +2082,11 @@ def _category_from_text(title: str, text: str) -> str:
             kw_flat = kw.replace("'", "")
             if any(_word_match(w, kw_flat) for w in title_words):
                 score += 10
-            score += body.count(kw_flat)
+            # FILIAL faqat NOMIDAN aniqlanadi: ichki hujjat (nizom, tartib)
+            # matnida "bank xizmatlari markazi" ko'p uchraydi va u filiallar
+            # ro'yxatiga tushib qolardi ("...mukofotlash Tartibi", 2026-11-12).
+            if label != _BRANCH_LABEL:
+                score += body.count(kw_flat)
         if score > best_score:
             best_label, best_score = label, score
     return best_label if best_score else "Boshqa xizmatlar"
@@ -2465,6 +2499,14 @@ class AnswerQuestionUseCase:
         # savolda "ru" (ruscha hujjat bo'lsa), aks holda "uz". execute /
         # execute_stream boshida o'rnatiladi.
         self._kb_lang = "uz"
+        # Javob tekshiruvi (qara: execute_stream, verifier.py)
+        self.last_verdict: str | None = None
+        self.last_verdict_note: str | None = None
+        self._retry_hint: str | None = None
+        self._last_context: str | None = None
+        self._effective_question: str | None = None
+        self._buf_text = ""
+        self._buf_done: dict[str, Any] | None = None
 
     @staticmethod
     def _category_label(source_url: str, title: str = "", text: str = "") -> str:
@@ -2718,6 +2760,10 @@ class AnswerQuestionUseCase:
             # Filiallar — yagona turkum, unda toraytirish ISHONCHLI bajariladi:
             # shart har doim HUDUD bo'ladi va hudud ma'lumotning o'zida yozilgan.
             if label == _BRANCH_LABEL:
+                # Savol ro'yxat emas, filiallar HAQIDA boshqa narsani so'rasa
+                # ("filiallar tarmog'ini kengaytirish rejalari") — modelga.
+                if _branch_other_topic(q, items):
+                    return None, None
                 return self._branch_reply(q, items, want_cyrillic)
 
             # Savolda turkum nomidan TASHQARI so'z bormi. Turkumning O'ZINI
@@ -3507,8 +3553,147 @@ class AnswerQuestionUseCase:
         self.last_intent = kind
         logger.warning("So'rov belgilandi (%s)", kind)
 
+    # Tekshiruvdan o'tkazilmaydigan natijalar: tayyor himoya javoblari va
+    # "topilmadi" (tekshiradigan narsa yo'q)
+    _UNVERIFIED_OUTCOMES = frozenset({"blocked", "flagged", "no_info"})
+    _UNVERIFIED_INTENTS = frozenset({Intent.SMALLTALK.value, Intent.ABOUT_BOT.value})
+
+    async def _collect(
+        self,
+        question: str,
+        history: list[ChatTurn] | None,
+        retry_hint: str | None,
+        pass_status: bool,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Xom javobni YIG'ADI: status hodisalari darhol o'tadi (agar
+        `pass_status`), matn va "done" esa self._buf_* ga yoziladi."""
+        self._buf_text = ""
+        self._buf_done = None
+        async for ev in self._execute_stream_raw(question, history, retry_hint):
+            kind = ev.get("type")
+            if kind == "delta":
+                self._buf_text += ev.get("text", "")
+            elif kind == "done":
+                self._buf_done = ev
+            elif kind == "status":
+                if pass_status:
+                    yield ev
+            else:
+                yield ev
+
+    def _needs_verify(self) -> bool:
+        return (
+            bool(config.ai.ANSWER_VERIFY)
+            and self.last_outcome not in self._UNVERIFIED_OUTCOMES
+            and self.last_intent not in self._UNVERIFIED_INTENTS
+            and bool(self._buf_text.strip())
+        )
+
     async def execute_stream(
         self, question: str, history: list[ChatTurn] | None = None
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Javob TEKSHIRUV bilan: xom javob yig'iladi, model uni savolga
+        mosligini baholaydi (qara: verifier.py), mos bo'lmasa kamchilikni
+        aytib qayta yozdiriladi. Foydalanuvchiga faqat tekshirilgan javob
+        chiqadi — bosqichlar ("o'ylamoqda…") esa real vaqtda ko'rinib turadi.
+
+        `last_verdict`: "ok" | "fixed" (2-urinish o'tdi) | "failed" (ikkalasi
+        ham o'tmadi, halol "topilmadi" berildi) | "unchecked" (tekshiruv
+        bajarilmadi) | None (tekshirilmaydigan javob)."""
+        self.last_verdict = None
+        self.last_verdict_note = None
+        extra_tokens = 0
+        async for ev in self._collect(question, history, None, True):
+            yield ev
+
+        if self._needs_verify():
+            yield {"type": "status", "step": "verify"}
+            v = await verify_answer(
+                self.ai_client,
+                question,
+                self._buf_text,
+                history,
+                interpreted=self._effective_question,
+                context=self._last_context,
+            )
+            if v is None:
+                self.last_verdict = "unchecked"
+            elif v.ok:
+                self.last_verdict = "ok"
+                extra_tokens += v.tokens
+            else:
+                extra_tokens += v.tokens
+                first_problem = v.problem or "the answer does not match the question"
+                logger.warning(
+                    "Tekshiruv: javob rad etildi | %r | %s", question[:200], first_problem
+                )
+                self.last_verdict_note = first_problem
+                # Qayta yozish — qisqa yo'llarsiz, kamchilik ko'rsatilgan holda
+                yield {"type": "status", "step": "rewrite"}
+                async for ev in self._collect(question, history, first_problem, False):
+                    yield ev
+                if not self._needs_verify():
+                    # 2-urinish "topilmadi" bo'ldi — halol javob, tekshiruv shart emas
+                    self.last_verdict = "fixed"
+                else:
+                    v2 = await verify_answer(
+                        self.ai_client,
+                        question,
+                        self._buf_text,
+                        history,
+                        interpreted=self._effective_question,
+                        context=self._last_context,
+                    )
+                    if v2 is not None:
+                        extra_tokens += v2.tokens
+                    if v2 is None or v2.ok:
+                        self.last_verdict = "fixed"
+                    else:
+                        # Ikkinchisi ham noto'g'ri — to'qima o'rniga halol javob
+                        logger.warning(
+                            "Tekshiruv: qayta yozilgan javob ham rad etildi | %r | %s",
+                            question[:200],
+                            v2.problem,
+                        )
+                        self.last_verdict = "failed"
+                        self.last_verdict_note = f"{first_problem} | {v2.problem}"
+                        self.last_outcome = "no_info"
+                        lang = detect_reply_lang(question, history)
+                        self._buf_text = _localize(NO_INFO_REPLY, lang)
+                        if self._buf_done is not None:
+                            self._buf_done = {**self._buf_done, "sources": []}
+
+        if self._buf_text:
+            yield {"type": "delta", "text": self._buf_text}
+        done = dict(self._buf_done or {
+            "type": "done",
+            "completion_tokens": 0,
+            "finish_reason": "stop",
+            "max_tokens": self.MAX_TOKENS,
+            "sources": [],
+        })
+        done["completion_tokens"] = int(done.get("completion_tokens") or 0) + extra_tokens
+        yield done
+
+    def _system(self, system: str, lang: ReplyLang) -> str:
+        """Tizim prompti + til + (qayta yozishda) tekshiruvchi ko'rsatgan
+        kamchilik."""
+        out = _with_lang(system, lang)
+        if self._retry_hint:
+            out += (
+                "\n\nIMPORTANT — REVIEW FEEDBACK: a previous draft answer to this "
+                f"question was rejected by a reviewer: {self._retry_hint}\n"
+                "Answer exactly what the user asked. Keep the user's own terms. "
+                "Use only facts from the provided blocks; if they do not contain "
+                "the answer, say honestly that the information was not found."
+            )
+        return out
+
+    async def _execute_stream_raw(
+        self,
+        question: str,
+        history: list[ChatTurn] | None = None,
+        retry_hint: str | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """execute bilan bir xil RAG mantiqi, lekin javobni token-token (oqim)
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
@@ -3522,11 +3707,23 @@ class AnswerQuestionUseCase:
           employees — xodimlar ro'yxatidan qidiruv;
           search    — bilim bazasidan qidiruv;
           write     — model javob yozmoqda.
-        Tayyor (modelsiz) javoblarda faqat "analyze" bo'ladi."""
+        Tayyor (modelsiz) javoblarda faqat "analyze" bo'ladi.
+
+        `retry_hint` — tekshiruvchi oldingi javobni rad etgan (qara:
+        execute_stream). Bunda so'zga qarab ishlaydigan QISQA YO'LLAR
+        (ma'lumotnoma, turkum/filial ro'yxati, xodim yo'li, "mavzudan tashqari",
+        aniqlashtirish) o'chiriladi — javob to'liq qidiruv + model orqali,
+        kamchilik ko'rsatilgan holda qayta yoziladi."""
         self.last_intent = None
         self.last_outcome = "answered"
         self.last_top_score = None
         self.last_flag = None
+        # Tekshiruvchi uchun: model qaysi kontekstga tayanib yozdi va savol
+        # qanday talqin qilindi
+        self._last_context = None
+        self._effective_question = None
+        self._retry_hint = retry_hint
+        force = retry_hint is not None
         yield {"type": "status", "step": "analyze"}
         # Himoya: PII maskalanadi, ochiq prompt-injection modelga umuman
         # bormaydi (qara: src/core/ai/guard.py)
@@ -3591,13 +3788,16 @@ class AnswerQuestionUseCase:
             question, history
         )
         question = resolved or question
+        self._effective_question = question
 
         # Xodimlar ma'lumotnomasi (o'zi kiritgan IP, admin qo'ygan kalit so'z)
         # — vektor bazadan va routerdan OLDIN: aniq moslik, model kerak emas.
-        if not resolved:
+        if not resolved and not force:
             hits = await self._directory_hits(question)
             if hits:
                 yield {"type": "status", "step": "employees"}
+                self.last_intent = Intent.EMPLOYEE.value
+                self._last_context = None
                 emp_text = _format_employee_answer(hits[:60])
                 yield {
                     "type": "delta",
@@ -3661,7 +3861,7 @@ class AnswerQuestionUseCase:
         # "2206 kimniki"), routerning fikridan qat'i nazar qisqa yo'llarni
         # ochmaymiz — xodim qidiruvini deterministik kod bajaradi va u
         # routerdan ishonchliroq (shu sabab u yerda ham router "maslahatchi").
-        skip_shortcuts = _has_employee_intent(question.lower())
+        skip_shortcuts = force or _has_employee_intent(question.lower())
 
         # Bank/moliyaga UMUMAN aloqasi yo'q savol (sport, siyosat, ob-havo...) —
         # bazaga bormaymiz, modelni ham chaqirmaymiz. Ilgari bu savol RAG'ga
@@ -3767,7 +3967,7 @@ class AnswerQuestionUseCase:
             yield {"type": "status", "step": "write"}
             async for ev in self.ai_client.stream_generate(
                 prompt,
-                system_prompt=_with_lang(system, lang),
+                system_prompt=self._system(system, lang),
                 temperature=self.TEMPERATURE,
                 max_tokens=max_toks,
             ):
@@ -3882,7 +4082,7 @@ class AnswerQuestionUseCase:
             yield {"type": "status", "step": "employees"}
         route = (
             None
-            if resolved or _blind_employee_guess(decision, question)
+            if force or resolved or _blind_employee_guess(decision, question)
             else await self._employee_route(to_latin(question))
         )
         if route is not None:
@@ -3929,12 +4129,15 @@ class AnswerQuestionUseCase:
         # Turkumning BARCHA mahsulotini so'ragan keng savol — LLM'ni chaqirmasdan,
         # katalogdan deterministik raqamlangan ro'yxat qaytaramiz (format har doim
         # bir xil bo'lsin: LLM'ga qoldirilsa ba'zan vergul bilan ham chiqib turardi).
-        broad_reply, only_title = await self._broad_category_reply(
-            question, want_cyrillic
+        broad_reply, only_title = (
+            (None, None)
+            if force
+            else await self._broad_category_reply(question, want_cyrillic)
         )
         # Turkum ichida bitta mahsulot aniqlandi — savolni uning to'liq nomiga
         # almashtiramiz (qidiruv ham, prompt ham shuni ko'radi).
         question = only_title or question
+        self._effective_question = question
         if broad_reply is not None:
             yield {"type": "delta", "text": broad_reply}
             yield {
@@ -4071,6 +4274,8 @@ class AnswerQuestionUseCase:
             )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
+        # Tekshiruvchi javobni shu kontekstga solishtiradi (to'qilgan raqam)
+        self._last_context = prompt
         # Bazadan bo'laklar topildi, lekin ular savolga umuman javob bermasa
         # (masalan bazada yo'q mahsulot) — model NEEDS_WEB deydi va javob
         # ruxsat etilgan saytlardan (turonbank.uz ham) olinadi.
@@ -4089,7 +4294,7 @@ class AnswerQuestionUseCase:
         yield {"type": "status", "step": "write"}
         async for ev in self.ai_client.stream_generate(
             prompt,
-            system_prompt=_with_lang(system, lang),
+            system_prompt=self._system(system, lang),
             temperature=self.TEMPERATURE,
             max_tokens=max_toks,
         ):

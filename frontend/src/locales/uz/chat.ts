@@ -176,6 +176,8 @@ export const chatStatic: ChatStaticStrings = {
     search: "Bilim bazasidan qidirmoqda",
     web: "Rasmiy saytlardan qidirmoqda",
     write: "Javob yozmoqda",
+    verify: "Javobni tekshirmoqda",
+    rewrite: "Javobni aniqlashtirmoqda",
   },
   interrupted: "To'xtatildi",
   sourcesLabel: "Manbalar",

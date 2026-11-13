@@ -128,6 +128,8 @@ async def cached_answer_stream(
             use_case.last_intent = data.get("intent")
             use_case.last_outcome = "answered"
             use_case.last_top_score = data.get("top_score")
+            # Keshga faqat tekshiruvdan o'tgan javob yoziladi
+            use_case.last_verdict = "cached"
             yield {"type": "status", "step": "analyze"}
             text = str(data.get("text", ""))
             for i in range(0, len(text), _REPLAY_CHUNK):
@@ -156,6 +158,7 @@ async def cached_answer_stream(
     text = "".join(parts)
     if (
         use_case.last_outcome == "answered"
+        and use_case.last_verdict in ("ok", "fixed", None)
         and use_case.last_intent in CACHEABLE_INTENTS
         and done.get("finish_reason") == "stop"
         and text.strip()

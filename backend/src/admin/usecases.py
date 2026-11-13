@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import Depends
 
 from src.admin.schemas import (
+    AnswerLogItem,
+    AnswerLogPageView,
     ComponentStatusView,
     DashboardStatsView,
     DeptStat,
@@ -270,6 +272,63 @@ class QuestionAnalyticsUseCase:
             top=items(top),
             unanswered=items(unanswered),
         )
+
+
+class AnswerLogUseCase:
+    """Savol + bot javobi jurnali: admin bot to'g'ri javob berganini
+    ko'rishi uchun. Tekshiruvchi rad etganlarni alohida filtrlash mumkin."""
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(
+        self,
+        days: int = 30,
+        verdict: str | None = None,
+        outcome: str | None = None,
+        search: str | None = None,
+        page: int = 1,
+        size: int = 30,
+    ) -> AnswerLogPageView:
+        async with self.uow as uow:
+            repo = uow.question_logs
+            rows, total = await repo.answer_log(
+                uow.session,
+                days=days,
+                verdict=verdict,
+                outcome=outcome,
+                search=search,
+                page=page,
+                size=size,
+            )
+            verdicts = await repo.verdict_counts(uow.session, days=days)
+        return AnswerLogPageView(
+            items=[
+                AnswerLogItem(
+                    id=log.id,
+                    created_at=log.created_at,
+                    username=username,
+                    question=log.question,
+                    answer=log.answer or "",
+                    intent=log.intent,
+                    outcome=log.outcome,
+                    verdict=log.verdict,
+                    verdict_note=log.verdict_note,
+                    duration_ms=log.duration_ms,
+                )
+                for log, username in rows
+            ],
+            total=total,
+            page=page,
+            size=size,
+            verdicts=verdicts,
+        )
+
+
+def get_answer_log_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> AnswerLogUseCase:
+    return AnswerLogUseCase(uow=uow)
 
 
 def get_question_analytics_use_case(

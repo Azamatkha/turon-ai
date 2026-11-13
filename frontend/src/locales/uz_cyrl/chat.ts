@@ -174,6 +174,8 @@ export const chatStatic: ChatStaticStrings = {
     search: "Билим базасидан қидирмоқда",
     web: "Расмий сайтлардан қидирмоқда",
     write: "Жавоб ёзмоқда",
+    verify: "Жавобни текширмоқда",
+    rewrite: "Жавобни аниқлаштирмоқда",
   },
   interrupted: "Тўхтатилди",
   sourcesLabel: "Манбалар",

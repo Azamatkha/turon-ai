@@ -2,7 +2,7 @@ from datetime import date
 from typing import Any
 from uuid import UUID
 
-from pydantic import EmailStr, Field, field_validator
+from pydantic import Field, field_validator
 
 from src.core.schemas import Base
 from src.core.validations import (
@@ -83,7 +83,9 @@ class UserProfileViewModel(Base):
     username: str
     department: str | None = None
     role: UserRole
-    email: EmailStr
+    # Javob modeli — tekshiruv yo'q: bazadagi eski yaroqsiz email (login
+    # nuqta bilan tugagan) butun profilni 500 ga aylantirmasin
+    email: str
     phone_number: str | None = None
     ip_number: str | None = None
     is_verified: bool
@@ -106,7 +108,9 @@ class UserSummaryWithContactsViewModel(Base):
     id: UUID
     full_name: str
     username: str
-    email: EmailStr
+    # Javob modeli — tekshiruv yo'q: bazadagi eski yaroqsiz email (login
+    # nuqta bilan tugagan) butun profilni 500 ga aylantirmasin
+    email: str
     phone_number: str
 
 class UserAdminListItem(Base):

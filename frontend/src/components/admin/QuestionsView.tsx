@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import AnswerLogPanel from "./AnswerLogPanel";
 import FilterSelect from "./FilterSelect";
 import StatCard, { type StatDef } from "./StatCard";
 import { getQuestionAnalytics, type QuestionAnalytics, type QuestionStatItem } from "../../services/adminService";
@@ -30,6 +31,16 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
   const [data, setData] = useState<QuestionAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  // Pastdagi "savol + javob" jurnali: qidiruv va qayta yuklash belgisi
+  const [logSearch, setLogSearch] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const logRef = useRef<HTMLElement>(null);
+
+  // Ro'yxatdagi savolni bossa — jurnal shu savol bilan filtrlanadi
+  const showAnswers = (question: string) => {
+    setLogSearch(question);
+    logRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,7 +109,19 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
       ) : (
         <ol className={styles.list}>
           {rows.map((r, i) => (
-            <li key={r.question + i} className={styles.item}>
+            <li
+              key={r.question + i}
+              className={`${styles.item} ${styles.itemClickable}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => showAnswers(r.question)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  showAnswers(r.question);
+                }
+              }}
+            >
               <span className={styles.rank}>{i + 1}</span>
               <span className={styles.q} title={r.question}>{r.question}</span>
               <span className={styles.meta}>
@@ -122,7 +145,10 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
           onChange={(v) => setDays(Number(v))}
           options={PERIODS.map((p) => ({ value: String(p), label: admin.questionsPeriod(p) }))}
         />
-        <button type="button" className={styles.refreshBtn} onClick={() => void load()} disabled={loading}>
+        <button type="button" className={styles.refreshBtn} onClick={() => {
+            void load();
+            setReloadKey((k) => k + 1);
+          }} disabled={loading}>
           {admin.faceLogsRefresh}
         </button>
       </div>
@@ -137,6 +163,15 @@ export default function QuestionsView({ mounted, t: admin }: QuestionsViewProps)
         {list(admin.questionsUnansweredTitle, admin.questionsUnansweredHint, data?.unanswered ?? [], true)}
         {list(admin.questionsTopTitle, admin.questionsTopHint, data?.top ?? [], false)}
       </div>
+
+      <AnswerLogPanel
+        ref={logRef}
+        days={days}
+        t={admin}
+        search={logSearch}
+        onSearchChange={setLogSearch}
+        reloadKey={reloadKey}
+      />
     </div>
   );
 }

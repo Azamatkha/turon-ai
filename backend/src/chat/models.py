@@ -90,3 +90,10 @@ class QuestionLog(Base, UUIDIDMixin, TimestampMixin):
     duration_ms: Mapped[int] = mapped_column(Integer, default=0)
     # outcome="web" bo'lsa — javob olingan sahifalar (admin bazaga qo'shishi uchun)
     source_urls: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    # Bot bergan javob (admin savol yonida ko'radi)
+    answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Javob tekshiruvi: "ok" | "fixed" (qayta yozildi) | "failed" (rad etildi,
+    # "topilmadi" berildi) | "unchecked" (tekshiruv bajarilmadi) | NULL
+    verdict: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    # Tekshiruvchi topgan kamchilik
+    verdict_note: Mapped[str | None] = mapped_column(Text, nullable=True)

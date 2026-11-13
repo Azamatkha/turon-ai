@@ -13,6 +13,8 @@ SWAGGER'DA TEKSHIRISH:
    POST /v1/admin/backups/qdrant -> bilim bazasi snapshot'ini hoziroq olish.
 6) GET /v1/admin/audit-logs?target_type=user&search=... -> admin amallari
    jurnali (kim, nima qildi, nimaga, qachon). Faqat VIEW_LOGS huquqi bilan.
+5b) GET /v1/admin/questions/answers -> savol + bot javobi jurnali (javob
+   tekshiruvi natijasi bilan), rad etilganlarni filtrlash mumkin
 5) GET /v1/admin/questions?days=30 -> eng ko'p so'ralgan va bazada javob
    topilmagan savollar + umumiy ko'rsatkichlar (javob vaqti, token).
 4) GET /v1/admin/disliked-answers?only_open=true -> dislike olgan javoblar
@@ -27,6 +29,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
 from src.admin.schemas import (
+    AnswerLogPageView,
     DashboardStatsView,
     DislikedAnswerPageView,
     FaceIdLogPageView,
@@ -37,6 +40,7 @@ from src.admin.schemas import (
     WebAnswerPageView,
 )
 from src.admin.usecases import (
+    AnswerLogUseCase,
     DashboardStatsUseCase,
     ListDislikedAnswersUseCase,
     ListFaceIdLogsUseCase,
@@ -45,6 +49,7 @@ from src.admin.usecases import (
     QuestionAnalyticsUseCase,
     ReviewDislikedAnswerUseCase,
     SystemStatusUseCase,
+    get_answer_log_use_case,
     get_dashboard_stats_use_case,
     get_list_disliked_answers_use_case,
     get_list_face_id_logs_use_case,
@@ -142,6 +147,25 @@ async def question_analytics(
 ) -> QuestionAnalyticsView:
     """Savollar tahlili — bilim bazasiga nima qo'shish kerakligini ko'rsatadi."""
     return await use_case.execute(days=days, limit=limit)
+
+
+@router.get("/questions/answers", response_model=AnswerLogPageView)
+async def answer_log(
+    current_user: Annotated[User, Depends(require_permission(Permission.VIEW_DASHBOARD))],
+    use_case: Annotated[AnswerLogUseCase, Depends(get_answer_log_use_case)],
+    days: Annotated[int, Query(ge=1, le=365)] = 30,
+    verdict: Annotated[
+        str | None, Query(pattern="^(ok|fixed|failed|unchecked|cached|rejected)$")
+    ] = None,
+    outcome: Annotated[str | None, Query(max_length=20)] = None,
+    search: Annotated[str | None, Query(max_length=100)] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 30,
+) -> AnswerLogPageView:
+    """Savollar va bot bergan javoblar — yangisidan eskisiga."""
+    return await use_case.execute(
+        days=days, verdict=verdict, outcome=outcome, search=search, page=page, size=size
+    )
 
 
 @router.get("/audit-logs", response_model=AuditLogPageView)

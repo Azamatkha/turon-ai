@@ -18,7 +18,10 @@ FULL_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9]{2,30}$")
 
 # Validates a username with alphanumeric characters, underscore, dash, and dot
 # Example: "john.doe_2023"
-USERNAME_VALIDATOR = re.compile(r"^[a-zA-Z0-9_\-.]{4,60}$")
+# Login'dan email hosil qilinadi (login@turonbank.uz), shuning uchun nuqta
+# boshida/oxirida yoki ketma-ket ("..") bo'lmasin — aks holda email yaroqsiz
+# bo'lib, /users/me 500 qaytarardi ("muzaffar.@turonbank.uz", 2026-11-12).
+USERNAME_VALIDATOR = re.compile(r"^(?!\.)(?!.*\.\.)[a-zA-Z0-9_\-.]{4,60}(?<!\.)$")
 
 # Validates a name with letters and spaces only
 # Example: "John Smith"

@@ -132,6 +132,31 @@ class QuestionAnalyticsView(Base):
     unanswered: list[QuestionStatItem]
 
 
+class AnswerLogItem(Base):
+    """Bitta savol va bot bergan javob (savollar tahlili jurnali)."""
+
+    id: UUID
+    created_at: datetime
+    username: str | None
+    question: str
+    answer: str
+    intent: str | None
+    outcome: str
+    # ok | fixed | failed | unchecked | cached | None
+    verdict: str | None
+    verdict_note: str | None
+    duration_ms: int
+
+
+class AnswerLogPageView(Base):
+    items: list[AnswerLogItem]
+    total: int
+    page: int
+    size: int
+    # Davr bo'yicha tekshiruv natijalari soni
+    verdicts: dict[str, int]
+
+
 class HourlyPoint(Base):
     hour: datetime
     questions: int

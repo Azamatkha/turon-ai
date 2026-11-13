@@ -192,6 +192,12 @@ class AIConfig(BaseModel):
     # tursa (boshqa mijoz yuborgan), model qayta yuklanib (~60 s) router
     # timeout bo'ldi. False faqat BARCHA mijozlar num_ctx yubormaganda xavfsiz.
     OLLAMA_SEND_NUM_CTX: bool = True
+    # Javob TEKSHIRUVI: har javob foydalanuvchiga chiqishidan oldin model uni
+    # "shu savolga javobmi, kontekstda yo'q fakt to'qilmaganmi" deb baholaydi;
+    # rad etilsa qayta yozadi (qara: src/knowledge/verifier.py). Javob oqim
+    # o'rniga tekshirilgach birdan chiqadi. Muammo bo'lsa .env da
+    # ANSWER_VERIFY=false bilan o'chiriladi.
+    ANSWER_VERIFY: bool = True
     # Model oxirgi so'rovdan keyin VRAM'da qancha turadi. Ollama standarti
     # atigi 5 daqiqa: 9 daqiqa jimlikdan keyin model tushirilib, keyingi
     # savolda 27B modelni qayta yuklash router timeout'idan (20 s) uzoq

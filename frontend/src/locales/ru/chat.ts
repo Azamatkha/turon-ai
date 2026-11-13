@@ -173,6 +173,8 @@ export const chatStatic: ChatStaticStrings = {
     search: "Ищет в базе знаний",
     web: "Ищет на официальных сайтах",
     write: "Пишет ответ",
+    verify: "Проверяет ответ",
+    rewrite: "Уточняет ответ",
   },
   interrupted: "Остановлено",
   sourcesLabel: "Источники",

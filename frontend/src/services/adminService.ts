@@ -184,6 +184,55 @@ export async function getQuestionAnalytics(days = 30, limit = 20): Promise<Quest
   return res.json();
 }
 
+// ---- Savol + bot javobi jurnali — /v1/admin/questions/answers ----
+
+export type AnswerVerdict = "ok" | "fixed" | "failed" | "unchecked" | "cached";
+
+export interface AnswerLogItem {
+  id: string;
+  created_at: string;
+  username?: string | null;
+  question: string;
+  answer: string;
+  intent?: string | null;
+  outcome: string;
+  verdict?: AnswerVerdict | null;
+  verdict_note?: string | null;
+  duration_ms: number;
+}
+
+export interface AnswerLogPage {
+  items: AnswerLogItem[];
+  total: number;
+  page: number;
+  size: number;
+  verdicts: Partial<Record<AnswerVerdict, number>>;
+}
+
+export interface AnswerLogQuery {
+  days: number;
+  // "rejected" — fixed + failed
+  verdict?: "rejected" | AnswerVerdict;
+  outcome?: string;
+  search?: string;
+  page?: number;
+  size?: number;
+}
+
+export async function getAnswerLog(q: AnswerLogQuery): Promise<AnswerLogPage> {
+  const params = new URLSearchParams({
+    days: String(q.days),
+    page: String(q.page ?? 1),
+    size: String(q.size ?? 30),
+  });
+  if (q.verdict) params.set("verdict", q.verdict);
+  if (q.outcome) params.set("outcome", q.outcome);
+  if (q.search?.trim()) params.set("search", q.search.trim());
+  const res = await apiFetch(`/v1/admin/questions/answers?${params.toString()}`);
+  if (!res.ok) throw new Error(await readError(res, "Javoblar jurnalini olishda xatolik"));
+  return res.json();
+}
+
 // ---- Audit jurnali — /v1/admin/audit-logs ----
 
 export interface AuditLogItem {

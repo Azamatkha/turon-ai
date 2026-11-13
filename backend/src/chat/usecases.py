@@ -71,6 +71,10 @@ class QuestionLogEntry:
     duration_ms: int
     # Veb-qidiruv javobi bo'lsa — sahifa havolalari
     source_urls: list[str] | None = None
+    # Bot bergan javob va tekshiruv natijasi (qara: knowledge/verifier.py)
+    answer: str | None = None
+    verdict: str | None = None
+    verdict_note: str | None = None
 
 
 async def log_question(entry: QuestionLogEntry) -> None:
@@ -102,6 +106,14 @@ async def log_question(entry: QuestionLogEntry) -> None:
                         "completion_tokens": entry.completion_tokens,
                         "duration_ms": entry.duration_ms,
                         "source_urls": entry.source_urls or None,
+                        # Javobda ham PII ochiq saqlanmasin
+                        "answer": (
+                            mask_pii(entry.answer.strip())[0][:20000]
+                            if entry.answer
+                            else None
+                        ),
+                        "verdict": entry.verdict,
+                        "verdict_note": entry.verdict_note,
                     },
                 )
                 await uow.commit()

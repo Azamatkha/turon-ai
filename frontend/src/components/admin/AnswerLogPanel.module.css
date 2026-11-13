@@ -1,0 +1,253 @@
+/* Savol + bot javobi jurnali (Savollar tahlili sahifasining pastki qismi) */
+
+.panel {
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+  scroll-margin-top: 16px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--adm-border);
+  background: var(--adm-card-alt);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.hint {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+}
+
+.summary {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-body);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.search {
+  width: 260px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.search:focus {
+  border-color: var(--adm-accent);
+}
+
+.error {
+  margin: 12px 16px 0;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px 4px;
+  border: none;
+  background: none;
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowHead:hover .q {
+  color: var(--adm-accent);
+}
+
+.q {
+  font-weight: 600;
+  color: var(--adm-text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: 12px;
+  color: var(--adm-text-muted-2);
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--adm-hover);
+  color: var(--adm-text-body);
+}
+
+.v_ok {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+}
+
+.v_fixed {
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.v_failed {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.chev {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--adm-text-muted-2);
+  transition: transform 0.15s ease;
+}
+
+.chevOpen {
+  transform: rotate(90deg);
+}
+
+.preview {
+  padding: 0 16px 11px;
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  padding: 4px 16px 14px;
+}
+
+.label {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--adm-text-muted-2);
+}
+
+.text {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--adm-card-alt);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--adm-text-body);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.note {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--adm-border);
+  text-align: center;
+}
+
+.moreBtn {
+  padding: 8px 16px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moreBtn:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.moreBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .rowHead {
+    grid-template-columns: minmax(0, 1fr) 16px;
+  }
+
+  .meta {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: wrap;
+  }
+
+  .search {
+    width: 100%;
+  }
+}

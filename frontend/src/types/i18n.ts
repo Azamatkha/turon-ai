@@ -587,6 +587,20 @@ export interface AdminStrings {
   questionsPeriod: (n: number) => string;
   questionsUsers: (n: number) => string;
   questionsErrors: (n: number) => string;
+  answersTitle: string;
+  answersHint: string;
+  answersSearchPh: string;
+  answersFilterAll: string;
+  answersFilterRejected: string;
+  answersFilterFailed: string;
+  answersFilterNoInfo: string;
+  answersEmpty: string;
+  answersMore: string;
+  answersQuestion: string;
+  answersAnswer: string;
+  answersNote: string;
+  answersVerdict: Record<"ok" | "fixed" | "failed" | "unchecked" | "cached", string>;
+  answersVerdictSummary: (ok: number, fixed: number, failed: number) => string;
   // Audit jurnali
   auditNav: string;
   auditLoadError: string;
