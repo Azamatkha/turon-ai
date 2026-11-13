@@ -241,14 +241,40 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
         search: str | None = None,
         page: int = 1,
         size: int = 30,
-    ) -> tuple[list[tuple[QuestionLog, str | None]], int]:
+    ) -> tuple[list[tuple[QuestionLog, str | None, str | None]], int]:
         """Savol + bot javobi jurnali, yangisidan eskisiga — admin bot to'g'ri
         javob berayaptimi, ko'zi bilan tekshirishi uchun.
 
         `verdict="rejected"` — tekshiruvchi rad etganlar (fixed + failed).
-        Har qator: (yozuv, xodim logini)."""
+        Har qator: (yozuv, xodim logini, javob).
+
+        Javob ustuni keyin qo'shilgan — eski yozuvlarda NULL. Ular uchun javob
+        chat tarixidan olinadi: shu xodimning yozuv vaqtiga eng yaqin (±2 daq)
+        bot xabari. Ikkalasi bir soniyada yoziladi (oqim tugagach), shuning
+        uchun moslik ishonchli; suhbat o'chirilgan bo'lsa — javob bo'sh."""
         since = get_utc_now() - timedelta(days=days)
-        conds = [self.model.created_at >= since, self.model.answer.isnot(None)]
+        window = timedelta(seconds=120)
+        from_history = (
+            select(ChatMessage.content)
+            .join(ChatSession, ChatMessage.session_id == ChatSession.id)
+            .where(
+                ChatSession.user_id == self.model.user_id,
+                ChatMessage.role == "assistant",
+                ChatMessage.created_at.between(
+                    self.model.created_at - window, self.model.created_at + window
+                ),
+            )
+            .order_by(
+                func.abs(
+                    func.extract("epoch", ChatMessage.created_at - self.model.created_at)
+                )
+            )
+            .limit(1)
+            .correlate(self.model)
+            .scalar_subquery()
+        )
+        answer_col = func.coalesce(self.model.answer, from_history)
+        conds = [self.model.created_at >= since]
         if verdict == "rejected":
             conds.append(self.model.verdict.in_(("fixed", "failed")))
         elif verdict:
@@ -268,7 +294,7 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
             ).scalar_one()
         )
         query = (
-            select(self.model, User.username)
+            select(self.model, User.username, answer_col)
             .outerjoin(User, self.model.user_id == User.id)
             .where(*conds)
             .order_by(self.model.created_at.desc())
@@ -276,7 +302,7 @@ class QuestionLogRepository(BaseRepository[QuestionLog]):
             .limit(size)
         )
         result = await session.execute(query)
-        return [(r[0], r[1]) for r in result.all()], total
+        return [(r[0], r[1], r[2]) for r in result.all()], total
 
     async def verdict_counts(
         self, session: AsyncSession, days: int = 30

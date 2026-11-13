@@ -263,6 +263,7 @@ export const admin: AdminStrings = {
   answersQuestion: "Савол",
   answersAnswer: "Бот жавоби",
   answersNote: "Текширувчи изоҳи",
+  answersMissing: "Жавоб сақланмаган (суҳбат ўчирилган бўлиши мумкин)",
   answersVerdict: {
     ok: "Текширилди",
     fixed: "Қайта ёзилди",

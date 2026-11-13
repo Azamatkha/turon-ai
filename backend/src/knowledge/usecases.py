@@ -3564,12 +3564,15 @@ class AnswerQuestionUseCase:
         history: list[ChatTurn] | None,
         retry_hint: str | None,
         pass_status: bool,
+        retry_route: str | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """Xom javobni YIG'ADI: status hodisalari darhol o'tadi (agar
         `pass_status`), matn va "done" esa self._buf_* ga yoziladi."""
         self._buf_text = ""
         self._buf_done = None
-        async for ev in self._execute_stream_raw(question, history, retry_hint):
+        async for ev in self._execute_stream_raw(
+            question, history, retry_hint, retry_route
+        ):
             kind = ev.get("type")
             if kind == "delta":
                 self._buf_text += ev.get("text", "")
@@ -3630,7 +3633,10 @@ class AnswerQuestionUseCase:
                 self.last_verdict_note = first_problem
                 # Qayta yozish — qisqa yo'llarsiz, kamchilik ko'rsatilgan holda
                 yield {"type": "status", "step": "rewrite"}
-                async for ev in self._collect(question, history, first_problem, False):
+                # Tekshiruvchi aytgan manbadan: baza / umumiy bilim / internet
+                async for ev in self._collect(
+                    question, history, first_problem, False, v.source
+                ):
                     yield ev
                 if not self._needs_verify():
                     # 2-urinish "topilmadi" bo'ldi — halol javob, tekshiruv shart emas
@@ -3694,6 +3700,7 @@ class AnswerQuestionUseCase:
         question: str,
         history: list[ChatTurn] | None = None,
         retry_hint: str | None = None,
+        retry_route: str | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """execute bilan bir xil RAG mantiqi, lekin javobni token-token (oqim)
         qaytaradi — foydalanuvchi real vaqtda ko'rishi uchun. Har bir bo'lak:
@@ -3713,7 +3720,15 @@ class AnswerQuestionUseCase:
         execute_stream). Bunda so'zga qarab ishlaydigan QISQA YO'LLAR
         (ma'lumotnoma, turkum/filial ro'yxati, xodim yo'li, "mavzudan tashqari",
         aniqlashtirish) o'chiriladi — javob to'liq qidiruv + model orqali,
-        kamchilik ko'rsatilgan holda qayta yoziladi."""
+        kamchilik ko'rsatilgan holda qayta yoziladi.
+
+        `retry_route` — tekshiruvchi aytgan TO'G'RI manba:
+          general_knowledge — bazasiz, model bilimidan (Markaziy bank nima,
+                              atama ma'nosi) — bazadagi "Bank haqida" hujjati
+                              begona mavzuga tortmasin;
+          web               — ruxsat etilgan saytlardan (yangiliklar, bugungi
+                              rasmiy ma'lumot); topilmasa — halol "topilmadi";
+          knowledge_base / none — bilim bazasidan to'liq qidiruv."""
         self.last_intent = None
         self.last_outcome = "answered"
         self.last_top_score = None
@@ -3724,6 +3739,8 @@ class AnswerQuestionUseCase:
         self._effective_question = None
         self._retry_hint = retry_hint
         force = retry_hint is not None
+        route_general = force and retry_route == "general_knowledge"
+        route_web = force and retry_route == "web"
         yield {"type": "status", "step": "analyze"}
         # Himoya: PII maskalanadi, ochiq prompt-injection modelga umuman
         # bormaydi (qara: src/core/ai/guard.py)
@@ -3854,6 +3871,36 @@ class AnswerQuestionUseCase:
             }
             return
 
+        # Tekshiruvchi: bu savolga javob INTERNETDAN (yangilik, bugungi rasmiy
+        # ma'lumot) olinishi kerak. Baza bunga javob bermaydi — u yerdan
+        # qayta qidirish yana eski hujjatni ("Tarix") qaytarardi.
+        if route_web:
+            if config.web_search.WEB_SEARCH_ENABLED and not _is_meaningless_query(
+                question
+            ):
+                async for ev in self._web_stream(
+                    question, decision, lang, want_cyrillic, router_tokens
+                ):
+                    yield ev
+                if self.last_outcome == "web":
+                    return
+            else:
+                logger.info(
+                    "Javob internetdan kerak, lekin veb-qidiruv o'chiq "
+                    "(WEB_SEARCH_ENABLED=false): %r",
+                    question[:200],
+                )
+            self.last_outcome = "no_info"
+            yield {"type": "delta", "text": _localize(NO_INFO_REPLY, lang)}
+            yield {
+                "type": "done",
+                "completion_tokens": router_tokens,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
         # XAVFSIZLIK TO'RI. Quyidagi uch yo'l (other / concept / history)
         # bazaga UMUMAN bormaydi — ya'ni router xato baholasa, bazada BOR
         # ma'lumot foydalanuvchiga yetib bormaydi. Xodim so'rovi bunga eng
@@ -3936,18 +3983,27 @@ class AnswerQuestionUseCase:
                 }
                 return
 
-        if (
+        if route_general or (
             decision is not None
             and not skip_shortcuts
             and catalog_title is None
             and decision.intent in (Intent.CONCEPT, Intent.HISTORY, Intent.LANGUAGE)
         ):
+            # Tekshiruvchi "umumiy bilimdan" desa — router nima deganidan
+            # qat'i nazar CONCEPT (bazasiz) yo'li
+            nosearch_intent = (
+                Intent.CONCEPT
+                if route_general or decision is None
+                else decision.intent
+            )
+            if route_general:
+                self.last_intent = Intent.CONCEPT.value
             prompt, system, max_toks = self._no_search_call(
-                decision.intent, question, history
+                nosearch_intent, question, history
             )
             # Joriy/tekshiriladigan fakt (bugungi stavka, soliq, qonun) —
             # model to'qimaydi, NEEDS_WEB deydi va kod internetdan qidiradi.
-            web_ok = decision.intent is Intent.CONCEPT and _web_eligible(
+            web_ok = nosearch_intent is Intent.CONCEPT and _web_eligible(
                 decision, question
             )
             if web_ok:

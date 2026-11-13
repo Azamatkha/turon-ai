@@ -309,14 +309,14 @@ class AnswerLogUseCase:
                     created_at=log.created_at,
                     username=username,
                     question=log.question,
-                    answer=log.answer or "",
+                    answer=answer or "",
                     intent=log.intent,
                     outcome=log.outcome,
                     verdict=log.verdict,
                     verdict_note=log.verdict_note,
                     duration_ms=log.duration_ms,
                 )
-                for log, username in rows
+                for log, username, answer in rows
             ],
             total=total,
             page=page,

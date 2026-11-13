@@ -262,6 +262,7 @@ export const admin: AdminStrings = {
   answersQuestion: "Вопрос",
   answersAnswer: "Ответ бота",
   answersNote: "Комментарий проверки",
+  answersMissing: "Ответ не сохранён (возможно, чат удалён)",
   answersVerdict: {
     ok: "Проверен",
     fixed: "Переписан",

@@ -266,6 +266,7 @@ export const admin: AdminStrings = {
   answersQuestion: "Savol",
   answersAnswer: "Bot javobi",
   answersNote: "Tekshiruvchi izohi",
+  answersMissing: "Javob saqlanmagan (suhbat o‘chirilgan bo‘lishi mumkin)",
   answersVerdict: {
     ok: "Tekshirildi",
     fixed: "Qayta yozildi",

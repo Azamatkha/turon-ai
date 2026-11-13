@@ -143,13 +143,13 @@ const AnswerLogPanel = forwardRef<HTMLElement, AnswerLogPanelProps>(function Ans
                     ›
                   </span>
                 </button>
-                {!isOpen && <div className={styles.preview}>{it.answer}</div>}
+                {!isOpen && <div className={styles.preview}>{it.answer || admin.answersMissing}</div>}
                 {isOpen && (
                   <div className={styles.body}>
                     <div className={styles.label}>{admin.answersQuestion}</div>
                     <div className={styles.text}>{it.question}</div>
                     <div className={styles.label}>{admin.answersAnswer}</div>
-                    <div className={styles.text}>{it.answer}</div>
+                    <div className={styles.text}>{it.answer || admin.answersMissing}</div>
                     {it.verdict_note && (
                       <>
                         <div className={styles.label}>{admin.answersNote}</div>

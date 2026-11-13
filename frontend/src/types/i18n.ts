@@ -599,6 +599,7 @@ export interface AdminStrings {
   answersQuestion: string;
   answersAnswer: string;
   answersNote: string;
+  answersMissing: string;
   answersVerdict: Record<"ok" | "fixed" | "failed" | "unchecked" | "cached", string>;
   answersVerdictSummary: (ok: number, fixed: number, failed: number) => string;
   // Audit jurnali

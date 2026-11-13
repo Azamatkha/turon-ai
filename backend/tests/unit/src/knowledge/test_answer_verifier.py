@@ -19,9 +19,17 @@ def _use_case(
     """drafts: (matn, intent, outcome) — har urinishda bittadan."""
     uc = AnswerQuestionUseCase(embedder=None, store=None, ai_client=None)  # type: ignore[arg-type]
     hints: list[str | None] = []
+    routes: list[str | None] = []
+    uc._test_routes = routes  # type: ignore[attr-defined]
 
-    async def raw(question: str, history: Any = None, retry_hint: str | None = None):
+    async def raw(
+        question: str,
+        history: Any = None,
+        retry_hint: str | None = None,
+        retry_route: str | None = None,
+    ):
         hints.append(retry_hint)
+        routes.append(retry_route)
         text, intent, outcome = drafts.pop(0)
         uc.last_intent = intent
         uc.last_outcome = outcome
@@ -117,3 +125,17 @@ def test_verify_prompt_has_context_and_interpretation() -> None:
         "19", "Meros omonati: 20%", interpreted="Meros omonati", context="BLOK: 20%"
     )
     assert "Meros omonati" in p and "CONTEXT" in p and "DRAFT ANSWER" in p
+
+
+@pytest.mark.asyncio
+async def test_retry_uses_source_named_by_verifier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """"Markaziy bank haqida" -> bazadagi "Bank haqida" (Turonbank) javobi rad
+    etiladi va qayta yozish UMUMIY BILIM yo'lidan ketadi."""
+    uc, _ = _use_case(
+        monkeypatch,
+        [("Turonbank 1990-yilda...", "concept", "answered"), ("Markaziy bank...", "concept", "answered")],
+        [Verdict(False, "asked about the Central Bank, answered about Turonbank", 1, "general_knowledge"), Verdict(True, "", 1)],
+    )
+    text, _, _ = await _run(uc)
+    assert text == "Markaziy bank..."
+    assert uc._test_routes == [None, "general_knowledge"]  # type: ignore[attr-defined]
