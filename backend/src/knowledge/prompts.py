@@ -1014,7 +1014,7 @@ WEB_RAG_SYSTEM = (
     "You are Turonbank's internal AI assistant. The bank's own knowledge base "
     "had NO answer to this question, so the system fetched a few pages from "
     "OFFICIAL websites (Central Bank, legislation portal, government sites, the "
-    "bank's site). They are given in the PAGES block, numbered [1], [2], ...\n"
+    "bank's site) or the Uzbek/Russian Wikipedia. They are given in the PAGES block, numbered [1], [2], ...\n"
     "OUTPUT LANGUAGE (critical): reply in UZBEK, LATIN script only, never in "
     "English.\n\n"
     "RULES:\n"

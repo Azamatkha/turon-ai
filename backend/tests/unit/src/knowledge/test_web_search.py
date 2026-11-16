@@ -524,3 +524,68 @@ async def test_apostrophes_normalized(enabled: None, monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(web_search, "_searxng", capture)
     await web_search.search("o’zbek lotin alifbosi oʻzgartirish")
     assert sent == ["o'zbek lotin alifbosi o'zgartirish"]
+
+
+def test_wiki_host_respects_allowlist() -> None:
+    assert web_search.wiki_host("lotin alifbosi", ["uz.wikipedia.org"]) == "uz.wikipedia.org"
+    assert web_search.wiki_host("латинский алфавит", ["uz.wikipedia.org"]) is None
+    assert web_search.wiki_host("латинский алфавит", ["wikipedia.org"]) == "ru.wikipedia.org"
+    assert web_search.wiki_host("lotin alifbosi", DOMAINS) is None
+
+
+def test_wiki_queries_shorten_and_fix_apostrophe() -> None:
+    assert web_search.wiki_queries("o'zbek lotin alifbosi o'zgartirish") == [
+        "oʻzbek lotin alifbosi oʻzgartirish",
+        "oʻzbek lotin alifbosi",
+        "oʻzbek lotin",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_wikipedia_used_when_engines_return_junk(
+    enabled: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Serverda qidiruv tizimlari bloklangan/axlat qaytaradi — Vikipediya API
+    baribir maqolani topadi va javob uchun sahifa beradi."""
+    monkeypatch.setattr(
+        config.web_search, "WEB_SEARCH_ALLOWED_DOMAINS", "lex.uz,uz.wikipedia.org"
+    )
+    article = "Oʻzbek lotin alifbosi 1993-yilda qabul qilingan. " * 5
+
+    class _Resp:
+        def __init__(self, data: dict) -> None:
+            self.data = data
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return self.data
+
+    class _Wiki:
+        def __init__(self, *a: Any, **kw: Any) -> None:
+            self.calls: list[dict] = []
+
+        async def __aenter__(self) -> "_Wiki":
+            return self
+
+        async def __aexit__(self, *a: Any) -> None:
+            return None
+
+        async def get(self, url: str, params: dict) -> _Resp:
+            assert url == "https://uz.wikipedia.org/w/api.php"
+            if params.get("list") == "search":
+                if params["srsearch"] == "oʻzbek lotin alifbosi oʻzgartirish":
+                    return _Resp({"query": {"search": []}})
+                return _Resp({"query": {"search": [{"title": "Oʻzbek lotin alifbosi"}]}})
+            return _Resp({"query": {"pages": {"1": {"extract": article}}}})
+
+    async def junk(q: str) -> list:
+        return []
+
+    monkeypatch.setattr(web_search, "_searxng", junk)
+    monkeypatch.setattr(web_search.httpx, "AsyncClient", _Wiki)
+    hits = await web_search.search("o'zbek lotin alifbosi o'zgartirish")
+    assert [h.title for h in hits] == ["Oʻzbek lotin alifbosi"]
+    assert hits[0].url.startswith("https://uz.wikipedia.org/wiki/")
+    assert web_search.is_allowed_url(hits[0].url, ["uz.wikipedia.org"])

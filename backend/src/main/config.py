@@ -258,7 +258,7 @@ class WebSearchConfig(BaseModel):
     # matni bor, islohot haqidagi yangiliklar uza.uz / kun.uz kabi saytlarda)
     WEB_SEARCH_ALLOWED_DOMAINS: str = (
         "cbu.uz,lex.uz,turonbank.uz,gov.uz,mf.uz,soliq.uz,"
-        "uza.uz,president.uz,kun.uz,gazeta.uz,daryo.uz"
+        "uza.uz,president.uz,kun.uz,gazeta.uz,daryo.uz,uz.wikipedia.org"
     )
     # Ko'proq sahifa — to'liqroq javob (bitta sahifa ochilmasa ham qolganlari bor)
     WEB_SEARCH_MAX_RESULTS: int = 5
