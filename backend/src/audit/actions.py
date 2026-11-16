@@ -15,6 +15,7 @@ class AuditAction(StrEnum):
     KNOWLEDGE_EMPLOYEES = "knowledge.employees"
     KNOWLEDGE_SCRAPE = "knowledge.scrape"
     KNOWLEDGE_VALIDITY = "knowledge.validity"
+    KNOWLEDGE_META = "knowledge.meta"
     KNOWLEDGE_RESCRAPE = "knowledge.rescrape"
 
     REPORT_UPDATE = "report.update"

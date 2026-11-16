@@ -19,6 +19,7 @@ from src.core.errors.exceptions import (
 )
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.answer_helpers import category_key
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import (
@@ -43,6 +44,11 @@ from src.knowledge.schemas import (
 from src.knowledge.scraper import extract_content, fetch_html
 
 logger = get_logger(__name__)
+
+# Admin qo'lda qo'yadigan payload maydonlari: tahrir / qayta scrape paytida
+# hujjat qayta yoziladi, bular esa yo'qolmasligi kerak.
+ADMIN_META_FIELDS = ("valid_until", "category", "note")
+
 
 class UploadKnowledgeUseCase:
     def __init__(self, embedder: OllamaEmbedder, store: QdrantStore) -> None:
@@ -404,8 +410,8 @@ class ScrapeUrlUseCase:
         # Qayta scrape qilinganda avvalgi bo'laklarni o'chiramiz — deterministic ID
         # bir xil chunk_index'larni ustiga yozadi, lekin chunk soni kamaysa
         # ortiqcha eski bo'laklar qolib ketmasligi uchun avval tozalaymiz.
-        # Amal qilish muddati (admin qo'ygan) qayta yuklashda saqlanadi.
-        _, valid_until = await UpdateKnowledgeUseCase(
+        # Admin qo'ygan muddat, turkum va izoh qayta yuklashda saqlanadi.
+        _, kept = await UpdateKnowledgeUseCase(
             embedder=self.embedder, store=self.store
         )._existing_meta(title)
         await self.store.delete_by_title(title)
@@ -415,7 +421,7 @@ class ScrapeUrlUseCase:
             title=title,
             text=text,
             source_url=url,
-            extra_payload={"valid_until": valid_until} if valid_until else None,
+            extra_payload=kept or None,
         )
 
     async def _unique_title(self, title: str, url: str) -> str:
@@ -460,9 +466,17 @@ class ListKnowledgeUseCase:
                     "preview": "",
                     "uploaded_at": "",
                     "valid_until": "",
+                    "category": "",
+                    "note": "",
+                    "source_url": "",
+                    "texts": [],
                 },
             )
             group["chunks"] += 1
+            group["texts"].append(str(payload.get("chunk_text", "")))
+            for key in ("category", "note", "source_url"):
+                if payload.get(key) and not group[key]:
+                    group[key] = str(payload[key])
             # Birinchi bo'lak (chunk_index == 0) matnidan qisqa ko'rinish olamiz
             if payload.get("chunk_index") == 0:
                 group["preview"] = str(payload.get("chunk_text", ""))[:160]
@@ -485,6 +499,11 @@ class ListKnowledgeUseCase:
                 uploaded_at=data["uploaded_at"],
                 valid_until=data["valid_until"],
                 duplicates=duplicates.get(title, []),
+                category=data["category"],
+                auto_category=category_key(
+                    data["source_url"], title, " ".join(data["texts"])
+                ),
+                note=data["note"],
             )
             for title, data in grouped.items()
         ]
@@ -539,8 +558,9 @@ class UpdateKnowledgeUseCase:
         #     yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" ro'yxatidan
         #     yo'qolardi (sarlavhasi tahrirlangan «Meros» shunday yo'qolgan);
         #  2) javob oxiridagi "Batafsil: <havola>" qatori ham chiqmay qolardi.
-        # Amal qilish muddati ham saqlanadi — tahrir uni o'chirib yubormasin
-        source_url, valid_until = await self._existing_meta(old_title)
+        # Amal qilish muddati, turkum va izoh ham saqlanadi — tahrir ularni
+        # o'chirib yubormasin
+        source_url, kept = await self._existing_meta(old_title)
         await self.store.delete_by_title(old_title)
         return await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
@@ -548,20 +568,40 @@ class UpdateKnowledgeUseCase:
             title=title,
             text=text,
             source_url=source_url,
-            extra_payload={"valid_until": valid_until} if valid_until else None,
+            extra_payload=kept or None,
         )
 
-    async def _existing_meta(self, old_title: str) -> tuple[str, str]:
-        """Tahrirlanayotgan yozuvning (havolasi, valid_until) — bo'lmasa bo'sh."""
+    async def _existing_meta(self, old_title: str) -> tuple[str, dict[str, Any]]:
+        """Tahrirlanayotgan yozuvning havolasi va admin qo'ygan maydonlari
+        (valid_until, category, note) — qayta yozishda saqlab qolish uchun."""
         if not await self.store.exists():
-            return "", ""
-        source_url = valid_until = ""
+            return "", {}
+        source_url = ""
+        kept: dict[str, Any] = {}
         for payload in await self.store.scroll_all_pages():
             if str(payload.get("title", "")) != old_title:
                 continue
             source_url = source_url or str(payload.get("source_url") or "")
-            valid_until = valid_until or str(payload.get("valid_until") or "")
-        return source_url, valid_until
+            for key in ADMIN_META_FIELDS:
+                if payload.get(key) and key not in kept:
+                    kept[key] = payload[key]
+        return source_url, kept
+
+
+class SetKnowledgeMetaUseCase:
+    """Hujjatga turkum va izoh qo'yadi (None/bo'sh — olib tashlaydi).
+
+    Faqat payload yangilanadi — vektorlar qayta hisoblanmaydi."""
+
+    def __init__(self, store: QdrantStore) -> None:
+        self.store = store
+
+    async def execute(self, title: str, category: str | None, note: str | None) -> None:
+        if not await self.store.search_by_field("title", title, limit=1):
+            raise InstanceNotFoundException("Ma'lumot topilmadi")
+        await self.store.set_payload_by_title(
+            title, {"category": category or None, "note": (note or "").strip() or None}
+        )
 
 
 class SetKnowledgeValidityUseCase:

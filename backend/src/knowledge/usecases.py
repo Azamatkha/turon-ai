@@ -39,13 +39,13 @@ from src.knowledge.answer_helpers import (
     _GENERIC_TITLE_WORDS,
     _RATE_CHANNEL_HINTS,
     _RESPONSIBLE_STEMS,
+    KB_CATEGORIES,
     _asks_about_organization,
     _asks_for_advice,
     _asks_general_meaning,
     _blind_employee_guess,
     _bot_reply,
     _branch_other_topic,
-    _category_from_text,
     _clarify_reply,
     _clean_concept_answer,
     _ConceptLineFilter,
@@ -88,6 +88,7 @@ from src.knowledge.answer_helpers import (
     _with_lang,
     _word_match,
     _words,
+    category_label,
 )
 from src.knowledge.directory import users_by_ip, users_with_ip, users_with_keywords
 from src.knowledge.ingest_usecases import (
@@ -283,35 +284,8 @@ class AnswerQuestionUseCase:
 
     @staticmethod
     def _category_label(source_url: str, title: str = "", text: str = "") -> str:
-        """Mahsulot turkumini aniqlaydi — katalogni guruhlash uchun
-        (kartalar / kreditlar / omonatlar / filiallar ...).
-
-        Asosiy belgi — HAVOLA. Havola bo'lmasa (qo'lda kiritilgan yoki eski
-        tahrirdan keyin havolasi yo'qolgan yozuv) turkum MATNDAN aniqlanadi:
-        aks holda yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" kabi
-        ro'yxatlarda umuman ko'rinmasdi."""
-        # Filiallar saytda "filial" deb emas, "bank xizmatlari markazi/ofisi"
-        # deb nomlangan — turkumni SARLAVHA bo'yicha aniqlaymiz.
-        t = title.lower()
-        if "bank xizmatlari markazi" in t or "bank xizmatlari ofisi" in t:
-            return _BRANCH_LABEL
-        url = source_url.lower()
-        # Nomi boshqacha bo'lgan bo'linmalar ham bor ("Biznesni rivojlantirish
-        # markazi") — ular sarlavha bo'yicha aniqlanmay, filiallar ro'yxatiga
-        # umuman tushmasdi. URL'dagi /branches/ bo'limi ishonchli belgi.
-        if "/branches/" in url:
-            return _BRANCH_LABEL
-        if "plastic-card" in url or "/cards" in url or "karta" in url:
-            return "Bank kartalari"
-        if "credit" in url or "loan" in url or "kredit" in url:
-            return "Kreditlar"
-        if "deposit" in url or "omonat" in url:
-            return "Omonatlar"
-        if "transfer" in url or "otkazma" in url or "o-tkazma" in url:
-            return "Pul o'tkazmalari"
-        if not url:
-            return _category_from_text(title, text)
-        return "Boshqa xizmatlar"
+        """Turkumni aniqlaydi — qara: answer_helpers.category_label."""
+        return category_label(source_url, title, text)
 
     async def _catalog_groups(self) -> dict[str, list[str]]:
         """Bazadagi BARCHA mahsulotlarning to'liq ro'yxati (title bo'yicha noyob),
@@ -340,6 +314,8 @@ class AnswerQuestionUseCase:
             # bilan). Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
             urls: dict[str, str] = {}
             texts: dict[str, list[str]] = {}
+            # Admin qo'lda qo'ygan turkum (payload "category") — avtomatikdan ustun
+            manual: dict[str, str] = {}
             for p in payloads:
                 if p.get("doc_type") == "employee" or _is_ru_doc(p) != ru:
                     continue
@@ -347,6 +323,8 @@ class AnswerQuestionUseCase:
                 if not title:
                     continue
                 urls.setdefault(title, str(p.get("source_url", "")))
+                if p.get("category") in KB_CATEGORIES:
+                    manual.setdefault(title, str(p["category"]))
                 # Bitta mahsulot bir necha bo'lakdan iborat — hammasini
                 # yig'amiz, manzil qaysi bo'lakda bo'lishidan qat'i nazar topilsin.
                 texts.setdefault(title, []).append(str(p.get("chunk_text", "")))
@@ -354,7 +332,11 @@ class AnswerQuestionUseCase:
             groups: dict[str, list[tuple[str, str]]] = {}
             for title, url in urls.items():
                 body = " ".join(texts[title])
-                label = self._category_label(url, title, body)
+                label = (
+                    KB_CATEGORIES[manual[title]]
+                    if title in manual
+                    else self._category_label(url, title, body)
+                )
                 groups.setdefault(label, []).append((title, body))
             return groups
 

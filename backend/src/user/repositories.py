@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import Text, and_, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from loggers import get_logger
@@ -182,17 +182,33 @@ class FaceIdSignatureLogRepository(BaseRepository[FaceIdSignatureLog]):
         only_failed: bool = False,
         page: int = 1,
         size: int = 20,
+        search: str | None = None,
     ) -> tuple[list[tuple[FaceIdSignatureLog, str | None]], int]:
         """Kelgan signature'lar + user logini (topilgan bo'lsa), yangisidan
-        eskisiga. (ro'yxat, jami) qaytaradi."""
-        count_query = select(func.count()).select_from(self.model)
+        eskisiga. (ro'yxat, jami) qaytaradi.
+
+        `search` — har bir so'z login, ism-familiya, natija, request_id yoki
+        signature ichidagi ma'lumotda (F.I.Sh, JShShIR, hujjat) uchrashi kerak."""
         # LEFT JOIN: user topilmagan (user_id NULL) yozuvlar ham chiqishi shart
         query = select(self.model, User.username).outerjoin(
             User, self.model.user_id == User.id
         )
+        conds = []
         if only_failed:
-            count_query = count_query.where(self.model.result != "ok")
-            query = query.where(self.model.result != "ok")
+            conds.append(self.model.result != "ok")
+        for word in (search or "").replace("@", " ").split():
+            fields = (
+                User.username,
+                User.first_name,
+                User.last_name,
+                self.model.result,
+                self.model.request_id,
+                cast(self.model.claims, Text),
+            )
+            conds.append(or_(*(f.icontains(word, autoescape=True) for f in fields)))
+        if conds:
+            query = query.where(and_(*conds))
+        count_query = select(func.count()).select_from(query.subquery())
         total = int((await session.execute(count_query)).scalar_one())
 
         query = (

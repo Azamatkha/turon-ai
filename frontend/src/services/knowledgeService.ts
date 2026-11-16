@@ -18,6 +18,10 @@ export async function scrapeUrl(url: string): Promise<UploadResult> {
   return res.json();
 }
 
+// Hujjat turkumlari — backend/src/knowledge/answer_helpers.py KB_CATEGORIES bilan bir xil
+export const KNOWLEDGE_CATEGORIES = ["credit", "deposit", "card", "transfer", "branch", "other"] as const;
+export type KnowledgeCategory = (typeof KNOWLEDGE_CATEGORIES)[number];
+
 // Ro'yxatda ko'rsatiladigan bitta yuklangan ma'lumot (sarlavha bo'yicha guruhlangan)
 export interface KnowledgeItem {
   title: string;
@@ -30,6 +34,17 @@ export interface KnowledgeItem {
   valid_until?: string;
   // Matni aynan bir xil boshqa hujjatlar (dublikat)
   duplicates?: string[];
+  // Admin qo'ygan turkum; qo'yilmagan bo'lsa bo'sh satr
+  category?: KnowledgeCategory | "";
+  // Bot o'zi aniqlagan turkum (category bo'sh bo'lsa shu ishlatiladi)
+  auto_category?: KnowledgeCategory;
+  // Admin izohi
+  note?: string;
+}
+
+/** Amaldagi turkum: admin qo'ygani, bo'lmasa bot aniqlagani. */
+export function effectiveCategory(it: KnowledgeItem): KnowledgeCategory {
+  return it.category || it.auto_category || "other";
 }
 
 // Saytdan qayta tekshirish (backend/src/knowledge/rescrape.py)
@@ -102,6 +117,19 @@ export async function setKnowledgeValidity(title: string, validUntil: string | n
     body: JSON.stringify({ title, valid_until: validUntil }),
   });
   if (!res.ok) throw new Error(await readError(res, "Muddatni saqlashda xatolik"));
+}
+
+// Turkum (null — bot o'zi aniqlaydi) va izoh (bo'sh — olib tashlanadi)
+export async function setKnowledgeMeta(
+  title: string,
+  category: KnowledgeCategory | null,
+  note: string
+): Promise<void> {
+  const res = await apiFetch("/v1/admin/knowledge/meta", {
+    method: "PATCH",
+    body: JSON.stringify({ title, category, note: note.trim() || null }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Turkumni saqlashda xatolik"));
 }
 
 // Ma'lumotni tahrirlash (eskisini o'chirib, yangi matnni qayta yozadi)

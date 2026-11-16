@@ -5,16 +5,22 @@ import {
   getKnowledgeDetail,
   updateKnowledge,
   deleteKnowledge,
+  type KnowledgeCategory,
   type KnowledgeDetail,
 } from "../../services/knowledgeService";
 import { useModalA11y } from "../../hooks/useModalA11y";
 import KnowledgeValidityEditor from "./KnowledgeValidityEditor";
+import KnowledgeMetaEditor from "./KnowledgeMetaEditor";
 import styles from "./KnowledgeDetailView.module.css";
 
 interface Props {
   title: string;
   // Amal qilish muddati (ro'yxatdan keladi — detail endpointi uni bermaydi)
   validUntil?: string;
+  // Turkum va izoh (ro'yxatdan keladi)
+  category?: KnowledgeCategory | "";
+  autoCategory?: KnowledgeCategory;
+  note?: string;
   onBack: () => void;
   onChanged: () => void; // ro'yxatni yangilash uchun
   t: AdminStrings;
@@ -32,7 +38,16 @@ function stripTitlePrefix(text: string, title: string): string {
 }
 
 // Bitta ma'lumotning to'liq sahifasi: ko'rish + tahrirlash + o'chirish.
-export default function KnowledgeDetailView({ title, validUntil = "", onBack, onChanged, t: admin }: Props) {
+export default function KnowledgeDetailView({
+  title,
+  validUntil = "",
+  category = "",
+  autoCategory = "other",
+  note = "",
+  onBack,
+  onChanged,
+  t: admin,
+}: Props) {
   const [detail, setDetail] = useState<KnowledgeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -132,6 +147,14 @@ export default function KnowledgeDetailView({ title, validUntil = "", onBack, on
       ) : detail ? (
         <>
           <div className={styles.title}>{detail.title}</div>
+          <KnowledgeMetaEditor
+            title={detail.title}
+            category={category}
+            autoCategory={autoCategory}
+            note={note}
+            t={admin}
+            onSaved={onChanged}
+          />
           <KnowledgeValidityEditor title={detail.title} validUntil={validUntil} t={admin} onSaved={onChanged} />
           <div className={styles.chunks}>
             {detail.chunks.map((c) => (

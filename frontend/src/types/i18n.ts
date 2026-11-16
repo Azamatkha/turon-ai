@@ -528,6 +528,8 @@ export interface AdminStrings {
   faceLogsSignature: string;
   faceLogsCopy: string;
   faceLogsCopied: string;
+  faceLogsSearchPh: string;
+  faceLogsNoResults: string;
   // Yoqmagan javoblar navbati
   // Bilim bazasi: amal qilish muddati
   knowledgeValidityLabel: string;
@@ -539,6 +541,16 @@ export interface AdminStrings {
   knowledgeValidityNone: string;
   knowledgeValiditySaved: string;
   knowledgeValidityFilter: (n: number) => string;
+  // Bilim bazasi: turkum va izoh (kalitlar — services/knowledgeService KNOWLEDGE_CATEGORIES)
+  knowledgeCategoryLabel: string;
+  knowledgeCategoryNames: Record<"credit" | "deposit" | "card" | "transfer" | "branch" | "other", string>;
+  knowledgeCategoryAuto: (name: string) => string;
+  knowledgeCategoryAll: string;
+  knowledgeNoteLabel: string;
+  knowledgeNotePh: string;
+  knowledgeMetaSave: string;
+  knowledgeMetaSaved: string;
+  knowledgeMetaHint: string;
   // Saytdan qayta tekshirish va dublikatlar
   rescrapeTitle: string;
   rescrapeSchedule: string;

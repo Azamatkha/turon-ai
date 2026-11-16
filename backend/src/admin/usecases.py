@@ -143,11 +143,19 @@ class ListFaceIdLogsUseCase:
         self.uow = uow
 
     async def execute(
-        self, only_failed: bool = False, page: int = 1, size: int = 20
+        self,
+        only_failed: bool = False,
+        page: int = 1,
+        size: int = 20,
+        search: str | None = None,
     ) -> FaceIdLogPageView:
         async with self.uow as uow:
             rows, total = await uow.face_id_signature_logs.list_with_usernames(
-                uow.session, only_failed=only_failed, page=page, size=size
+                uow.session,
+                only_failed=only_failed,
+                page=page,
+                size=size,
+                search=search,
             )
             return FaceIdLogPageView(
                 items=[

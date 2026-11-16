@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import HButton from "../common/HButton";
 import FilterSelect from "./FilterSelect";
 import type { AdminStrings } from "../../types/i18n";
-import { employeeStats, listKnowledge, uploadEmployees, uploadEmployeesJson, type KnowledgeItem } from "../../services/knowledgeService";
+import {
+  effectiveCategory,
+  employeeStats,
+  KNOWLEDGE_CATEGORIES,
+  listKnowledge,
+  uploadEmployees,
+  uploadEmployeesJson,
+  type KnowledgeItem,
+} from "../../services/knowledgeService";
 import KnowledgeDetailView from "./KnowledgeDetailView";
 import RescrapePanel from "./RescrapePanel";
 import { fmtIsoDate, validityState } from "../../utils/knowledgeValidity";
@@ -34,6 +42,8 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const [sortKey, setSortKey] = useState<SortKey>("title");
   // Faqat muddati o'tgan / yaqinlashgan hujjatlar
   const [onlyStale, setOnlyStale] = useState(false);
+  // Turkum filtri ("" — hammasi). Admin qo'ygani, bo'lmasa bot aniqlagani bo'yicha
+  const [category, setCategory] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [empUploading, setEmpUploading] = useState(false);
   const [empMsg, setEmpMsg] = useState<string | null>(null);
@@ -114,10 +124,14 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
 
   // Ma'lumot tanlansa — to'liq sahifa (modal emas)
   if (selected) {
+    const sel = items.find((i) => i.title === selected);
     return (
       <KnowledgeDetailView
         title={selected}
-        validUntil={items.find((i) => i.title === selected)?.valid_until ?? ""}
+        validUntil={sel?.valid_until ?? ""}
+        category={sel?.category ?? ""}
+        autoCategory={sel?.auto_category ?? "other"}
+        note={sel?.note ?? ""}
         onBack={() => setSelected(null)}
         onChanged={load}
         t={admin}
@@ -126,8 +140,29 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   }
 
   const q = search.trim().toLowerCase();
+  const names = admin.knowledgeCategoryNames;
+  // Har turkumda nechta hujjat bor — filtr variantlarida ko'rsatiladi
+  const catCounts = new Map<string, number>();
+  for (const it of items) {
+    const c = effectiveCategory(it);
+    catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
+  }
+  const categoryOptions = [
+    { value: "", label: `${admin.knowledgeCategoryAll} (${items.length})` },
+    ...KNOWLEDGE_CATEGORIES.filter((c) => catCounts.has(c)).map((c) => ({
+      value: c,
+      label: `${names[c]} (${catCounts.get(c)})`,
+    })),
+  ];
   const visible = items
-    .filter((it) => !q || it.title.toLowerCase().includes(q) || it.preview.toLowerCase().includes(q))
+    .filter(
+      (it) =>
+        !q ||
+        it.title.toLowerCase().includes(q) ||
+        it.preview.toLowerCase().includes(q) ||
+        (it.note ?? "").toLowerCase().includes(q)
+    )
+    .filter((it) => !category || effectiveCategory(it) === category)
     .filter((it) => !onlyStale || isStale(it))
     .sort((a, b) => {
       if (sortKey === "chunks") return b.chunks - a.chunks;
@@ -203,6 +238,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             onChange={(e) => setSearch(e.target.value)}
             placeholder={admin.knowledgeSearchPh}
           />
+          <FilterSelect value={category} onChange={setCategory} options={categoryOptions} />
           <FilterSelect
             value={sortKey}
             onChange={(v) => setSortKey(v as SortKey)}
@@ -248,9 +284,17 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
                 <div className={styles.cardTitle}>{it.title}</div>
                 <span className={styles.badge}>{admin.knowledgeChunks(it.chunks)}</span>
               </div>
+              {it.note && <div className={styles.note}>{it.note}</div>}
               {it.preview && <div className={styles.preview}>{it.preview}…</div>}
               <div className={styles.cardFoot}>
                 <span className={styles.lang}>{it.lang.toUpperCase()}</span>
+                {/* Qo'lda qo'yilgan turkum — to'q rangda, avtomatigi — xira */}
+                <span
+                  className={`${styles.category} ${it.category ? styles.categoryManual : ""}`}
+                  title={it.category ? undefined : admin.knowledgeCategoryAuto(names[effectiveCategory(it)])}
+                >
+                  {names[effectiveCategory(it)]}
+                </span>
                 {it.duplicates && it.duplicates.length > 0 && (
                   <span className={`${styles.validity} ${styles.vSoon}`} title={it.duplicates.join("\n")}>
                     {admin.knowledgeDuplicate(it.duplicates.length)}

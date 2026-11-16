@@ -32,12 +32,14 @@ export interface ApiFaceIdLogPage {
 }
 
 export async function listFaceIdLogs(
-  opts: { onlyFailed?: boolean; page?: number; size?: number } = {}
+  opts: { onlyFailed?: boolean; page?: number; size?: number; search?: string } = {}
 ): Promise<ApiFaceIdLogPage> {
   const q = new URLSearchParams();
   if (opts.onlyFailed) q.set("only_failed", "true");
   if (opts.page != null) q.set("page", String(opts.page));
   if (opts.size != null) q.set("size", String(opts.size));
+  // Login, F.I.Sh, JShShIR, natija yoki request_id bo'yicha
+  if (opts.search?.trim()) q.set("search", opts.search.trim());
   const qs = q.toString();
   const res = await apiFetch(`/v1/admin/face-id-logs${qs ? `?${qs}` : ""}`);
   if (!res.ok) {

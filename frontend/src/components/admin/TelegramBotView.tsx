@@ -9,6 +9,7 @@ import {
 } from "../../services/telegramBotService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./TelegramBotView.module.css";
+import { pageList } from "../../utils/pageList";
 
 interface TelegramBotViewProps {
   mounted: boolean;
@@ -30,19 +31,6 @@ export function fmtDate(iso: string | null): string {
 
 export function tgUserName(u: ApiTgUser): string {
   return u.full_name || (u.username ? `@${u.username}` : String(u.telegram_id));
-}
-
-/** Ko'rsatiladigan sahifa raqamlari: 1 … 4 5 6 … 12 (null = "…"). */
-function pageList(current: number, total: number): (number | null)[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages = new Set([1, total, current - 1, current, current + 1]);
-  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
-  const out: (number | null)[] = [];
-  sorted.forEach((p, i) => {
-    if (i > 0 && p - sorted[i - 1] > 1) out.push(null);
-    out.push(p);
-  });
-  return out;
 }
 
 // Telegram yordam boti userlari. Ma'lumotni bot o'zi davriy yuboradi — bu yerda faqat o'qish.

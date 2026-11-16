@@ -308,3 +308,31 @@
   background: var(--adm-danger-bg);
 }
 
+
+/* Admin izohi — kartochkada preview'dan oldin */
+.note {
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--adm-text-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Turkum belgisi: avtomatik — xira, qo'lda qo'yilgan — urg'uli */
+.category {
+  padding: 2px 9px;
+  border: 1px dashed var(--adm-border-2);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--adm-text-muted-2);
+}
+
+.categoryManual {
+  border: 1px solid transparent;
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}

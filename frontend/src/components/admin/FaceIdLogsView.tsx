@@ -3,7 +3,10 @@ import FilterSelect from "./FilterSelect";
 import { listFaceIdLogs, type ApiFaceIdLog } from "../../services/faceIdLogService";
 import type { AdminStrings } from "../../types/i18n";
 import { useModalA11y } from "../../hooks/useModalA11y";
+import { pageList } from "../../utils/pageList";
 import styles from "./FaceIdLogsView.module.css";
+
+const PAGE_SIZE = 20;
 
 interface FaceIdLogsViewProps {
   mounted: boolean;
@@ -28,15 +31,32 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
   const [items, setItems] = useState<ApiFaceIdLog[]>([]);
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<"" | "failed">("");
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<ApiFaceIdLog | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Qidiruv har harfda so'rov yubormasin — 350ms kutamiz, natija 1-sahifadan
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setQuery(search);
+      setPage(1);
+    }, 350);
+    return () => window.clearTimeout(id);
+  }, [search]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listFaceIdLogs({ onlyFailed: filter === "failed", size: 100 });
+      const data = await listFaceIdLogs({
+        onlyFailed: filter === "failed",
+        page,
+        size: PAGE_SIZE,
+        search: query,
+      });
       setItems(data.items);
       setTotal(data.total);
       setErr(null);
@@ -47,7 +67,10 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
     } finally {
       setLoading(false);
     }
-  }, [filter, admin.faceLogsLoadError]);
+  }, [filter, page, query, admin.faceLogsLoadError]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
 
   useEffect(() => {
     void load();
@@ -88,9 +111,20 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
   return (
     <div className={mounted ? `${styles.wrap} ${styles.in}` : styles.wrap}>
       <div className={styles.toolbar}>
+        <input
+          className={styles.search}
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={admin.faceLogsSearchPh}
+          aria-label={admin.faceLogsSearchPh}
+        />
         <FilterSelect
           value={filter}
-          onChange={(v) => setFilter(v as "" | "failed")}
+          onChange={(v) => {
+            setFilter(v as "" | "failed");
+            setPage(1);
+          }}
           options={[
             { value: "", label: admin.faceLogsFilterAll },
             { value: "failed", label: admin.faceLogsFilterFailed },
@@ -114,7 +148,7 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
         </div>
 
         {!loading && items.length === 0 && !err && (
-          <div className={styles.empty}>{admin.faceLogsEmpty}</div>
+          <div className={styles.empty}>{query.trim() ? admin.faceLogsNoResults : admin.faceLogsEmpty}</div>
         )}
 
         {items.map((log) => (
@@ -146,6 +180,29 @@ export default function FaceIdLogsView({ mounted, t: admin }: FaceIdLogsViewProp
             </span>
           </button>
         ))}
+
+        {total > PAGE_SIZE && (
+          <nav className={styles.pager} aria-label={admin.pageRange(start + 1, start + items.length, total)}>
+            <span className={styles.pagerInfo}>{admin.pageRange(start + 1, start + items.length, total)}</span>
+            <div className={styles.pagerBtns}>
+              <button type="button" className={styles.pageBtn} onClick={() => setPage(page - 1)} disabled={page === 1 || loading} aria-label={admin.pagePrev}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              {pageList(page, totalPages).map((p, i) =>
+                p === null ? (
+                  <span key={`gap-${i}`} className={styles.pageGap}>…</span>
+                ) : (
+                  <button key={p} type="button" className={`${styles.pageBtn} ${p === page ? styles.pageBtnActive : ""}`} onClick={() => setPage(p)} disabled={loading} aria-current={p === page ? "page" : undefined}>
+                    {p}
+                  </button>
+                )
+              )}
+              <button type="button" className={styles.pageBtn} onClick={() => setPage(page + 1)} disabled={page === totalPages || loading} aria-label={admin.pageNext}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+              </button>
+            </div>
+          </nav>
+        )}
       </div>
 
       {selected && (

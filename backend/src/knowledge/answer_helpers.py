@@ -1508,6 +1508,57 @@ def _category_from_text(title: str, text: str) -> str:
     return best_label if best_score else "Boshqa xizmatlar"
 
 
+# Admin hujjatga QO'LDA qo'yadigan turkum: kalit -> katalog label'i.
+# Kalitlar frontend bilan umumiy (KnowledgeListView filtri), label'lar esa
+# category_label qaytaradigan nomlar bilan AYNAN bir xil bo'lishi shart.
+KB_CATEGORIES: dict[str, str] = {
+    "credit": "Kreditlar",
+    "deposit": "Omonatlar",
+    "card": "Bank kartalari",
+    "transfer": "Pul o'tkazmalari",
+    "branch": _BRANCH_LABEL,
+    "other": "Boshqa xizmatlar",
+}
+_CATEGORY_KEY_BY_LABEL = {label: key for key, label in KB_CATEGORIES.items()}
+
+
+def category_label(source_url: str, title: str = "", text: str = "") -> str:
+    """Mahsulot turkumini aniqlaydi — katalogni guruhlash uchun
+    (kartalar / kreditlar / omonatlar / filiallar ...).
+
+    Asosiy belgi — HAVOLA. Havola bo'lmasa (qo'lda kiritilgan yoki eski
+    tahrirdan keyin havolasi yo'qolgan yozuv) turkum MATNDAN aniqlanadi:
+    aks holda yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" kabi
+    ro'yxatlarda umuman ko'rinmasdi."""
+    # Filiallar saytda "filial" deb emas, "bank xizmatlari markazi/ofisi"
+    # deb nomlangan — turkumni SARLAVHA bo'yicha aniqlaymiz.
+    t = title.lower()
+    if "bank xizmatlari markazi" in t or "bank xizmatlari ofisi" in t:
+        return _BRANCH_LABEL
+    url = source_url.lower()
+    # Nomi boshqacha bo'lgan bo'linmalar ham bor ("Biznesni rivojlantirish
+    # markazi") — ular sarlavha bo'yicha aniqlanmay, filiallar ro'yxatiga
+    # umuman tushmasdi. URL'dagi /branches/ bo'limi ishonchli belgi.
+    if "/branches/" in url:
+        return _BRANCH_LABEL
+    if "plastic-card" in url or "/cards" in url or "karta" in url:
+        return "Bank kartalari"
+    if "credit" in url or "loan" in url or "kredit" in url:
+        return "Kreditlar"
+    if "deposit" in url or "omonat" in url:
+        return "Omonatlar"
+    if "transfer" in url or "otkazma" in url or "o-tkazma" in url:
+        return "Pul o'tkazmalari"
+    if not url:
+        return _category_from_text(title, text)
+    return "Boshqa xizmatlar"
+
+
+def category_key(source_url: str, title: str = "", text: str = "") -> str:
+    """category_label'ning kaliti ("credit", "deposit", ...) — admin ro'yxati uchun."""
+    return _CATEGORY_KEY_BY_LABEL.get(category_label(source_url, title, text), "other")
+
+
 def _word_match(a: str, b: str) -> bool:
     """Ikki so'z o'zbekcha qo'shimcha farqi bilan bir xilmi: "bank" ~
     "banklari", "avtokreditlar" ~ "avtokrediti", "tashkil" ~ "tashkil".

@@ -94,12 +94,16 @@ async def list_face_id_logs(
     only_failed: bool = False,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
+    search: Annotated[str | None, Query(max_length=100)] = None,
 ) -> FaceIdLogPageView:
     """`/auth/save` ga kelgan GSI signature'lar — nima kelgani va natijasi.
 
+    `search` — login, F.I.Sh, JShShIR, natija yoki request_id bo'yicha.
     Shaxsiy ma'lumot qaytadi, shuning uchun faqat VIEW_LOGS huquqi bilan.
     """
-    return await use_case.execute(only_failed=only_failed, page=page, size=size)
+    return await use_case.execute(
+        only_failed=only_failed, page=page, size=size, search=search
+    )
 
 
 @router.get("/disliked-answers", response_model=DislikedAnswerPageView)

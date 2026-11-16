@@ -19,6 +19,7 @@ from src.core.schemas import SuccessResponse
 from src.core.storage.media import read_upload_limited
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.ingest_usecases import SetKnowledgeMetaUseCase
 from src.knowledge.rescrape import (
     RescrapeStatusUseCase,
     TriggerRescrapeUseCase,
@@ -29,6 +30,7 @@ from src.knowledge.schemas import (
     EmployeeIn,
     KnowledgeDetail,
     KnowledgeItem,
+    KnowledgeMetaRequest,
     KnowledgeValidityRequest,
     PdfUploadResult,
     QuestionRequest,
@@ -178,6 +180,28 @@ async def set_knowledge_validity(
     await audit.log(
         current_user, AuditAction.KNOWLEDGE_VALIDITY, "knowledge", target_label=data.title,
         details={"valid_until": data.valid_until},
+    )
+    return SuccessResponse(success=True)
+
+
+@router.patch("/meta", response_model=SuccessResponse)
+async def set_knowledge_meta(
+    data: KnowledgeMetaRequest,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> SuccessResponse:
+    """Admin: hujjat turkumi (kredit/omonat/...) va izohi.
+
+    Turkum qo'yilsa bot katalogi ham shuni ishlatadi; null — bot o'zi aniqlaydi."""
+    await SetKnowledgeMetaUseCase(store=store).execute(
+        title=data.title, category=data.category, note=data.note
+    )
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_META, "knowledge", target_label=data.title,
+        details={"category": data.category, "note": data.note},
     )
     return SuccessResponse(success=True)
 

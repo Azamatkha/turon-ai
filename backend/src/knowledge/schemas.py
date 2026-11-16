@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -52,6 +53,13 @@ class KnowledgeItem(Base):
     valid_until: str = ""
     # Matni aynan bir xil boshqa hujjatlar sarlavhalari (dublikat)
     duplicates: list[str] = []
+    # Admin qo'ygan turkum ("credit", "deposit", ...); qo'yilmagan bo'lsa ""
+    category: str = ""
+    # Bot o'zi aniqlagan turkum (havola/sarlavha/matndan) — `category` bo'sh
+    # bo'lsa filtr shunga tayanadi
+    auto_category: str = ""
+    # Admin izohi (erkin matn)
+    note: str = ""
 
 
 class KnowledgeChunk(Base):
@@ -69,6 +77,18 @@ class KnowledgeValidityRequest(Base):
     title: str = Field(min_length=1, max_length=500)
     # None — muddatni olib tashlash (cheksiz amal qiladi)
     valid_until: date | None = None
+
+
+# Admin turkumlari — answer_helpers.KB_CATEGORIES kalitlari bilan bir xil
+KnowledgeCategory = Literal["credit", "deposit", "card", "transfer", "branch", "other"]
+
+
+class KnowledgeMetaRequest(Base):
+    title: str = Field(min_length=1, max_length=500)
+    # None — turkumni olib tashlash (bot yana o'zi aniqlaydi)
+    category: KnowledgeCategory | None = None
+    # Bo'sh / None — izohni olib tashlash
+    note: str | None = Field(default=None, max_length=500)
 
 
 class UpdateKnowledgeRequest(Base):
