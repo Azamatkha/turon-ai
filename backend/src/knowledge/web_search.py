@@ -72,10 +72,21 @@ async def _ask(client: httpx.AsyncClient, q: str) -> list[dict]:
             params={"q": q, "format": "json", "safesearch": 1},
         )
         resp.raise_for_status()
-        return list(resp.json().get("results") or [])
+        data = resp.json()
     except Exception as exc:  # noqa: BLE001 - bitta bosqich yiqilsa, keyingisi bor
-        logger.info("SearXNG so'rovi ishlamadi %r: %s", q[:120], exc)
+        logger.info("Veb-qidiruv so'rovi ishlamadi %r: %s", q[:120], exc)
         return []
+    results = list(data.get("results") or [])
+    # Har so'rov natijasi logda: 0 bo'lsa qaysi dvigatel nega javob bermagani
+    # (CAPTCHA, access denied, too many requests) shu yerdan ko'rinadi
+    logger.info(
+        "Veb-qidiruv so'rovi %r: %d natija %s | javob bermadi: %s",
+        q[:120],
+        len(results),
+        sorted({str(r.get("url", ""))[:60] for r in results})[:3],
+        data.get("unresponsive_engines") or "-",
+    )
+    return results
 
 
 def _allowed(results: list[dict], domains: list[str], limit: int) -> list[tuple[str, str]]:
