@@ -44,3 +44,12 @@ engines:
     disabled: false
   - name: yandex
     disabled: false
+  # 2-diagnostika: duckduckgo — "CAPTCHA", yandex — "parsing error" (server
+  # IP'si bot deb bloklanadi). Bloklashi kamroq tizimlar qo'shildi: mojeek —
+  # o'z indeksi bor va `site:` ni qo'llaydi; startpage va qwant — zaxira.
+  - name: mojeek
+    disabled: false
+  - name: startpage
+    disabled: false
+  - name: qwant
+    disabled: false
