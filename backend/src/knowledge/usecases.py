@@ -126,6 +126,7 @@ from src.knowledge.prompts import (
     VERIFY_FAILED_REPLY,
     WEB_LOOKUP_TOKEN,
     WEB_NOT_FOUND_TOKEN,
+    WEB_QUERY_SYSTEM,
     WEB_RAG_SYSTEM,
     WEB_UNAVAILABLE_HINT,
 )
@@ -1193,11 +1194,31 @@ class AnswerQuestionUseCase:
 
         return prompt, sources
 
-    def _web_query(self, question: str, decision: Route | None) -> str:
-        # Tashqariga xom savol emas — router tozalagan qidiruv so'rovi
+    async def _web_query(self, question: str, decision: Route | None) -> str:
+        """Internetga ketadigan KALIT SO'ZLAR (xom savol emas).
+
+        Router search_query'si — bazadagi vektor qidiruv uchun to'liq gap;
+        qidiruv tizimlari esa o'zbekcha qo'shimchali gapdan hech narsa
+        topmaydi. Shuning uchun model undan 2-5 ta kalit so'z ajratadi.
+        Ishlamasa — router so'roviga qaytamiz."""
+        base = question
         if decision is not None and len(decision.search_query.strip()) >= 3:
-            return decision.search_query
-        return question
+            base = decision.search_query
+        try:
+            raw = await self.ai_client.generate_text(
+                base,
+                system_prompt=WEB_QUERY_SYSTEM,
+                temperature=0.0,
+                max_tokens=self.REWRITE_MAX_TOKENS,
+            )
+        except Exception:  # noqa: BLE001 - kalit so'z chiqmasa, asl so'rov bilan
+            return base
+        keywords = " ".join(raw.split()).strip().strip('"').strip()
+        # Model izoh yozsa yoki bo'sh qaytarsa — asl so'rov
+        if len(keywords) < 3 or len(keywords) > 120 or "\n" in raw.strip():
+            return base
+        logger.info("Veb-qidiruv kalit so'zlari: %r -> %r", base[:200], keywords)
+        return keywords
 
     async def _web_stream(
         self,
@@ -1213,7 +1234,7 @@ class AnswerQuestionUseCase:
         NOT_FOUND desa — hech qanday delta yubormaydi (chaqiruvchi odatdagi
         "ma'lumot topilmadi"ni qaytaradi)."""
         yield {"type": "status", "step": "web"}
-        hits = await web_search.search(self._web_query(question, decision))
+        hits = await web_search.search(await self._web_query(question, decision))
         if not hits:
             return
         sources = _web_sources(hits)
@@ -1291,7 +1312,7 @@ class AnswerQuestionUseCase:
         router_tokens: int,
     ) -> AnswerResult | None:
         """`_web_stream` ning oqimsiz (mobil /ask) varianti."""
-        hits = await web_search.search(self._web_query(question, decision))
+        hits = await web_search.search(await self._web_query(question, decision))
         if not hits:
             return None
         gen = await self.ai_client.generate_text_with_usage(

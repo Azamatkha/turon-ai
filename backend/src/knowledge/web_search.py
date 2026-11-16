@@ -31,6 +31,7 @@ logger = get_logger(__name__)
 _CACHE_TTL = 24 * 3600
 _CACHE_MAX = 200
 _cache: dict[str, tuple[float, list["WebHit"]]] = {}
+_APOSTROPHES = str.maketrans({c: "'" for c in "’‘ʻʼ`"})
 
 
 @dataclass(frozen=True)
@@ -184,6 +185,9 @@ async def search(query: str) -> list[WebHit]:
     cfg = config.web_search
     if not cfg.WEB_SEARCH_ENABLED or not cfg.allowed_domains:
         return []
+    # o’/g’ dagi turli tutuq belgilari (’ ʻ ʼ ‘ `) bitta ' ga — qidiruv
+    # tizimlari ularni har xil harf deb biladi
+    query = query.translate(_APOSTROPHES)
     query = mask_pii(query.strip())[0][:300]
     if len(query) < 3:
         return []

@@ -474,3 +474,53 @@ async def test_cyrillic_variant_finds_lex(enabled: None, monkeypatch: pytest.Mon
     fake = _FakeClient({"лотин алифбоси site:lex.uz": [{"url": "https://lex.uz/docs/3", "title": "Қонун"}]})
     _patch_client(monkeypatch, fake)
     assert await web_search._searxng("lotin alifbosi") == [("https://lex.uz/docs/3", "Қонун")]
+
+
+class _KeywordAI:
+    def __init__(self, reply: str | Exception) -> None:
+        self.reply = reply
+        self.systems: list[str] = []
+
+    async def generate_text(self, prompt: str, **kw: Any) -> str:
+        self.systems.append(kw.get("system_prompt", ""))
+        if isinstance(self.reply, Exception):
+            raise self.reply
+        return self.reply
+
+
+_ALPHABET_Q = "o’zbek lotin alifbosiga qanday o’zgartirish kiritildi"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "reply,expected",
+    [
+        ('"o\'zbek lotin alifbosi o\'zgartirish"', "o'zbek lotin alifbosi o'zgartirish"),
+        (RuntimeError("ollama down"), _ALPHABET_Q),  # model ishlamasa — asl so'rov
+        ("", _ALPHABET_Q),  # bo'sh javob
+        ("lotin alifbosi\nIzoh: bu kalit so'zlar", _ALPHABET_Q),  # izoh qo'shsa
+    ],
+)
+async def test_web_query_keywords(reply: str | Exception, expected: str) -> None:
+    """Internetga to'liq gap emas, kalit so'zlar ketadi: qidiruv tizimlari
+    "alifbosiga qanday ... kiritildi" dan 0 natija berardi (serverda)."""
+    from src.knowledge.prompts import WEB_QUERY_SYSTEM
+
+    ai = _KeywordAI(reply)
+    uc = AnswerQuestionUseCase(embedder=None, store=None, ai_client=ai)  # type: ignore[arg-type]
+    decision = Route(intent=Intent.LANGUAGE, search_query=_ALPHABET_Q)
+    assert await uc._web_query(_ALPHABET_Q, decision) == expected
+    assert ai.systems == [WEB_QUERY_SYSTEM]
+
+
+@pytest.mark.asyncio
+async def test_apostrophes_normalized(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    sent: list[str] = []
+
+    async def capture(q: str) -> list:
+        sent.append(q)
+        return []
+
+    monkeypatch.setattr(web_search, "_searxng", capture)
+    await web_search.search("o’zbek lotin alifbosi oʻzgartirish")
+    assert sent == ["o'zbek lotin alifbosi o'zgartirish"]

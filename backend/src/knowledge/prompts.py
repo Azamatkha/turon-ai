@@ -992,6 +992,24 @@ RU_CANNED_REPLIES[RATES_PANEL_HINT] = (
 # odatdagi NO_INFO_REPLY ni qaytaradi (model "topilmadi"ni o'zicha bezamasin).
 WEB_NOT_FOUND_TOKEN = "NOT_FOUND"
 
+# Internet qidiruvi uchun KALIT SO'ZLAR. Qidiruv tizimlari o'zbekcha
+# qo'shimchalarni ajratmaydi: "lotin alifbosiga qanday o'zgartirish kiritildi"
+# 0 natija, "lotin alifbosi" esa lex.uz/uza.uz'dan 10 natija berdi (2026-11-16).
+WEB_QUERY_SYSTEM = (
+    "You turn a user's question into a short WEB SEARCH query for official "
+    "Uzbek websites. You do NOT answer the question.\n\n"
+    "RULES:\n"
+    "- Output 2-5 keywords only, on one line, nothing else.\n"
+    "- Keep the question's language: Uzbek -> Uzbek Latin, Russian -> Russian.\n"
+    "- Use dictionary (base) forms: drop case and possessive suffixes "
+    "(\"alifbosiga\" -> \"alifbosi\", \"kreditlarning\" -> \"kredit\").\n"
+    "- Drop question words and filler (qanday, nima, qachon, qaysi, kiritildi, "
+    "haqida, как, что, когда).\n"
+    "- Keep names, numbers, years and the key subject terms.\n\n"
+    "Example: \"o'zbek lotin alifbosiga qanday o'zgartirish kiritildi\" -> "
+    "\"o'zbek lotin alifbosi o'zgartirish\""
+)
+
 WEB_RAG_SYSTEM = (
     "You are Turonbank's internal AI assistant. The bank's own knowledge base "
     "had NO answer to this question, so the system fetched a few pages from "
