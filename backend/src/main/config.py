@@ -266,6 +266,11 @@ class WebSearchConfig(BaseModel):
     # Bir sahifadan modelga beriladigan matn chegarasi (belgi)
     # 65k kontekstda 5 x 8000 belgi (~12k token) bemalol sig'adi
     WEB_SEARCH_PAGE_CHARS: int = 8000
+    # Qaysi SearXNG dvigatellari ishlatiladi (vergul bilan, masalan
+    # "mojeek,startpage"). Bo'sh — settings.yml dagi barcha yoqilganlar.
+    # 2026-11-16: bing `site:` ni e'tiborsiz qoldirib begona sahifalar
+    # qaytardi — yaxshi ishlaydiganlarni .env da tanlab qo'yish uchun.
+    WEB_SEARCH_ENGINES: str = ""
 
     model_config = ConfigDict(extra="ignore")
 

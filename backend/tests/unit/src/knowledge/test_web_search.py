@@ -409,7 +409,7 @@ async def test_per_domain_fallback(enabled: None, monkeypatch: pytest.MonkeyPatc
     _patch_client(monkeypatch, fake)
     found = await web_search._searxng("lotin alifbosi")
     assert found == [("https://lex.uz/docs/1", "Qonun")]
-    assert fake.queries[0].startswith("lotin alifbosi (site:")  # avval OR so'rovi
+    assert fake.queries[:2] == ["lotin alifbosi", web_search.build_query("lotin alifbosi", DOMAINS)]
 
 
 @pytest.mark.asyncio
@@ -425,7 +425,7 @@ async def test_unfiltered_fallback_keeps_allowlist(enabled: None, monkeypatch: p
     _patch_client(monkeypatch, fake)
     found = await web_search._searxng("lotin alifbosi")
     assert found == [("https://lex.uz/docs/2", "Qonun")]  # wikipedia tashlandi
-    assert "lotin alifbosi" in fake.queries  # 3-bosqich: filtrsiz so'rov
+    assert fake.queries == ["lotin alifbosi"]  # 1-bosqich: filtrsiz so'rov
 
 
 @pytest.mark.asyncio
@@ -434,21 +434,21 @@ async def test_first_query_hit_skips_fallbacks(enabled: None, monkeypatch: pytes
     fake = _FakeClient({combined: [{"url": "https://cbu.uz/x", "title": "Stavka"}]})
     _patch_client(monkeypatch, fake)
     assert await web_search._searxng("stavka") == [("https://cbu.uz/x", "Stavka")]
-    # Birinchi so'rovning o'zida topildi — boshqa hech narsa yuborilmaydi
-    assert fake.queries == [combined]
+    # OR so'rovida topildi — site: va kirill so'rovlari yuborilmaydi
+    assert fake.queries == ["stavka", combined]
 
 
-def test_search_plan_batches_and_order() -> None:
-    domains = ["a.uz", "b.uz", "c.uz", "d.uz"]
+def test_search_plan_is_small() -> None:
+    """Bir savolga ko'pi bilan 6 so'rov — ko'p so'rov server IP'sini bloklatdi."""
+    domains = ["a.uz", "b.uz", "c.uz", "d.uz", "e.uz"]
     plan = web_search._search_plan("lotin alifbosi", domains)
-    # Lotin: OR + 2 guruh (3+1), kirill: OR + 2 guruh, oxirida filtrsiz
-    assert len(plan) == 7
-    assert plan[0] == [web_search.build_query("lotin alifbosi", domains)]
-    assert plan[1] == [f"lotin alifbosi site:{d}" for d in domains[:3]]
-    assert plan[2] == ["lotin alifbosi site:d.uz"]
-    assert plan[3][0].startswith("лотин алифбоси (site:")
-    assert plan[-1] == ["lotin alifbosi", "лотин алифбоси"]
-    assert all(len(step) <= 3 for step in plan)
+    assert plan == [
+        ["lotin alifbosi"],
+        [web_search.build_query("lotin alifbosi", domains)],
+        [f"lotin alifbosi site:{d}" for d in domains[:3]],
+        ["лотин алифбоси"],
+    ]
+    assert sum(len(step) for step in plan) <= 6
 
 
 @pytest.mark.asyncio
@@ -458,7 +458,7 @@ async def test_stops_at_first_hit(enabled: None, monkeypatch: pytest.MonkeyPatch
     _patch_client(monkeypatch, fake)
     await web_search._searxng("lotin alifbosi")
     assert not any(q.startswith("лотин") for q in fake.queries)
-    assert len(fake.queries) <= 1 + 3
+    assert len(fake.queries) <= 2 + 3
 
 
 def test_script_variants() -> None:
@@ -471,7 +471,7 @@ def test_script_variants() -> None:
 @pytest.mark.asyncio
 async def test_cyrillic_variant_finds_lex(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
     # lex.uz hujjati faqat kirillcha so'rovda topiladi
-    fake = _FakeClient({"лотин алифбоси site:lex.uz": [{"url": "https://lex.uz/docs/3", "title": "Қонун"}]})
+    fake = _FakeClient({"лотин алифбоси": [{"url": "https://lex.uz/docs/3", "title": "Қонун"}]})
     _patch_client(monkeypatch, fake)
     assert await web_search._searxng("lotin alifbosi") == [("https://lex.uz/docs/3", "Қонун")]
 
@@ -522,70 +522,10 @@ async def test_apostrophes_normalized(enabled: None, monkeypatch: pytest.MonkeyP
         return []
 
     monkeypatch.setattr(web_search, "_searxng", capture)
-    await web_search.search("o’zbek lotin alifbosi oʻzgartirish")
-    assert sent == ["o'zbek lotin alifbosi o'zgartirish"]
+    await web_search.search("o’zbek lotin alifbosi o'zgartirish ‘g`ozi")
+    # o'/g' dagi har xil tutuq — ʻ (so'z bo'linmaydi); boshqa joydagisi tegilmaydi
+    assert sent == ["oʻzbek lotin alifbosi oʻzgartirish ‘gʻozi"]
 
 
-def test_wiki_host_respects_allowlist() -> None:
-    assert web_search.wiki_host("lotin alifbosi", ["uz.wikipedia.org"]) == "uz.wikipedia.org"
-    assert web_search.wiki_host("латинский алфавит", ["uz.wikipedia.org"]) is None
-    assert web_search.wiki_host("латинский алфавит", ["wikipedia.org"]) == "ru.wikipedia.org"
-    assert web_search.wiki_host("lotin alifbosi", DOMAINS) is None
-
-
-def test_wiki_queries_shorten_and_fix_apostrophe() -> None:
-    assert web_search.wiki_queries("o'zbek lotin alifbosi o'zgartirish") == [
-        "oʻzbek lotin alifbosi oʻzgartirish",
-        "oʻzbek lotin alifbosi",
-        "oʻzbek lotin",
-    ]
-
-
-@pytest.mark.asyncio
-async def test_wikipedia_used_when_engines_return_junk(
-    enabled: None, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Serverda qidiruv tizimlari bloklangan/axlat qaytaradi — Vikipediya API
-    baribir maqolani topadi va javob uchun sahifa beradi."""
-    monkeypatch.setattr(
-        config.web_search, "WEB_SEARCH_ALLOWED_DOMAINS", "lex.uz,uz.wikipedia.org"
-    )
-    article = "Oʻzbek lotin alifbosi 1993-yilda qabul qilingan. " * 5
-
-    class _Resp:
-        def __init__(self, data: dict) -> None:
-            self.data = data
-
-        def raise_for_status(self) -> None:
-            return None
-
-        def json(self) -> dict:
-            return self.data
-
-    class _Wiki:
-        def __init__(self, *a: Any, **kw: Any) -> None:
-            self.calls: list[dict] = []
-
-        async def __aenter__(self) -> "_Wiki":
-            return self
-
-        async def __aexit__(self, *a: Any) -> None:
-            return None
-
-        async def get(self, url: str, params: dict) -> _Resp:
-            assert url == "https://uz.wikipedia.org/w/api.php"
-            if params.get("list") == "search":
-                if params["srsearch"] == "oʻzbek lotin alifbosi oʻzgartirish":
-                    return _Resp({"query": {"search": []}})
-                return _Resp({"query": {"search": [{"title": "Oʻzbek lotin alifbosi"}]}})
-            return _Resp({"query": {"pages": {"1": {"extract": article}}}})
-
-    async def junk(q: str) -> list:
-        return []
-
-    monkeypatch.setattr(web_search, "_searxng", junk)
-    monkeypatch.setattr(web_search.httpx, "AsyncClient", _Wiki)
-    hits = await web_search.search("o'zbek lotin alifbosi o'zgartirish")
-    assert [h.title for h in hits] == ["Oʻzbek lotin alifbosi"]
-    assert hits[0].url.startswith("https://uz.wikipedia.org/wiki/")
-    assert web_search.is_allowed_url(hits[0].url, ["uz.wikipedia.org"])
+def test_script_variants_modifier_apostrophe() -> None:
+    assert web_search.script_variants("oʻzbek alifbosi") == ["oʻzbek alifbosi", "ўзбек алифбоси"]

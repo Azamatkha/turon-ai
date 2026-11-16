@@ -15,7 +15,7 @@ import asyncio
 from dataclasses import dataclass
 import re
 import time
-from urllib.parse import quote, urlparse
+from urllib.parse import urlparse
 
 import httpx
 
@@ -32,7 +32,10 @@ logger = get_logger(__name__)
 _CACHE_TTL = 24 * 3600
 _CACHE_MAX = 200
 _cache: dict[str, tuple[float, list["WebHit"]]] = {}
-_APOSTROPHES = str.maketrans({c: "'" for c in "’‘ʻʼ`"})
+# o'/g' dagi tutuq belgisi. Oddiy ' ni qidiruv tizimlari so'z chegarasi deb
+# biladi: "o'zbek" -> "o" + "zbek" va natijada "O harfi" sahifalari chiqardi
+# (2026-11-16). Rasmiy imlodagi ʻ (U+02BB) so'zni butun saqlaydi.
+_UZ_APOSTROPHE = re.compile("([oOgG])[’‘ʼ'`]")
 
 
 @dataclass(frozen=True)
@@ -67,11 +70,12 @@ def build_query(query: str, domains: list[str]) -> str:
 async def _ask(client: httpx.AsyncClient, q: str) -> list[dict]:
     """Bitta SearXNG so'rovi — xom natijalar (xato bo'lsa bo'sh)."""
     cfg = config.web_search
+    params: dict[str, str | int] = {"q": q, "format": "json", "safesearch": 1}
+    engines = ",".join(e.strip() for e in cfg.WEB_SEARCH_ENGINES.split(",") if e.strip())
+    if engines:
+        params["engines"] = engines
     try:
-        resp = await client.get(
-            f"{cfg.SEARXNG_URL.rstrip('/')}/search",
-            params={"q": q, "format": "json", "safesearch": 1},
-        )
+        resp = await client.get(f"{cfg.SEARXNG_URL.rstrip('/')}/search", params=params)
         resp.raise_for_status()
         data = resp.json()
     except Exception as exc:  # noqa: BLE001 - bitta bosqich yiqilsa, keyingisi bor
@@ -105,11 +109,11 @@ def _allowed(results: list[dict], domains: list[str], limit: int) -> list[tuple[
     return out
 
 
-# Domen bo'yicha so'rovlar shu o'lchamdagi guruhlar bilan ketadi. Serverdagi
-# diagnostika (2026-11-16): ketma-ket 3 ta so'rovdan keyin qidiruv tizimlari
-# cheklay boshladi (keyingi hammasi 0 natija) — 22 tasini birdan yuborish
-# o'zimizni bloklatadi.
-_DOMAIN_BATCH = 3
+# Bitta savolga ko'pi bilan shuncha `site:` so'rovi (allowlist boshidagi
+# domenlar). Serverdagi diagnostika (2026-11-16): har savolga 30 tagacha so'rov
+# yuborganimizdan keyin duckduckgo CAPTCHA, qwant "Suspended" bilan server
+# IP'sini blokladi. Kam so'rov — bloklanmaslik sharti.
+_SITE_QUERIES = 3
 # Butun qidiruv (barcha bosqichlar) uchun vaqt chegarasi — foydalanuvchi
 # javobni cheksiz kutmasin
 _SEARCH_BUDGET_SECONDS = 20.0
@@ -118,22 +122,16 @@ _SEARCH_BUDGET_SECONDS = 20.0
 def _search_plan(query: str, domains: list[str]) -> list[list[str]]:
     """Qidiruv bosqichlari — har biri bir vaqtda yuboriladigan so'rovlar guruhi.
 
-    Bosqichma-bosqich, chunki serverdagi qidiruv tizimlari bir nechta `site:`
-    ni OR bilan yaxshi bajarmaydi (Google esa server IP'sini bloklagan):
-      har alifbo varianti uchun (avval lotin, keyin kirill):
-        1) bitta so'rov, barcha domenlar OR bilan;
-        2) har domen alohida `site:` bilan — 3 tadan guruh;
-      oxirida: filtrsiz so'rov, natijadan faqat ruxsat etilganlar."""
-    variants = script_variants(query)
-    plan: list[list[str]] = []
-    for v in variants:
-        plan.append([build_query(v, domains)])
-        site_queries = [f"{v} site:{d}" for d in domains]
-        plan.extend(
-            site_queries[i : i + _DOMAIN_BATCH]
-            for i in range(0, len(site_queries), _DOMAIN_BATCH)
-        )
-    plan.append(variants)
+    Bir savolga ko'pi bilan 6 ta so'rov (ilgari 30 tagacha edi):
+      1) filtrsiz so'rov — natijadan faqat allowlist'dagilar olinadi;
+      2) barcha domenlar OR bilan;
+      3) allowlist boshidagi 3 ta domen alohida `site:` bilan;
+      4) lotincha so'rov bo'lsa — kirill varianti, filtrsiz."""
+    plan: list[list[str]] = [[query], [build_query(query, domains)]]
+    site = [f"{query} site:{d}" for d in domains[:_SITE_QUERIES]]
+    if site:
+        plan.append(site)
+    plan.extend([v] for v in script_variants(query)[1:])
     return plan
 
 
@@ -174,97 +172,9 @@ def script_variants(query: str) -> list[str]:
     bot ichida lotinga keltiriladi."""
     if is_cyrillic_text(query):
         return [query]
-    other = to_cyrillic(query)
+    # to_cyrillic ʻ ni tanimaydi ("oʻzbek" -> "оʻзбек") — avval ' ga qaytaramiz
+    other = to_cyrillic(query.replace("ʻ", "'"))
     return [query] if other == query else [query, other]
-
-
-# --- Vikipediya: qidiruv tizimlarisiz, to'g'ridan-to'g'ri API ---
-# Serverdagi diagnostika (2026-11-16): duckduckgo — CAPTCHA, qwant —
-# "Suspended", bing/startpage esa `site:` ni e'tiborsiz qoldirib YouTube,
-# ChatGPT, Instagram sahifalarini qaytaradi. Vikipediya API'si JSON, bloklamaydi
-# va "Oʻzbek lotin alifbosi" kabi maqolalarni aniq topadi. Faqat domen
-# (uz.wikipedia.org / ru.wikipedia.org) allowlist'da bo'lsa ishlaydi.
-_WIKI_PAGES = 2
-_WIKI_HEADERS = {"User-Agent": "TuronAI-internal-assistant/1.0"}
-_UZ_APOSTROPHE = re.compile(r"([oOgG])'")
-
-
-def wiki_host(query: str, domains: list[str]) -> str | None:
-    """So'rov tiliga mos Vikipediya hosti — allowlist'da bo'lmasa None."""
-    host = "ru.wikipedia.org" if is_cyrillic_text(query) else "uz.wikipedia.org"
-    return host if is_allowed_url(f"https://{host}/", domains) else None
-
-
-def wiki_queries(query: str) -> list[str]:
-    """Vikipediya uchun so'rovlar: avval to'liq, topilmasa oxirgi so'zlarsiz.
-
-    O'zbek Vikipediyasi o'/g' ni ʻ bilan yozadi ("Oʻzbek") — shunga keltiriladi."""
-    words = _UZ_APOSTROPHE.sub("\\1\u02bb", query).split()
-    return [" ".join(words[:n]) for n in range(len(words), 1, -1)][:3] or [query]
-
-
-async def _wiki_page(
-    client: httpx.AsyncClient, api: str, host: str, title: str
-) -> WebHit | None:
-    try:
-        resp = await client.get(
-            api,
-            params={
-                "action": "query",
-                "prop": "extracts",
-                "explaintext": 1,
-                "redirects": 1,
-                "titles": title,
-                "format": "json",
-            },
-        )
-        resp.raise_for_status()
-        pages = (resp.json().get("query") or {}).get("pages") or {}
-    except Exception as exc:  # noqa: BLE001 - bitta maqola olinmasa, qolgani bilan
-        logger.info("Vikipediya maqolasi olinmadi %r: %s", title, exc)
-        return None
-    for page in pages.values():
-        text = str(page.get("extract") or "").strip()
-        if len(text) >= 80:
-            url = f"https://{host}/wiki/{quote(title.replace(' ', '_'))}"
-            return WebHit(
-                url=url,
-                title=title[:300],
-                text=text[: config.web_search.WEB_SEARCH_PAGE_CHARS],
-            )
-    return None
-
-
-async def _wikipedia(query: str) -> list[WebHit]:
-    cfg = config.web_search
-    host = wiki_host(query, cfg.allowed_domains)
-    if host is None:
-        return []
-    api = f"https://{host}/w/api.php"
-    async with httpx.AsyncClient(
-        timeout=cfg.WEB_SEARCH_TIMEOUT_SECONDS, headers=_WIKI_HEADERS
-    ) as client:
-        titles: list[str] = []
-        for q in wiki_queries(query):
-            resp = await client.get(
-                api,
-                params={
-                    "action": "query",
-                    "list": "search",
-                    "srsearch": q,
-                    "srlimit": _WIKI_PAGES,
-                    "format": "json",
-                },
-            )
-            resp.raise_for_status()
-            found = (resp.json().get("query") or {}).get("search") or []
-            titles = [str(i["title"]) for i in found if i.get("title")]
-            if titles:
-                break
-        pages = await asyncio.gather(*(_wiki_page(client, api, host, t) for t in titles))
-    hits = [p for p in pages if p is not None]
-    logger.info("Vikipediya %r: %s", query[:120], [h.title for h in hits])
-    return hits
 
 
 async def _page(url: str, title: str) -> WebHit | None:
@@ -286,9 +196,8 @@ async def search(query: str) -> list[WebHit]:
     cfg = config.web_search
     if not cfg.WEB_SEARCH_ENABLED or not cfg.allowed_domains:
         return []
-    # o’/g’ dagi turli tutuq belgilari (’ ʻ ʼ ‘ `) bitta ' ga — qidiruv
-    # tizimlari ularni har xil harf deb biladi
-    query = query.translate(_APOSTROPHES)
+    # o'/g' dagi har xil tutuq belgilari (' ’ ‘ ʼ `) bitta ʻ ga (_UZ_APOSTROPHE)
+    query = _UZ_APOSTROPHE.sub(r"\1ʻ", query)
     query = mask_pii(query.strip())[0][:300]
     if len(query) < 3:
         return []
@@ -297,16 +206,13 @@ async def search(query: str) -> list[WebHit]:
     cached = _cache.get(key)
     if cached and now - cached[0] < _CACHE_TTL:
         return cached[1]
-    found, wiki = await asyncio.gather(_searxng(query), _wikipedia(query), return_exceptions=True)
-    if isinstance(found, BaseException):
-        logger.warning("Veb-qidiruv ishlamadi: %s", found)
-        found = []
-    if isinstance(wiki, BaseException):
-        logger.warning("Vikipediya qidiruvi ishlamadi: %s", wiki)
-        wiki = []
+    try:
+        found = await _searxng(query)
+    except Exception as exc:  # noqa: BLE001 - qidiruv ishlamasa ham javob yiqilmaydi
+        logger.warning("Veb-qidiruv ishlamadi: %s", exc)
+        return []
     pages = await asyncio.gather(*(_page(u, t) for u, t in found))
-    # Rasmiy saytlar birinchi, Vikipediya — ulardan keyin
-    hits = [p for p in pages if p is not None] + wiki
+    hits = [p for p in pages if p is not None]
     logger.info("Veb-qidiruv %r: %d natija, %d sahifa", query, len(found), len(hits))
     if len(_cache) >= _CACHE_MAX:
         _cache.pop(next(iter(_cache)))

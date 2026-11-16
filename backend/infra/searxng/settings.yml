@@ -38,8 +38,10 @@ engines:
     disabled: true
   - name: brave
     disabled: true
+  # 3-diagnostika: bing `site:` ni e'tiborsiz qoldiradi ("lotin alifbosi
+  # site:lex.uz" -> Russell Westbrook, YouTube) — o'chirildi
   - name: bing
-    disabled: false
+    disabled: true
   - name: duckduckgo
     disabled: false
   - name: yandex
