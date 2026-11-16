@@ -1462,8 +1462,11 @@ class AnswerQuestionUseCase:
                 "\n\nIMPORTANT — REVIEW FEEDBACK: a previous draft answer to this "
                 f"question was rejected by a reviewer: {self._retry_hint}\n"
                 "Answer exactly what the user asked. Keep the user's own terms. "
-                "Use only facts from the provided blocks; if they do not contain "
-                "the answer, say honestly that the information was not found."
+                "If information blocks are provided, use only facts from them; if "
+                "they do not contain the answer, say honestly that the information "
+                "was not found. If no blocks are provided (general knowledge or a "
+                "language question), correct exactly the error the reviewer named "
+                "and leave out every detail you are not sure of."
             )
         return out
 

@@ -63,13 +63,14 @@ IMPORTANT: an answer that is fully supported by the CONTEXT is still "wrong" if 
 4. WRONG REFUSAL: the answer says the topic is outside banking/Turonbank, or refuses, although the question is clearly about banking, finance, Turonbank or its employees.
 5. WRONG LIST: the answer is a list (products, branches, employees) but the question did not ask for that list, or the list contains items clearly unrelated to the question.
 6. SELF-CONTRADICTION or obviously broken text.
+7. FACTUAL ERROR (answers WITHOUT CONTEXT — general knowledge, language, spelling, history, laws): the answer states something that contradicts well-established knowledge you are highly confident about — e.g. a wrong rule of Uzbek spelling or alphabet, a letter that does not exist or a wrong way of writing it, a law attributed to the wrong year, a wrong definition of a term, an adopted law confused with a draft or proposal. Reject ONLY when you are sure the statement is false; do not reject a claim merely because you cannot confirm it, and never for events after your training knowledge. In "problem" name the false statement and the correct fact.
 
 Return verdict "ok" when:
 - the answer addresses what was asked, even if short or not exhaustive;
 - the answer honestly says the information was not found;
 - the answer is a relevant clarifying question (e.g. offers options that match the user's words);
 - the user's message is a follow-up (a number choosing from a previous list, "yes", "more details") and the answer fits the conversation;
-- there is no CONTEXT (a general-knowledge answer) and the answer is a sensible on-topic explanation — you cannot verify such facts, so do not reject them unless they are clearly absurd or off-topic;
+- there is no CONTEXT (a general-knowledge answer), the answer is on-topic and nothing in it contradicts well-established knowledge (see rule 7) — facts you simply cannot confirm are not a reason to reject;
 - the question asks for news/latest events and the answer reports the most recent items found in the web PAGES (with their dates), even if they are not from today.
 Do NOT nitpick style, length, formatting or language. Do NOT mark "wrong" because you personally do not know a Turonbank fact — judge facts only against the CONTEXT.
 

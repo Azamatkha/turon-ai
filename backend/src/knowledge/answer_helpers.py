@@ -19,6 +19,7 @@ from src.core.utils.uzbek_script import (
 from src.knowledge import web_search
 from src.knowledge.lang import ReplyLang, is_russian_text
 from src.knowledge.prompts import (
+    ABOUT_BOT_REPLY,
     CAPABILITIES_REPLY,
     LANGUAGE_SYSTEM,
     RU_CANNED_REPLIES,
@@ -746,7 +747,7 @@ def _bot_reply(decision: Route, history: list[ChatTurn] | None, lang: ReplyLang)
     Suhbat o'rtasidagi "rahmat", "xayr" kabi gapga esa routerning qisqa
     javobi: har safar uzun ro'yxat chiqsa bezor qiladi."""
     if decision.intent is Intent.ABOUT_BOT:
-        return _localize(CAPABILITIES_REPLY, lang)
+        return _localize(ABOUT_BOT_REPLY, lang)
     if not history:
         greeting = "Здравствуйте!" if lang == "ru" else _localize("Assalomu alaykum!", lang)
         body = _localize(CAPABILITIES_REPLY, lang)

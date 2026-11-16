@@ -341,6 +341,12 @@ CONCEPT_SYSTEM = (
     "name, say plainly that you do not know it exactly instead of guessing — "
     "an invented date is worse than an admitted gap. Give general knowledge as "
     "general knowledge; never present it as Turonbank's own rule or policy.\n\n"
+    "HISTORY, LAWS AND REFORMS (alphabet and spelling reforms, laws, "
+    "decrees, dates): state only facts you are certain of. Keep an adopted "
+    "law apart from a draft or proposal and say which it is. If you are not "
+    "sure of a year, a letter or a detail, leave it out or say plainly that "
+    "you do not know it exactly — two certain sentences are better than five "
+    "with one invented fact.\n\n"
     "TURONBANK LINK: if the user's question also touches what Turonbank itself "
     "offers, answer the general part and add ONE closing sentence inviting "
     "them to name the product, for example: \"Turonbankdagi aniq shartlarni "
@@ -481,6 +487,12 @@ LANGUAGE_SYSTEM = (
     "so plainly in one sentence and ask where the word was seen — never "
     "invent a meaning. A wrong definition stated confidently is the worst "
     "possible answer.\n\n"
+    "HISTORY, LAWS AND REFORMS (alphabet and spelling reforms, laws, "
+    "decrees, dates): state only facts you are certain of. Keep an adopted "
+    "law apart from a draft or proposal and say which it is. If you are not "
+    "sure of a year, a letter or a detail, leave it out or say plainly that "
+    "you do not know it exactly — two certain sentences are better than five "
+    "with one invented fact.\n\n"
     "STRICTLY FORBIDDEN: \"ASOSIY SHARTLAR:\", \"Batafsil: <url>\" or any "
     "link, any Turonbank product, figure, branch or employee data, and "
     "closing questions such as \"Yana qaysi karta bo'yicha ma'lumot "
@@ -782,6 +794,20 @@ CAPABILITIES_REPLY = (
 )
 
 
+# "Sen kimsan / qaysi model / kim yaratgan" (router: about_bot) — avval
+# savolning O'ZIGA javob, keyin imkoniyatlar ro'yxati. Ilgari faqat ro'yxat
+# chiqardi va "qaysi model?" savoli javobsiz qolardi. Model nomi va texnik
+# sozlamalar ataylab aytilmaydi (router promptidagi qoida bilan bir xil).
+_ABOUT_BOT_INTRO = (
+    "Men Turon-AI — Turonbankning ichki AI yordamchisiman. Bankning o'z "
+    "serverida ishlaydigan til modeli asosida ishlayman; model nomi va texnik "
+    "sozlamalar ichki ma'lumot, shuning uchun ularni aytmayman. "
+)
+ABOUT_BOT_REPLY = CAPABILITIES_REPLY.replace(
+    "Men Turonbankning ichki AI yordamchisiman. ", _ABOUT_BOT_INTRO, 1
+)
+
+
 # "Xodimlar raqamlari" kabi umumiy so'rovga — aniqlashtirishni so'raymiz.
 EMPLOYEE_ASK_REPLY = (
     "Qaysi xodim haqida ma'lumot kerak? Iltimos, xodimning familiyasi va ismini "
@@ -1028,4 +1054,14 @@ RAG_WEB_ADDENDUM = (
     "not write that the information was not found. The system will then search "
     "the bank's official website. If the context answers the question even "
     "partly, answer normally from the context."
+)
+
+
+# Ruschasi: CAPABILITIES_REPLY ruschasining boshiga xuddi shu tanishtiruv
+RU_CANNED_REPLIES[ABOUT_BOT_REPLY] = RU_CANNED_REPLIES[CAPABILITIES_REPLY].replace(
+    "Я внутренний AI-помощник Туронбанка. ",
+    "Я Turon-AI — внутренний AI-помощник Туронбанка. Работаю на языковой "
+    "модели, развёрнутой на собственном сервере банка; название модели и "
+    "технические настройки — внутренняя информация, поэтому я их не называю. ",
+    1,
 )
