@@ -1,8 +1,8 @@
 from datetime import date
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import BeforeValidator, Field, field_validator
 
 from src.core.schemas import Base
 from src.core.validations import (
@@ -15,6 +15,18 @@ from src.user.enums import UserRole
 
 PHONE_ERROR = "Telefon raqami +998 va 9 ta raqamdan iborat bo'lsin (masalan +998 99 123 45 67)"
 IP_NUMBER_ERROR = "IP raqam 1-4 xonali son bo'lsin (masalan 1036)"
+
+
+def _role_lower(value: Any) -> Any:
+    """Rolni katta-kichik harfdan qat'i nazar qabul qilamiz: "ADMIN" -> "admin".
+
+    API hujjatida uzoq vaqt "ADMIN" deb ko'rsatilgan edi va mobil ilova shuni
+    yuboradi; enum qiymatlari esa kichik harfda — 422 qaytardi."""
+    return value.strip().lower() if isinstance(value, str) else value
+
+
+# Kiruvchi so'rovlardagi rol maydoni (javoblarda oddiy UserRole qoladi)
+RoleInput = Annotated[UserRole, BeforeValidator(_role_lower)]
 
 
 def normalize_phone(value: str | None) -> str | None:
@@ -218,14 +230,14 @@ class UpdateContactsModel(Base):
 
 
 class AdminCreateUserModel(CreateUserModel):
-    role: UserRole = UserRole.USER
+    role: RoleInput = UserRole.USER
 
 class AdminUpdateUserModel(Base):
     username: str | None = None
     full_name: str | None = None
     department: str | None = None
     password: str | None = None
-    role: UserRole | None = None
+    role: RoleInput | None = None
     # Admin userni qo'lda tasdiqlashi (yoki tasdiqni bekor qilishi) mumkin
     is_verified: bool | None = None
     # Face-ID'dan o'tolmagan xodim ma'lumotlarini admin qo'lda kiritadi.
