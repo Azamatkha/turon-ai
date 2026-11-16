@@ -254,7 +254,12 @@ class WebSearchConfig(BaseModel):
     WEB_SEARCH_ENABLED: bool = False
     SEARXNG_URL: str = "http://searxng:8080"
     # Vergul bilan: "cbu.uz,lex.uz,turonbank.uz". Subdomenlar ham ruxsat.
-    WEB_SEARCH_ALLOWED_DOMAINS: str = "cbu.uz,lex.uz,turonbank.uz,gov.uz,mf.uz,soliq.uz"
+    # Rasmiy manbalar + yangilik saytlari (2026-11-16: lex.uz'da faqat qonun
+    # matni bor, islohot haqidagi yangiliklar uza.uz / kun.uz kabi saytlarda)
+    WEB_SEARCH_ALLOWED_DOMAINS: str = (
+        "cbu.uz,lex.uz,turonbank.uz,gov.uz,mf.uz,soliq.uz,"
+        "uza.uz,president.uz,kun.uz,gazeta.uz,daryo.uz"
+    )
     # Ko'proq sahifa — to'liqroq javob (bitta sahifa ochilmasa ham qolganlari bor)
     WEB_SEARCH_MAX_RESULTS: int = 5
     WEB_SEARCH_TIMEOUT_SECONDS: float = 8.0

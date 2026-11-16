@@ -20,6 +20,7 @@ import httpx
 
 from loggers import get_logger
 from src.core.ai.guard import mask_pii
+from src.core.utils.uzbek_script import is_cyrillic_text, to_cyrillic
 from src.knowledge.scraper import extract_content, fetch_html
 from src.main.config import config
 
@@ -91,34 +92,77 @@ def _allowed(results: list[dict], domains: list[str], limit: int) -> list[tuple[
     return out
 
 
+# Domen bo'yicha so'rovlar shu o'lchamdagi guruhlar bilan ketadi. Serverdagi
+# diagnostika (2026-11-16): ketma-ket 3 ta so'rovdan keyin qidiruv tizimlari
+# cheklay boshladi (keyingi hammasi 0 natija) — 22 tasini birdan yuborish
+# o'zimizni bloklatadi.
+_DOMAIN_BATCH = 3
+# Butun qidiruv (barcha bosqichlar) uchun vaqt chegarasi — foydalanuvchi
+# javobni cheksiz kutmasin
+_SEARCH_BUDGET_SECONDS = 20.0
+
+
+def _search_plan(query: str, domains: list[str]) -> list[list[str]]:
+    """Qidiruv bosqichlari — har biri bir vaqtda yuboriladigan so'rovlar guruhi.
+
+    Bosqichma-bosqich, chunki serverdagi qidiruv tizimlari bir nechta `site:`
+    ni OR bilan yaxshi bajarmaydi (Google esa server IP'sini bloklagan):
+      har alifbo varianti uchun (avval lotin, keyin kirill):
+        1) bitta so'rov, barcha domenlar OR bilan;
+        2) har domen alohida `site:` bilan — 3 tadan guruh;
+      oxirida: filtrsiz so'rov, natijadan faqat ruxsat etilganlar."""
+    variants = script_variants(query)
+    plan: list[list[str]] = []
+    for v in variants:
+        plan.append([build_query(v, domains)])
+        site_queries = [f"{v} site:{d}" for d in domains]
+        plan.extend(
+            site_queries[i : i + _DOMAIN_BATCH]
+            for i in range(0, len(site_queries), _DOMAIN_BATCH)
+        )
+    plan.append(variants)
+    return plan
+
+
 async def _searxng(query: str) -> list[tuple[str, str]]:
     """SearXNG'dan (url, sarlavha) ro'yxati — allowlist'dan o'tganlari.
 
-    Bosqichma-bosqich, chunki serverdagi qidiruv tizimlari (Bing, DuckDuckGo)
-    bir nechta `site:` ni OR bilan yaxshi bajarmaydi va bo'sh qaytaradi
-    (Google esa server IP'sini bloklagan):
-      1) bitta so'rov, barcha domenlar OR bilan;
-      2) bo'sh bo'lsa — har domen alohida `site:` bilan (parallel);
-      3) u ham bo'sh bo'lsa — filtrsiz so'rov, natijadan faqat ruxsat etilganlar.
-    Domen cheklovi har bosqichda KODDA tekshiriladi."""
+    Bosqichlar (`_search_plan`) navbat bilan yuboriladi va NATIJA TOPILISHI
+    bilan to'xtaydi. Domen cheklovi har bosqichda KODDA tekshiriladi."""
     cfg = config.web_search
     domains = cfg.allowed_domains
     limit = cfg.WEB_SEARCH_MAX_RESULTS
+    started = time.monotonic()
     async with httpx.AsyncClient(timeout=cfg.WEB_SEARCH_TIMEOUT_SECONDS) as client:
-        found = _allowed(await _ask(client, build_query(query, domains)), domains, limit)
-        if found:
-            return found
-        per_domain = await asyncio.gather(
-            *(_ask(client, f"{query} site:{d}") for d in domains)
-        )
-        found = _allowed([r for rs in per_domain for r in rs], domains, limit)
-        if found:
-            logger.info("Veb-qidiruv: domen bo'yicha alohida so'rovda topildi %r", query[:120])
-            return found
-        found = _allowed(await _ask(client, query), domains, limit)
-        if found:
-            logger.info("Veb-qidiruv: filtrsiz so'rovda topildi %r", query[:120])
-        return found
+        for step, queries in enumerate(_search_plan(query, domains), 1):
+            if time.monotonic() - started > _SEARCH_BUDGET_SECONDS:
+                logger.info("Veb-qidiruv: vaqt tugadi (%d-bosqich) %r", step, query[:120])
+                break
+            answers = await asyncio.gather(*(_ask(client, q) for q in queries))
+            found = _allowed([r for rs in answers for r in rs], domains, limit)
+            if found:
+                if step > 1:
+                    logger.info("Veb-qidiruv: %d-bosqichda topildi %r", step, query[:120])
+                return found
+    return []
+
+
+def script_variants(query: str) -> list[str]:
+    """So'rov + uning ikkinchi alifbodagi varianti (o'zbekcha bo'lsa).
+
+    lex.uz va davlat saytlaridagi hujjatlar ko'pincha KIRILLDA («Лотин
+    ёзувига асосланган ўзбек алифбоси...»), qidiruv tizimlari esa lotin va
+    kirillni turli so'z deb biladi — "lotin alifbosi site:lex.uz" 0 natija
+    berardi.
+
+    Faqat LOTINCHA so'rovga kirill varianti qo'shiladi. Kirillcha so'rov
+    o'zgarishsiz: u ruscha bo'lishi mumkin (lotinga o'girilsa ma'nosiz), ruscha
+    va o'zbek kirilini esa ishonchli ajratib bo'lmaydi; o'zbekcha savol baribir
+    bot ichida lotinga keltiriladi."""
+    if is_cyrillic_text(query):
+        return [query]
+    other = to_cyrillic(query)
+    return [query] if other == query else [query, other]
 
 
 async def _page(url: str, title: str) -> WebHit | None:

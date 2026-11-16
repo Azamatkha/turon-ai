@@ -425,7 +425,7 @@ async def test_unfiltered_fallback_keeps_allowlist(enabled: None, monkeypatch: p
     _patch_client(monkeypatch, fake)
     found = await web_search._searxng("lotin alifbosi")
     assert found == [("https://lex.uz/docs/2", "Qonun")]  # wikipedia tashlandi
-    assert fake.queries[-1] == "lotin alifbosi"
+    assert "lotin alifbosi" in fake.queries  # 3-bosqich: filtrsiz so'rov
 
 
 @pytest.mark.asyncio
@@ -434,4 +434,43 @@ async def test_first_query_hit_skips_fallbacks(enabled: None, monkeypatch: pytes
     fake = _FakeClient({combined: [{"url": "https://cbu.uz/x", "title": "Stavka"}]})
     _patch_client(monkeypatch, fake)
     assert await web_search._searxng("stavka") == [("https://cbu.uz/x", "Stavka")]
+    # Birinchi so'rovning o'zida topildi — boshqa hech narsa yuborilmaydi
     assert fake.queries == [combined]
+
+
+def test_search_plan_batches_and_order() -> None:
+    domains = ["a.uz", "b.uz", "c.uz", "d.uz"]
+    plan = web_search._search_plan("lotin alifbosi", domains)
+    # Lotin: OR + 2 guruh (3+1), kirill: OR + 2 guruh, oxirida filtrsiz
+    assert len(plan) == 7
+    assert plan[0] == [web_search.build_query("lotin alifbosi", domains)]
+    assert plan[1] == [f"lotin alifbosi site:{d}" for d in domains[:3]]
+    assert plan[2] == ["lotin alifbosi site:d.uz"]
+    assert plan[3][0].startswith("лотин алифбоси (site:")
+    assert plan[-1] == ["lotin alifbosi", "лотин алифбоси"]
+    assert all(len(step) <= 3 for step in plan)
+
+
+@pytest.mark.asyncio
+async def test_stops_at_first_hit(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    # lex.uz birinchi guruhda topiladi — keyingi guruhlar va kirill yuborilmaydi
+    fake = _FakeClient({"lotin alifbosi site:lex.uz": [{"url": "https://lex.uz/docs/1", "title": "Qonun"}]})
+    _patch_client(monkeypatch, fake)
+    await web_search._searxng("lotin alifbosi")
+    assert not any(q.startswith("лотин") for q in fake.queries)
+    assert len(fake.queries) <= 1 + 3
+
+
+def test_script_variants() -> None:
+    assert web_search.script_variants("lotin alifbosi") == ["lotin alifbosi", "лотин алифбоси"]
+    assert web_search.script_variants("лотин алифбоси") == ["лотин алифбоси"]
+    # Ruscha — o'zgarishsiz (lotinga o'girilmaydi)
+    assert web_search.script_variants("курс доллара сегодня") == ["курс доллара сегодня"]
+
+
+@pytest.mark.asyncio
+async def test_cyrillic_variant_finds_lex(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    # lex.uz hujjati faqat kirillcha so'rovda topiladi
+    fake = _FakeClient({"лотин алифбоси site:lex.uz": [{"url": "https://lex.uz/docs/3", "title": "Қонун"}]})
+    _patch_client(monkeypatch, fake)
+    assert await web_search._searxng("lotin alifbosi") == [("https://lex.uz/docs/3", "Қонун")]
