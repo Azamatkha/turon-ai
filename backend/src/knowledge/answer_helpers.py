@@ -783,7 +783,9 @@ def _guard_input(
 
 # Veb-qidiruvga faqat bank faktiga oid niyatlar boradi. Xodim (shaxsiy
 # ma'lumot), suhbat tarixi, salomlashish, soha tashqarisi — hech qachon.
-_WEB_INTENTS = frozenset({Intent.PRODUCT, Intent.RATES, Intent.BRANCH, Intent.CONCEPT})
+_WEB_INTENTS = frozenset(
+    {Intent.PRODUCT, Intent.RATES, Intent.BRANCH, Intent.CONCEPT, Intent.LANGUAGE}
+)
 
 
 def _web_eligible(decision: Route | None, question: str) -> bool:

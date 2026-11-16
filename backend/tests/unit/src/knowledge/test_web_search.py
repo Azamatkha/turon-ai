@@ -305,3 +305,66 @@ async def test_rag_normal_answer_untouched(enabled: None, monkeypatch: pytest.Mo
     text, _ = await _run(uc, "Avtokredit foizi qancha")
     assert text == answer
     assert uc.last_outcome == "answered"
+
+
+# ---- Til savoli (language) va "internet kerak, lekin o'chiq" holati ----
+
+
+class _SysAI(_FakeAI):
+    """System promptni ham yozib oladi."""
+
+    def __init__(self, reply: str) -> None:
+        super().__init__(reply)
+        self.systems: list[str] = []
+
+    async def stream_generate(self, prompt: str, **kw: Any) -> Any:
+        self.systems.append(kw.get("system_prompt") or "")
+        async for ev in super().stream_generate(prompt, **kw):
+            yield ev
+
+
+def _language_uc(monkeypatch: pytest.MonkeyPatch, ai: _FakeAI) -> AnswerQuestionUseCase:
+    uc = _uc(monkeypatch, ai)
+
+    async def classify(question: str, history: Any = None) -> Route:
+        return Route(intent=Intent.LANGUAGE, search_query="lotin alifbosi o'zgarishlari")
+
+    monkeypatch.setattr(uc.router, "classify", classify)
+    return uc
+
+
+async def _raw(uc: AnswerQuestionUseCase, q: str, hint: str | None, route: str | None) -> str:
+    text = ""
+    async for ev in uc._execute_stream_raw(q, None, hint, route):
+        if ev["type"] == "delta":
+            text += ev["text"]
+    return text
+
+
+@pytest.mark.asyncio
+async def test_language_law_question_goes_online(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_search(q: str) -> list[WebHit]:
+        return [HIT]
+
+    monkeypatch.setattr(web_search, "search", fake_search)
+    ai = _TwoStepAI("NEEDS_WEB", "Qonun 1993-yilda qabul qilingan [1].")
+    uc = _language_uc(monkeypatch, ai)
+    text, _ = await _run(uc, "lotin alifbosiga qanday o'zgartirish kiritildi")
+    assert "NEEDS_WEB" not in text
+    assert uc.last_outcome == "web"
+
+
+@pytest.mark.asyncio
+async def test_web_route_disabled_falls_back_to_general(monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.knowledge.prompts import NO_INFO_REPLY, WEB_UNAVAILABLE_HINT
+
+    monkeypatch.setattr(config.web_search, "WEB_SEARCH_ENABLED", False)
+    answer = "Lotin alifbosi 1993-yilgi qonun bilan joriy etilgan."
+    ai = _SysAI(answer)
+    uc = _language_uc(monkeypatch, ai)
+    text = await _raw(uc, "lotin alifbosiga qanday o'zgartirish kiritildi", "unconfirmed 2023 law", "web")
+    # Ilgari darhol "topilmadi" edi — endi umumiy bilimdan, ogohlantirish bilan
+    assert text == answer
+    assert text != NO_INFO_REPLY
+    assert WEB_UNAVAILABLE_HINT.strip() in ai.systems[-1]
+    assert "unconfirmed 2023 law" in ai.systems[-1]

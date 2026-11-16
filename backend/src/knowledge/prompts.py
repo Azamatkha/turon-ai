@@ -1044,6 +1044,28 @@ CONCEPT_WEB_ADDENDUM = (
     "other banks (apply the OTHER BANKS rule)."
 )
 
+# Til savoli (language) uchun xuddi shu — imlo/alifbo islohoti, qonun, rasmiy
+# qoida haqida model xotirasidan yozmaydi, NEEDS_WEB deydi.
+LANGUAGE_WEB_ADDENDUM = (
+    "\n\nWEB LOOKUP IS AVAILABLE: the system can look the answer up on official "
+    "Uzbek websites (legislation, government). If the question asks about a LAW, "
+    "decree, official reform (e.g. changes to the Uzbek alphabet or spelling "
+    "rules), its date or what changed — reply with exactly one word: "
+    f"{WEB_LOOKUP_TOKEN}. Nothing else.\n"
+    "Do NOT use it for ordinary word meanings, spelling of a word, translation "
+    "or correcting a text — answer those yourself."
+)
+
+# Internet kerak, lekin qidiruv o'chiq — umumiy bilimdan, faqat aniq faktlar bilan
+WEB_UNAVAILABLE_HINT = (
+    " Official web lookup is NOT available right now: answer from well-established "
+    "knowledge only. Do not name any law, decree, reform, year or event you are not "
+    "certain of; if the user asks about recent official changes, say plainly that "
+    "you have no confirmed information about them and that the official text of "
+    "the legislation should be checked."
+)
+
+
 # Bazadan bo'laklar topilgan, lekin ular savolga JAVOB BERMASA — model
 # "topilmadi" deb yozmaydi, NEEDS_WEB deydi va kod ruxsat etilgan saytlardan
 # (turonbank.uz ham) qidiradi. Faqat veb-qidiruv yoqilganda qo'shiladi.

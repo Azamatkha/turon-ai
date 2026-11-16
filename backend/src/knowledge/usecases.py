@@ -113,6 +113,7 @@ from src.knowledge.prompts import (
     HISTORY_SYSTEM,
     INJECTION_REPLY,
     LANGUAGE_SYSTEM,
+    LANGUAGE_WEB_ADDENDUM,
     NO_INFO_REPLY,
     OFF_TOPIC_REPLY,
     OTHER_BANK_REPLY,
@@ -126,6 +127,7 @@ from src.knowledge.prompts import (
     WEB_LOOKUP_TOKEN,
     WEB_NOT_FOUND_TOKEN,
     WEB_RAG_SYSTEM,
+    WEB_UNAVAILABLE_HINT,
 )
 from src.knowledge.rates_scraper import RATES_TITLE, RATES_URL, channel_lines
 from src.knowledge.router import Intent, QuestionRouter, Route
@@ -1649,22 +1651,27 @@ class AnswerQuestionUseCase:
         # Tekshiruvchi: bu savolga javob INTERNETDAN (yangilik, bugungi rasmiy
         # ma'lumot) olinishi kerak. Baza bunga javob bermaydi — u yerdan
         # qayta qidirish yana eski hujjatni ("Tarix") qaytarardi.
+        if route_web and not config.web_search.WEB_SEARCH_ENABLED:
+            # Qidiruv o'chiq — ilgari darhol "topilmadi" berilardi, ya'ni
+            # tekshiruvchi bitta to'qilgan qonunni ushlasa, foydalanuvchi aniq
+            # ma'lum faktlarni (1993-yilgi qonun) ham olmasdi. Endi umumiy
+            # bilimdan, tasdiqlanmagan hujjat/sanalarsiz qayta yoziladi.
+            logger.info(
+                "Javob internetdan kerak, lekin veb-qidiruv o'chiq — umumiy "
+                "bilimdan qayta yoziladi: %r",
+                question[:200],
+            )
+            route_web = False
+            route_general = True
+            self._retry_hint = (self._retry_hint or "") + WEB_UNAVAILABLE_HINT
         if route_web:
-            if config.web_search.WEB_SEARCH_ENABLED and not _is_meaningless_query(
-                question
-            ):
+            if not _is_meaningless_query(question):
                 async for ev in self._web_stream(
                     question, decision, lang, want_cyrillic, router_tokens
                 ):
                     yield ev
                 if self.last_outcome == "web":
                     return
-            else:
-                logger.info(
-                    "Javob internetdan kerak, lekin veb-qidiruv o'chiq "
-                    "(WEB_SEARCH_ENABLED=false): %r",
-                    question[:200],
-                )
             self.last_outcome = "no_info"
             yield {"type": "delta", "text": _localize(NO_INFO_REPLY, lang)}
             yield {
@@ -1778,11 +1785,16 @@ class AnswerQuestionUseCase:
             )
             # Joriy/tekshiriladigan fakt (bugungi stavka, soliq, qonun) —
             # model to'qimaydi, NEEDS_WEB deydi va kod internetdan qidiradi.
-            web_ok = nosearch_intent is Intent.CONCEPT and _web_eligible(
-                decision, question
-            )
+            web_ok = nosearch_intent in (
+                Intent.CONCEPT,
+                Intent.LANGUAGE,
+            ) and _web_eligible(decision, question)
             if web_ok:
-                system = system + CONCEPT_WEB_ADDENDUM
+                system = system + (
+                    LANGUAGE_WEB_ADDENDUM
+                    if nosearch_intent is Intent.LANGUAGE
+                    else CONCEPT_WEB_ADDENDUM
+                )
             # Kirillga o'girilmaydigan javobda aralash alifboli so'zni
             # ("молияiy") tuzatamiz. Kirillga o'girilganda kerak emas —
             # u yerda matn baribir bir alifboga keltiriladi. Ruscha javobda

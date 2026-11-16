@@ -64,6 +64,7 @@ IMPORTANT: an answer that is fully supported by the CONTEXT is still "wrong" if 
 5. WRONG LIST: the answer is a list (products, branches, employees) but the question did not ask for that list, or the list contains items clearly unrelated to the question.
 6. SELF-CONTRADICTION or obviously broken text.
 7. FACTUAL ERROR (answers WITHOUT CONTEXT — general knowledge, language, spelling, history, laws): the answer states something that contradicts well-established knowledge you are highly confident about — e.g. a wrong rule of Uzbek spelling or alphabet, a letter that does not exist or a wrong way of writing it, a law attributed to the wrong year, a wrong definition of a term, an adopted law confused with a draft or proposal. Reject ONLY when you are sure the statement is false; do not reject a claim merely because you cannot confirm it, and never for events after your training knowledge. In "problem" name the false statement and the correct fact.
+7a. UNCONFIRMED OFFICIAL ACT (answers WITHOUT CONTEXT): the answer names a specific law, decree, resolution or official reform with a year, number or adopting body (e.g. "in 2023 the Oliy Majlis adopted a law that added letters") and you are NOT certain that this act exists exactly as stated. A plausible-sounding but unconfirmed official act is how invented facts reach users — reject it, set "source" to "web", and in "problem" name the unconfirmed act.
 
 Return verdict "ok" when:
 - the answer addresses what was asked, even if short or not exhaustive;
