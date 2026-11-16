@@ -61,28 +61,64 @@ def build_query(query: str, domains: list[str]) -> str:
     return f"{query} ({sites})" if sites else query
 
 
-async def _searxng(query: str) -> list[tuple[str, str]]:
-    """SearXNG'dan (url, sarlavha) ro'yxati — allowlist'dan o'tganlari."""
+async def _ask(client: httpx.AsyncClient, q: str) -> list[dict]:
+    """Bitta SearXNG so'rovi — xom natijalar (xato bo'lsa bo'sh)."""
     cfg = config.web_search
-    domains = cfg.allowed_domains
-    async with httpx.AsyncClient(timeout=cfg.WEB_SEARCH_TIMEOUT_SECONDS) as client:
+    try:
         resp = await client.get(
             f"{cfg.SEARXNG_URL.rstrip('/')}/search",
-            params={"q": build_query(query, domains), "format": "json", "safesearch": 1},
+            params={"q": q, "format": "json", "safesearch": 1},
         )
         resp.raise_for_status()
-        data = resp.json()
+        return list(resp.json().get("results") or [])
+    except Exception as exc:  # noqa: BLE001 - bitta bosqich yiqilsa, keyingisi bor
+        logger.info("SearXNG so'rovi ishlamadi %r: %s", q[:120], exc)
+        return []
+
+
+def _allowed(results: list[dict], domains: list[str], limit: int) -> list[tuple[str, str]]:
+    """Natijalardan faqat ruxsat etilgan domenlar — (url, sarlavha), takrorsiz."""
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
-    for item in data.get("results") or []:
+    for item in results:
         url = str(item.get("url") or "")
         if not url or url in seen or not is_allowed_url(url, domains):
             continue
         seen.add(url)
         out.append((url, str(item.get("title") or "")))
-        if len(out) >= cfg.WEB_SEARCH_MAX_RESULTS:
+        if len(out) >= limit:
             break
     return out
+
+
+async def _searxng(query: str) -> list[tuple[str, str]]:
+    """SearXNG'dan (url, sarlavha) ro'yxati — allowlist'dan o'tganlari.
+
+    Bosqichma-bosqich, chunki serverdagi qidiruv tizimlari (Bing, DuckDuckGo)
+    bir nechta `site:` ni OR bilan yaxshi bajarmaydi va bo'sh qaytaradi
+    (Google esa server IP'sini bloklagan):
+      1) bitta so'rov, barcha domenlar OR bilan;
+      2) bo'sh bo'lsa — har domen alohida `site:` bilan (parallel);
+      3) u ham bo'sh bo'lsa — filtrsiz so'rov, natijadan faqat ruxsat etilganlar.
+    Domen cheklovi har bosqichda KODDA tekshiriladi."""
+    cfg = config.web_search
+    domains = cfg.allowed_domains
+    limit = cfg.WEB_SEARCH_MAX_RESULTS
+    async with httpx.AsyncClient(timeout=cfg.WEB_SEARCH_TIMEOUT_SECONDS) as client:
+        found = _allowed(await _ask(client, build_query(query, domains)), domains, limit)
+        if found:
+            return found
+        per_domain = await asyncio.gather(
+            *(_ask(client, f"{query} site:{d}") for d in domains)
+        )
+        found = _allowed([r for rs in per_domain for r in rs], domains, limit)
+        if found:
+            logger.info("Veb-qidiruv: domen bo'yicha alohida so'rovda topildi %r", query[:120])
+            return found
+        found = _allowed(await _ask(client, query), domains, limit)
+        if found:
+            logger.info("Veb-qidiruv: filtrsiz so'rovda topildi %r", query[:120])
+        return found
 
 
 async def _page(url: str, title: str) -> WebHit | None:

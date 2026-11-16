@@ -26,10 +26,21 @@ search:
 #     all://:
 #       - http://<proxy-ip>:<port>
 
+# 2026-11-16 serverdagi diagnostika (unresponsive_engines):
+#   google — "access denied" (server IP bloklangan), brave — "too many requests",
+#   google cse — "timeout". Ular natija bermaydi, faqat har so'rovga kutish
+#   qo'shadi — o'chirildi. Yandex .uz saytlarini yaxshi indekslaydi va `site:`
+#   ni to'g'ri bajaradi — qo'shildi.
 engines:
   - name: google
-    disabled: false
+    disabled: true
+  - name: google cse
+    disabled: true
+  - name: brave
+    disabled: true
   - name: bing
     disabled: false
   - name: duckduckgo
+    disabled: false
+  - name: yandex
     disabled: false

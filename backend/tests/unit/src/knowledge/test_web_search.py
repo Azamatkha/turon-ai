@@ -368,3 +368,70 @@ async def test_web_route_disabled_falls_back_to_general(monkeypatch: pytest.Monk
     assert text != NO_INFO_REPLY
     assert WEB_UNAVAILABLE_HINT.strip() in ai.systems[-1]
     assert "unconfirmed 2023 law" in ai.systems[-1]
+
+
+# ---- SearXNG bosqichlari: OR bo'sh -> domen bo'yicha -> filtrsiz ----
+
+
+class _FakeClient:
+    def __init__(self, answers: dict[str, list[dict]]) -> None:
+        self.answers = answers
+        self.queries: list[str] = []
+
+    async def __aenter__(self) -> "_FakeClient":
+        return self
+
+    async def __aexit__(self, *a: Any) -> None:
+        return None
+
+    async def get(self, url: str, params: dict) -> Any:
+        q = params["q"]
+        self.queries.append(q)
+        results = self.answers.get(q, [])
+
+        class _R:
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self) -> dict:
+                return {"results": results}
+
+        return _R()
+
+
+def _patch_client(monkeypatch: pytest.MonkeyPatch, fake: _FakeClient) -> None:
+    monkeypatch.setattr(web_search.httpx, "AsyncClient", lambda **kw: fake)
+
+
+@pytest.mark.asyncio
+async def test_per_domain_fallback(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = _FakeClient({"lotin alifbosi site:lex.uz": [{"url": "https://lex.uz/docs/1", "title": "Qonun"}]})
+    _patch_client(monkeypatch, fake)
+    found = await web_search._searxng("lotin alifbosi")
+    assert found == [("https://lex.uz/docs/1", "Qonun")]
+    assert fake.queries[0].startswith("lotin alifbosi (site:")  # avval OR so'rovi
+
+
+@pytest.mark.asyncio
+async def test_unfiltered_fallback_keeps_allowlist(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = _FakeClient(
+        {
+            "lotin alifbosi": [
+                {"url": "https://uz.wikipedia.org/wiki/Alifbo", "title": "Wiki"},
+                {"url": "https://lex.uz/docs/2", "title": "Qonun"},
+            ]
+        }
+    )
+    _patch_client(monkeypatch, fake)
+    found = await web_search._searxng("lotin alifbosi")
+    assert found == [("https://lex.uz/docs/2", "Qonun")]  # wikipedia tashlandi
+    assert fake.queries[-1] == "lotin alifbosi"
+
+
+@pytest.mark.asyncio
+async def test_first_query_hit_skips_fallbacks(enabled: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    combined = web_search.build_query("stavka", DOMAINS)
+    fake = _FakeClient({combined: [{"url": "https://cbu.uz/x", "title": "Stavka"}]})
+    _patch_client(monkeypatch, fake)
+    assert await web_search._searxng("stavka") == [("https://cbu.uz/x", "Stavka")]
+    assert fake.queries == [combined]
