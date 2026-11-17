@@ -48,7 +48,7 @@ def _use_case(monkeypatch: pytest.MonkeyPatch, users: list[dict[str, Any]]) -> A
     async def no_ip(q: str) -> list[dict[str, Any]]:
         return []
 
-    monkeypatch.setattr(uc_mod, "users_with_ip", fake_users)
+    monkeypatch.setattr(uc_mod, "directory_users", fake_users)
     monkeypatch.setattr(uc, "_scroll_points", fake_points)
     monkeypatch.setattr(uc, "_lookup_by_ip_field", no_ip)
     return uc
@@ -238,7 +238,11 @@ async def test_branch_employees_from_both_sources(monkeypatch: pytest.MonkeyPatc
     async def points() -> list[dict[str, Any]]:
         return [SHAHRISABZ_FILE, BY_POSITION, BUXORO_FILE]
 
+    async def by_ip(q_lower: str) -> list[dict[str, Any]]:
+        return [SHARED_C]  # Qdrant `ip` maydoni bo'yicha topilgan
+
     monkeypatch.setattr(uc, "_scroll_points", points)
+    monkeypatch.setattr(uc, "_lookup_by_ip_field", by_ip)
     kind, emps = await uc._employee_route(q)
     assert kind == "answer"
     assert sorted(e["fish"] for e in emps) == ["Karimov Anvar", "QODIROV SARDOR", "TOSHEVA NODIRA"]
@@ -255,3 +259,113 @@ async def test_branch_info_question_is_not_employee_list(monkeypatch: pytest.Mon
     monkeypatch.setattr(uc, "_scroll_points", points)
     route = await uc._employee_route("shahrisabz bxm manzili")
     assert route is None or route[0] != "answer"
+
+
+# --- IP kiritmagan, lekin telefoni bor xodim ham topiladi ---
+
+MAFTUNA_NO_IP = {
+    "fish": "Ubaydulloyeva Maftuna", "department": "Buxoro BXM", "division": "",
+    "position": "Universal menedjer (mutaxassis)", "ip": "", "phone": "+998 90 123 45 67",
+}
+RIZO_MAFTUNA = {
+    "doc_type": "employee", "fish": "RIZOXODJAYEVA MAFTUNA BAXTIYAROVNA",
+    "department": "OPERATSION DEPARTAMENT", "division": "",
+    "position": "So'ngi nazorat xodimi", "ip": "4602", "phone": "998(91) 621 27 37",
+}
+
+
+@pytest.mark.asyncio
+async def test_user_without_ip_found_with_phone(monkeypatch: pytest.MonkeyPatch) -> None:
+    uc = _use_case(monkeypatch, [MAFTUNA_NO_IP, UMIDA_USER])
+
+    async def points() -> list[dict[str, Any]]:
+        return [RIZO_MAFTUNA, {**UMIDA, "doc_type": "employee"}]
+
+    monkeypatch.setattr(uc, "_scroll_points", points)
+    assert await uc._employee_route("ubaydulloyeva maftuna") == ("answer", [MAFTUNA_NO_IP])
+    from src.knowledge.answer_helpers import _format_employee_answer
+
+    text = _format_employee_answer([MAFTUNA_NO_IP])
+    assert "ichki raqam (IP): yo'q" in text and "+998 90 123 45 67" in text
+
+
+@pytest.mark.asyncio
+async def test_half_name_match_is_not_another_person(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Familiya bir odamniki, ism boshqa odamniki — begona xodim emas, "topilmadi"."""
+    uc = _use_case(monkeypatch, [])
+
+    async def points() -> list[dict[str, Any]]:
+        return [RIZO_MAFTUNA, {**UMIDA, "doc_type": "employee"}]
+
+    monkeypatch.setattr(uc, "_scroll_points", points)
+    assert await uc._employee_route("ubaydulloyeva maftuna") == ("none", [])
+
+
+def test_non_name_word_does_not_block_match() -> None:
+    """Hech kimning ismi bo'lmagan so'z ("telefonini") yarim moslik deb sanalmaydi."""
+    assert _match_employees([VEC_EMP], "abrorov telefonini") == [VEC_EMP]
+
+
+def test_directory_record_has_formatted_phone() -> None:
+    from types import SimpleNamespace
+
+    from src.knowledge.directory import _to_record
+
+    u = SimpleNamespace(
+        last_name="Ubaydulloyeva", first_name="Maftuna", patronym=None,
+        department="Buxoro BXM", position="Menedjer", ip_number=None,
+        phone_number="+998901234567",
+    )
+    rec = _to_record(u)  # type: ignore[arg-type]
+    assert rec["phone"] == "+998 90 123 45 67" and rec["ip"] == ""
+
+
+def test_employee_answer_is_not_rewritten_by_verifier() -> None:
+    from src.knowledge.router import Intent
+
+    assert Intent.EMPLOYEE.value in AnswerQuestionUseCase._UNVERIFIED_INTENTS
+
+
+# --- Bitta IP bir nechta xodimga tegishli ---
+
+SHARED_A = {**USER_EMP, "fish": "Aliyev Bobur", "ip": "4031"}
+SHARED_B = {**USER_EMP, "fish": "Karimova Dilnoza", "department": "Risk departamenti", "ip": "4031"}
+SHARED_C = {
+    "doc_type": "employee", "fish": "TOSHEV JAMSHID", "department": "BUXORO BXM",
+    "division": "", "position": "Kassir", "ip": "4031", "phone": "",
+}
+
+
+@pytest.mark.parametrize("q", ["4031", "4031 kimniki", "ip 4031"])
+@pytest.mark.asyncio
+async def test_shared_ip_returns_everyone(monkeypatch: pytest.MonkeyPatch, q: str) -> None:
+    uc = _use_case(monkeypatch, [SHARED_A, SHARED_B])
+
+    async def points() -> list[dict[str, Any]]:
+        return [SHARED_C]
+
+    async def by_ip(q_lower: str) -> list[dict[str, Any]]:
+        return [SHARED_C]  # Qdrant `ip` maydoni bo'yicha topilgan
+
+    monkeypatch.setattr(uc, "_scroll_points", points)
+    monkeypatch.setattr(uc, "_lookup_by_ip_field", by_ip)
+    kind, emps = await uc._employee_route(q)
+    assert kind == "answer"
+    # Ikkala manbadagi barcha egalari
+    assert {e["fish"] for e in emps} == {"Aliyev Bobur", "Karimova Dilnoza", "TOSHEV JAMSHID"}
+
+
+def test_shared_ip_answer_lists_all_without_asking() -> None:
+    from src.knowledge.answer_helpers import _format_employee_answer
+
+    text = _format_employee_answer([SHARED_A, SHARED_B, SHARED_C], "4031")
+    assert text.startswith("Ichki raqam (IP) 4031 — 3 ta xodimga tegishli")
+    assert "Aliyev Bobur" in text and "Karimova Dilnoza" in text and "TOSHEV JAMSHID" in text
+    assert "Qaysi biri" not in text
+
+
+def test_same_name_different_ips_still_asks() -> None:
+    from src.knowledge.answer_helpers import _format_employee_answer
+
+    other = {**SHARED_B, "ip": "4032"}
+    assert "Qaysi biri" in _format_employee_answer([SHARED_A, other], "aliyev")

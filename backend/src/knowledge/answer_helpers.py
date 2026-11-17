@@ -304,7 +304,17 @@ def _format_employee_line(e: dict[str, Any], with_dept: bool = True) -> str:
     return ", ".join(p for p in parts if p)
 
 
-def _format_employee_answer(emps: list[dict[str, Any]]) -> str:
+def _shared_ip(emps: list[dict[str, Any]], question: str) -> str | None:
+    """Bir nechta xodim BITTA ichki raqamni bo'lishadi va savolda aynan shu
+    raqam so'ralgan — o'sha raqam, aks holda None."""
+    ips = {str(e.get("ip", "")).strip() for e in emps}
+    if len(emps) < 2 or len(ips) != 1:
+        return None
+    ip = ips.pop()
+    return ip if ip and ip in re.findall(r"\d+", question) else None
+
+
+def _format_employee_answer(emps: list[dict[str, Any]], question: str = "") -> str:
     """Xodim javobini KOD tuzadi, model emas.
 
     Sabab: modelga qoldirilganda u 16 xodimdan 8 tasini yozib to'xtab qolgan,
@@ -313,6 +323,16 @@ def _format_employee_answer(emps: list[dict[str, Any]]) -> str:
     aynan bazadagidek bo'lishi shart, shuning uchun uni kod kafolatlaydi."""
     if len(emps) == 1:
         return _format_employee_line(emps[0]) + "."
+
+    # Bitta IP bir nechta xodimga tegishli (umumiy xona/telefon) — bu tanlov
+    # emas, javob: hammasi ko'rsatiladi, "qaysi biri kerak?" deb so'ralmaydi.
+    ip = _shared_ip(emps, question)
+    if ip:
+        lines = [f"{i}. {_format_employee_line(e)}" for i, e in enumerate(emps, 1)]
+        return (
+            f"Ichki raqam (IP) {ip} — {len(emps)} ta xodimga tegishli:\n\n"
+            + "\n".join(lines)
+        )
 
     depts = {str(e.get("department", "")).strip() for e in emps}
     # Hammasi bitta bo'limdan — bu BO'LIM ro'yxati: har qatorda bo'lim nomini
@@ -394,6 +414,13 @@ NameScore = tuple[int, int]
 def _best_name_matches(
     emps: list[dict[str, Any]], qtokens: list[str]
 ) -> tuple[NameScore, list[dict[str, Any]]]:
+    best, matched, _ = _name_match_core(emps, qtokens)
+    return best, matched
+
+
+def _name_match_core(
+    emps: list[dict[str, Any]], qtokens: list[str]
+) -> tuple[NameScore, list[dict[str, Any]], int]:
     """Ism/familiya bo'yicha eng yaxshi mos kelgan xodim(lar) va ularning balli.
 
     Ball = (mos kelgan so'zlar SONI, mos qismlar uzunligi). Avval so'zlar soni
@@ -402,15 +429,17 @@ def _best_name_matches(
     Ilgari faqat uzunliklar yig'indisi edi — uzun familiya bitta o'zi qisqa
     ism + familiyadan ko'p ball olib, butunlay boshqa odam qaytarilardi."""
     if not qtokens:
-        return (0, 0), []
+        return (0, 0), [], 0
     scored: list[tuple[NameScore, dict[str, Any]]] = []
     qnorms = [_name_norm(qt) for qt in qtokens]
+    # Savoldagi qaysi so'zlar umuman biror xodimning ismiga mos keldi
+    name_words: set[int] = set()
     for e in emps:
         # Otasining ismi (otchestvo) chiqarib tashlanadi — faqat o'z ismi/familiyasi.
         toks = _own_name_tokens(str(e.get("fish", "")))
         score = 0
         hits = 0
-        for qn in qnorms:
+        for qi, qn in enumerate(qnorms):
             best_cp = 0
             for nt in toks:
                 nn = _name_norm(nt)
@@ -440,12 +469,30 @@ def _best_name_matches(
             if best_cp:
                 hits += 1
                 score += best_cp
+                name_words.add(qi)
         if hits:
             scored.append(((hits, score), e))
     if not scored:
-        return (0, 0), []
+        return (0, 0), [], 0
     best = max(s for s, _ in scored)
-    return best, [e for s, e in scored if s == best]
+    # Savolda ikki ism-so'z bor ("ubaydulloyeva maftuna") va ikkalasi ham
+    # bazada KIMNINGDIR ismi, lekin bitta odamda birga uchramaydi — bu boshqa
+    # odam emas, so'ralgan xodim yo'q. Ilgari faqat familiyasi (Umida) yoki
+    # faqat ismi (Rizoxodjayeva Maftuna) mos kelgan begona xodim qaytarilardi.
+    # Hech kimga mos kelmagan so'z ("telefonini") hisobga olinmaydi.
+    if best[0] == 1 and len(name_words) >= 2:
+        return (0, 0), [], len(name_words)
+    return best, [e for s, e in scored if s == best], len(name_words)
+
+
+def _asks_unknown_person(emps: list[dict[str, Any]], q_lower: str) -> bool:
+    """Savol — ism-familiya (ikki so'zi ham bazadagi ismlar), lekin bunday
+    odam yo'q. Bunda "xodim topilmadi" deyiladi: savolni mahsulot qidiruviga
+    yuborsak, model begona xodim ma'lumotini javobga qo'shib yuborardi."""
+    if _has_non_employee_signal(q_lower):
+        return False
+    best, matched, name_words = _name_match_core(emps, _name_query_tokens(q_lower))
+    return not matched and name_words >= 2
 
 
 def _score_by_name(
@@ -481,7 +528,7 @@ def _same_place(a: dict[str, Any], b: dict[str, Any]) -> bool:
 
 
 # Xodim O'ZI kiritgan (users jadvali) maydonlar fayldagisidan ustun turadi
-_USER_OVERRIDE_FIELDS = ("fish", "department", "position", "ip")
+_USER_OVERRIDE_FIELDS = ("fish", "department", "position", "ip", "phone")
 
 
 def _merge_employee_sources(
@@ -489,8 +536,9 @@ def _merge_employee_sources(
 ) -> list[dict[str, Any]]:
     """users jadvali va yuklangan fayldagi xodimlarni BITTA ro'yxatga
     birlashtiradi. Bir odam ikkala manbada bo'lsa — bitta yozuv qoladi:
-    IP, bo'lim, lavozim xodimning O'ZI kiritganidan (faylda IP 2345, o'zi
-    2346 kiritgan bo'lsa — 2346), telefon va bo'linma fayldan."""
+    IP, bo'lim, lavozim, telefon xodimning O'ZI kiritganidan (faylda IP
+    2345, o'zi 2346 kiritgan bo'lsa — 2346). O'zi kiritmagan maydon (masalan
+    IP bo'sh) va bo'linma — fayldan."""
     if not users:
         return list(file_emps)
     if not file_emps:
@@ -1026,7 +1074,7 @@ def _blind_employee_guess(decision: Route | None, question: str) -> bool:
         return False
     q_lower = question.lower()
     return not _has_employee_intent(q_lower) and not re.search(
-        r"\b\d{3,5}\b", q_lower
+        r"\b\d{2,5}\b", q_lower
     )
 
 

@@ -90,26 +90,11 @@ class UserRepository(SoftDeleteRepository[User]):
         result = await session.execute(query)
         return list(result.scalars().all())
 
-    async def directory_by_ip(
-        self, session: AsyncSession, ip_numbers: set[str]
-    ) -> list[User]:
-        """Ichki IP raqami aynan mos xodimlar — chat-bot qidiruvi uchun."""
-        if not ip_numbers:
-            return []
-        query = (
-            self._directory_base()
-            .where(self.model.ip_number.in_(ip_numbers))
-            .order_by(self.model.last_name, self.model.first_name)
-        )
-        result = await session.execute(query)
-        return list(result.scalars().all())
-
-    async def directory_with_ip(self, session: AsyncSession) -> list[User]:
-        """Ichki IP raqamini kiritgan barcha xodimlar — chat-bot xodim
-        qidiruvi avval shu ro'yxatdan (ism/bo'lim/raqam) izlaydi."""
-        query = self._directory_base().where(
-            self.model.ip_number.isnot(None), self.model.ip_number != ""
-        )
+    async def directory_all(self, session: AsyncSession) -> list[User]:
+        """Ma'lumotnomadagi BARCHA xodimlar — chat-bot xodim qidiruvi shu
+        ro'yxatdan (ism/bo'lim/raqam) izlaydi. IP kiritmaganlar ham: ular
+        ham bankda bor, telefoni bo'lishi mumkin ("IP: yo'q" deb chiqadi)."""
+        query = self._directory_base()
         result = await session.execute(query)
         return list(result.scalars().all())
 

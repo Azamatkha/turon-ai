@@ -43,6 +43,7 @@ from src.knowledge.answer_helpers import (
     _asks_about_organization,
     _asks_for_advice,
     _asks_general_meaning,
+    _asks_unknown_person,
     _blind_employee_guess,
     _bot_reply,
     _branch_other_topic,
@@ -92,7 +93,7 @@ from src.knowledge.answer_helpers import (
     _words,
     category_label,
 )
-from src.knowledge.directory import users_by_ip, users_with_ip, users_with_keywords
+from src.knowledge.directory import directory_users, users_with_keywords
 from src.knowledge.ingest_usecases import (
     DeleteKnowledgeUseCase,
     GetKnowledgeDetailUseCase,
@@ -629,6 +630,18 @@ class AnswerQuestionUseCase:
             )
         return _localize(EMPLOYEE_NOT_FOUND_REPLY, lang)
 
+    async def _ip_owners(
+        self, q_lower: str, users: list[dict[str, Any]] | None = None
+    ) -> list[dict[str, Any]]:
+        """Savoldagi ichki raqam (yoki telefon) egalari — users jadvali va
+        yuklangan fayldan birga. Bir odam ikkalasida bo'lsa — bitta yozuv va
+        o'zi kiritgan IP ustun (faylda eski raqam qolgan bo'lsa, u eski raqam
+        bo'yicha chiqmaydi). Bitta IP bir nechta xodimniki bo'lsa — hammasi."""
+        if users is None:
+            users = await directory_users()
+        direct = await self._lookup_by_ip_field(q_lower)
+        return _match_by_number(_merge_employee_sources(users, direct), q_lower)
+
     async def _lookup_by_ip_field(self, q_lower: str) -> list[dict[str, Any]]:
         """Savoldagi 3-5 xonali raqamni Qdrant'da `ip` payload maydoni bo'yicha
         ANIQ qidiradi. scroll natijasiga bog'liq emas."""
@@ -662,7 +675,7 @@ class AnswerQuestionUseCase:
         # Raqam faqat aniq IP so'rovida: "2025-yil" yoki "1000 dollar" ichki
         # raqam emas.
         if nums and (_has_employee_intent(q_lower) or _BARE_IP_RE.fullmatch(q_lower)):
-            return await users_by_ip(nums)
+            return await self._ip_owners(q_lower)
         qwords = _text_words(q_lower)
         if not any(w.startswith(_RESPONSIBLE_STEMS) for w in qwords):
             return []
@@ -688,8 +701,11 @@ class AnswerQuestionUseCase:
         # 1-MANBA: xodimlarning o'zi kiritgan raqamlar ro'yxati (users jadvali).
         # U vektor bazadagi yuklangan fayldan yangiroq. Xuddi shu qoidalar
         # (raqam -> bo'lim -> ism) bilan qidiriladi; topilmasa vektor bazaga.
-        users = await users_with_ip()
-        by_number = _match_by_number(users, q_lower)
+        users = await directory_users()
+        # Raqam bo'yicha — ikkala manbadagi BARCHA egalari (bitta IP 2-3 xodimga
+        # tegishli bo'lishi mumkin). Faqat users'dan olsak, fayldagi sherigi
+        # tushib qolardi.
+        by_number = await self._ip_owners(q_lower, users)
         if by_number:
             return "answer", by_number[:60]
 
@@ -768,7 +784,7 @@ class AnswerQuestionUseCase:
         # qaytarardi va model shular asosida mavjud bo'lmagan xodimlarni,
         # ketma-ket soxta IP va telefon raqamlarini to'qib chiqargan edi.
         # Bu holda model umuman chaqirilmaydi — tayyor matn qaytariladi.
-        if _has_employee_intent(q_lower):
+        if _has_employee_intent(q_lower) or _asks_unknown_person(people, q_lower):
             return "none", []
         return None
 
@@ -1388,7 +1404,12 @@ class AnswerQuestionUseCase:
     # Tekshiruvdan o'tkazilmaydigan natijalar: tayyor himoya javoblari va
     # "topilmadi" (tekshiradigan narsa yo'q)
     _UNVERIFIED_OUTCOMES = frozenset({"blocked", "flagged", "no_info"})
-    _UNVERIFIED_INTENTS = frozenset({Intent.SMALLTALK.value, Intent.ABOUT_BOT.value})
+    # Xodim javobi bazadagi yozuvdan KOD bilan tuziladi — tekshiruvchi uni rad
+    # etsa, model "qisqa yo'llarsiz" qayta yozib, mavjud bo'lmagan xodim yoki
+    # "familiyasi boshqa" kabi to'qima chiqarardi (263 token, bazada yo'q gap).
+    _UNVERIFIED_INTENTS = frozenset(
+        {Intent.SMALLTALK.value, Intent.ABOUT_BOT.value, Intent.EMPLOYEE.value}
+    )
 
     async def _collect(
         self,
@@ -1650,7 +1671,7 @@ class AnswerQuestionUseCase:
                 yield {"type": "status", "step": "employees"}
                 self.last_intent = Intent.EMPLOYEE.value
                 self._last_context = None
-                emp_text = _format_employee_answer(hits[:60])
+                emp_text = _format_employee_answer(hits[:60], question)
                 yield {
                     "type": "delta",
                     "text": to_cyrillic(emp_text) if want_cyrillic else emp_text,
@@ -2013,7 +2034,7 @@ class AnswerQuestionUseCase:
             # Router savolni "concept" degan bo'lsa ham kontakt keshga
             # tushib, keyin boshqa savolga ham shu javob qaytib qolardi.
             self.last_intent = Intent.EMPLOYEE.value
-            emp_text = _format_employee_answer(emps)
+            emp_text = _format_employee_answer(emps, question)
             yield {
                 "type": "delta",
                 "text": to_cyrillic(emp_text) if want_cyrillic else emp_text,
@@ -2302,7 +2323,7 @@ class AnswerQuestionUseCase:
         if not resolved:
             hits = await self._directory_hits(question)
             if hits:
-                emp_text = _format_employee_answer(hits[:60])
+                emp_text = _format_employee_answer(hits[:60], question)
                 return AnswerResult(
                     answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
                     sources=[],
@@ -2498,7 +2519,7 @@ class AnswerQuestionUseCase:
             # Router savolni "concept" degan bo'lsa ham kontakt keshga
             # tushib, keyin boshqa savolga ham shu javob qaytib qolardi.
             self.last_intent = Intent.EMPLOYEE.value
-            emp_text = _format_employee_answer(emps)
+            emp_text = _format_employee_answer(emps, question)
             return AnswerResult(
                 answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
                 sources=[],
