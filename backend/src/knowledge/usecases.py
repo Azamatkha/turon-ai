@@ -57,6 +57,7 @@ from src.knowledge.answer_helpers import (
     _format_history,
     _guard_input,
     _has_employee_intent,
+    _ip_lookup_numbers,
     _is_generic_employee_request,
     _is_meaningless_query,
     _is_ru_doc,
@@ -68,6 +69,7 @@ from src.knowledge.answer_helpers import (
     _match_by_number,
     _match_employees,
     _mentions_catalog_title,
+    _merge_employee_sources,
     _merge_results,
     _narrow_by_title,
     _norm_apostrophes,
@@ -107,6 +109,7 @@ from src.knowledge.prompts import (
     CONCEPT_SYSTEM,
     CONCEPT_WEB_ADDENDUM,
     EMPLOYEE_ASK_REPLY,
+    EMPLOYEE_IP_NOT_FOUND_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
     EMPLOYEE_SYSTEM,
     HARMFUL_REPLY,
@@ -614,12 +617,27 @@ class AnswerQuestionUseCase:
             note = to_cyrillic(note)
         return f"{note}{numbered}\n\n{closing}", None
 
+    @staticmethod
+    def _employee_canned(kind: str, question: str, lang: ReplyLang) -> str:
+        """Xodim qidiruvining tayyor (modelsiz) javobi foydalanuvchi tilida."""
+        if kind == "ask":
+            return _localize(EMPLOYEE_ASK_REPLY, lang)
+        if kind == "no_ip":
+            nums = _ip_lookup_numbers(to_latin(question).lower())
+            return _localize(EMPLOYEE_IP_NOT_FOUND_REPLY, lang).format(
+                ", ".join(dict.fromkeys(nums))
+            )
+        return _localize(EMPLOYEE_NOT_FOUND_REPLY, lang)
+
     async def _lookup_by_ip_field(self, q_lower: str) -> list[dict[str, Any]]:
         """Savoldagi 3-5 xonali raqamni Qdrant'da `ip` payload maydoni bo'yicha
         ANIQ qidiradi. scroll natijasiga bog'liq emas."""
         out: list[dict[str, Any]] = []
         seen: set[str] = set()
-        for n in re.findall(r"\b\d{3,5}\b", q_lower):
+        nums = dict.fromkeys(
+            [*re.findall(r"\b\d{3,5}\b", q_lower), *_ip_lookup_numbers(q_lower)]
+        )
+        for n in nums:
             for p in await self.store.search_by_field("ip", n, limit=60):
                 if p.get("doc_type") != "employee":
                     continue
@@ -640,7 +658,7 @@ class AnswerQuestionUseCase:
         q_lower = question.lower()
         if len(q_lower) > _EMPLOYEE_HINT_MAX_CHARS:
             return []
-        nums = set(re.findall(r"\b\d{3,4}\b", q_lower))
+        nums = set(re.findall(r"\b\d{2,4}\b", q_lower))
         # Raqam faqat aniq IP so'rovida: "2025-yil" yoki "1000 dollar" ichki
         # raqam emas.
         if nums and (_has_employee_intent(q_lower) or _BARE_IP_RE.fullmatch(q_lower)):
@@ -660,6 +678,8 @@ class AnswerQuestionUseCase:
         """Savol xodim (telefon/IP) haqida bo'lsa yo'naltiradi:
         ("answer", [xodimlar]) — mos xodim(lar) topildi;
         ("ask", []) — umumiy so'rov, aniqlashtirish kerak;
+        ("no_ip", []) — IP egasi so'raldi, bunday raqamli xodim yo'q;
+        ("none", []) — xodim so'raldi, lekin topilmadi;
         None — bu xodim savoli emas (mahsulot RAG'ga o'tadi)."""
         # Xodimlarni doc_type filtri bilan TO'LIQ sahifalab olamiz — 5000'lik
         # scroll_all cheklovi kolleksiya kattalashganda xodimlarni "yo'qotib"
@@ -688,20 +708,35 @@ class AnswerQuestionUseCase:
             # Ro'yxat baribir bo'sh — hech bo'lmasa raqam bo'yicha ANIQ
             # payload qidiruvini sinab ko'ramiz.
             direct = await self._lookup_by_ip_field(q_lower)
-            return ("answer", direct[:60]) if direct else None
+            if direct:
+                return "answer", direct[:60]
+            return ("no_ip", []) if _ip_lookup_numbers(q_lower) else None
 
         # Eng kuchli signal: savoldagi raqam biror xodimning IP/telefoniga aniq
         # mos kelsa — bu direktoriya so'rovi. Katalog-title bostiruvidan OLDIN
         # tekshiramiz, aks holda yalang'och "2206" mahsulot RAG'iga ketib qolardi.
-        by_number = _match_by_number(emps, q_lower)
+        # Ikki manba bitta ro'yxatga: bir odam ikkalasida bo'lsa — bitta
+        # yozuv, IP/bo'lim/lavozim xodimning o'zi kiritganidan (u yangiroq).
+        people = _merge_employee_sources(users, emps)
+        by_number = _match_by_number(people, q_lower)
         if not by_number:
             # Zaxira: Qdrant'dan TO'G'RIDAN-TO'G'RI `ip` maydoni bo'yicha.
             # scroll bilan hamma xodimni yuklab Python'da solishtirish
             # kolleksiya kattalashganda ishonchsiz; bu esa aniq payload
-            # filtri — bitta so'rov, hech narsa tushib qolmaydi.
-            by_number = await self._lookup_by_ip_field(q_lower)
+            # filtri — bitta so'rov, hech narsa tushib qolmaydi. Natija ham
+            # users bilan birlashtiriladi: faylda eski IP qolgan xodim o'zi
+            # boshqa raqam kiritgan bo'lsa, eski raqam bo'yicha chiqmasin.
+            direct = await self._lookup_by_ip_field(q_lower)
+            by_number = _match_by_number(
+                _merge_employee_sources(users, direct), q_lower
+            )
         if by_number:
             return "answer", by_number[:60]
+        # Faqat raqam so'ralgan ("4031", "4031 kimniki"), lekin bunday IP
+        # egasi yo'q — aniq aytamiz. Aks holda savol mahsulot qidiruviga ketib,
+        # umumiy "ma'lumot topilmadi" chiqardi.
+        if _ip_lookup_numbers(q_lower):
+            return "no_ip", []
         # Savolda bazadagi mahsulot/filial NOMI bo'lsa (va aniq xodim-niyat
         # bildirilmagan bo'lsa) — bu mahsulot savoli. Xodim qidiruvini umuman
         # sinamaymiz: aks holda "Yunusobod" kabi joy nomi xodim ismining
@@ -716,10 +751,12 @@ class AnswerQuestionUseCase:
             if _mentions_catalog_title(q_lower, sorted(t for t in titles if t)):
                 return None
 
-        # Avval users ro'yxatidan, keyin vektor bazadagi xodimlardan
-        matched = _match_employees(users, q_lower) if users else []
-        if not matched and emps:
-            matched = _match_employees(emps, q_lower)
+        # Ism / bo'lim / filial bo'yicha — birlashgan ro'yxatda. Ilgari users
+        # va fayl alohida qaralardi: users'da biror moslik (masalan faqat
+        # familiyasi bir xil boshqa odam) topilsa, fayl umuman qaralmasdi
+        # ("ubaydulloyeva maftuna" so'roviga Umida chiqardi), filial so'rovida
+        # esa xodimlarning bir qismi chiqmay qolardi.
+        matched = _match_employees(people, q_lower)
         if matched:
             # Javobni endi kod tuzadi (model emas), shuning uchun token cheklovi
             # yo'q — katta bo'lim ham to'liq chiqadi.
@@ -1951,16 +1988,16 @@ class AnswerQuestionUseCase:
         )
         if route is not None:
             kind, emps = route
-            if kind in ("ask", "none"):
+            if kind in ("ask", "none", "no_ip"):
                 # Model UMUMAN chaqirilmaydi — tayyor matn. "none" holatida
                 # modelga "topilmadi" deyishni ishonib topshirib bo'lmaydi:
                 # u yo'q xodimlarni to'qib chiqargan edi.
-                canned = (
-                    EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
-                )
-                if kind == "none":
+                if kind != "ask":
                     self.last_outcome = "no_info"
-                yield {"type": "delta", "text": _localize(canned, lang)}
+                yield {
+                    "type": "delta",
+                    "text": self._employee_canned(kind, question, lang),
+                }
                 yield {
                     "type": "done",
                     "completion_tokens": router_tokens,
@@ -2444,14 +2481,13 @@ class AnswerQuestionUseCase:
         )
         if route is not None:
             kind, emps = route
-            if kind in ("ask", "none"):
+            if kind in ("ask", "none", "no_ip"):
                 # Stream yo'li bilan bir xil: model chaqirilmaydi (to'qib
                 # chiqarishning oldini olish uchun), tayyor matn qaytadi.
-                canned = (
-                    EMPLOYEE_ASK_REPLY if kind == "ask" else EMPLOYEE_NOT_FOUND_REPLY
-                )
+                if kind != "ask":
+                    self.last_outcome = "no_info"
                 return AnswerResult(
-                    answer=_localize(canned, lang),
+                    answer=self._employee_canned(kind, question, lang),
                     sources=[],
                     finish_reason="stop",
                     completion_tokens=router_tokens,

@@ -5,6 +5,7 @@ normallashtirish, aniqlashtiruvchi savol, kurs hisobi va h.k.).
 """
 
 from datetime import timedelta
+from difflib import SequenceMatcher
 from itertools import chain, zip_longest
 import re
 from typing import Any
@@ -52,6 +53,9 @@ _DEPT_STOP = {
     "nazorat", "hisobini", "yuritish", "bosh", "menejer", "direktori",
     # "bank" hamma bo'lim nomida uchraydi — hech narsani ajratmaydi.
     "bank", "banki", "turonbank",
+    # Filial belgisi har filial nomida bor ("Shahrisabz BXM", "Buxoro BXM") —
+    # filialni faqat joy nomi ajratadi.
+    "bxm", "bxo", "filial", "filiali", "ofis", "ofisi",
 }
 
 # Bo'lim nomida deyarli har doim uchraydigan, hech narsani AJRATMAYDIGAN
@@ -338,6 +342,10 @@ def _match_by_number(
     o'sha xodim(lar)ni qaytaradi. Bu eng kuchli signal — yalang'och "2206"
     ham to'g'ridan-to'g'ri xodimga yo'naladi (mahsulot RAG'iga ketmaydi)."""
     nums = re.findall(r"\d{3,}", q_lower)
+    # 2 xonali raqam ham IP bo'lishi mumkin, lekin faqat savol aniq IP so'rovi
+    # bo'lsa ("45", "ip 45"): aks holda "10 ta xodim" kabi gapdagi son ham
+    # kimningdir IP'siga tushib qolardi.
+    nums += [n for n in _ip_lookup_numbers(q_lower) if n not in nums]
     if not nums:
         return []
     ip_targets = {n for n in nums if len(n) <= 5}
@@ -373,22 +381,35 @@ def _name_query_tokens(q_lower: str) -> list[str]:
     ]
 
 
-def _score_by_name(
-    emps: list[dict[str, Any]], qtokens: list[str]
-) -> list[dict[str, Any]]:
-    """Ism/familiya bo'yicha eng yaxshi mos kelgan xodim(lar).
+# Imlo farqi: "Ubaydulloyeva" / "Ubaydullayeva" — prefiks 8 harfda uziladi,
+# lekin bu bitta familiya. Uzun so'zlarda o'xshashlik shundan yuqori bo'lsa
+# mos deb olinadi. "Xudoyberdiyev" / "Xudoyberganov" (~0.73) — turli
+# familiyalar, ular o'tmaydi.
+_NAME_SIMILARITY = 0.85
+_NAME_SIMILARITY_MIN_LEN = 6
 
-    Alohida funksiya, chunki u IKKI joyda kerak: butun bazada qidirishda va
-    bo'lim topilgach o'sha bo'lim ICHIDA qidirishda ("IT departamenti
-    Shaxzodning ip raqami")."""
+NameScore = tuple[int, int]
+
+
+def _best_name_matches(
+    emps: list[dict[str, Any]], qtokens: list[str]
+) -> tuple[NameScore, list[dict[str, Any]]]:
+    """Ism/familiya bo'yicha eng yaxshi mos kelgan xodim(lar) va ularning balli.
+
+    Ball = (mos kelgan so'zlar SONI, mos qismlar uzunligi). Avval so'zlar soni
+    solishtiriladi: "ubaydulloyeva maftuna" so'rovida ism HAM familiya mos
+    kelgan Maftuna faqat familiyasi mos kelgan Umidadan har doim ustun turadi.
+    Ilgari faqat uzunliklar yig'indisi edi — uzun familiya bitta o'zi qisqa
+    ism + familiyadan ko'p ball olib, butunlay boshqa odam qaytarilardi."""
     if not qtokens:
-        return []
-    scored: list[tuple[int, dict[str, Any]]] = []
+        return (0, 0), []
+    scored: list[tuple[NameScore, dict[str, Any]]] = []
     qnorms = [_name_norm(qt) for qt in qtokens]
     for e in emps:
         # Otasining ismi (otchestvo) chiqarib tashlanadi — faqat o'z ismi/familiyasi.
         toks = _own_name_tokens(str(e.get("fish", "")))
         score = 0
+        hits = 0
         for qn in qnorms:
             best_cp = 0
             for nt in toks:
@@ -408,13 +429,181 @@ def _score_by_name(
                 # Kamida 5 belgi — 4 belgili bo'lak tasodifan tushib qolardi.
                 elif len(qn) >= 5 and qn in nn:
                     best_cp = max(best_cp, len(qn) - 1)
-            score += best_cp
-        if score:
-            scored.append((score, e))
+                # Imlo farqi (bir-ikki harf): boshi kamida 4 harf bir xil va
+                # umumiy o'xshashlik yuqori bo'lsa — o'sha so'z.
+                elif (
+                    cp >= 4
+                    and min(len(qn), len(nn)) >= _NAME_SIMILARITY_MIN_LEN
+                    and SequenceMatcher(None, qn, nn).ratio() >= _NAME_SIMILARITY
+                ):
+                    best_cp = max(best_cp, cp)
+            if best_cp:
+                hits += 1
+                score += best_cp
+        if hits:
+            scored.append(((hits, score), e))
     if not scored:
-        return []
+        return (0, 0), []
     best = max(s for s, _ in scored)
-    return [e for s, e in scored if s == best]
+    return best, [e for s, e in scored if s == best]
+
+
+def _score_by_name(
+    emps: list[dict[str, Any]], qtokens: list[str]
+) -> list[dict[str, Any]]:
+    """Ism/familiya bo'yicha eng yaxshi mos kelgan xodim(lar).
+
+    Alohida funksiya, chunki u IKKI joyda kerak: butun bazada qidirishda va
+    bo'lim topilgach o'sha bo'lim ICHIDA qidirishda ("IT departamenti
+    Shaxzodning ip raqami")."""
+    return _best_name_matches(emps, qtokens)[1]
+
+
+def _person_key(fish: str) -> str | None:
+    """Bir odamni ikki manbada tanish uchun kalit: familiya + ism
+    (otasining ismisiz, tartibidan qat'i nazar, X/H va apostrof farqisiz)."""
+    toks = [_name_norm(t) for t in _own_name_tokens(fish)[:2]]
+    return " ".join(sorted(toks)) if len(toks) == 2 else None
+
+
+def _place_words(text: str) -> set[str]:
+    return {
+        t for t in _words(_drop_apos(text)) if len(t) >= 3 and not _is_dept_stopword(t)
+    }
+
+
+def _same_place(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    """Ikki yozuvning bo'limi bir joymi. Bittasida bo'lim yo'q bo'lsa — ha.
+    Adashlar (bir xil ism-familiyali turli xodimlar) birlashib ketmasligi uchun."""
+    wa = _place_words(str(a.get("department", "")))
+    wb = _place_words(str(b.get("department", "")))
+    return not wa or not wb or bool(wa & wb)
+
+
+# Xodim O'ZI kiritgan (users jadvali) maydonlar fayldagisidan ustun turadi
+_USER_OVERRIDE_FIELDS = ("fish", "department", "position", "ip")
+
+
+def _merge_employee_sources(
+    users: list[dict[str, Any]], file_emps: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """users jadvali va yuklangan fayldagi xodimlarni BITTA ro'yxatga
+    birlashtiradi. Bir odam ikkala manbada bo'lsa — bitta yozuv qoladi:
+    IP, bo'lim, lavozim xodimning O'ZI kiritganidan (faylda IP 2345, o'zi
+    2346 kiritgan bo'lsa — 2346), telefon va bo'linma fayldan."""
+    if not users:
+        return list(file_emps)
+    if not file_emps:
+        return list(users)
+    by_key: dict[str, list[int]] = {}
+    # Imlo farqi uchun ("Ubaydulloyeva" / "Ubaydullayeva"): ism yoki
+    # familiyasidan biri AYNAN bir xil bo'lgan users — nomzodlar
+    by_token: dict[str, list[int]] = {}
+    for i, u in enumerate(users):
+        fish = str(u.get("fish", ""))
+        k = _person_key(fish)
+        if k:
+            by_key.setdefault(k, []).append(i)
+        for t in {_name_norm(t) for t in _own_name_tokens(fish)[:2]}:
+            by_token.setdefault(t, []).append(i)
+    used: set[int] = set()
+    merged: list[dict[str, Any]] = []
+    for f in file_emps:
+        fish = str(f.get("fish", ""))
+        k = _person_key(fish)
+        idx = next(
+            (i for i in by_key.get(k or "", []) if _same_place(users[i], f)), None
+        )
+        if idx is None and k:
+            # Ikkala so'z ham mos (biri imlo farqi bilan) va joyi bir xil
+            ftoks = _own_name_tokens(fish)[:2]
+            cands = dict.fromkeys(
+                i for t in ftoks for i in by_token.get(_name_norm(t), [])
+            )
+            idx = next(
+                (
+                    i
+                    for i in cands
+                    if _same_place(users[i], f)
+                    and _best_name_matches([users[i]], ftoks)[0][0] == 2
+                ),
+                None,
+            )
+        if idx is None:
+            merged.append(f)
+            continue
+        if idx in used:
+            continue  # faylda shu odam ikki marta — bittasi yetarli
+        used.add(idx)
+        u = users[idx]
+        merged.append(
+            {**f, **{key: u[key] for key in _USER_OVERRIDE_FIELDS if u.get(key)}}
+        )
+    return [u for i, u in enumerate(users) if i not in used] + merged
+
+
+def _ip_lookup_numbers(q_lower: str) -> list[str]:
+    """Savol ICHKI RAQAM (IP) egasini qidirish bo'lsa — o'sha raqam(lar).
+
+    Ikki holat: savol faqat raqamning o'zi ("4031", "45") yoki raqam + aniq
+    IP belgisi, savolda ism yo'q ("4031 kimniki", "ip 45", "45 ichki raqam").
+    Oddiy "xodim" so'zi yetmaydi: "IT departament 10 ta xodim" dagi 10 — IP
+    emas. Ism ham bor bo'lsa ("Xamdamov 4031") — bu ism qidiruvi, bo'sh ro'yxat."""
+    nums = re.findall(r"\b\d{1,4}\b", q_lower)
+    if not nums:
+        return []
+    if _BARE_IP_RE.fullmatch(q_lower):
+        return nums
+    words = set(_words(q_lower))
+    ip_word = (
+        "ip" in words
+        or any(p in q_lower for p in _EMPLOYEE_PHRASES)
+        or any(w.startswith("kim") for w in words)
+        or "tegishli" in words
+        or "egasi" in words
+    )
+    if not ip_word:
+        return []
+    if _name_query_tokens(re.sub(r"\d+", " ", q_lower)):
+        return []
+    return nums
+
+
+# Savol FILIAL haqida ekanini bildiradi — shunda xodimning LAVOZIMI ham
+# qaraladi (ba'zan filial nomi lavozimda: "Shahrisabz BXM boshqaruvchisi").
+_BRANCH_MARKERS = ("bxm", "bxo", "filial", "bank xizmatlari", "ofis")
+
+
+def _place_score(
+    text: str, qwords: set[str], dept_intent: bool, coverage: bool = True
+) -> int:
+    """Bo'lim/lavozim matni savolga qanchalik mos (0 — mos emas).
+
+    Ball: mos so'zlarning umumiy uzunligi (aniqroq moslik = katta ball),
+    ustiga nomning necha foizi qamralgani. Filial so'rovida (`coverage=False`)
+    foiz qo'shilmaydi: "Shahrisabz BXM boshqaruvchisi" lavozimi "Shahrisabz
+    BXM" bo'limidan past baholanib, ro'yxatdan tushib qolmasin."""
+    # _QUERY_STOP ham chiqarib tashlanadi. Sabab: bazada "ICHKI AUDIT
+    # DEPARTAMENTI" bo'limi bor, "ICHKI raqam" esa ichki raqamni so'rashning
+    # odatiy iborasi. "ichki" ni ajratuvchi so'z deb olsak, "Xamdamboyev ichki
+    # raqami" kabi HAR QANDAY savol o'sha bo'limga tushib ketardi.
+    distinctive = [
+        t
+        for t in _words(_drop_apos(text))
+        if len(t) >= 2 and not _is_dept_stopword(t) and t not in _QUERY_STOP
+    ]
+    if not distinctive:
+        return 0
+    hits = [t for t in distinctive if _dept_token_hit(t, qwords)]
+    if not hits:
+        return 0
+    # Xodim-niyat aytilmagan bo'lsa (savol shunchaki bo'lim nomi) — nomning
+    # HAMMA ajratuvchi so'zi savolda bo'lishi shart. Qisman moslikka ruxsat
+    # bersak, oddiy savol tasodifan biror bo'limga tushib ketardi.
+    if not dept_intent and len(hits) < len(distinctive):
+        return 0
+    score = sum(len(t) for t in hits) * 10
+    return score + (100 * len(hits) // len(distinctive)) if coverage else score
 
 
 def _match_employees(
@@ -422,7 +611,7 @@ def _match_employees(
 ) -> list[dict[str, Any]]:
     """Savolga mos xodimlarni ANIQ moslash bilan topadi: IP raqami, telefon,
     bo'lim nomi yoki F.I.SH bo'yicha. Topilmasa bo'sh ro'yxat."""
-    qwords = set(_words(q_lower))
+    qwords = set(_words(_drop_apos(q_lower)))
 
     # 1-2) IP / telefon — aniq raqam moslash (yagona manba: _match_by_number)
     by_number = _match_by_number(emps, q_lower)
@@ -447,44 +636,30 @@ def _match_employees(
         # moslikni tanlaymiz. Ilgari tartibsiz set bo'ylab yurib BIRINCHI mos
         # kelgan bo'lim qaytarilardi — shu sabab "IT departamenti xodimlari"
         # so'roviga tasodifan "Moliyaviy hisobotlar departamenti" javob berardi.
-        best_dept = ""
-        best_dept_score = 0
-        for dept in sorted({str(e.get("department", "")) for e in emps}):
-            # _QUERY_STOP ham chiqarib tashlanadi. Sabab: bazada "ICHKI AUDIT
-            # DEPARTAMENTI" bo'limi bor, "ICHKI raqam" esa ichki raqamni
-            # so'rashning odatiy iborasi. "ichki" ni ajratuvchi so'z deb olsak,
-            # "Xamdamboyev ichki raqami" kabi HAR QANDAY savol o'sha bo'limga
-            # tushib ketardi va butunlay boshqa xodimlar qaytarilardi.
-            distinctive = [
-                t
-                for t in _words(dept)
-                if len(t) >= 2
-                and not _is_dept_stopword(t)
-                and t not in _QUERY_STOP
-            ]
-            if not distinctive:
-                continue
-            hits = [t for t in distinctive if _dept_token_hit(t, qwords)]
-            if not hits:
-                continue
-            # Xodim-niyat aytilmagan bo'lsa (savol shunchaki bo'lim nomi) —
-            # bo'lim nomining HAMMA ajratuvchi so'zi savolda bo'lishi shart.
-            # Qisman moslikka ruxsat bersak, oddiy savol tasodifan biror
-            # bo'limga tushib ketardi.
-            if not dept_intent and len(hits) < len(distinctive):
-                continue
-            # Ball: mos so'zlarning umumiy uzunligi (aniqroq moslik = katta ball),
-            # ustiga bo'lim nomining necha foizi qamralgani.
-            score = sum(len(t) for t in hits) * 10 + (
-                100 * len(hits) // len(distinctive)
-            )
-            if score > best_dept_score:
-                best_dept_score = score
-                best_dept = dept
-        if best_dept:
-            dept_emps = [
-                e for e in emps if str(e.get("department", "")) == best_dept
-            ]
+        # Har xodim uchun bo'limi (filial so'ralganda — lavozimi ham) savolga
+        # qanchalik mosligi hisoblanadi; eng yuqori balli xodimlar olinadi.
+        # Bo'lim NOMI bo'yicha guruhlanmaydi: users'da "Shahrisabz BXM",
+        # faylda "SHAHRISABZ BXM" — bir filial, ikkalasidagi xodimlar chiqadi.
+        branch_q = any(m in q_lower for m in _BRANCH_MARKERS)
+        cache: dict[str, int] = {}
+
+        def place(text: str) -> int:
+            if text not in cache:
+                cache[text] = _place_score(
+                    text, qwords, dept_intent, coverage=not branch_q
+                )
+            return cache[text]
+
+        scored = []
+        for e in emps:
+            sc = place(str(e.get("department", "")))
+            if branch_q:
+                sc = max(sc, place(str(e.get("position", ""))))
+            if sc:
+                scored.append((sc, e))
+        if scored:
+            top = max(sc for sc, _ in scored)
+            dept_emps = [e for sc, e in scored if sc == top]
             # Savolda bo'lim BILAN BIRGA ism ham aytilgan bo'lsa ("IT
             # departamenti Shaxzodning ip raqami") — butun bo'limni emas,
             # o'sha bo'lim ichidan ismni qidiramiz.
@@ -941,7 +1116,7 @@ def _has_employee_intent(q_lower: str) -> bool:
         or "tegishli" in words
         or "egasi" in words
     )
-    return bool(whose and re.search(r"\b\d{3,5}\b", q_lower))
+    return bool(whose and re.search(r"\b\d{2,5}\b", q_lower))
 
 
 # "Kim qaraydi / kim mas'ul / kimga murojaat" — admin qo'ygan KALIT SO'Z
@@ -954,7 +1129,8 @@ _RESPONSIBLE_STEMS = (
     "kto", "otvecha", "zanima",
 )
 # Savol faqat ichki raqamning o'zi: "2206" yoki "2206?"
-_BARE_IP_RE = re.compile(r"\s*\d{3,4}\s*\??\s*")
+# Ichki raqam 2-4 xonali bo'ladi ("45", "512", "2206")
+_BARE_IP_RE = re.compile(r"\s*\d{2,4}\s*\??\s*")
 
 
 def _keyword_hit(keyword: str, qwords: set[str]) -> bool:

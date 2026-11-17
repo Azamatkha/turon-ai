@@ -748,6 +748,18 @@ QUERY_REWRITE_SYSTEM = (
 # to'g'ridan-to'g'ri shu matn qaytariladi. Sabab: modelga "topilmadi" deyishni
 # ishonib topshirganda u yo'q xodimlarni, soxta ichki raqam va telefonlarni
 # o'ylab topib yuborgan edi (bank ma'lumotnomasi uchun qabul qilib bo'lmaydi).
+# Savol ichki raqam (IP) egasini qidirish edi ("4031", "4031 kimniki"), lekin
+# bunday raqamli xodim yo'q. {0} — so'ralgan raqam (kirillga o'girishda
+# buzilmasligi uchun raqamli joy belgisi). Ilgari bunday savol mahsulot
+# qidiruviga ketib, umumiy "ma'lumot topilmadi" qaytardi — xodim raqamni
+# telefon deb tushunildimi yoki IP deb, bilmasdi.
+EMPLOYEE_IP_NOT_FOUND_REPLY = (
+    "Ichki raqami (IP) {0} bo'lgan xodim topilmadi. Agar IP raqam bo'yicha "
+    "xodimni qidirayotgan bo'lsangiz — bu raqam bo'yicha hech qanday xodim yo'q. "
+    "Telefon raqamini qidirayotgan bo'lsangiz, uni to'liq yozing "
+    "(masalan: 99 123 45 67), yoki xodimning familiyasini yozing."
+)
+
 EMPLOYEE_NOT_FOUND_REPLY = (
     "Bu so'rov bo'yicha xodim topilmadi. Xodimning familiyasini yoki ismini "
     "to'liqroq yozing, yoki bo'lim nomini ko'rsating — masalan: \"IT "
@@ -923,6 +935,12 @@ RU_CANNED_REPLIES.update(
             "картах, кредитах, вкладах, курсах валют, филиалах, финансовых "
             "терминах или о языке (значение слова, правописание, перевод) — с "
             "радостью отвечу."
+        ),
+        EMPLOYEE_IP_NOT_FOUND_REPLY: (
+            "Сотрудник с внутренним номером (IP) {0} не найден. Если вы ищете "
+            "сотрудника по IP-номеру — по этому номеру никого нет. Если это "
+            "номер телефона, напишите его полностью (например: 99 123 45 67) "
+            "или укажите фамилию сотрудника."
         ),
         EMPLOYEE_NOT_FOUND_REPLY: (
             "По этому запросу сотрудник не найден. Напишите фамилию или имя "
