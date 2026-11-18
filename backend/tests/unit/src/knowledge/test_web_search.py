@@ -529,3 +529,31 @@ async def test_apostrophes_normalized(enabled: None, monkeypatch: pytest.MonkeyP
 
 def test_script_variants_modifier_apostrophe() -> None:
     assert web_search.script_variants("oʻzbek alifbosi") == ["oʻzbek alifbosi", "ўзбек алифбоси"]
+
+
+@pytest.mark.asyncio
+async def test_language_retry_general_keeps_language_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tarjima so'rovi qayta yozilganda (tekshiruvchi: general_knowledge) til
+    prompti qoladi — CONCEPT prompti bankdan tashqari matnni rad etardi."""
+    from src.knowledge.prompts import CONCEPT_SYSTEM, LANGUAGE_SYSTEM
+
+    monkeypatch.setattr(config.web_search, "WEB_SEARCH_ENABLED", False)
+    answer = "I could not find the exact MS Store links."
+    ai = _SysAI(answer)
+    uc = _language_uc(monkeypatch, ai)
+    text = await _raw(
+        uc,
+        "inglizchaga tarjima qilib ber: MS Store'dagi aniq manzillarni topa olmadim",
+        "the answer refused a translation",
+        "general_knowledge",
+    )
+    assert text == answer
+    assert LANGUAGE_SYSTEM[:60] in ai.systems[-1]
+    assert CONCEPT_SYSTEM[:60] not in ai.systems[-1]
+
+
+def test_verifier_text_task_rule() -> None:
+    from src.knowledge.verifier import VERIFY_SYSTEM
+
+    assert "TEXT TASKS" in VERIFY_SYSTEM
+    assert "never apply rules 3, 7 or 7a" in VERIFY_SYSTEM

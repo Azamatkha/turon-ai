@@ -1852,12 +1852,17 @@ class AnswerQuestionUseCase:
         ):
             # Tekshiruvchi "umumiy bilimdan" desa — router nima deganidan
             # qat'i nazar CONCEPT (bazasiz) yo'li
-            nosearch_intent = (
-                Intent.CONCEPT
-                if route_general or decision is None
-                else decision.intent
-            )
-            if route_general:
+            # LANGUAGE bundan mustasno: til vazifasi (tarjima, tahrir) ham
+            # "umumiy bilim", lekin CONCEPT prompti bankdan tashqari mavzuni
+            # rad etadi — dasturlar haqidagi matnni tarjima qilish so'rovi
+            # qayta urinishda "doiradan tashqari" deb rad etilardi (2026-11-18)
+            if decision is not None and decision.intent is Intent.LANGUAGE:
+                nosearch_intent = Intent.LANGUAGE
+            elif route_general or decision is None:
+                nosearch_intent = Intent.CONCEPT
+            else:
+                nosearch_intent = decision.intent
+            if nosearch_intent is Intent.CONCEPT and route_general:
                 self.last_intent = Intent.CONCEPT.value
             prompt, system, max_toks = self._no_search_call(
                 nosearch_intent, question, history
