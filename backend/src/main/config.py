@@ -166,6 +166,9 @@ class AIConfig(BaseModel):
     # 16384 -> 32768: server RTX PRO 6000 Blackwell (96 GB) ga almashtirildi.
     # 27B model (~17 GB) + 32k KV-kesh + bge-m3 bemalol sig'adi, zaxira katta.
     # Yuqoridagi 12 GB hisobi endi tarix uchun qoldirilgan.
+    # 2026-11-18: bu qiymat endi Ollama'ga YUBORILMAYDI (qara:
+    # OllamaClient._resolve_num_ctx) — model serverdagi oyna bilan (amalda
+    # 65536) ishlaydi. Qoldirilgan: .env da bor bo'lsa xato bermasin.
     OLLAMA_NUM_CTX: int = 32768
     # Moslashuvchan oyna (qara: OllamaClient._resolve_num_ctx). Ollama
     # serveridan boshqa mijozlar ham foydalanadi va bitta modelni bir vaqtda

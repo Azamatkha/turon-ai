@@ -192,10 +192,10 @@ class AnswerQuestionUseCase:
     # olmoshlarni to'g'ri yechishga bevosita yordam beradi.
     HISTORY_LIMIT = 8
     # --- Prompt byudjeti (belgilarda) ---------------------------------- #
-    # num_ctx = 32768 token (config.ai.OLLAMA_NUM_CTX; 96 GB GPU'ga o'tilganda
-    # 16384 dan ko'tarildi). Quyidagi hisob 16384 uchun yozilgan va hozir ham
-    # sig'adi — zaxira endi ~21 000 token. Chegaralarni oshirish mumkin, lekin
-    # uzunroq prompt javobni sekinlashtiradi, shuning uchun hozircha tegmadik.
+    # Oyna — serverdagi model qaysi bilan yuklangan bo'lsa (amalda 65536; num_ctx
+    # biz tomondan majburlanmaydi, qara: OllamaClient._resolve_num_ctx). Quyidagi
+    # hisob eng kichik ruxsat etilgan oyna — OLLAMA_MIN_NUM_CTX=16384 — uchun
+    # yozilgan, shuning uchun har qanday kattaroq oynaga sig'adi.
     # O'zbek lotinida ~3.2 belgi = 1 token.
     #
     # HAMMASI SHU OYNAGA SIG'ISHI KERAK — system prompt, kontekst, katalog,

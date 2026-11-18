@@ -68,70 +68,12 @@ class OllamaClient(BaseAIClient):
     CTX_PROBE_TIMEOUT = 2.0
 
     # ----- helpers ----- #
-    async def _resolve_num_ctx(self) -> int:
-        """So'rovga yuboriladigan num_ctx ni tanlaydi.
-
-        Ollama bitta modelni faqat BITTA num_ctx bilan ushlaydi — boshqa qiymat
-        so'ralsa, model VRAM'dan chiqarilib qayta yuklanadi (~60 s). Serverdan
-        boshqa mijozlar ham foydalanadi (masalan 65536 bilan), shuning uchun
-        biz o'z qiymatimizni majburlamaymiz: model allaqachon yuklangan bo'lsa,
-        o'sha oynaga moslashamiz (min_num_ctx dan kichik bo'lmasa).
-        Model yuklanmagan yoki /api/ps javob bermasa — config'dagi qiymat."""
+    async def _loaded_ctx(self) -> int:
+        """Serverda model HOZIR qaysi oyna bilan yuklangan (/api/ps).
+        Yuklanmagan yoki aniqlab bo'lmasa — 0. Natija CTX_CACHE_TTL keshlanadi."""
         now = time.monotonic()
         if self._ctx_cache and now - self._ctx_cache[1] < self.CTX_CACHE_TTL:
             return self._ctx_cache[0]
-
-        chosen = self.num_ctx
-        try:
-            resp = await self.http.get(
-                f"{self.base_url}/api/ps", timeout=self.CTX_PROBE_TIMEOUT
-            )
-            if resp.status_code == 200:
-                for m in resp.json().get("models") or []:
-                    if self.model not in (m.get("name"), m.get("model")):
-                        continue
-                    loaded = int(m.get("context_length") or 0)
-                    if loaded >= self.min_num_ctx:
-                        chosen = loaded
-                    break
-        except (httpx.HTTPError, ValueError, TypeError):
-            # Tekshiruv ixtiyoriy — xato bo'lsa odatiy qiymat bilan davom etamiz
-            pass
-
-        if chosen != self._last_logged_ctx:
-            logger.info(
-                "Ollama num_ctx: %d (config: %d, minimum: %d)",
-                chosen,
-                self.num_ctx,
-                self.min_num_ctx,
-            )
-            self._last_logged_ctx = chosen
-        self._ctx_cache = (chosen, now)
-        return chosen
-
-    async def _options(self, temperature: float | None, max_tokens: int) -> dict[str, Any]:
-        """So'rov `options` bloki. num_ctx faqat OLLAMA_SEND_NUM_CTX=True
-        bo'lsa qo'shiladi — aks holda Ollama serverdagi sozlamani ishlatadi."""
-        opts: dict[str, Any] = {
-            "temperature": (
-                temperature if temperature is not None else self.default_temperature
-            ),
-            "num_predict": max_tokens,
-        }
-        if self.send_num_ctx:
-            # Qiymat yuklangan modelga moslashadi (qara: _resolve_num_ctx)
-            opts["num_ctx"] = await self._resolve_num_ctx()
-        else:
-            await self._warn_small_server_ctx()
-        return opts
-
-    async def _warn_small_server_ctx(self) -> None:
-        """num_ctx yuborilmaganda: serverdagi oyna promptlarimizga yetadimi.
-        /api/ps natijasi keshlanadi (CTX_CACHE_TTL), ogohlantirish faqat qiymat
-        o'zgarganda yoziladi."""
-        now = time.monotonic()
-        if self._ctx_cache and now - self._ctx_cache[1] < self.CTX_CACHE_TTL:
-            return
         loaded = 0
         try:
             resp = await self.http.get(
@@ -143,29 +85,63 @@ class OllamaClient(BaseAIClient):
                         loaded = int(m.get("context_length") or 0)
                         break
         except (httpx.HTTPError, ValueError, TypeError):
+            # Tekshiruv ixtiyoriy — xato bo'lsa "noma'lum" deb davom etamiz
             pass
         self._ctx_cache = (loaded, now)
         if loaded and loaded != self._last_logged_ctx:
             log = logger.warning if loaded < self.min_num_ctx else logger.info
-            log(
-                "Ollama server num_ctx: %d (minimum kerak: %d)%s",
-                loaded,
-                self.min_num_ctx,
-                " — KICHIK: promptlar kesiladi, serverda OLLAMA_CONTEXT_LENGTH ni oshiring"
-                if loaded < self.min_num_ctx
-                else "",
-            )
+            log("Ollama modeli %d kontekst bilan ishlayapti (minimum: %d)", loaded, self.min_num_ctx)
             self._last_logged_ctx = loaded
+        return loaded
+
+    async def _resolve_num_ctx(self) -> int | None:
+        """So'rovga num_ctx yuborish kerakmi va qaysi.
+
+        Bu loyiha oynani O'ZI BELGILAMAYDI. Ollama serveridan boshqa
+        loyihalar ham foydalanadi (65536 bilan) va bitta model bir vaqtda faqat
+        BITTA oyna bilan turadi: boshqa qiymat so'ralsa, 122B model VRAM'dan
+        chiqarilib qayta yuklanadi (~60 s). Ilgari model yuklanmagan paytda biz
+        config'dagi 32768 ni yuborardik — model 32k bilan ochilib, keyin boshqa
+        loyiha uni yana 65k ga qayta yuklardi.
+
+        Endi:
+        * model yuklangan — AYNAN o'sha oyna yuboriladi (qayta yuklanmaydi;
+          num_ctx umuman yuborilmasa Ollama standart qiymatni qo'yib, modelni
+          qayta yuklab yuborishi mumkin — 2026-11-11 hodisasi);
+        * yuklanmagan / noma'lum — num_ctx YUBORILMAYDI: Ollama serverdagi
+          sozlama (OLLAMA_CONTEXT_LENGTH) bilan ochadi;
+        * yuklangan oyna promptlarimizga juda kichik (< OLLAMA_MIN_NUM_CTX) —
+          faqat shunda minimum so'raladi, aks holda system prompt kesiladi."""
+        loaded = await self._loaded_ctx()
+        if not loaded:
+            return None
+        return max(loaded, self.min_num_ctx)
+
+    async def _options(self, temperature: float | None, max_tokens: int) -> dict[str, Any]:
+        """So'rov `options` bloki. num_ctx faqat model allaqachon yuklangan
+        bo'lsa (o'sha qiymat) qo'shiladi — qara: _resolve_num_ctx."""
+        opts: dict[str, Any] = {
+            "temperature": (
+                temperature if temperature is not None else self.default_temperature
+            ),
+            "num_predict": max_tokens,
+        }
+        if self.send_num_ctx:
+            num_ctx = await self._resolve_num_ctx()
+            if num_ctx:
+                opts["num_ctx"] = num_ctx
+        else:
+            # Hech qachon yuborilmaydi — faqat kichik oyna haqida ogohlantirish
+            await self._loaded_ctx()
+        return opts
 
     async def context_window(self) -> int | None:
-        """So'rovlar AMALDA qaysi oyna bilan ishlaydi (hujjat tahlilchisi
-        hujjatdan qancha qismini bir chaqiruvga sig'dirishni shundan
-        hisoblaydi). Serverda model 65536 bilan yuklangan bo'lsa — 65536."""
-        if self.send_num_ctx:
-            return await self._resolve_num_ctx()
-        await self._warn_small_server_ctx()
-        loaded = self._ctx_cache[0] if self._ctx_cache else 0
-        return loaded or self.num_ctx
+        """Model AMALDA qaysi oyna bilan ishlayapti (hujjat tahlilchisi kabi
+        katta promptlar byudjetini shundan hisoblaydi). Noma'lum — None."""
+        loaded = await self._loaded_ctx()
+        if not loaded:
+            return None
+        return max(loaded, self.min_num_ctx) if self.send_num_ctx else loaded
 
     @staticmethod
     def _build_messages(

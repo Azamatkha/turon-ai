@@ -18,7 +18,8 @@ logger = get_logger(__name__)
 
 # Hujjatning qancha qismi BITTA chaqiruvga sig'ishi modelning AMALDAGI
 # kontekst oynasidan hisoblanadi (serverda 65536 bo'lsa — ~150 ming belgi,
-# 32768 bo'lsa — ~68 ming). Oyna noma'lum bo'lsa — 32768 deb olinadi.
+# 32768 bo'lsa — ~70 ming). Model hali yuklanmagan (oyna noma'lum) bo'lsa —
+# ehtiyot uchun 32768 deb hisoblanadi (bu faqat BYUDJET, Ollama'ga yuborilmaydi).
 # Uzunroq hujjat bo'laklarga bo'linib, avval har bo'lakdan qisqa qaydlar olinadi.
 DEFAULT_CONTEXT_TOKENS = 32_768
 # Ko'rsatmalar (system prompt) + fayl nomi/savol uchun zaxira
