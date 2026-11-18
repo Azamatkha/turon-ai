@@ -74,6 +74,10 @@ class BaseAIClient(ABC):
         """Model rasmni o'qiy oladimi (vision). Standart holatda — yo'q."""
         return False
 
+    async def context_window(self) -> int | None:
+        """Model hozir ishlayotgan kontekst oynasi (token). Noma'lum — None."""
+        return None
+
     async def read_image(
         self,
         image_png: bytes,

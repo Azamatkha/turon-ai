@@ -12,7 +12,7 @@ import pytest
 from src.core.errors.exceptions import InstanceProcessingException
 from src.documents import extractors
 from src.documents.extractors import docx_to_text, extract_document, xlsx_to_text
-from src.documents.usecases import DIRECT_MAX_CHARS, AnalyzeDocumentUseCase
+from src.documents.usecases import AnalyzeDocumentUseCase, direct_max_chars
 
 _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
@@ -30,8 +30,9 @@ def _p(text: str) -> str:
 
 
 class FakeAI:
-    def __init__(self, vision: bool = True) -> None:
+    def __init__(self, vision: bool = True, ctx: int | None = 32_768) -> None:
         self.vision = vision
+        self.ctx = ctx
         self.images = 0
         self.prompts: list[str] = []
         self.systems: list[str] = []
@@ -39,6 +40,9 @@ class FakeAI:
 
     async def supports_vision(self) -> bool:
         return self.vision
+
+    async def context_window(self) -> int | None:
+        return self.ctx
 
     async def read_image(self, png: bytes, **_: Any) -> Any:
         self.images += 1
@@ -170,8 +174,26 @@ async def test_long_document_condensed() -> None:
     ai = FakeAI()
     uc = AnalyzeDocumentUseCase(ai_client=ai, convert_timeout=5)  # type: ignore[arg-type]
     para = "Bu bandda bankning majburiyatlari batafsil yozilgan. " * 40
-    text = "\n\n".join([para] * (DIRECT_MAX_CHARS // len(para) + 5))
+    limit = direct_max_chars(32_768)
+    text = "\n\n".join([para] * (limit // len(para) + 5))
     await _collect(uc.stream(data=text.encode(), filename="katta.txt", question="", lang="uz"))
     assert ai.notes_calls >= 2
     assert "qism qaydlari" in ai.prompts[0]
-    assert len(ai.prompts[0]) < DIRECT_MAX_CHARS
+    assert len(ai.prompts[0]) < limit
+
+
+async def test_64k_context_fits_doc_without_condensing() -> None:
+    # 32k da bo'laklanadigan hujjat 65536 oynada butunligicha beriladi
+    ai = FakeAI(ctx=65_536)
+    uc = AnalyzeDocumentUseCase(ai_client=ai, convert_timeout=5)  # type: ignore[arg-type]
+    para = "Kredit shartnomasi bandi, foiz stavkasi va muddatlar. " * 40
+    text = "\n\n".join([para] * (direct_max_chars(32_768) // len(para) + 5))
+    await _collect(uc.stream(data=text.encode(), filename="katta.txt", question="", lang="uz"))
+    assert ai.notes_calls == 0
+    assert len(ai.prompts[0]) > direct_max_chars(32_768)
+
+
+def test_direct_max_chars_scales_with_context() -> None:
+    assert direct_max_chars(65_536) > direct_max_chars(32_768) * 2
+    assert direct_max_chars(None) == direct_max_chars(32_768)
+    assert direct_max_chars(4_096) == 20_000

@@ -16,15 +16,30 @@ from src.knowledge.chunking import chunk_text
 
 logger = get_logger(__name__)
 
-# Shundan qisqa matn modelga to'liq beriladi (~13-20k token: num_ctx 32k ga
-# javob bilan birga sig'adi). Uzunrog'i bo'laklarga bo'linib, avval har
-# bo'lakdan qisqa qaydlar olinadi.
-DIRECT_MAX_CHARS = 40_000
-PART_CHARS = 18_000
+# Hujjatning qancha qismi BITTA chaqiruvga sig'ishi modelning AMALDAGI
+# kontekst oynasidan hisoblanadi (serverda 65536 bo'lsa — ~150 ming belgi,
+# 32768 bo'lsa — ~68 ming). Oyna noma'lum bo'lsa — 32768 deb olinadi.
+# Uzunroq hujjat bo'laklarga bo'linib, avval har bo'lakdan qisqa qaydlar olinadi.
+DEFAULT_CONTEXT_TOKENS = 32_768
+# Ko'rsatmalar (system prompt) + fayl nomi/savol uchun zaxira
+PROMPT_RESERVE_TOKENS = 2_500
+# Bir tokenga necha belgi — EHTIYOTKOR qiymat: kirill o'zbek matni eng
+# "qimmat" (~2.5 belgi/token), lotin/rus esa arzonroq. Kam baholasak — hujjat
+# keraksiz bo'laklanadi, ko'p baholasak — oxiri kesilib qoladi.
+CHARS_PER_TOKEN = 2.5
+# Juda kichik oynada ham kamida shuncha
+MIN_DIRECT_CHARS = 20_000
 # Juda katta hujjat: ko'pi bilan shuncha bo'lak tahlil qilinadi
 MAX_PARTS = 8
 PART_NOTES_MAX_TOKENS = 900
 ANSWER_MAX_TOKENS = 2048
+
+
+def direct_max_chars(context_tokens: int | None) -> int:
+    """Bitta chaqiruvga beriladigan hujjat matnining eng ko'p hajmi (belgi)."""
+    ctx = context_tokens or DEFAULT_CONTEXT_TOKENS
+    budget = ctx - PROMPT_RESERVE_TOKENS - ANSWER_MAX_TOKENS
+    return max(MIN_DIRECT_CHARS, int(budget * CHARS_PER_TOKEN))
 TEMPERATURE = 0.2
 
 
@@ -35,9 +50,9 @@ class AnalyzeDocumentUseCase:
         # Jurnal uchun (router o'qiydi)
         self.document: ExtractedDocument | None = None
 
-    async def _condense(self, text: str) -> tuple[str, bool]:
+    async def _condense(self, text: str, part_chars: int) -> tuple[str, bool]:
         """Uzun hujjat: bo'laklardan qaydlar. Qaytaradi: (matn, qisqartirildimi)."""
-        parts = chunk_text(text, max_chars=PART_CHARS, min_chars=PART_CHARS // 4)
+        parts = chunk_text(text, max_chars=part_chars, min_chars=part_chars // 4)
         truncated = len(parts) > MAX_PARTS
         parts = parts[:MAX_PARTS]
         sem = asyncio.Semaphore(2)
@@ -109,8 +124,11 @@ class AnalyzeDocumentUseCase:
 
         body = doc.text
         yield {"type": "status", "step": "doc_analyze"}
-        if len(body) > DIRECT_MAX_CHARS:
-            body, truncated = await self._condense(body)
+        limit = direct_max_chars(await self.ai_client.context_window())
+        if len(body) > limit:
+            # Bo'lak oynaning yarmi: chunk_text kichik dumni oldingi bo'lakka
+            # qo'shib yuborsa ham, bitta chaqiruvga baribir sig'adi
+            body, truncated = await self._condense(body, part_chars=limit // 2)
             notes.append("hujjat uzun — quyida uning qismlari bo'yicha qaydlar berilgan")
             if truncated:
                 notes.append("hujjat juda uzun, faqat boshidagi qismlar tahlil qilindi")

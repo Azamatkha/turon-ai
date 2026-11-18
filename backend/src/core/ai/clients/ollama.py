@@ -157,6 +157,16 @@ class OllamaClient(BaseAIClient):
             )
             self._last_logged_ctx = loaded
 
+    async def context_window(self) -> int | None:
+        """So'rovlar AMALDA qaysi oyna bilan ishlaydi (hujjat tahlilchisi
+        hujjatdan qancha qismini bir chaqiruvga sig'dirishni shundan
+        hisoblaydi). Serverda model 65536 bilan yuklangan bo'lsa — 65536."""
+        if self.send_num_ctx:
+            return await self._resolve_num_ctx()
+        await self._warn_small_server_ctx()
+        loaded = self._ctx_cache[0] if self._ctx_cache else 0
+        return loaded or self.num_ctx
+
     @staticmethod
     def _build_messages(
         prompt: str, system_prompt: str | None
