@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Chat, Msg, SourceRef, ThinkStep, VoteFeedback } from "../types/chat";
 import { askReply, askReplyStream, suggestFollowups } from "../services/chatBotService";
+import { analyzeDocumentStream, DocumentError } from "../services/documentService";
 import {
   listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle, pinSession,
 } from "../services/chatHistoryService";
@@ -56,6 +57,8 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   chatsRef.current = chats;
   const [activeId, setActiveIdState] = useState("");
   const [draft, setDraft] = useState("");
+  // Biriktirilgan hujjat (📎) — keyingi yuborishda tahlilga ketadi
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [thinking, setThinking] = useState(false);
   const [generating, setGenerating] = useState(false);
   // "O'ylayapman…" qatori: backend yuborgan bosqichlar va boshlangan vaqt.
@@ -198,7 +201,8 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
     sessionId: string,
     tempId: string,
     res: { text: string; finishReason: string; completionTokens: number; maxTokens: number; sources?: SourceRef[] },
-    question: string
+    question: string,
+    withSuggestions = true
   ) => {
     const finalText = stripStrayFollowup(res.text);
     // Xabar id'si DB'ga saqlangach almashadi — takliflar qaysi biri bilan
@@ -237,6 +241,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
         setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, id: saved.id } : x)));
       })
       .catch(() => {});
+    if (!withSuggestions) return;
     // "Keyingi savol" takliflari — javob ko'ringandan KEYIN, alohida so'rov
     const titles = [...new Set((res.sources ?? []).map((x) => x.title))];
     void suggestFollowups(question, finalText, titles).then((list) => {
@@ -250,7 +255,8 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   const respond = async (
     sessionId: string,
     userText: string,
-    history: { role: string; content: string }[] = []
+    history: { role: string; content: string }[] = [],
+    doc?: { file: File; question: string }
   ) => {
     const tempId = "a" + Date.now();
     const abort = new AbortController();
@@ -279,31 +285,28 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
     };
 
     try {
+      const onDelta = (fullText: string) => {
+        ensureStarted();
+        partial = fullText;
+        setActiveMsgs(sessionId, (m) => m.map((x) => (x.id === tempId ? { ...x, text: fullText } : x)));
+      };
+      const onStatus = (step: ThinkStep) => {
+        if (stepsRef.current[stepsRef.current.length - 1] === step) return;
+        stepsRef.current = [...stepsRef.current, step];
+        setLiveSteps(stepsRef.current);
+      };
+      if (doc) {
+        // Hujjat tahlili — alohida endpoint, oqim formati bir xil
+        const res = await analyzeDocumentStream(doc.file, doc.question, onDelta, abort.signal, onStatus);
+        ensureStarted();
+        finalizeAssistant(sessionId, tempId, res, userText);
+        return;
+      }
       // Streaming: backend token-token yuboradi — real vaqtda matn va token o'sib boradi
-      const res = await askReplyStream(
-        userText,
-        history,
-        (fullText) => {
-          ensureStarted();
-          partial = fullText;
-          setActiveMsgs(sessionId, (m) =>
-            m.map((x) =>
-              x.id === tempId
-                ? { ...x, text: fullText }
-                : x
-            )
-          );
-        },
-        abort.signal,
-        (step) => {
-          if (stepsRef.current[stepsRef.current.length - 1] === step) return;
-          stepsRef.current = [...stepsRef.current, step];
-          setLiveSteps(stepsRef.current);
-        }
-      );
+      const res = await askReplyStream(userText, history, onDelta, abort.signal, onStatus);
       ensureStarted();
       finalizeAssistant(sessionId, tempId, res, userText);
-    } catch {
+    } catch (e) {
       // Foydalanuvchi to'xtatgan — xabar "To'xtatildi" belgisi bilan qoladi
       if (abort.signal.aborted) {
         setGenerating(false);
@@ -324,6 +327,19 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
         }
         return;
       }
+      // Hujjat tahlili xatosi — sababni javob o'rnida ko'rsatamiz (RAG'ga qaytilmaydi)
+      if (doc) {
+        const reason = e instanceof DocumentError && e.message ? e.message : "";
+        ensureStarted();
+        finalizeAssistant(
+          sessionId,
+          tempId,
+          { text: "⚠️ " + (reason || "Hujjatni tahlil qilib bo'lmadi."), finishReason: "error", completionTokens: 0, maxTokens: 0 },
+          userText,
+          false
+        );
+        return;
+      }
       // Streaming ishlamadi — eski (oqimsiz) yo'lga qaytamiz
       try {
         const res = await askReply(userText, history);
@@ -339,8 +355,13 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   };
 
   const send = async (forced?: string) => {
-    const text = (forced ?? draft).trim();
-    if (!text || generating) return;
+    const question = (forced ?? draft).trim();
+    // Majburiy matn (taklif bosilganda) bilan fayl yuborilmaydi
+    const file = forced === undefined ? attachment : null;
+    if ((!question && !file) || generating) return;
+    // Chatda ko'rinadigan va tarixga yoziladigan matn: "📎 fayl.pdf" + savol
+    const text = file ? `📎 ${file.name}` + (question ? `
+${question}` : "") : question;
 
     // Faol suhbat bo'lmasa — yangi yaratamiz
     let sessionId = activeId;
@@ -375,6 +396,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
       });
     });
     setDraft("");
+    setAttachment(null);
     setThinking(true);
     setGenerating(true);
     // DB ga saqlaymiz va vaqtinchalik id'ni haqiqiy DB id'ga almashtiramiz —
@@ -402,7 +424,10 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
         });
     }
 
-    pendingRef.current = setTimeout(() => respond(sessionId, text, history), 150);
+    pendingRef.current = setTimeout(
+      () => respond(sessionId, text, history, file ? { file, question } : undefined),
+      150
+    );
   };
 
   // Hali birorta so'z kelmasdan to'xtatilgan javob — bo'sh xabar o'rniga
@@ -511,10 +536,10 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
   const rawMsgs = active.messages || [];
   const isEmpty = rawMsgs.length === 0 && !thinking;
   const hasMessages = rawMsgs.length > 0 || thinking;
-  const canSend = draft.trim().length > 0 && !generating;
+  const canSend = (draft.trim().length > 0 || attachment !== null) && !generating;
 
   return {
     chats, activeId, setActiveId, active, rawMsgs, isEmpty, hasMessages, canSend,
-    draft, setDraft, thinking, generating, liveSteps, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
+    draft, setDraft, attachment, setAttachment, thinking, generating, liveSteps, newChat, removeChat, togglePin, renameChat, send, stop, regenerate, resendLast, editAndResend, voteMsg,
   };
 }

@@ -39,6 +39,7 @@ from src.core.errors.handlers import (
     handle_unexpected_exception,
     handle_validation_error,
 )
+from src.documents import routers as documents_routers
 from src.guides import routers as guide_routers
 from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers
@@ -129,6 +130,9 @@ def include_routers(app: FastAPI) -> None:
     v1_router = APIRouter()
     v1_router.include_router(user_routers.router, prefix="/users", tags=["Users"])
     v1_router.include_router(chat_routers.router, prefix="/chat", tags=["Chat"])
+    v1_router.include_router(
+        documents_routers.router, prefix="/chat", tags=["Documents"]
+    )
     v1_router.include_router(
         calculator_routers.router, prefix="/calculator", tags=["Calculator"]
     )

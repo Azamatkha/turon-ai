@@ -220,6 +220,11 @@ export interface ChatStaticStrings {
   send: string;
   // Faqat ekran o'quvchisi uchun: yangi qator qanday qo'shiladi
   newLineHint: string;
+  // Hujjat tahlilchisi (📎)
+  attachFile: string;
+  removeFile: string;
+  fileTooLarge: string;
+  fileUnsupported: string;
   // Xabarlar oqimi (aria-label) — ekran o'quvchisi shu nom bilan e'lon qiladi
   messagesRegion: string;
   stop: string;

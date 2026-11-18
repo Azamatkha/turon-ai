@@ -56,7 +56,17 @@ export async function askReplyStream(
     signal,
   });
   if (!res.ok || !res.body) throw new Error("stream unavailable");
+  return readAnswerStream(res, onDelta, onStatus);
+}
 
+// SSE javob oqimini o'qiydi (delta/status/done/error). /ask/stream va hujjat
+// tahlili (/analyze-document) bir xil formatda yuboradi.
+export async function readAnswerStream(
+  res: Response,
+  onDelta: (fullText: string, estTokens: number) => void,
+  onStatus?: (step: ThinkStep) => void
+): Promise<AskResult> {
+  if (!res.body) throw new Error("stream unavailable");
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

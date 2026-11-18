@@ -140,3 +140,87 @@
   backdrop-filter: var(--tu-glass-blur);
   -webkit-backdrop-filter: var(--tu-glass-blur);
 }
+
+/* --- Hujjat biriktirish (📎) --------------------------------------- */
+.attachBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 2px 0 2px -8px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tu-text-faint);
+  cursor: pointer;
+  transition: background var(--tu-duration) ease, color var(--tu-duration) ease;
+}
+
+.attachBtn:hover:not(:disabled) {
+  background: var(--tu-accent-soft);
+  color: var(--tu-accent);
+}
+
+.attachBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.fileInput {
+  display: none;
+}
+
+/* Tanlangan fayl "chip"i — panel ustida */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tu-space-2);
+  margin-bottom: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--tu-radius-lg);
+  font-size: var(--tu-text-sm);
+}
+
+.chipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(420px, 60vw);
+}
+
+.chipSize {
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.chipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chipRemove:hover {
+  background: var(--tu-accent-soft);
+}
+
+.fileError {
+  font-size: var(--tu-text-sm);
+  color: #dc2626;
+  margin-bottom: 8px;
+}

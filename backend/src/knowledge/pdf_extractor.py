@@ -224,6 +224,48 @@ def render_pdf_pages(file_bytes: bytes) -> list[PdfPageImage]:
         document.close()
 
 
+@dataclass(frozen=True, slots=True)
+class PdfSplitPage:
+    text: str            # matn qatlami (skanda deyarli bo'sh)
+    png: bytes | None    # faqat SKAN sahifa uchun rasm (modelga beriladi)
+
+
+def split_pdf_pages(
+    file_bytes: bytes, *, max_pages: int, max_scans: int
+) -> tuple[list[PdfSplitPage], int, int]:
+    """Sahifalarni ikki turga ajratadi: matn qatlami bor sahifa — matni
+    darhol olinadi; skan sahifa — RASMGA aylantiriladi (Qwen o'qishi uchun).
+
+    Hamma sahifani rasm qilish sekin: Word'dan olingan 50 sahifali PDF uchun
+    50 ta model chaqiruvi kerak bo'lardi, matn qatlami esa bir zumda va
+    xatosiz o'qiladi. Rasm faqat haqiqatan kerak bo'lgan joyda.
+
+    Qaytaradi: (sahifalar, jami_sahifa_soni, o'qilmay qolgan_sahifalar)."""
+    document = _open_pdf(file_bytes)
+    pages: list[PdfSplitPage] = []
+    scans = 0
+    skipped = 0
+    try:
+        total = document.page_count
+        for index, page in enumerate(document):
+            if index >= max_pages:
+                skipped += total - index
+                break
+            text = str(page.get_text("text") or "")
+            if len(text.strip()) >= MIN_TEXT_CHARS_PER_PAGE:
+                pages.append(PdfSplitPage(text=text, png=None))
+            elif scans < max_scans:
+                scans += 1
+                pages.append(
+                    PdfSplitPage(text=text, png=page.get_pixmap(dpi=VISION_DPI).tobytes("png"))
+                )
+            else:
+                skipped += 1
+    finally:
+        document.close()
+    return pages, total, skipped
+
+
 def page_fallback_text(page: PdfPageImage) -> str:
     """Model o'qiy olmagan sahifa — matn qatlami, u bo'lmasa OCR."""
     text = page.text

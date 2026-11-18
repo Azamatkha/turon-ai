@@ -419,6 +419,8 @@ class AppConfig(BaseModel):
     # BARCHA fayllar yig'indisi. nginx client_max_body_size = 10m — multipart
     # ustamasiga joy qolishi uchun 9 MB.
     CONVERT_MAX_BYTES: int = 9 * 1024 * 1024
+    # Chatdagi hujjat tahlilchisi: bitta fayl (nginx 10m, multipart ustamasi bilan)
+    DOC_ANALYZE_MAX_BYTES: int = 9 * 1024 * 1024
     # EDO yo'riqnomasi videosi (MP4) — butun fayl uchun cheklov.
     GUIDE_VIDEO_MAX_BYTES: int = 200 * 1024 * 1024
     # Video BO'LAKLAB yuklanadi: nginx client_max_body_size = 10m, nginx
