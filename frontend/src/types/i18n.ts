@@ -225,6 +225,10 @@ export interface ChatStaticStrings {
   removeFile: string;
   fileTooLarge: string;
   fileUnsupported: string;
+  // Limitlar haqida qisqa yozuv (chip yonida va drop oynasida)
+  attachLimits: string;
+  dropHere: string;
+  docLabel: string;
   // Xabarlar oqimi (aria-label) — ekran o'quvchisi shu nom bilan e'lon qiladi
   messagesRegion: string;
   stop: string;

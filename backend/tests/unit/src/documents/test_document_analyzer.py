@@ -197,3 +197,22 @@ def test_direct_max_chars_scales_with_context() -> None:
     assert direct_max_chars(65_536) > direct_max_chars(32_768) * 2
     assert direct_max_chars(None) == direct_max_chars(32_768)
     assert direct_max_chars(4_096) == 20_000
+
+
+def test_xlsx_leading_empty_columns_and_dates() -> None:
+    from datetime import datetime
+
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Oktabr"
+    ws["C2"] = "Filial"
+    ws["D2"] = "Sana"
+    ws["C3"] = "Buxoro BXM"
+    ws["D3"] = datetime(2026, 10, 1)
+    buf = io.BytesIO()
+    wb.save(buf)
+    text = xlsx_to_text(buf.getvalue())
+    assert "### Varaq: Oktabr (2 qator, 2 ustun)" in text
+    assert "| Buxoro BXM | 2026-10-01 |" in text

@@ -64,3 +64,38 @@ export async function analyzeDocumentStream(
     throw new DocumentError(e instanceof Error ? e.message : String(e));
   }
 }
+
+// Fayl yuborishdan OLDIN tekshiruv (backend ham tekshiradi — bu faqat tez javob)
+export function validateDoc(file: File): "unsupported" | "tooLarge" | null {
+  if (!isSupportedDoc(file.name)) return "unsupported";
+  if (file.size > DOC_MAX_BYTES) return "tooLarge";
+  return null;
+}
+
+// Chat tarixidagi hujjatli xabar: "📎 fayl.xlsx\nsavol" — kartochka bo'lib chiziladi
+export const DOC_MSG_PREFIX = "📎 ";
+
+export function docMessageText(fileName: string, question: string): string {
+  return DOC_MSG_PREFIX + fileName + (question ? "\n" + question : "");
+}
+
+export function parseDocMessage(text: string): { name: string; question: string } | null {
+  if (!text.startsWith(DOC_MSG_PREFIX)) return null;
+  const rest = text.slice(DOC_MSG_PREFIX.length);
+  const nl = rest.indexOf("\n");
+  const name = (nl >= 0 ? rest.slice(0, nl) : rest).trim();
+  // Fayl nomi kengaytmasiz bo'lsa — oddiy matn (foydalanuvchi o'zi 📎 yozgan)
+  if (!name || !docExt(name)) return null;
+  return { name, question: nl >= 0 ? rest.slice(nl + 1).trim() : "" };
+}
+
+// Kartochkadagi tur yorlig'i va rangi
+export function docKind(name: string): { label: string; color: string } {
+  const ext = docExt(name);
+  if (ext === "pdf") return { label: "PDF", color: "#DC2626" };
+  if (["doc", "docx", "odt", "rtf"].includes(ext)) return { label: ext.toUpperCase(), color: "#2563EB" };
+  if (["xls", "xlsx", "ods", "csv"].includes(ext)) return { label: ext.toUpperCase(), color: "#16A34A" };
+  if (["ppt", "pptx", "odp"].includes(ext)) return { label: ext.toUpperCase(), color: "#EA580C" };
+  if (ext === "txt") return { label: "TXT", color: "#64748B" };
+  return { label: ext.toUpperCase(), color: "#7C3AED" };
+}

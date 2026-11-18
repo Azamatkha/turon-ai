@@ -19,6 +19,7 @@ papkaga, keyin darhol o'chiriladi) va bilim bazasiga TUSHMAYDI.
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import datetime, time
 import io
 import re
 from xml.etree import ElementTree
@@ -59,7 +60,7 @@ VISION_CONCURRENCY = 2
 VISION_PAGE_MAX_TOKENS = 4096
 VISION_PAGE_TIMEOUT = 180.0
 # Excel: bitta varaqdan ko'pi bilan shuncha qator
-MAX_SHEET_ROWS = 400
+MAX_SHEET_ROWS = 1500
 # Zip ichidagi XML "bomba"sidan himoya (ochilgan hajm)
 _MAX_XML_BYTES = 40 * 1024 * 1024
 # Rasm modelga berilishidan oldin shu o'lchamgacha kichraytiriladi
@@ -274,6 +275,9 @@ def docx_to_text(data: bytes) -> str:
 def _cell(value: object) -> str:
     if value is None:
         return ""
+    # Sana katakchasi: "2026-10-01 00:00:00" -> "2026-10-01"
+    if isinstance(value, datetime) and value.time() == time(0, 0):
+        return value.date().isoformat()
     if isinstance(value, float) and value.is_integer():
         value = int(value)
     return str(value).strip().replace("\n", " ").replace("|", "/")
@@ -293,7 +297,7 @@ def xlsx_to_text(data: bytes) -> str:
     sheets: list[str] = []
     try:
         for ws in wb.worksheets:
-            rows: list[str] = []
+            grid: list[list[str]] = []
             extra = 0
             for row in ws.iter_rows(values_only=True):
                 cells = [_cell(v) for v in row]
@@ -301,13 +305,21 @@ def xlsx_to_text(data: bytes) -> str:
                     cells.pop()
                 if not any(cells):
                     continue
-                if len(rows) >= MAX_SHEET_ROWS:
+                if len(grid) >= MAX_SHEET_ROWS:
                     extra += 1
                     continue
-                rows.append("| " + " | ".join(cells) + " |")
-            if not rows:
+                grid.append(cells)
+            if not grid:
                 continue
-            block = f"### Varaq: {ws.title}\n" + "\n".join(rows)
+            # Chapdagi butunlay bo'sh ustunlar (jadval B yoki C ustundan
+            # boshlangan) — har qatorda "|  |  |" bo'lib token yeydi
+            lead = min(next(i for i, c in enumerate(r) if c) for r in grid)
+            rows = ["| " + " | ".join(r[lead:]) + " |" for r in grid]
+            width = max(len(r) - lead for r in grid)
+            total = len(grid) + extra
+            block = (
+                f"### Varaq: {ws.title} ({total} qator, {width} ustun)\n" + "\n".join(rows)
+            )
             if extra:
                 block += f"\n(... yana {extra} qator ko'rsatilmadi)"
             sheets.append(block)

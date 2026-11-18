@@ -202,3 +202,40 @@
      4) asosiy tus. */
 /* (.gradientBg olib tashlandi — yoyilma endi sahifa darajasidagi
    `.bgLayer` da, shunda u yon panel ostidan ham o'tadi.) */
+
+/* --- Hujjatni sudrab tashlash (drag&drop) qatlami ------------------- */
+.dropOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(14, 27, 66, 0.28);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+.dropBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 460px;
+  padding: 32px 36px;
+  border: 2px dashed;
+  border-radius: var(--tu-radius-xl);
+  text-align: center;
+}
+
+.dropTitle {
+  font-size: var(--tu-text-lg, 18px);
+  font-weight: 600;
+}
+
+.dropHint {
+  font-size: var(--tu-text-sm);
+  line-height: 1.45;
+}

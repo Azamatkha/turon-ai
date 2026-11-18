@@ -11,6 +11,7 @@ import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import MessageContent, { toPlainText } from "./MessageContent";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
+import { docKind, parseDocMessage } from "../../services/documentService";
 
 // Manba chiplari: bir hujjatning bir nechta bo'lagi kelishi mumkin — sarlavha
 // bo'yicha takrorsiz, ko'pi bilan 4 tasi
@@ -254,7 +255,26 @@ export default function MessageArea({
                         </div>
                       </div>
                     ) : (
-                      <div className={styles.bubbleUser} style={{ background: tk.bubbleUser }}>{m.text}</div>
+                      (() => {
+                        // Hujjatli xabar ("📎 fayl.xlsx" + yangi qatorda savol) — fayl kartochkasi + savol
+                        const doc = parseDocMessage(m.text);
+                        if (!doc) return <div className={styles.bubbleUser} style={{ background: tk.bubbleUser }}>{m.text}</div>;
+                        const kind = docKind(doc.name);
+                        return (
+                          <div className={`${styles.bubbleUser} ${styles.bubbleDoc}`} style={{ background: tk.bubbleUser }}>
+                            <div className={styles.docCard}>
+                              <span className={styles.docIcon} style={{ background: kind.color }} aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>
+                              </span>
+                              <span className={styles.docMeta}>
+                                <span className={styles.docName} title={doc.name}>{doc.name}</span>
+                                <span className={styles.docType}>{kind.label} · {s.docLabel}</span>
+                              </span>
+                            </div>
+                            {doc.question && <div className={styles.docQuestion}>{doc.question}</div>}
+                          </div>
+                        );
+                      })()
                     )}
                     {!isEditing && (
                       <div className={styles.userMeta}>

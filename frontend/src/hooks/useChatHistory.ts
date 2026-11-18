@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Chat, Msg, SourceRef, ThinkStep, VoteFeedback } from "../types/chat";
 import { askReply, askReplyStream, suggestFollowups } from "../services/chatBotService";
-import { analyzeDocumentStream, DocumentError } from "../services/documentService";
+import { analyzeDocumentStream, docMessageText, DocumentError } from "../services/documentService";
 import {
   listSessions, createSession, getSession, deleteSession, addMessage, deleteMessage, renameSession, voteMessage, generateTitle, pinSession,
 } from "../services/chatHistoryService";
@@ -360,8 +360,7 @@ export function useChatHistory(newChatLabel: string = "Yangi chat") {
     const file = forced === undefined ? attachment : null;
     if ((!question && !file) || generating) return;
     // Chatda ko'rinadigan va tarixga yoziladigan matn: "📎 fayl.pdf" + savol
-    const text = file ? `📎 ${file.name}` + (question ? `
-${question}` : "") : question;
+    const text = file ? docMessageText(file.name, question) : question;
 
     // Faol suhbat bo'lmasa — yangi yaratamiz
     let sessionId = activeId;

@@ -33,7 +33,7 @@ MIN_DIRECT_CHARS = 20_000
 # Juda katta hujjat: ko'pi bilan shuncha bo'lak tahlil qilinadi
 MAX_PARTS = 8
 PART_NOTES_MAX_TOKENS = 900
-ANSWER_MAX_TOKENS = 2048
+ANSWER_MAX_TOKENS = 4096
 
 
 def direct_max_chars(context_tokens: int | None) -> int:

@@ -1,10 +1,10 @@
-import { useRef, useState, ChangeEvent, KeyboardEvent } from "react";
+import { useRef, ChangeEvent, KeyboardEvent } from "react";
 import { GrSend } from "react-icons/gr";
 import HButton from "../common/HButton";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT } from "./theme";
-import { DOC_ACCEPT, DOC_MAX_BYTES, isSupportedDoc } from "../../services/documentService";
+import { DOC_ACCEPT, docKind } from "../../services/documentService";
 import styles from "./Composer.module.css";
 
 interface ComposerProps {
@@ -22,6 +22,9 @@ interface ComposerProps {
   // Hujjat tahlilchisi: biriktirilgan fayl
   attachment: File | null;
   setAttachment: (f: File | null) => void;
+  // Tanlangan/tashlangan faylni tekshirib biriktiradi (ChatPage — drag&drop bilan umumiy)
+  onFile: (f: File) => void;
+  fileError: string;
 }
 
 function fmtSize(bytes: number): string {
@@ -29,26 +32,16 @@ function fmtSize(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1) + " MB";
 }
 
-export default function Composer({ draft, setDraft, canSend, onSend, generating, onStop, placeholder, disclaimer, tk, isDark, s, attachment, setAttachment }: ComposerProps) {
+export default function Composer({ draft, setDraft, canSend, onSend, generating, onStop, placeholder, disclaimer, tk, isDark, s, attachment, setAttachment, onFile, fileError }: ComposerProps) {
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [fileError, setFileError] = useState("");
 
   const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     // Bir xil faylni qayta tanlash ham onChange bersin
     e.target.value = "";
     if (!f) return;
-    if (!isSupportedDoc(f.name)) {
-      setFileError(s.fileUnsupported);
-      return;
-    }
-    if (f.size > DOC_MAX_BYTES) {
-      setFileError(s.fileTooLarge);
-      return;
-    }
-    setFileError("");
-    setAttachment(f);
+    onFile(f);
     taRef.current?.focus();
   };
 
@@ -85,13 +78,16 @@ export default function Composer({ draft, setDraft, canSend, onSend, generating,
         {attachment && (
           <div className={styles.chips}>
             <div className={styles.chip} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, color: tk.input }}>
-              <span aria-hidden="true">📎</span>
+              <span className={styles.chipBadge} style={{ background: docKind(attachment.name).color }} aria-hidden="true">
+                {docKind(attachment.name).label}
+              </span>
               <span className={styles.chipName} title={attachment.name}>{attachment.name}</span>
               <span className={styles.chipSize}>{fmtSize(attachment.size)}</span>
               <button type="button" className={styles.chipRemove} onClick={() => setAttachment(null)} aria-label={s.removeFile} data-tip={s.removeFile}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>
             </div>
+            <span className={styles.chipHint} style={{ color: tk.muted }}>{s.attachLimits}</span>
           </div>
         )}
         <div className={styles.bar} style={{ background: tk.card, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "0 4px 20px rgba(0,0,0,.3)" : "0 4px 20px rgba(14, 27, 66,.07)" }}>

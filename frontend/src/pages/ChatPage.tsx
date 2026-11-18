@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useChatHistory } from "../hooks/useChatHistory";
@@ -19,6 +19,7 @@ import GridPattern from "../components/GridPattern";
 import OrbitRings from "../components/OrbitRings";
 import CosmicSingularity from "../components/CosmicSingularity";
 import Logo from "../components/common/Logo";
+import { validateDoc } from "../services/documentService";
 import styles from "./ChatPage.module.css";
 
 export default function ChatPage() {
@@ -37,6 +38,10 @@ export default function ChatPage() {
   const isNarrow = useMediaQuery("(max-width: 900px)");
   const [sidebarOpen, setSidebarOpen] = useState(() => !window.matchMedia("(max-width: 900px)").matches);
   const [search, setSearch] = useState("");
+  // Hujjat tahlilchisi: fayl xatosi va drag&drop holati
+  const [fileError, setFileError] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
   const { theme, toggleTheme } = useTheme();
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -175,6 +180,47 @@ export default function ChatPage() {
   const tk = getThemeTokens(isDark);
   const side = getSideTokens(isDark);
 
+  // Fayl (📎 tugma yoki sudrab tashlash) — tur va hajm shu yerda tekshiriladi
+  const acceptFile = (f: File) => {
+    const err = validateDoc(f);
+    if (err) {
+      setFileError(err === "tooLarge" ? S.fileTooLarge : S.fileUnsupported);
+      return;
+    }
+    setFileError("");
+    setAttachment(f);
+  };
+
+  // Drag&drop: faqat fayl sudralganda (matn/havola emas). dragenter/leave
+  // ichki elementlarda ham chaqiriladi — chuqurlik hisoblagichi bilan
+  // qatlam miltillamaydi.
+  const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
+  const onDragEnter = (e: DragEvent) => {
+    if (!hasFiles(e) || generating) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    setDragging(true);
+  };
+  const onDragOver = (e: DragEvent) => {
+    if (!hasFiles(e) || generating) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+  const onDragLeave = (e: DragEvent) => {
+    if (!hasFiles(e)) return;
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragging(false);
+  };
+  const onDrop = (e: DragEvent) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (generating) return;
+    const f = e.dataTransfer.files?.[0];
+    if (f) acceptFile(f);
+  };
+
   // Qidiruv matni bo'yicha suhbatlarni filtrlaymiz (sarlavha bo'yicha, registrga sezgir emas),
   // so'ng yagona (guruhlarsiz) ro'yxatda pin qilinganlar tepada, qolgani oxirgi xabar vaqti
   // bo'yicha (eng yangisi birinchi) chiqadi.
@@ -300,7 +346,23 @@ export default function ChatPage() {
 
       <SidebarToggle open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} left={sidebarOpen ? SW : COLL} openLabel={S.collapseSidebar} closedLabel={S.openSidebar} />
 
-      <main className={styles.main} id="chat-main">
+      <main
+        className={styles.main}
+        id="chat-main"
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        {dragging && (
+          <div className={styles.dropOverlay} aria-hidden="true">
+            <div className={styles.dropBox} style={{ background: tk.card, borderColor: "var(--tu-accent)", color: tk.strong }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3" /></svg>
+              <div className={styles.dropTitle}>{S.dropHere}</div>
+              <div className={styles.dropHint} style={{ color: tk.muted }}>{S.attachLimits}</div>
+            </div>
+          </div>
+        )}
         {/* Fon: yoyilma -> to'r -> zarrachalar -> orbitalar -> xira logotip.
             Hammasi BITTA o'ram (`bgStack`) ichida: shundagina "position:
             absolute + z-index" faqat shu o'ramga tegib, sahifa mazmuni
@@ -363,7 +425,9 @@ export default function ChatPage() {
           isDark={isDark}
           s={S}
           attachment={attachment}
-          setAttachment={setAttachment}
+          setAttachment={(f) => { setAttachment(f); if (!f) setFileError(""); }}
+          onFile={acceptFile}
+          fileError={fileError}
         />
       </main>
     </div>
