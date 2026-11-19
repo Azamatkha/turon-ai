@@ -50,6 +50,8 @@ export const chatStatic: ChatStaticStrings = {
   notifSafetyHarmful: "Хавфли сўров аниқланди",
   notifSafetyProfanity: "Сўкиниш билан ёзилган хабар",
   notifAdminMessage: "Администратор хабари",
+  notifImageAlt: "Администратор юборган расм",
+  notifImageClose: "Ёпиш",
   notifTimeNow: "Ҳозир",
   notifMinAgo: (m: number) => `${m} дақ олдин`,
   notifHourAgo: (h: number) => `${h} соат олдин`,

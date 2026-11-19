@@ -54,21 +54,50 @@ function userLabel(it: AnswerLogItem): string {
 
 
 // Savol bergan xodimga xabar — bildirishnoma bo'lib boradi (masalan bot
-// noto'g'ri javob bergan bo'lsa, admin to'g'ri javobni o'zi yozadi).
+// noto'g'ri javob bergan bo'lsa, admin to'g'ri javobni o'zi yozadi). Matnga
+// rasm (skrinshot) biriktirish mumkin: fayl tanlab yoki Ctrl+V bilan.
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
 function UserMessageBox({ logId, hasUser, t: admin }: { logId: string; hasUser: boolean; t: AdminStrings }) {
   const [text, setText] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Ko'rinish uchun object URL — rasm almashsa yoki oyna yopilsa bo'shatiladi
+  useEffect(() => {
+    if (!image) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(image);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [image]);
 
   if (!hasUser) return <div className={styles.msgHint}>{admin.answersMessageNoUser}</div>;
 
+  const pick = (file: File | null | undefined) => {
+    if (!file) return;
+    if (!IMAGE_TYPES.includes(file.type) || file.size > IMAGE_MAX_BYTES) {
+      setMsg({ ok: false, text: admin.answersMessageImageHint });
+      return;
+    }
+    setImage(file);
+    setMsg(null);
+  };
+
   const send = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() && !image) return;
     setBusy(true);
     setMsg(null);
     try {
-      await sendUserMessage(logId, text);
+      await sendUserMessage(logId, text, image);
       setText("");
+      setImage(null);
       setMsg({ ok: true, text: admin.answersMessageSent });
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : admin.questionsLoadError });
@@ -89,15 +118,50 @@ function UserMessageBox({ logId, hasUser, t: admin }: { logId: string; hasUser: 
           setText(e.target.value);
           setMsg(null);
         }}
+        onPaste={(e) => {
+          const file = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
+          if (file) {
+            e.preventDefault();
+            pick(file);
+          }
+        }}
         placeholder={admin.answersMessagePh}
         aria-label={admin.answersMessageTitle}
         disabled={busy}
       />
+      {preview && (
+        <div className={styles.msgPreview}>
+          <img src={preview} alt="" />
+          <button type="button" className={styles.msgRemove} onClick={() => setImage(null)} disabled={busy}>
+            {admin.answersMessageImageRemove}
+          </button>
+        </div>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept={IMAGE_TYPES.join(",")}
+        style={{ display: "none" }}
+        onChange={(e) => {
+          pick(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
       <div className={styles.msgRow}>
-        <span className={styles.msgHint}>{admin.answersMessageHint}</span>
-        <button type="button" className={styles.msgSend} onClick={() => void send()} disabled={busy || !text.trim()}>
-          {admin.answersMessageSend}
-        </button>
+        <span className={styles.msgHint}>{admin.answersMessageHint} {admin.answersMessageImageHint}</span>
+        <span className={styles.msgActions}>
+          <button type="button" className={styles.msgAttach} onClick={() => fileRef.current?.click()} disabled={busy}>
+            {admin.answersMessageImage}
+          </button>
+          <button
+            type="button"
+            className={styles.msgSend}
+            onClick={() => void send()}
+            disabled={busy || (!text.trim() && !image)}
+          >
+            {admin.answersMessageSend}
+          </button>
+        </span>
       </div>
       {msg && <div className={msg.ok ? styles.msgOk : styles.msgErr} role="status">{msg.text}</div>}
     </div>

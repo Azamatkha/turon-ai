@@ -70,6 +70,14 @@ export async function streamNotifications(
   }
 }
 
+/** Admin xabariga biriktirilgan rasm — himoyalangan endpointdan blob.
+ *  Ochiq URL yo'q, shuning uchun object URL yasaladi (chaqiruvchi revoke qiladi). */
+export async function fetchNotificationImage(id: string): Promise<string> {
+  const res = await apiFetch(`/v1/notifications/${id}/image`);
+  if (!res.ok) throw new Error(await readError(res, "Rasmni olishda xatolik"));
+  return URL.createObjectURL(await res.blob());
+}
+
 export async function markRead(id: string): Promise<void> {
   const res = await apiFetch(`/v1/notifications/${id}/read`, { method: "POST" });
   if (!res.ok) throw new Error(await readError(res, "Belgilashda xatolik"));

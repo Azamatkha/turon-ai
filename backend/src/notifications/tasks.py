@@ -13,6 +13,7 @@ from celery_tasks.main import (
 from celery_tasks.types import typed_shared_task
 from loggers import get_logger
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
+from src.core.storage.media import delete_media
 from src.core.utils.coroutine_runner import execute_coroutine_sync
 from src.core.utils.datetime_utils import get_utc_now
 
@@ -34,13 +35,19 @@ async def _cleanup_old_notifications() -> int:
         uow: ApplicationUnitOfWork[RepositoryProtocol] = ApplicationUnitOfWork(session)
         try:
             async with uow:
+                images = await uow.notifications.images_older_than(
+                    uow.session, read_before=cutoff, any_before=cutoff
+                )
                 deleted = await uow.notifications.delete_older_than(
                     uow.session,
                     read_before=cutoff,
                     any_before=cutoff,
                 )
                 await uow.commit()
-                return deleted
+            # Admin xabarlaridagi rasmlar — qator o'chgach diskdan ham
+            for path in images:
+                await delete_media(path)
+            return deleted
         except Exception:
             logger.exception("Eski bildirishnomalarni tozalab bo'lmadi")
             return 0

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 
 from src.admin.schemas import (
     AnswerLogItem,
@@ -30,8 +30,10 @@ from src.admin.schemas import (
 from src.chat.answer_cache import cache_stats_today
 from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
-from src.core.errors.exceptions import InstanceNotFoundException
+from src.core.errors.exceptions import InstanceNotFoundException, NotAcceptableException
+from src.core.storage.media import delete_media, save_image
 from src.core.utils.datetime_utils import get_utc_now
+from src.main.config import config
 from src.notifications.enums import NotificationType
 from src.notifications.events import publish_new
 from src.system.dependencies import get_readiness_service
@@ -340,6 +342,11 @@ class AnswerLogUseCase:
         )
 
 
+# Admin xabarlariga biriktirilgan rasmlar papkasi (MEDIA_ROOT ichida)
+ADMIN_MESSAGE_MEDIA_DIR = "admin_messages"
+EMPTY_MESSAGE = "Xabar matni yoki rasm bo'lishi kerak"
+
+
 class SendUserMessageUseCase:
     """Admin jurnaldagi savol egasiga xabar yuboradi — xodim uni
     bildirishnomalarda (qo'ng'iroqcha) ko'radi. Masalan: bot noto'g'ri javob
@@ -348,23 +355,43 @@ class SendUserMessageUseCase:
     def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
         self.uow = uow
 
-    async def execute(self, log_id: UUID, text: str) -> str:
+    async def execute(
+        self, log_id: UUID, text: str, image: UploadFile | None = None
+    ) -> str:
+        text = text.strip()
+        if not text and image is None:
+            raise NotAcceptableException(EMPTY_MESSAGE)
         async with self.uow as uow:
             log = await uow.question_logs.get_single(uow.session, id=log_id)
             if log is None or log.user_id is None:
                 raise InstanceNotFoundException("Savol yoki uning egasi topilmadi")
             user_id = log.user_id
             question = log.question
-            await uow.notifications.create(
-                uow.session,
-                {
-                    "user_id": user_id,
-                    "type": NotificationType.ADMIN_MESSAGE.value,
-                    "params": {"title": text.strip(), "question": question[:300]},
-                    "entity_id": log.id,
-                },
-            )
-            await uow.commit()
+            params = {"title": text, "question": question[:300]}
+            # Rasm (masalan "shu yerni bosing" skrinshoti) — MEDIA_ROOT'ga,
+            # ochiq URL'siz. Xodim uni faqat o'z bildirishnomasi orqali oladi.
+            image_path: str | None = None
+            if image is not None:
+                image_path, _ = await save_image(
+                    image, subdir=ADMIN_MESSAGE_MEDIA_DIR, max_bytes=config.app.REPORT_MAX_BYTES
+                )
+                params["image"] = image_path
+            try:
+                await uow.notifications.create(
+                    uow.session,
+                    {
+                        "user_id": user_id,
+                        "type": NotificationType.ADMIN_MESSAGE.value,
+                        "params": params,
+                        "entity_id": log.id,
+                    },
+                )
+                await uow.commit()
+            except Exception:
+                # Xabar yozilmadi — rasm diskda yetim qolmasin
+                if image_path:
+                    await delete_media(image_path)
+                raise
         # Signal commit'dan KEYIN — klient so'raganda qator ko'rinsin
         await publish_new([user_id])
         return question

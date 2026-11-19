@@ -46,6 +46,24 @@ class NotificationRepository(BaseRepository[Notification]):
         result = await session.execute(query)
         return int(result.rowcount) if hasattr(result, "rowcount") else 0
 
+    async def images_older_than(
+        self,
+        session: AsyncSession,
+        read_before: datetime,
+        any_before: datetime,
+    ) -> list[str]:
+        """delete_older_than o'chiradigan qatorlardagi rasm yo'llari —
+        fayllar ham diskdan o'chirilishi uchun."""
+        query = select(self.model.params).where(
+            or_(
+                (self.model.is_read.is_(True)) & (self.model.created_at < read_before),
+                self.model.created_at < any_before,
+            ),
+            self.model.params.has_key("image"),
+        )
+        result = await session.execute(query)
+        return [str(p["image"]) for p in result.scalars().all() if p and p.get("image")]
+
     async def delete_older_than(
         self,
         session: AsyncSession,

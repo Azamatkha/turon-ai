@@ -71,6 +71,23 @@ class ListNotificationsUseCase:
             )
 
 
+class GetNotificationImageUseCase:
+    """Bildirishnomaga biriktirilgan rasm yo'li — faqat egasiga."""
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(self, user_id: UUID, notification_id: UUID) -> str:
+        async with self.uow as uow:
+            n = await uow.notifications.get_single(
+                uow.session, id=notification_id, user_id=user_id
+            )
+        image = str((n.params or {}).get("image") or "") if n is not None else ""
+        if not image:
+            raise InstanceNotFoundException(NOTIFICATION_NOT_FOUND)
+        return image
+
+
 class UnreadCountUseCase:
     """Frontend buni interval bilan so'raydi — imkon qadar yengil bo'lishi kerak."""
 
@@ -161,6 +178,12 @@ def get_list_notifications_use_case(
     uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
 ) -> ListNotificationsUseCase:
     return ListNotificationsUseCase(uow=uow)
+
+
+def get_notification_image_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> GetNotificationImageUseCase:
+    return GetNotificationImageUseCase(uow=uow)
 
 
 def get_unread_count_use_case(

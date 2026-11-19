@@ -317,6 +317,9 @@ export const admin: AdminStrings = {
   answersMessageSend: "Yuborish",
   answersMessageSent: "Xabar yuborildi",
   answersMessageNoUser: "Savol egasi noma’lum — xabar yuborib bo‘lmaydi",
+  answersMessageImage: "Rasm biriktirish",
+  answersMessageImageRemove: "Rasmni olib tashlash",
+  answersMessageImageHint: "PNG, JPG yoki WEBP, 5 MB gacha. Skrinshotni Ctrl+V bilan ham qo‘yish mumkin.",
   answersOutcome: {
     answered: "Javob berildi",
     no_info: "Topilmadi",

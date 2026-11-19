@@ -20,15 +20,17 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from redis.asyncio import Redis
 
 from loggers import get_logger
 from src.core.redis.dependencies import get_redis_client
 from src.core.schemas import SuccessResponse
+from src.core.storage.media import resolve_media_path
 from src.notifications.events import channel_for
 from src.notifications.schemas import NotificationListView, UnreadCountView
 from src.notifications.usecases import (
+    GetNotificationImageUseCase,
     ListNotificationsUseCase,
     MarkAllReadUseCase,
     MarkReadUseCase,
@@ -36,6 +38,7 @@ from src.notifications.usecases import (
     get_list_notifications_use_case,
     get_mark_all_read_use_case,
     get_mark_read_use_case,
+    get_notification_image_use_case,
     get_unread_count_use_case,
 )
 from src.user.auth.dependencies import get_current_user
@@ -67,6 +70,23 @@ async def list_notifications(
         offset=offset,
         only_unread=only_unread,
     )
+
+
+@router.get("/{notification_id}/image")
+async def notification_image(
+    notification_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    use_case: Annotated[
+        GetNotificationImageUseCase, Depends(get_notification_image_use_case)
+    ],
+) -> FileResponse:
+    """Admin xabariga biriktirilgan rasm — faqat o'sha xabar egasiga.
+
+    Ochiq URL yo'q: frontend rasmni avtorizatsiya bilan blob qilib oladi."""
+    relative_path = await use_case.execute(
+        user_id=current_user.id, notification_id=notification_id
+    )
+    return FileResponse(resolve_media_path(relative_path))
 
 
 @router.get("/unread-count", response_model=UnreadCountView)

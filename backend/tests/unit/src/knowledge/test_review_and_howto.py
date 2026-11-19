@@ -79,3 +79,14 @@ def test_review_only_unchecked_answers(monkeypatch: pytest.MonkeyPatch) -> None:
     # Xavfsizlik bloklari va bo'sh javob
     assert not needs_review("blocked", None, "javob")
     assert not needs_review("answered", None, "  ")
+
+
+@pytest.mark.asyncio
+async def test_admin_message_needs_text_or_image() -> None:
+    from uuid import uuid4
+
+    from src.admin.usecases import SendUserMessageUseCase
+    from src.core.errors.exceptions import NotAcceptableException
+
+    with pytest.raises(NotAcceptableException):
+        await SendUserMessageUseCase(uow=None).execute(uuid4(), "   ", None)  # type: ignore[arg-type]

@@ -314,6 +314,9 @@ export const admin: AdminStrings = {
   answersMessageSend: "Юбориш",
   answersMessageSent: "Хабар юборилди",
   answersMessageNoUser: "Савол эгаси номаълум — хабар юбориб бўлмайди",
+  answersMessageImage: "Расм бириктириш",
+  answersMessageImageRemove: "Расмни олиб ташлаш",
+  answersMessageImageHint: "PNG, JPG ёки WEBP, 5 MB гача. Скриншотни Ctrl+V билан ҳам қўйиш мумкин.",
   answersOutcome: {
     answered: "Жавоб берилди",
     no_info: "Топилмади",

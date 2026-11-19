@@ -241,11 +241,14 @@ export async function getAnswerLog(q: AnswerLogQuery): Promise<AnswerLogPage> {
   return res.json();
 }
 
-// Savol bergan xodimga admin xabari — u bildirishnoma bo'lib boradi
-export async function sendUserMessage(logId: string, text: string): Promise<void> {
+// Savol bergan xodimga admin xabari (matn va/yoki rasm) — bildirishnoma bo'lib boradi
+export async function sendUserMessage(logId: string, text: string, image?: File | null): Promise<void> {
+  const form = new FormData();
+  form.append("text", text.trim());
+  if (image) form.append("image", image);
   const res = await apiFetch(`/v1/admin/questions/${encodeURIComponent(logId)}/message`, {
     method: "POST",
-    body: JSON.stringify({ text: text.trim() }),
+    body: form,
   });
   if (!res.ok) throw new Error(await readError(res, "Xabarni yuborishda xatolik"));
 }

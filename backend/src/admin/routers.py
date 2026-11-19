@@ -26,7 +26,7 @@ SWAGGER'DA TEKSHIRISH:
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 
 from src.admin.schemas import (
     AnswerLogPageView,
@@ -37,7 +37,6 @@ from src.admin.schemas import (
     QuestionAnalyticsView,
     ReviewDislikedModel,
     SystemStatusView,
-    UserMessageRequest,
     WebAnswerPageView,
 )
 from src.admin.usecases import (
@@ -178,16 +177,19 @@ async def answer_log(
 @router.post("/questions/{log_id}/message", status_code=status.HTTP_204_NO_CONTENT)
 async def send_user_message(
     log_id: UUID,
-    data: UserMessageRequest,
     current_user: Annotated[User, Depends(require_permission(Permission.VIEW_DASHBOARD))],
     use_case: Annotated[SendUserMessageUseCase, Depends(get_send_user_message_use_case)],
     audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+    text: Annotated[str, Form(max_length=1000)] = "",
+    image: Annotated[UploadFile | None, File()] = None,
 ) -> None:
-    """Savol bergan xodimga admin xabari — bildirishnoma bo'lib boradi."""
-    question = await use_case.execute(log_id=log_id, text=data.text)
+    """Savol bergan xodimga admin xabari (matn va/yoki rasm) — bildirishnoma
+    bo'lib boradi."""
+    question = await use_case.execute(log_id=log_id, text=text, image=image)
     await audit.log(
         current_user, AuditAction.ANSWER_MESSAGE, "question", log_id,
-        target_label=question[:120], details={"text": data.text[:500]},
+        target_label=question[:120],
+        details={"text": text[:500], "image": image is not None},
     )
 
 

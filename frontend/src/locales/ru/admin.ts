@@ -313,6 +313,9 @@ export const admin: AdminStrings = {
   answersMessageSend: "Отправить",
   answersMessageSent: "Сообщение отправлено",
   answersMessageNoUser: "Автор вопроса неизвестен — отправить нельзя",
+  answersMessageImage: "Прикрепить изображение",
+  answersMessageImageRemove: "Убрать изображение",
+  answersMessageImageHint: "PNG, JPG или WEBP, до 5 МБ. Скриншот можно вставить через Ctrl+V.",
   answersOutcome: {
     answered: "Ответ дан",
     no_info: "Не найдено",

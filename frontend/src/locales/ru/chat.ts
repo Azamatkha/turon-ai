@@ -49,6 +49,8 @@ export const chatStatic: ChatStaticStrings = {
   notifSafetyHarmful: "Обнаружен опасный запрос",
   notifSafetyProfanity: "Сообщение с ругательствами",
   notifAdminMessage: "Сообщение администратора",
+  notifImageAlt: "Изображение от администратора",
+  notifImageClose: "Закрыть",
   notifTimeNow: "Сейчас",
   notifMinAgo: (m: number) => `${m} мин назад`,
   notifHourAgo: (h: number) => `${h} ч назад`,

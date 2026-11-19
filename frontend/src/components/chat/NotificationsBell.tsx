@@ -7,7 +7,8 @@ import {
   desktopPermission,
   useNotifications,
 } from "../../hooks/useNotifications";
-import type { ApiNotification } from "../../services/notificationService";
+import { fetchNotificationImage, type ApiNotification } from "../../services/notificationService";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import type { ThemeTokens } from "../../types/chat";
 import type { ChatStaticStrings } from "../../types/i18n";
 import headerStyles from "./ChatHeader.module.css";
@@ -76,6 +77,52 @@ function linkFor(n: ApiNotification): string | null {
   return null;
 }
 
+// Admin xabaridagi rasm: himoyalangan endpointdan blob qilib olinadi
+// (ochiq URL yo'q). Qatorda kichik ko'rinish, bosilganda — to'liq o'lcham.
+function useNotifImage(n: ApiNotification): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  const has = n.type === "admin_message" && !!n.params?.image;
+  useEffect(() => {
+    if (!has) return;
+    let alive = true;
+    let made: string | null = null;
+    fetchNotificationImage(n.id)
+      .then((u) => {
+        made = u;
+        if (alive) setUrl(u);
+        else URL.revokeObjectURL(u);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [has, n.id]);
+  return url;
+}
+
+function NotifThumb({ n, alt }: { n: ApiNotification; alt: string }) {
+  const url = useNotifImage(n);
+  if (!url) return null;
+  return <img className={styles.thumb} src={url} alt={alt} />;
+}
+
+function ImageViewer({ n, alt, closeLabel, onClose }: { n: ApiNotification; alt: string; closeLabel: string; onClose: () => void }) {
+  const url = useNotifImage(n);
+  const ref = useModalA11y<HTMLDivElement>(onClose);
+  return createPortal(
+    <div className={styles.viewer} onClick={onClose}>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label={alt} className={styles.viewerInner}>
+        <button type="button" className={styles.viewerClose} onClick={onClose}>
+          {closeLabel}
+        </button>
+        {url && <img src={url} alt={alt} className={styles.viewerImg} />}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function relTime(iso: string, s: ChatStaticStrings): string {
   const t = new Date(iso).getTime();
   if (!Number.isFinite(t)) return "";
@@ -90,6 +137,8 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
   const [open, setOpen] = useState(false);
   const [perm, setPerm] = useState(desktopPermission());
   const [showHow, setShowHow] = useState(false);
+  // To'liq o'lchamda ochilgan rasm (admin xabari)
+  const [viewing, setViewing] = useState<ApiNotification | null>(null);
   // Panel portal orqali <body> ga chiqadi — header'ning z-index qatlamiga
   // qamalib qolmasin. Shuning uchun joyi tugma koordinatasidan hisoblanadi.
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -276,6 +325,8 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
               )}
               {items.map((n) => {
                 const href = linkFor(n);
+                const isAdminMsg = n.type === "admin_message";
+                const hasImage = isAdminMsg && !!n.params?.image;
                 // Butun qator bosiladi: havolasi bo'lsa o'sha sahifa ochiladi,
                 // bo'lmasa shunchaki o'qilgan deb belgilanadi. Shu sababli
                 // alohida ✓ tugmasi kerak emas — qator ham tozaroq ko'rinadi.
@@ -285,7 +336,11 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                     type="button"
                     className={styles.row}
                     style={{ borderColor: tk.cardBorder }}
-                    onClick={() => (href ? openLink(n, href) : void markRead(n.id))}
+                    onClick={() => {
+                      if (href) return openLink(n, href);
+                      if (!n.is_read) void markRead(n.id);
+                      if (hasImage) setViewing(n);
+                    }}
                   >
                     <span
                       className={n.is_read ? styles.dotRead : styles.dotUnread}
@@ -301,10 +356,15 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                         </span>
                       </span>
                       {bodyFor(n, s) && (
-                        <span className={styles.rowText} style={{ color: tk.muted }}>
+                        // Admin xabari to'liq ko'rinsin (kesilmasin)
+                        <span
+                          className={`${styles.rowText} ${isAdminMsg ? styles.rowTextFull : ""}`}
+                          style={{ color: tk.muted }}
+                        >
                           {bodyFor(n, s)}
                         </span>
                       )}
+                      {hasImage && <NotifThumb n={n} alt={s.notifImageAlt} />}
                     </span>
                   </button>
                 );
@@ -313,6 +373,9 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
           </div>,
           document.body
         )}
+      {viewing && (
+        <ImageViewer n={viewing} alt={s.notifImageAlt} closeLabel={s.notifImageClose} onClose={() => setViewing(null)} />
+      )}
     </div>
   );
 }

@@ -104,6 +104,8 @@ export interface ChatStaticStrings {
   notifSafetyHarmful: string;
   notifSafetyProfanity: string;
   notifAdminMessage: string;
+  notifImageAlt: string;
+  notifImageClose: string;
   notifTimeNow: string;
   notifMinAgo: (m: number) => string;
   notifHourAgo: (h: number) => string;
@@ -647,6 +649,9 @@ export interface AdminStrings {
   answersMessageSend: string;
   answersMessageSent: string;
   answersMessageNoUser: string;
+  answersMessageImage: string;
+  answersMessageImageRemove: string;
+  answersMessageImageHint: string;
   answersVerdictSummary: (ok: number, fixed: number, failed: number) => string;
   questionsTabLog: string;
   questionsTabStats: string;
