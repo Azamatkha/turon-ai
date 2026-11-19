@@ -32,6 +32,8 @@ from src.core.database.session import get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException
 from src.core.utils.datetime_utils import get_utc_now
+from src.notifications.enums import NotificationType
+from src.notifications.events import publish_new
 from src.system.dependencies import get_readiness_service
 from src.system.readiness import ReadinessService, overall_status
 from src.user.auth.services.gsi_signature import summarize_claims
@@ -336,6 +338,42 @@ class AnswerLogUseCase:
             size=size,
             verdicts=verdicts,
         )
+
+
+class SendUserMessageUseCase:
+    """Admin jurnaldagi savol egasiga xabar yuboradi — xodim uni
+    bildirishnomalarda (qo'ng'iroqcha) ko'radi. Masalan: bot noto'g'ri javob
+    bergan bo'lsa, admin to'g'ri javobni o'zi yozib yuboradi."""
+
+    def __init__(self, uow: ApplicationUnitOfWork[RepositoryProtocol]) -> None:
+        self.uow = uow
+
+    async def execute(self, log_id: UUID, text: str) -> str:
+        async with self.uow as uow:
+            log = await uow.question_logs.get_single(uow.session, id=log_id)
+            if log is None or log.user_id is None:
+                raise InstanceNotFoundException("Savol yoki uning egasi topilmadi")
+            user_id = log.user_id
+            question = log.question
+            await uow.notifications.create(
+                uow.session,
+                {
+                    "user_id": user_id,
+                    "type": NotificationType.ADMIN_MESSAGE.value,
+                    "params": {"title": text.strip(), "question": question[:300]},
+                    "entity_id": log.id,
+                },
+            )
+            await uow.commit()
+        # Signal commit'dan KEYIN — klient so'raganda qator ko'rinsin
+        await publish_new([user_id])
+        return question
+
+
+def get_send_user_message_use_case(
+    uow: ApplicationUnitOfWork[RepositoryProtocol] = Depends(get_unit_of_work),
+) -> SendUserMessageUseCase:
+    return SendUserMessageUseCase(uow=uow)
 
 
 def get_answer_log_use_case(

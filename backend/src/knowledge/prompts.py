@@ -835,6 +835,19 @@ ABOUT_BOT_REPLY = CAPABILITIES_REPLY.replace(
 
 
 # "Xodimlar raqamlari" kabi umumiy so'rovga — aniqlashtirishni so'raymiz.
+# Xodim O'Z ichki raqamini (IP) / telefonini qanday kiritishini so'raydi
+# ("IP ni qanday qo'shsam bo'ladi"). Bu xodim QIDIRUVI emas — ilgari "ip"
+# so'zi tufayli ma'lumotnomaga ketib, "xodim topilmadi" qaytardi (2026-11-19).
+CONTACTS_HOWTO_REPLY = (
+    "O'z ichki raqamingizni (IP) va telefoningizni o'zingiz kiritasiz:\n"
+    "1. Chap paneldagi pastki qismda ismingizni bosing.\n"
+    "2. «Kontaktlar» bandini tanlang.\n"
+    "3. Ichki raqam (IP) va telefonni yozib, saqlang.\n\n"
+    "Shundan keyin hamkasblaringiz sizni ma'lumotnoma va bot orqali shu "
+    "raqam bilan topa oladi. Raqamni xuddi shu yerda o'zgartirasiz ham."
+)
+
+
 EMPLOYEE_ASK_REPLY = (
     "Qaysi xodim haqida ma'lumot kerak? Iltimos, xodimning familiyasi va ismini "
     "yoki bo'lim nomini yozing — masalan: \"Azamat Xamdamov ichki raqami\" yoki "
@@ -971,6 +984,14 @@ RU_CANNED_REPLIES.update(
             "Здравствуйте! Я внутренний AI-помощник Туронбанка — задавайте "
             "вопросы о банковских продуктах, внутренних документах и "
             "справочнике сотрудников."
+        ),
+        CONTACTS_HOWTO_REPLY: (
+            "Свой внутренний номер (IP) и телефон вы указываете сами:\n"
+            "1. Внизу левой панели нажмите на своё имя.\n"
+            "2. Выберите пункт «Контакты».\n"
+            "3. Введите внутренний номер (IP) и телефон и сохраните.\n\n"
+            "После этого коллеги смогут найти вас по этому номеру в "
+            "справочнике и через бота. Изменить номер можно там же."
         ),
         EMPLOYEE_ASK_REPLY: (
             "О каком сотруднике нужна информация? Пожалуйста, напишите фамилию "

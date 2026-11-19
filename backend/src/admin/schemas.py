@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from pydantic import Field
+
 from src.core.schemas import Base
 from src.system.schemas import ComponentStatusView
 
@@ -152,6 +154,12 @@ class AnswerLogItem(Base):
     sources_count: int = 0
     completion_tokens: int = 0
     source_urls: list[str] = []
+
+
+class UserMessageRequest(Base):
+    """Admin savol bergan xodimga yozadigan xabar (bildirishnoma bo'lib boradi)."""
+
+    text: str = Field(min_length=1, max_length=1000)
 
 
 class AnswerLogPageView(Base):

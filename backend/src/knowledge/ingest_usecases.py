@@ -19,7 +19,7 @@ from src.core.errors.exceptions import (
 )
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.qdrant_store import QdrantStore
-from src.knowledge.answer_helpers import category_key
+from src.knowledge.categories import kb_categories
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import (
@@ -469,11 +469,9 @@ class ListKnowledgeUseCase:
                     "category": "",
                     "note": "",
                     "source_url": "",
-                    "texts": [],
                 },
             )
             group["chunks"] += 1
-            group["texts"].append(str(payload.get("chunk_text", "")))
             for key in ("category", "note", "source_url"):
                 if payload.get(key) and not group[key]:
                     group[key] = str(payload[key])
@@ -490,6 +488,8 @@ class ListKnowledgeUseCase:
         # Matni AYNAN bir xil hujjatlar (bir sahifa ikki marta turli sarlavha
         # bilan yuklangan) — botga bir xil kontekst ikki marta tushadi
         duplicates = find_duplicates(group_by_title(payloads))
+        # Turkumi o'chirilgan hujjat — "Turkumsiz" (avtomatik taxmin yo'q)
+        known = {c.key for c in await kb_categories()}
         return [
             KnowledgeItem(
                 title=title,
@@ -499,10 +499,7 @@ class ListKnowledgeUseCase:
                 uploaded_at=data["uploaded_at"],
                 valid_until=data["valid_until"],
                 duplicates=duplicates.get(title, []),
-                category=data["category"],
-                auto_category=category_key(
-                    data["source_url"], title, " ".join(data["texts"])
-                ),
+                category=data["category"] if data["category"] in known else "",
                 note=data["note"],
             )
             for title, data in grouped.items()
@@ -554,9 +551,7 @@ class UpdateKnowledgeUseCase:
     ) -> UploadResult:
         # HAVOLA SAQLANADI. Ilgari tahrirlangan yozuv `source_url`siz qayta
         # yozilardi va bu ikki narsani buzardi:
-        #  1) turkum aynan havoladan aniqlanadi (`_category_label`) — havolasiz
-        #     yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" ro'yxatidan
-        #     yo'qolardi (sarlavhasi tahrirlangan «Meros» shunday yo'qolgan);
+        #  1) havola admin ro'yxatida va qayta skanerlashda kerak;
         #  2) javob oxiridagi "Batafsil: <havola>" qatori ham chiqmay qolardi.
         # Amal qilish muddati, turkum va izoh ham saqlanadi — tahrir ularni
         # o'chirib yubormasin

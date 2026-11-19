@@ -672,6 +672,11 @@ def _place_score(
     return score + (100 * len(hits) // len(distinctive)) if coverage else score
 
 
+# O'zbek/rus familiyasi qo'shimchalari: Inoyatov, Toshmatova, Aliyev,
+# Kuchkarova, Xudoyberdiyev, Rustamzoda, Gorskiy.
+_SURNAME_RE = re.compile(r"\w{3,}(ov|ev|yev|ova|eva|yeva|zoda|iy|aya)$")
+
+
 def _dept_and_name(
     scored: list[tuple[int, dict[str, Any]]],
     emps: list[dict[str, Any]],
@@ -811,7 +816,24 @@ def _match_employees_ex(
     if _has_non_employee_signal(q_lower) and not _has_employee_intent(q_lower):
         return [], None
 
-    return _score_by_name(emps, _name_query_tokens(q_lower)), None
+    toks = _name_query_tokens(q_lower)
+    found = _score_by_name(emps, toks)
+    if not found:
+        return [], None
+    # Savoldagi FAMILIYA bazada hech kimda yo'q, lekin ism bor ("Inoyatov
+    # suxrob" -> 4 ta boshqa Suxrob). Ilgari ro'yxat jim berilardi va xodim
+    # so'ragan odami shular ichida deb o'ylardi (2026-11-19). Endi javob
+    # boshida familiya topilmagani ochiq aytiladi.
+    missing = [t for t in toks if _SURNAME_RE.search(t) and not _score_by_name(emps, [t])]
+    if not missing:
+        return found, None
+    hit = [t for t in toks if t not in missing and _score_by_name(found, [t])]
+    miss_label = " ".join(t.capitalize() for t in missing)
+    hit_label = " ".join(t.capitalize() for t in hit)
+    note = f"«{miss_label}» familiyali xodim bazada topilmadi."
+    if hit_label:
+        note += f" «{hit_label}» ismli {len(found)} ta xodim bor:"
+    return found, note
 
 
 # Foydalanuvchi ro'yxatdan faqat RAQAM yozib tanlashi mumkin ("53"). Bunda
@@ -1559,38 +1581,14 @@ def _asks_for_advice(q_lower: str) -> bool:
     return any(m in q_lower for m in _ADVICE_MARKERS)
 
 
-# Turkum nomi (— _category_label qaytaradigan label bilan AYNAN mos kelishi
-# shart) -> savolda uchrashi mumkin bo'lgan kalit so'zlar. _broad_category_reply
-# shu asosida savol qaysi turkum haqida ekanini aniqlaydi.
-# Filiallar turkumi alohida ajratilgan: faqat unda deterministik (hudud
-# bo'yicha) toraytirish qo'llanadi — pastdagi _broad_category_reply'ga qarang.
-_BRANCH_LABEL = "Filiallar (bank xizmatlari markazlari va ofislari)"
-
-_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "Bank kartalari": ("karta",),
-    "Kreditlar": ("kredit", "ipoteka", "qarz", "mikroqarz", "mikrokredit"),
-    "Omonatlar": ("omonat", "depozit"),
-    "Pul o'tkazmalari": ("o'tkazma", "otkazma", "o'tkazish", "otkazish"),
-    _BRANCH_LABEL: (
-        "filial",
-        "bxm",
-        "bank xizmatlari markazi",
-        "bank xizmatlari ofisi",
-    ),
-}
-
-# Turkumning O'ZINI bildiruvchi so'zlar — yuqoridagi ro'yxatdan FARQ QILADI.
-# _CATEGORY_KEYWORDS turkumni ANIQLASH uchun ("ipoteka" so'zi ham kreditlar
-# turkumiga ishora qiladi), bu esa turkum ichida TORAYTIRISHDA e'tiborga
-# olinmaydigan so'zlar. "ipoteka", "avtokredit", "mikroqarz" bu yerda YO'Q —
-# ular kredit TURI, ya'ni haqiqiy filtr. Aynan shuning uchun "Ipoteka
-# kreditlari bo'yicha ma'lumot ber" so'roviga barcha 20 ta kredit qaytarilardi.
-_CATEGORY_GENERIC: dict[str, tuple[str, ...]] = {
-    "Bank kartalari": ("karta",),
-    "Kreditlar": ("kredit",),
-    "Omonatlar": ("omonat", "depozit"),
-    "Pul o'tkazmalari": ("otkazma", "otkazish"),
-}
+# Turkumni bildiruvchi umumiy so'zlar — mahsulot NOMIning o'ziga xos qismi
+# emas (qara: _GENERIC_TITLE_WORDS). Turkumlarning o'zi endi admin
+# boshqaradigan kb_categories jadvalida (qara: categories.py).
+_CATEGORY_WORDS: tuple[str, ...] = (
+    "karta", "kredit", "ipoteka", "qarz", "mikroqarz", "mikrokredit",
+    "omonat", "depozit", "o'tkazma", "otkazma", "o'tkazish", "otkazish",
+    "filial", "bxm", "bank xizmatlari markazi", "bank xizmatlari ofisi",
+)
 
 
 # --- ANIQLASHTIRISH (savol berib olish) --------------------------------- #
@@ -1613,7 +1611,7 @@ _AFFIRMATIVE_WORDS = frozenset(
 # so'ralsa, "kredit foizi qanday hisoblanadi" kabi umumiy savolga ham
 # keraksiz qayta savol berilardi.
 _GENERIC_TITLE_WORDS = frozenset(
-    w for words in _CATEGORY_KEYWORDS.values() for w in words
+    _CATEGORY_WORDS
 ) | {
     "krediti",
     "kreditlari",
@@ -1792,83 +1790,6 @@ def _resolve_clarification(
     if len(titles) == 1 and all(w in _AFFIRMATIVE_WORDS for w in words):
         return titles[0]
     return None
-
-
-def _category_from_text(title: str, text: str) -> str:
-    """Havolasiz yozuv uchun turkumni sarlavha va matndan taxmin qiladi.
-
-    Sarlavhadagi so'z MATNDAGIDAN kuchliroq: mahsulot matnida boshqa turkum
-    so'zi ham uchraydi (omonat tavsifida "kredit olish imkoniyati" kabi),
-    lekin nomda odatda faqat o'zining turkumi bo'ladi. Shu sabab nomdagi
-    moslik 10 barobar og'irroq baholanadi."""
-    title_words = _text_words(title)
-    body = _norm_apostrophes(to_latin(text)).replace("'", "").lower()
-    best_label, best_score = "Boshqa xizmatlar", 0
-    for label, keywords in _CATEGORY_KEYWORDS.items():
-        score = 0
-        for kw in keywords:
-            kw_flat = kw.replace("'", "")
-            if any(_word_match(w, kw_flat) for w in title_words):
-                score += 10
-            # FILIAL faqat NOMIDAN aniqlanadi: ichki hujjat (nizom, tartib)
-            # matnida "bank xizmatlari markazi" ko'p uchraydi va u filiallar
-            # ro'yxatiga tushib qolardi ("...mukofotlash Tartibi", 2026-11-12).
-            if label != _BRANCH_LABEL:
-                score += body.count(kw_flat)
-        if score > best_score:
-            best_label, best_score = label, score
-    return best_label if best_score else "Boshqa xizmatlar"
-
-
-# Admin hujjatga QO'LDA qo'yadigan turkum: kalit -> katalog label'i.
-# Kalitlar frontend bilan umumiy (KnowledgeListView filtri), label'lar esa
-# category_label qaytaradigan nomlar bilan AYNAN bir xil bo'lishi shart.
-KB_CATEGORIES: dict[str, str] = {
-    "credit": "Kreditlar",
-    "deposit": "Omonatlar",
-    "card": "Bank kartalari",
-    "transfer": "Pul o'tkazmalari",
-    "branch": _BRANCH_LABEL,
-    "other": "Boshqa xizmatlar",
-}
-_CATEGORY_KEY_BY_LABEL = {label: key for key, label in KB_CATEGORIES.items()}
-
-
-def category_label(source_url: str, title: str = "", text: str = "") -> str:
-    """Mahsulot turkumini aniqlaydi — katalogni guruhlash uchun
-    (kartalar / kreditlar / omonatlar / filiallar ...).
-
-    Asosiy belgi — HAVOLA. Havola bo'lmasa (qo'lda kiritilgan yoki eski
-    tahrirdan keyin havolasi yo'qolgan yozuv) turkum MATNDAN aniqlanadi:
-    aks holda yozuv "Boshqa xizmatlar"ga tushib, "Omonatlar" kabi
-    ro'yxatlarda umuman ko'rinmasdi."""
-    # Filiallar saytda "filial" deb emas, "bank xizmatlari markazi/ofisi"
-    # deb nomlangan — turkumni SARLAVHA bo'yicha aniqlaymiz.
-    t = title.lower()
-    if "bank xizmatlari markazi" in t or "bank xizmatlari ofisi" in t:
-        return _BRANCH_LABEL
-    url = source_url.lower()
-    # Nomi boshqacha bo'lgan bo'linmalar ham bor ("Biznesni rivojlantirish
-    # markazi") — ular sarlavha bo'yicha aniqlanmay, filiallar ro'yxatiga
-    # umuman tushmasdi. URL'dagi /branches/ bo'limi ishonchli belgi.
-    if "/branches/" in url:
-        return _BRANCH_LABEL
-    if "plastic-card" in url or "/cards" in url or "karta" in url:
-        return "Bank kartalari"
-    if "credit" in url or "loan" in url or "kredit" in url:
-        return "Kreditlar"
-    if "deposit" in url or "omonat" in url:
-        return "Omonatlar"
-    if "transfer" in url or "otkazma" in url or "o-tkazma" in url:
-        return "Pul o'tkazmalari"
-    if not url:
-        return _category_from_text(title, text)
-    return "Boshqa xizmatlar"
-
-
-def category_key(source_url: str, title: str = "", text: str = "") -> str:
-    """category_label'ning kaliti ("credit", "deposit", ...) — admin ro'yxati uchun."""
-    return _CATEGORY_KEY_BY_LABEL.get(category_label(source_url, title, text), "other")
 
 
 def _word_match(a: str, b: str) -> bool:
@@ -2278,3 +2199,35 @@ def _refine_employee_list(
         if all(word_fits(w, toks) for w in words):
             out.append(e)
     return out or None
+
+
+# --- "O'z IP/telefonimni qanday kiritaman" ------------------------------- #
+# Xodim QIDIRUVI emas, ilovadan foydalanish savoli. "ip"/"raqam" so'zi bor,
+# shuning uchun ilgari ma'lumotnomaga ketib "xodim topilmadi" qaytardi.
+_CONTACT_SUBJECT_RE = re.compile(
+    r"\b(ip|ichki\s+raqam\w*|raqamim\w*|telefon\w*|kontakt\w*|nomer\w*|"
+    r"внутренн\w*\s+номер\w*|номер\w*|телефон\w*|контакт\w*)"
+)
+_CONTACT_ACTION_RE = re.compile(
+    r"\b(qosh|kirit|ozgartir|almashtir|yangila|qoy|ulay|tahrirla|"
+    r"добав|измен|указ|ввест|ввод|поменя|обнов|"
+    # to_latin ruscha savolni ham lotinga o'giradi ("Как добавить" -> "kak dobavit")
+    r"dobav|izmen|ukaz|vvest|vvod|pomenya|obnov)\w*"
+)
+_HOWTO_RE = re.compile(
+    r"\b(qanday|qanaqa|qayerda|qayerga|qayerdan|nima\s+qilsam|"
+    r"\w+moqchiman|как|где|куда|kak|gde|kuda)\b"
+)
+
+
+def _asks_contacts_howto(question: str) -> bool:
+    """Savol — o'z IP raqami/telefonini QANDAY kiritish yoki o'zgartirish
+    haqida (ma'lumotnomadan boshqa xodimni qidirish emas)."""
+    q = _norm_apostrophes(to_latin(question).lower()).replace("'", "")
+    if len(q) > 160 or re.search(r"\b\d{3,5}\b", q):
+        return False
+    return bool(
+        _CONTACT_SUBJECT_RE.search(q)
+        and _CONTACT_ACTION_RE.search(q)
+        and _HOWTO_RE.search(q)
+    )

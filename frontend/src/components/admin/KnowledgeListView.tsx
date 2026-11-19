@@ -3,14 +3,16 @@ import HButton from "../common/HButton";
 import FilterSelect from "./FilterSelect";
 import type { AdminStrings } from "../../types/i18n";
 import {
-  effectiveCategory,
   employeeStats,
-  KNOWLEDGE_CATEGORIES,
+  listCategories,
   listKnowledge,
+  setCategoryBulk,
   uploadEmployees,
   uploadEmployeesJson,
+  type KbCategory,
   type KnowledgeItem,
 } from "../../services/knowledgeService";
+import KnowledgeCategoriesModal from "./KnowledgeCategoriesModal";
 import KnowledgeDetailView from "./KnowledgeDetailView";
 import RescrapePanel from "./RescrapePanel";
 import { fmtIsoDate, validityState } from "../../utils/knowledgeValidity";
@@ -42,8 +44,16 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const [sortKey, setSortKey] = useState<SortKey>("title");
   // Faqat muddati o'tgan / yaqinlashgan hujjatlar
   const [onlyStale, setOnlyStale] = useState(false);
-  // Turkum filtri ("" — hammasi). Admin qo'ygani, bo'lmasa bot aniqlagani bo'yicha
+  // Turkum filtri: "" — hammasi, NONE — turkumsiz, aks holda turkum kaliti.
+  // Turkumni faqat admin qo'yadi (avtomatik taxmin yo'q).
   const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<KbCategory[]>([]);
+  const [catsOpen, setCatsOpen] = useState(false);
+  // Belgilash rejimi: bir nechta hujjatga birdaniga turkum qo'yish
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkCat, setBulkCat] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [empUploading, setEmpUploading] = useState(false);
   const [empMsg, setEmpMsg] = useState<string | null>(null);
@@ -103,7 +113,9 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
     setLoading(true);
     setErr(null);
     try {
-      setItems(await listKnowledge());
+      const [list, cats] = await Promise.all([listKnowledge(), listCategories()]);
+      setItems(list);
+      setCategories(cats);
     } catch (e) {
       setErr(e instanceof Error ? e.message : admin.knowledgeLoadError);
     } finally {
@@ -130,7 +142,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         title={selected}
         validUntil={sel?.valid_until ?? ""}
         category={sel?.category ?? ""}
-        autoCategory={sel?.auto_category ?? "other"}
+        categories={categories}
         note={sel?.note ?? ""}
         onBack={() => setSelected(null)}
         onChanged={load}
@@ -140,19 +152,20 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   }
 
   const q = search.trim().toLowerCase();
-  const names = admin.knowledgeCategoryNames;
+  const NONE = "__none__";
+  const names = new Map(categories.map((c) => [c.key, c.name]));
+  // Turkumi o'chirilgan yoki qo'yilmagan — "Turkumsiz"
+  const catOf = (it: KnowledgeItem) => (it.category && names.has(it.category) ? it.category : NONE);
   // Har turkumda nechta hujjat bor — filtr variantlarida ko'rsatiladi
   const catCounts = new Map<string, number>();
   for (const it of items) {
-    const c = effectiveCategory(it);
+    const c = catOf(it);
     catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
   }
   const categoryOptions = [
     { value: "", label: `${admin.knowledgeCategoryAll} (${items.length})` },
-    ...KNOWLEDGE_CATEGORIES.filter((c) => catCounts.has(c)).map((c) => ({
-      value: c,
-      label: `${names[c]} (${catCounts.get(c)})`,
-    })),
+    { value: NONE, label: `${admin.knowledgeCategoryNone} (${catCounts.get(NONE) ?? 0})` },
+    ...categories.map((c) => ({ value: c.key, label: `${c.name} (${catCounts.get(c.key) ?? 0})` })),
   ];
   const visible = items
     .filter(
@@ -162,7 +175,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         it.preview.toLowerCase().includes(q) ||
         (it.note ?? "").toLowerCase().includes(q)
     )
-    .filter((it) => !category || effectiveCategory(it) === category)
+    .filter((it) => !category || catOf(it) === category)
     .filter((it) => !onlyStale || isStale(it))
     .sort((a, b) => {
       if (sortKey === "chunks") return b.chunks - a.chunks;
@@ -171,8 +184,45 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
       return a.title.localeCompare(b.title);
     });
 
+  const togglePick = (title: string) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+
+  const stopSelecting = () => {
+    setSelecting(false);
+    setPicked(new Set());
+    setBulkCat("");
+  };
+
+  const applyBulk = async () => {
+    if (picked.size === 0) return;
+    setBulkBusy(true);
+    try {
+      await setCategoryBulk([...picked], bulkCat && bulkCat !== NONE ? bulkCat : null);
+      setEmpMsg(admin.knowledgeBulkDone(picked.size));
+      stopSelecting();
+      await load();
+    } catch (e) {
+      setEmpMsg(e instanceof Error ? e.message : admin.knowledgeSaveError);
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <div className={`${styles.wrap} ${mounted ? styles.in : ""}`}>
+      {catsOpen && (
+        <KnowledgeCategoriesModal
+          categories={categories}
+          t={admin}
+          onClose={() => setCatsOpen(false)}
+          onChanged={load}
+        />
+      )}
       <div className={styles.head}>
         <div className={styles.count}>
           {!loading && !err ? admin.knowledgeItemsCount(items.length) : ""}
@@ -213,6 +263,15 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             {admin.knowledgeEmployeesCheck}
           </HButton>
           <HButton
+            onClick={() => setCatsOpen(true)}
+            className={`${styles.reloadBtn} tu-shiny`}
+            baseStyle={{}}
+            hoverStyle={{ background: "var(--adm-border)", color: "var(--adm-text-strong)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>
+            {admin.knowledgeCategoriesManage}
+          </HButton>
+          <HButton
             onClick={load}
             className={`${styles.reloadBtn} tu-shiny`}
             baseStyle={{}}
@@ -249,6 +308,14 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
               { value: "oldest", label: admin.knowledgeSortOldest },
             ]}
           />
+          <button
+            type="button"
+            className={`${styles.staleBtn} ${styles.selectBtn} ${selecting ? styles.selectBtnOn : ""}`}
+            aria-pressed={selecting}
+            onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+          >
+            {admin.knowledgeSelectMode}
+          </button>
           {staleCount > 0 && (
             <button
               type="button"
@@ -259,6 +326,39 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
               {admin.knowledgeValidityFilter(staleCount)}
             </button>
           )}
+        </div>
+      )}
+
+      {selecting && (
+        <div className={styles.bulkBar}>
+          <span className={styles.bulkCount}>{admin.knowledgeSelectedCount(picked.size)}</span>
+          <button
+            type="button"
+            className={styles.bulkLink}
+            onClick={() => setPicked(new Set(visible.map((it) => it.title)))}
+          >
+            {admin.knowledgeSelectAllVisible}
+          </button>
+          <FilterSelect
+            value={bulkCat}
+            onChange={setBulkCat}
+            options={[
+              { value: "", label: admin.knowledgeBulkPick },
+              ...categories.map((c) => ({ value: c.key, label: c.name })),
+              { value: NONE, label: admin.knowledgeCategoryNone },
+            ]}
+          />
+          <button
+            type="button"
+            className={styles.bulkApply}
+            onClick={() => void applyBulk()}
+            disabled={bulkBusy || picked.size === 0 || !bulkCat}
+          >
+            {admin.knowledgeBulkApply}
+          </button>
+          <button type="button" className={styles.bulkLink} onClick={stopSelecting} disabled={bulkBusy}>
+            {admin.knowledgeBulkCancel}
+          </button>
         </div>
       )}
 
@@ -277,10 +377,16 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
           {visible.map((it) => (
             <button
               key={it.title}
-              className={styles.card}
-              onClick={() => setSelected(it.title)}
+              className={`${styles.card} ${selecting && picked.has(it.title) ? styles.cardPicked : ""}`}
+              onClick={() => (selecting ? togglePick(it.title) : setSelected(it.title))}
+              aria-pressed={selecting ? picked.has(it.title) : undefined}
             >
               <div className={styles.cardTop}>
+                {selecting && (
+                  <span className={`${styles.check} ${picked.has(it.title) ? styles.checkOn : ""}`} aria-hidden="true">
+                    {picked.has(it.title) ? "✓" : ""}
+                  </span>
+                )}
                 <div className={styles.cardTitle}>{it.title}</div>
                 <span className={styles.badge}>{admin.knowledgeChunks(it.chunks)}</span>
               </div>
@@ -288,12 +394,9 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
               {it.preview && <div className={styles.preview}>{it.preview}…</div>}
               <div className={styles.cardFoot}>
                 <span className={styles.lang}>{it.lang.toUpperCase()}</span>
-                {/* Qo'lda qo'yilgan turkum — to'q rangda, avtomatigi — xira */}
-                <span
-                  className={`${styles.category} ${it.category ? styles.categoryManual : ""}`}
-                  title={it.category ? undefined : admin.knowledgeCategoryAuto(names[effectiveCategory(it)])}
-                >
-                  {names[effectiveCategory(it)]}
+                {/* Turkum qo'yilgan — to'q rangda, turkumsiz — xira */}
+                <span className={`${styles.category} ${catOf(it) !== NONE ? styles.categoryManual : ""}`}>
+                  {catOf(it) !== NONE ? names.get(catOf(it)) : admin.knowledgeCategoryNone}
                 </span>
                 {it.duplicates && it.duplicates.length > 0 && (
                   <span className={`${styles.validity} ${styles.vSoon}`} title={it.duplicates.join("\n")}>

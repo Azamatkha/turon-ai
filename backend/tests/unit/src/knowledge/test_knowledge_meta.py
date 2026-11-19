@@ -1,12 +1,13 @@
 """Admin qo'yadigan turkum va izoh: saqlash, ro'yxatda ko'rinishi, tahrirda
-yo'qolmasligi va bot katalogida avtomatikdan ustun turishi."""
+yo'qolmasligi. Bot katalogi FAQAT admin turkumiga tayanadi (avto yo'q)."""
 
 from typing import Any
 
 import pytest
 
 from src.core.errors.exceptions import InstanceNotFoundException
-from src.knowledge.answer_helpers import KB_CATEGORIES, category_key
+from src.knowledge import categories as cat_mod
+from src.knowledge.categories import make_def, match_categories
 from src.knowledge.ingest_usecases import (
     ListKnowledgeUseCase,
     SetKnowledgeMetaUseCase,
@@ -41,11 +42,22 @@ def _doc(title: str, url: str = "", text: str = "matn", **extra: Any) -> dict[st
     return {"title": title, "chunk_index": 0, "chunk_text": text, "source_url": url, **extra}
 
 
-def test_category_keys_match_labels() -> None:
-    assert category_key("https://turonbank.uz/uz/private/credits/avto") == "credit"
-    assert category_key("https://turonbank.uz/uz/private/deposits/meros") == "deposit"
-    assert category_key("", "Meros omonati", "omonat foizi") == "deposit"
-    assert set(KB_CATEGORIES) == {"credit", "deposit", "card", "transfer", "branch", "other"}
+def test_default_categories_keep_old_keys() -> None:
+    """Avval qo'lda qo'yilgan "credit"/"deposit"... kalitlari ishlayveradi."""
+    keys = {c.key for c in cat_mod.DEFAULT_CATEGORIES}
+    assert keys == {"credit", "deposit", "card", "transfer", "branch", "other"}
+
+
+def test_match_prefers_specific_custom_category() -> None:
+    cats = [*cat_mod.DEFAULT_CATEGORIES, make_def("c1", "Ipoteka", "ipoteka, uy krediti")]
+    found = match_categories("Ipoteka kreditlari qanday", cats)
+    assert found[0].name == "Ipoteka"
+    assert "Kreditlar" in [c.name for c in found]
+
+
+def test_custom_category_without_keywords_matches_by_name() -> None:
+    cat = make_def("c2", "Biznes kreditlar", "")
+    assert match_categories("biznes kreditlar ro'yxati", [cat]) == [cat]
 
 
 @pytest.mark.asyncio
@@ -55,9 +67,8 @@ async def test_set_meta_and_list() -> None:
     [item] = await ListKnowledgeUseCase(store).execute()  # type: ignore[arg-type]
     assert item.category == "credit"
     assert item.note == "kredit bo'limi uchun"
-    assert item.auto_category == "other"
 
-    # Olib tashlash — bot yana o'zi aniqlaydi
+    # Olib tashlash — "Turkumsiz"
     await SetKnowledgeMetaUseCase(store).execute("Ichki tartib", None, "")  # type: ignore[arg-type]
     [item] = await ListKnowledgeUseCase(store).execute()  # type: ignore[arg-type]
     assert item.category == "" and item.note == ""
@@ -78,12 +89,21 @@ async def test_update_keeps_admin_meta() -> None:
 
 
 @pytest.mark.asyncio
-async def test_catalog_prefers_manual_category() -> None:
+async def test_list_hides_deleted_category() -> None:
+    """Turkumi o'chirilgan hujjat ro'yxatda "Turkumsiz" ("")."""
+    store = _Store([_doc("A", category="c-ochirilgan")])
+    [item] = await ListKnowledgeUseCase(store).execute()  # type: ignore[arg-type]
+    assert item.category == ""
+
+
+@pytest.mark.asyncio
+async def test_catalog_uses_only_manual_category() -> None:
+    """Havolasi kreditlar bo'limida bo'lsa ham turkum FAQAT admin qo'ygani.
+    Turkumsiz hujjat hech qaysi turkum ro'yxatiga tushmaydi."""
     from src.knowledge.usecases import AnswerQuestionUseCase
 
     uc = AnswerQuestionUseCase(embedder=None, store=None, ai_client=None)  # type: ignore[arg-type]
     points = [
-        # Havolasi kreditlar bo'limida, lekin admin "omonat" deb belgilagan
         _doc("Aralash mahsulot", "https://turonbank.uz/uz/credits/x", category="deposit"),
         _doc("Avtokredit", "https://turonbank.uz/uz/credits/avto"),
     ]
@@ -94,4 +114,5 @@ async def test_catalog_prefers_manual_category() -> None:
     uc._scroll_points = _scroll  # type: ignore[method-assign]
     groups = await uc._catalog_groups()
     assert groups["Omonatlar"] == ["Aralash mahsulot"]
-    assert groups["Kreditlar"] == ["Avtokredit"]
+    assert "Kreditlar" not in groups
+    assert groups[cat_mod.UNCATEGORIZED_LABEL] == ["Avtokredit"]

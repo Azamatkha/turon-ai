@@ -103,6 +103,7 @@ export interface ChatStaticStrings {
   // Xavfli so'rov / so'kinish (faqat adminga)
   notifSafetyHarmful: string;
   notifSafetyProfanity: string;
+  notifAdminMessage: string;
   notifTimeNow: string;
   notifMinAgo: (m: number) => string;
   notifHourAgo: (h: number) => string;
@@ -550,11 +551,28 @@ export interface AdminStrings {
   knowledgeValidityNone: string;
   knowledgeValiditySaved: string;
   knowledgeValidityFilter: (n: number) => string;
-  // Bilim bazasi: turkum va izoh (kalitlar — services/knowledgeService KNOWLEDGE_CATEGORIES)
+  // Bilim bazasi: turkum va izoh. Turkumlarni admin o'zi yaratadi
+  // (services/knowledgeService listCategories) — nomlari ma'lumot, tarjima emas.
   knowledgeCategoryLabel: string;
-  knowledgeCategoryNames: Record<"credit" | "deposit" | "card" | "transfer" | "branch" | "other", string>;
-  knowledgeCategoryAuto: (name: string) => string;
+  knowledgeCategoryNone: string;
   knowledgeCategoryAll: string;
+  knowledgeCategoriesManage: string;
+  knowledgeCategoriesTitle: string;
+  knowledgeCategoriesHint: string;
+  knowledgeCategoryNamePh: string;
+  knowledgeCategoryKeywordsPh: string;
+  knowledgeCategoryAdd: string;
+  knowledgeCategoryDelete: string;
+  knowledgeCategoryDeleteConfirm: (name: string) => string;
+  knowledgeCategoryEmpty: string;
+  knowledgeCategoriesClose: string;
+  knowledgeSelectMode: string;
+  knowledgeSelectedCount: (n: number) => string;
+  knowledgeSelectAllVisible: string;
+  knowledgeBulkPick: string;
+  knowledgeBulkApply: string;
+  knowledgeBulkCancel: string;
+  knowledgeBulkDone: (n: number) => string;
   knowledgeNoteLabel: string;
   knowledgeNotePh: string;
   knowledgeMetaSave: string;
@@ -621,7 +639,14 @@ export interface AdminStrings {
   answersAnswer: string;
   answersNote: string;
   answersMissing: string;
-  answersVerdict: Record<"ok" | "fixed" | "failed" | "unchecked" | "cached", string>;
+  answersVerdict: Record<"ok" | "fixed" | "failed" | "unchecked" | "cached" | "doubt", string>;
+  answersFilterDoubt: string;
+  answersMessageTitle: string;
+  answersMessageHint: string;
+  answersMessagePh: string;
+  answersMessageSend: string;
+  answersMessageSent: string;
+  answersMessageNoUser: string;
   answersVerdictSummary: (ok: number, fixed: number, failed: number) => string;
   questionsTabLog: string;
   questionsTabStats: string;

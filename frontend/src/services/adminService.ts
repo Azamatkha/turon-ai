@@ -186,7 +186,9 @@ export async function getQuestionAnalytics(days = 30, limit = 20): Promise<Quest
 
 // ---- Savol + bot javobi jurnali — /v1/admin/questions/answers ----
 
-export type AnswerVerdict = "ok" | "fixed" | "failed" | "unchecked" | "cached";
+// doubt — javob kod bilan tuzilgan va darhol chiqqan, AI fonda tahlil qilib
+// savolga mos emas deb topgan (backend src/chat/answer_review.py)
+export type AnswerVerdict = "ok" | "fixed" | "failed" | "unchecked" | "cached" | "doubt";
 
 export interface AnswerLogItem {
   id: string;
@@ -237,6 +239,15 @@ export async function getAnswerLog(q: AnswerLogQuery): Promise<AnswerLogPage> {
   const res = await apiFetch(`/v1/admin/questions/answers?${params.toString()}`);
   if (!res.ok) throw new Error(await readError(res, "Javoblar jurnalini olishda xatolik"));
   return res.json();
+}
+
+// Savol bergan xodimga admin xabari — u bildirishnoma bo'lib boradi
+export async function sendUserMessage(logId: string, text: string): Promise<void> {
+  const res = await apiFetch(`/v1/admin/questions/${encodeURIComponent(logId)}/message`, {
+    method: "POST",
+    body: JSON.stringify({ text: text.trim() }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Xabarni yuborishda xatolik"));
 }
 
 // ---- Audit jurnali — /v1/admin/audit-logs ----

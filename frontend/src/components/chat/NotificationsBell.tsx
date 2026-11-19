@@ -36,6 +36,8 @@ function titleFor(n: ApiNotification, s: ChatStaticStrings): string {
       return s.notifKnowledgeSourceFailed;
     case "safety_flagged":
       return n.params?.kind === "profanity" ? s.notifSafetyProfanity : s.notifSafetyHarmful;
+    case "admin_message":
+      return s.notifAdminMessage;
     default:
       return s.notifications;
   }

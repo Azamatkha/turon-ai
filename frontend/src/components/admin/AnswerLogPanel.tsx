@@ -2,7 +2,13 @@ import { forwardRef, useCallback, useEffect, useRef, useState, type KeyboardEven
 import FilterSelect from "./FilterSelect";
 import MessageContent from "../chat/MessageContent";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
-import { getAnswerLog, type AnswerLogItem, type AnswerLogPage, type AnswerLogQuery } from "../../services/adminService";
+import {
+  getAnswerLog,
+  sendUserMessage,
+  type AnswerLogItem,
+  type AnswerLogPage,
+  type AnswerLogQuery,
+} from "../../services/adminService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./AnswerLogPanel.module.css";
 
@@ -15,7 +21,7 @@ interface AnswerLogPanelProps {
   reloadKey: number;
 }
 
-type VerdictKey = "all" | "rejected" | "failed" | "ok";
+type VerdictKey = "all" | "rejected" | "failed" | "ok" | "doubt";
 type OutcomeKey = "all" | keyof AdminStrings["answersOutcome"];
 
 const OUTCOMES: Exclude<OutcomeKey, "all">[] = ["answered", "no_info", "web", "flagged", "blocked", "error"];
@@ -44,6 +50,58 @@ function fmtFull(iso: string): string {
 
 function userLabel(it: AnswerLogItem): string {
   return it.full_name || it.username || "—";
+}
+
+
+// Savol bergan xodimga xabar — bildirishnoma bo'lib boradi (masalan bot
+// noto'g'ri javob bergan bo'lsa, admin to'g'ri javobni o'zi yozadi).
+function UserMessageBox({ logId, hasUser, t: admin }: { logId: string; hasUser: boolean; t: AdminStrings }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  if (!hasUser) return <div className={styles.msgHint}>{admin.answersMessageNoUser}</div>;
+
+  const send = async () => {
+    if (!text.trim()) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await sendUserMessage(logId, text);
+      setText("");
+      setMsg({ ok: true, text: admin.answersMessageSent });
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof Error ? e.message : admin.questionsLoadError });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={styles.msgBox}>
+      <div className={styles.label}>{admin.answersMessageTitle}</div>
+      <textarea
+        className={styles.msgInput}
+        value={text}
+        maxLength={1000}
+        rows={3}
+        onChange={(e) => {
+          setText(e.target.value);
+          setMsg(null);
+        }}
+        placeholder={admin.answersMessagePh}
+        aria-label={admin.answersMessageTitle}
+        disabled={busy}
+      />
+      <div className={styles.msgRow}>
+        <span className={styles.msgHint}>{admin.answersMessageHint}</span>
+        <button type="button" className={styles.msgSend} onClick={() => void send()} disabled={busy || !text.trim()}>
+          {admin.answersMessageSend}
+        </button>
+      </div>
+      {msg && <div className={msg.ok ? styles.msgOk : styles.msgErr} role="status">{msg.text}</div>}
+    </div>
+  );
 }
 
 // Savol + bot javobi jurnali — admin bot to'g'ri javob berayaptimi, o'z ko'zi
@@ -157,6 +215,8 @@ const AnswerLogPanel = forwardRef<HTMLElement, AnswerLogPanelProps>(function Ans
         </>
       )}
 
+      <UserMessageBox key={it.id} logId={it.id} hasUser={!!(it.username || it.full_name)} t={admin} />
+
       {!!it.source_urls?.length && (
         <>
           <div className={styles.label}>{admin.answersSources}</div>
@@ -198,6 +258,7 @@ const AnswerLogPanel = forwardRef<HTMLElement, AnswerLogPanelProps>(function Ans
             { value: "ok", label: admin.answersFilterOk },
             { value: "rejected", label: admin.answersFilterRejected },
             { value: "failed", label: admin.answersFilterFailed },
+            { value: "doubt", label: admin.answersFilterDoubt },
           ]}
         />
         <div className={styles.summary}>

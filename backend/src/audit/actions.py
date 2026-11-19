@@ -16,6 +16,7 @@ class AuditAction(StrEnum):
     KNOWLEDGE_SCRAPE = "knowledge.scrape"
     KNOWLEDGE_VALIDITY = "knowledge.validity"
     KNOWLEDGE_META = "knowledge.meta"
+    KNOWLEDGE_CATEGORY = "knowledge.category"
     KNOWLEDGE_RESCRAPE = "knowledge.rescrape"
 
     REPORT_UPDATE = "report.update"
@@ -25,6 +26,7 @@ class AuditAction(StrEnum):
     GUIDE_DELETE = "guide.delete"
 
     ANSWER_REVIEW = "answer.review"
+    ANSWER_MESSAGE = "answer.message"
 
     BACKUP_RUN = "backup.run"
 

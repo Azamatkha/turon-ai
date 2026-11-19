@@ -5,7 +5,7 @@ import {
   getKnowledgeDetail,
   updateKnowledge,
   deleteKnowledge,
-  type KnowledgeCategory,
+  type KbCategory,
   type KnowledgeDetail,
 } from "../../services/knowledgeService";
 import { useModalA11y } from "../../hooks/useModalA11y";
@@ -18,8 +18,8 @@ interface Props {
   // Amal qilish muddati (ro'yxatdan keladi — detail endpointi uni bermaydi)
   validUntil?: string;
   // Turkum va izoh (ro'yxatdan keladi)
-  category?: KnowledgeCategory | "";
-  autoCategory?: KnowledgeCategory;
+  category?: string;
+  categories?: KbCategory[];
   note?: string;
   onBack: () => void;
   onChanged: () => void; // ro'yxatni yangilash uchun
@@ -42,7 +42,7 @@ export default function KnowledgeDetailView({
   title,
   validUntil = "",
   category = "",
-  autoCategory = "other",
+  categories = [],
   note = "",
   onBack,
   onChanged,
@@ -150,7 +150,7 @@ export default function KnowledgeDetailView({
           <KnowledgeMetaEditor
             title={detail.title}
             category={category}
-            autoCategory={autoCategory}
+            categories={categories}
             note={note}
             t={admin}
             onSaved={onChanged}

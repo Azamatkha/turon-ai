@@ -18,9 +18,21 @@ export async function scrapeUrl(url: string): Promise<UploadResult> {
   return res.json();
 }
 
-// Hujjat turkumlari — backend/src/knowledge/answer_helpers.py KB_CATEGORIES bilan bir xil
-export const KNOWLEDGE_CATEGORIES = ["credit", "deposit", "card", "transfer", "branch", "other"] as const;
-export type KnowledgeCategory = (typeof KNOWLEDGE_CATEGORIES)[number];
+// Hujjat turkumi — ADMIN o'zi yaratadi (backend: kb_categories jadvali).
+// Avtomatik taxmin yo'q: turkum qo'yilmagan hujjat "Turkumsiz".
+export interface KbCategory {
+  key: string;
+  name: string;
+  // Savolda shu so'zlardan biri bo'lsa bot shu turkum ro'yxatini beradi
+  keywords: string[];
+  sort_order: number;
+}
+
+export interface KbCategoryInput {
+  name: string;
+  keywords: string[];
+  sort_order?: number | null;
+}
 
 // Ro'yxatda ko'rsatiladigan bitta yuklangan ma'lumot (sarlavha bo'yicha guruhlangan)
 export interface KnowledgeItem {
@@ -34,17 +46,10 @@ export interface KnowledgeItem {
   valid_until?: string;
   // Matni aynan bir xil boshqa hujjatlar (dublikat)
   duplicates?: string[];
-  // Admin qo'ygan turkum; qo'yilmagan bo'lsa bo'sh satr
-  category?: KnowledgeCategory | "";
-  // Bot o'zi aniqlagan turkum (category bo'sh bo'lsa shu ishlatiladi)
-  auto_category?: KnowledgeCategory;
+  // Admin qo'ygan turkum kaliti; qo'yilmagan bo'lsa bo'sh satr
+  category?: string;
   // Admin izohi
   note?: string;
-}
-
-/** Amaldagi turkum: admin qo'ygani, bo'lmasa bot aniqlagani. */
-export function effectiveCategory(it: KnowledgeItem): KnowledgeCategory {
-  return it.category || it.auto_category || "other";
 }
 
 // Saytdan qayta tekshirish (backend/src/knowledge/rescrape.py)
@@ -119,10 +124,10 @@ export async function setKnowledgeValidity(title: string, validUntil: string | n
   if (!res.ok) throw new Error(await readError(res, "Muddatni saqlashda xatolik"));
 }
 
-// Turkum (null — bot o'zi aniqlaydi) va izoh (bo'sh — olib tashlanadi)
+// Turkum (null — "Turkumsiz") va izoh (bo'sh — olib tashlanadi)
 export async function setKnowledgeMeta(
   title: string,
-  category: KnowledgeCategory | null,
+  category: string | null,
   note: string
 ): Promise<void> {
   const res = await apiFetch("/v1/admin/knowledge/meta", {
@@ -236,4 +241,46 @@ export async function getRescrapeStatus(): Promise<RescrapeStatus> {
 export async function runRescrape(): Promise<void> {
   const res = await apiFetch("/v1/admin/knowledge/rescrape", { method: "POST" });
   if (!res.ok) throw new Error(await readError(res, "Tekshiruvni boshlab bo'lmadi"));
+}
+
+// --- Turkumlar (admin boshqaradi) --- //
+
+export async function listCategories(): Promise<KbCategory[]> {
+  const res = await apiFetch("/v1/admin/knowledge/categories");
+  if (!res.ok) throw new Error(await readError(res, "Turkumlarni olishda xatolik"));
+  return res.json();
+}
+
+export async function createCategory(data: KbCategoryInput): Promise<KbCategory> {
+  const res = await apiFetch("/v1/admin/knowledge/categories", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Turkumni saqlashda xatolik"));
+  return res.json();
+}
+
+export async function updateCategory(key: string, data: KbCategoryInput): Promise<KbCategory> {
+  const res = await apiFetch(`/v1/admin/knowledge/categories/${encodeURIComponent(key)}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Turkumni saqlashda xatolik"));
+  return res.json();
+}
+
+export async function deleteCategory(key: string): Promise<void> {
+  const res = await apiFetch(`/v1/admin/knowledge/categories/${encodeURIComponent(key)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(await readError(res, "Turkumni o'chirishda xatolik"));
+}
+
+// Belgilangan hujjatlarga birdaniga turkum qo'yish (null — olib tashlash)
+export async function setCategoryBulk(titles: string[], category: string | null): Promise<void> {
+  const res = await apiFetch("/v1/admin/knowledge/meta/bulk", {
+    method: "PATCH",
+    body: JSON.stringify({ titles, category }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "Turkumni saqlashda xatolik"));
 }

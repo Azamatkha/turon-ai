@@ -99,3 +99,16 @@ async def async_client_with_fakes(
         transport=transport, base_url="http://testserver"
     ) as client:
         yield client
+
+
+@pytest.fixture(autouse=True)
+def _kb_categories_without_db(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bilim bazasi turkumlari unit testlarda bazadan o'qilmaydi — migratsiya
+    seed qiladigan standart ro'yxat ishlatiladi."""
+    from src.knowledge import categories
+
+    async def _defaults() -> list[categories.CategoryDef]:
+        return list(categories.DEFAULT_CATEGORIES)
+
+    categories.invalidate_categories()
+    monkeypatch.setattr(categories, "_load_categories", _defaults)

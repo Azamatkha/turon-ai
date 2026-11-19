@@ -1,35 +1,30 @@
 import { useState } from "react";
 import FilterSelect from "./FilterSelect";
-import {
-  KNOWLEDGE_CATEGORIES,
-  setKnowledgeMeta,
-  type KnowledgeCategory,
-} from "../../services/knowledgeService";
+import { setKnowledgeMeta, type KbCategory } from "../../services/knowledgeService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./KnowledgeMetaEditor.module.css";
 
 interface Props {
   title: string;
-  // Admin qo'ygan turkum ("" — qo'yilmagan, bot o'zi aniqlaydi)
-  category: KnowledgeCategory | "";
-  // Bot aniqlagan turkum — "Avtomatik (…)" variantida ko'rsatiladi
-  autoCategory: KnowledgeCategory;
+  // Admin qo'ygan turkum kaliti ("" — "Turkumsiz")
+  category: string;
+  // Admin yaratgan turkumlar ro'yxati
+  categories: KbCategory[];
   note: string;
   t: AdminStrings;
   onSaved: () => void;
 }
 
-// Hujjat sahifasidagi "Turkum va izoh": hujjat nimaga tegishli ekanini
-// belgilash (kredit, omonat, ...) — ro'yxat filtri va bot katalogi shuni ishlatadi.
-export default function KnowledgeMetaEditor({ title, category, autoCategory, note, t: admin, onSaved }: Props) {
-  const [cat, setCat] = useState<KnowledgeCategory | "">(category);
+// Hujjat sahifasidagi "Turkum va izoh": hujjat nimaga tegishli ekanini admin
+// o'zi belgilaydi — ro'yxat filtri va bot katalogi FAQAT shuni ishlatadi.
+export default function KnowledgeMetaEditor({ title, category, categories, note, t: admin, onSaved }: Props) {
+  const [cat, setCat] = useState<string>(category);
   const [text, setText] = useState(note);
   const [saved, setSaved] = useState({ cat: category, text: note });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  const names = admin.knowledgeCategoryNames;
   const dirty = cat !== saved.cat || text.trim() !== saved.text.trim();
 
   const save = async () => {
@@ -56,12 +51,12 @@ export default function KnowledgeMetaEditor({ title, category, autoCategory, not
         <FilterSelect
           value={cat}
           onChange={(v) => {
-            setCat(v as KnowledgeCategory | "");
+            setCat(v);
             setOk(false);
           }}
           options={[
-            { value: "", label: admin.knowledgeCategoryAuto(names[autoCategory]) },
-            ...KNOWLEDGE_CATEGORIES.map((c) => ({ value: c, label: names[c] })),
+            { value: "", label: admin.knowledgeCategoryNone },
+            ...categories.map((c) => ({ value: c.key, label: c.name })),
           ]}
         />
         <input

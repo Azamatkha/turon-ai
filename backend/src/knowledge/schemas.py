@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -53,11 +52,9 @@ class KnowledgeItem(Base):
     valid_until: str = ""
     # Matni aynan bir xil boshqa hujjatlar sarlavhalari (dublikat)
     duplicates: list[str] = []
-    # Admin qo'ygan turkum ("credit", "deposit", ...); qo'yilmagan bo'lsa ""
+    # Admin qo'ygan turkum kaliti (kb_categories.key); qo'yilmagan yoki
+    # turkumi o'chirilgan bo'lsa "" — avtomatik taxmin YO'Q
     category: str = ""
-    # Bot o'zi aniqlagan turkum (havola/sarlavha/matndan) — `category` bo'sh
-    # bo'lsa filtr shunga tayanadi
-    auto_category: str = ""
     # Admin izohi (erkin matn)
     note: str = ""
 
@@ -79,16 +76,33 @@ class KnowledgeValidityRequest(Base):
     valid_until: date | None = None
 
 
-# Admin turkumlari — answer_helpers.KB_CATEGORIES kalitlari bilan bir xil
-KnowledgeCategory = Literal["credit", "deposit", "card", "transfer", "branch", "other"]
-
-
 class KnowledgeMetaRequest(Base):
     title: str = Field(min_length=1, max_length=500)
-    # None — turkumni olib tashlash (bot yana o'zi aniqlaydi)
-    category: KnowledgeCategory | None = None
+    # Turkum kaliti (kb_categories.key); None — turkumni olib tashlash
+    category: str | None = Field(default=None, max_length=40)
     # Bo'sh / None — izohni olib tashlash
     note: str | None = Field(default=None, max_length=500)
+
+
+class KnowledgeBulkCategoryRequest(Base):
+    """Bir nechta hujjatga birdaniga turkum qo'yish (None — olib tashlash)."""
+
+    titles: list[str] = Field(min_length=1, max_length=2000)
+    category: str | None = Field(default=None, max_length=40)
+
+
+class KbCategoryView(Base):
+    key: str
+    name: str
+    keywords: list[str]
+    sort_order: int
+
+
+class KbCategoryIn(Base):
+    name: str = Field(min_length=1, max_length=100)
+    # Savolda shu so'zlardan biri bo'lsa bot shu turkum ro'yxatini beradi
+    keywords: list[str] = Field(default_factory=list, max_length=50)
+    sort_order: int | None = None
 
 
 class UpdateKnowledgeRequest(Base):

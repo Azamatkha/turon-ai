@@ -48,6 +48,7 @@ export const chatStatic: ChatStaticStrings = {
   notifKnowledgeSourceFailed: "Страница сайта не открылась — документ не обновлён",
   notifSafetyHarmful: "Обнаружен опасный запрос",
   notifSafetyProfanity: "Сообщение с ругательствами",
+  notifAdminMessage: "Сообщение администратора",
   notifTimeNow: "Сейчас",
   notifMinAgo: (m: number) => `${m} мин назад`,
   notifHourAgo: (h: number) => `${h} ч назад`,

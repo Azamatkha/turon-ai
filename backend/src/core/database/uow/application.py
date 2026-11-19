@@ -12,6 +12,7 @@ from src.core.database.repositories import BaseRepository
 from src.core.database.uow.abstract import R, RepositoryProtocol
 from src.core.database.uow.sqlalchemy import RepositoryInstance, SQLAlchemyUnitOfWork
 from src.guides.repositories import EdoGuideRepository
+from src.knowledge.repositories import KbCategoryRepository
 from src.notifications.repositories import NotificationRepository
 from src.reports.repositories import UserReportRepository
 from src.telegram_bot.repositories import (
@@ -117,6 +118,11 @@ class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
     def edo_guides(self) -> EdoGuideRepository:
         """Get the EdoGuideRepository."""
         return self._get_repository(EdoGuideRepository)
+
+    @property
+    def kb_categories(self) -> KbCategoryRepository:
+        """Get the KbCategoryRepository."""
+        return self._get_repository(KbCategoryRepository)
 
     @property
     def telegram_bot_users(self) -> TelegramBotUserRepository:

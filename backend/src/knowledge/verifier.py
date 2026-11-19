@@ -43,8 +43,9 @@ VERIFY_SCHEMA: dict[str, Any] = {
             "type": "string",
             "enum": ["knowledge_base", "general_knowledge", "web", "none"],
         },
+        "analysis": {"type": "string"},
     },
-    "required": ["verdict", "problem", "source"],
+    "required": ["verdict", "problem", "source", "analysis"],
 }
 
 VERIFY_SYSTEM = """You are a strict quality reviewer for the internal AI assistant of Turonbank (a bank in Uzbekistan). Bank employees ask questions in Uzbek (Latin or Cyrillic) or Russian. You receive the USER QUESTION (with recent conversation), the DRAFT ANSWER, and sometimes the CONTEXT (knowledge-base blocks the answer was supposed to use).
@@ -83,6 +84,8 @@ Do NOT nitpick style, length, formatting or language. Do NOT mark "wrong" becaus
 - "general_knowledge" — general banking/finance knowledge or facts about other well-known institutions (what the Central Bank is and does, what a term means) that a knowledgeable banker can explain without Turonbank documents;
 - "web" — fresh or official external facts (news, latest events, today's official rates or decisions, current laws or regulator rules);
 - "none" — greetings, follow-ups, or when the answer is ok and no other source is needed.
+
+"analysis": ALWAYS fill it, for "ok" too — it is shown to the bank's admin, so write it IN UZBEK (Latin script), 1-2 short sentences: what the employee actually wanted (the intent you understood, in your own words) and whether the answer gives exactly that. If the verdict is "wrong", say plainly what is wrong and what the employee should have received instead.
 Output JSON only."""
 
 
@@ -93,6 +96,8 @@ class Verdict:
     tokens: int = 0
     # Javob qayerdan olinishi kerak: knowledge_base | general_knowledge | web | none
     source: str = "none"
+    # Admin uchun o'zbekcha tahlil: foydalanuvchi nima so'radi va javob mosmi
+    analysis: str = ""
 
 
 def _history_tail(history: list[ChatTurn] | None, turns: int = 4) -> str:
@@ -168,4 +173,11 @@ async def verify_answer(
         question[:120],
         problem or "-",
     )
-    return Verdict(ok=verdict == "ok", problem=problem, tokens=tokens, source=source)
+    analysis = str(data.get("analysis", "")).strip()[:800]
+    return Verdict(
+        ok=verdict == "ok",
+        problem=problem,
+        tokens=tokens,
+        source=source,
+        analysis=analysis,
+    )

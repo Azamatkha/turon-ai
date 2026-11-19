@@ -29,6 +29,7 @@ from redis.asyncio import Redis
 
 from loggers import get_logger
 from src.chat.answer_cache import cached_answer_stream
+from src.chat.answer_review import needs_review, schedule_review
 from src.chat.schemas import (
     AddMessageModel,
     CreateSessionModel,
@@ -385,7 +386,8 @@ async def ask(
         # faqat veb javoblar yozilardi, oddiy javoblarni admin ko'rmasdi.
         # Javob shakli (mijozga qaytadigan `result`) o'zgarmaydi.
         is_web = use_case.last_outcome == "web"
-        await log_question(
+        verdict = getattr(use_case, "last_verdict", None)
+        log_id = await log_question(
             QuestionLogEntry(
                 user_id=current_user.id,
                 question=data.question,
@@ -398,10 +400,17 @@ async def ask(
                 # Veb manbalar — admin "bazaga qo'shish" uchun ko'radi
                 source_urls=[s.url for s in result.sources if s.url] if is_web else None,
                 answer=result.answer or None,
-                verdict=getattr(use_case, "last_verdict", None),
+                verdict=verdict,
                 verdict_note=getattr(use_case, "last_verdict_note", None),
             )
         )
+        # Asosiy oqimda tekshirilmagan javob (xodim, "topilmadi", tayyor
+        # matn) — AI fonda tahlil qiladi, admin jurnalda ko'radi
+        if needs_review(use_case.last_outcome, verdict, result.answer):
+            schedule_review(
+                log_id, ai_client, data.question, result.answer, history,
+                use_case._effective_question,
+            )
     return result
 
 
@@ -497,7 +506,8 @@ async def ask_stream(
             # "no_info" (bazada topilmadi) yoki "blocked" (prompt-injection)
             if outcome != "error" and answer_use_case.last_outcome != "answered":
                 outcome = answer_use_case.last_outcome
-            await log_question(
+            verdict = getattr(answer_use_case, "last_verdict", None)
+            log_id = await log_question(
                 QuestionLogEntry(
                     user_id=current_user.id,
                     question=data.question,
@@ -509,10 +519,16 @@ async def ask_stream(
                     duration_ms=int((time.monotonic() - started) * 1000),
                     source_urls=web_urls or None,
                     answer=answer_text or None,
-                    verdict=getattr(answer_use_case, "last_verdict", None),
+                    verdict=verdict,
                     verdict_note=getattr(answer_use_case, "last_verdict_note", None),
                 )
             )
+            # Asosiy oqimda tekshirilmagan javob — AI fonda tahlil qiladi
+            if needs_review(outcome, verdict, answer_text):
+                schedule_review(
+                    log_id, ai_client, data.question, answer_text, history,
+                    answer_use_case._effective_question,
+                )
             # Xavfli so'rov yoki so'kinish — adminga xabar
             if outcome == "flagged" and answer_use_case.last_flag:
                 await notify_safety_flag(

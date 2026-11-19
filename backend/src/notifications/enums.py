@@ -22,6 +22,9 @@ class NotificationType(StrEnum):
     KNOWLEDGE_SOURCE_FAILED = "knowledge_source_failed"
     # Xavfli so'rov yoki so'kinish aniqlandi — adminlarga (chat/usecases.py)
     SAFETY_FLAGGED = "safety_flagged"
+    # Admin "Savollar tahlili"dan savol bergan xodimga yozgan xabar.
+    # Matn (admin yozgani) params["title"] da, savol — params["question"].
+    ADMIN_MESSAGE = "admin_message"
 
     @classmethod
     def values(cls) -> set[str]:

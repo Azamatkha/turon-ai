@@ -29,18 +29,15 @@ from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge import web_search
 from src.knowledge.answer_helpers import (
     _BARE_IP_RE,
-    _BRANCH_LABEL,
     _BROAD_QUESTION_STOPWORDS,
-    _CATEGORY_GENERIC,
-    _CATEGORY_KEYWORDS,
     _CLARIFY_MAX_OPTIONS,
     _CURRENCY_ALIASES,
     _EMPLOYEE_HINT_MAX_CHARS,
     _GENERIC_TITLE_WORDS,
     _RATE_CHANNEL_HINTS,
     _RESPONSIBLE_STEMS,
-    KB_CATEGORIES,
     _asks_about_organization,
+    _asks_contacts_howto,
     _asks_for_advice,
     _asks_general_meaning,
     _asks_unknown_person,
@@ -93,9 +90,13 @@ from src.knowledge.answer_helpers import (
     _with_lang,
     _word_match,
     _words,
-    category_label,
     translation_target,
     translation_task_note,
+)
+from src.knowledge.categories import (
+    UNCATEGORIZED_LABEL,
+    kb_categories,
+    match_categories,
 )
 from src.knowledge.directory import directory_users, users_with_keywords
 from src.knowledge.ingest_usecases import (
@@ -113,6 +114,7 @@ from src.knowledge.lang import ReplyLang, detect_reply_lang
 from src.knowledge.prompts import (
     CONCEPT_SYSTEM,
     CONCEPT_WEB_ADDENDUM,
+    CONTACTS_HOWTO_REPLY,
     EMPLOYEE_ASK_REPLY,
     EMPLOYEE_IP_NOT_FOUND_REPLY,
     EMPLOYEE_NOT_FOUND_REPLY,
@@ -293,11 +295,6 @@ class AnswerQuestionUseCase:
         self._buf_text = ""
         self._buf_done: dict[str, Any] | None = None
 
-    @staticmethod
-    def _category_label(source_url: str, title: str = "", text: str = "") -> str:
-        """Turkumni aniqlaydi — qara: answer_helpers.category_label."""
-        return category_label(source_url, title, text)
-
     async def _catalog_groups(self) -> dict[str, list[str]]:
         """Bazadagi BARCHA mahsulotlarning to'liq ro'yxati (title bo'yicha noyob),
         turkumlarga ajratilgan (faqat nomlar, URL'siz). _build_catalog (LLM uchun
@@ -319,36 +316,34 @@ class AnswerQuestionUseCase:
         # ro'yxatdan tushib qolardi: "Omonatlar" so'ralganda «Meros omonati»
         # chiqmay qo'ygan edi, garchi bazada tursa ham.
         payloads = await self._scroll_points()
+        # Turkum — FAQAT admin qo'ygani (payload "category" = turkum kaliti).
+        # Avtomatik taxmin yo'q: u ko'p adashardi (2026-11-19). Turkumi
+        # qo'yilmagan yoki turkumi o'chirilgan hujjat UNCATEGORIZED_LABEL
+        # ostida turadi — katalogda bor, lekin hech qaysi turkum ro'yxatida emas.
+        names = {c.key: c.name for c in await kb_categories()}
 
         def build(ru: bool) -> dict[str, list[tuple[str, str]]]:
-            # title bo'yicha noyob mahsulotlar (birinchi uchragan source_url
-            # bilan). Xodimlar (doc_type=employee) mahsulot katalogiga kirmaydi.
-            urls: dict[str, str] = {}
+            # title bo'yicha noyob mahsulotlar. Xodimlar (doc_type=employee)
+            # mahsulot katalogiga kirmaydi.
             texts: dict[str, list[str]] = {}
-            # Admin qo'lda qo'ygan turkum (payload "category") — avtomatikdan ustun
-            manual: dict[str, str] = {}
+            labels: dict[str, str] = {}
             for p in payloads:
                 if p.get("doc_type") == "employee" or _is_ru_doc(p) != ru:
                     continue
                 title = str(p.get("title", "")).strip()
                 if not title:
                     continue
-                urls.setdefault(title, str(p.get("source_url", "")))
-                if p.get("category") in KB_CATEGORIES:
-                    manual.setdefault(title, str(p["category"]))
+                key = str(p.get("category") or "")
+                if key in names:
+                    labels.setdefault(title, names[key])
                 # Bitta mahsulot bir necha bo'lakdan iborat — hammasini
                 # yig'amiz, manzil qaysi bo'lakda bo'lishidan qat'i nazar topilsin.
                 texts.setdefault(title, []).append(str(p.get("chunk_text", "")))
 
             groups: dict[str, list[tuple[str, str]]] = {}
-            for title, url in urls.items():
-                body = " ".join(texts[title])
-                label = (
-                    KB_CATEGORIES[manual[title]]
-                    if title in manual
-                    else self._category_label(url, title, body)
-                )
-                groups.setdefault(label, []).append((title, body))
+            for title, parts in texts.items():
+                label = labels.get(title, UNCATEGORIZED_LABEL)
+                groups.setdefault(label, []).append((title, " ".join(parts)))
             return groups
 
         uz_groups = build(ru=False)
@@ -380,18 +375,15 @@ class AnswerQuestionUseCase:
         groups = await self._catalog_groups()
         if not groups:
             return ""
-        q = _norm_apostrophes(to_latin(question).lower())
-        wanted = [
-            label
-            for label, keywords in _CATEGORY_KEYWORDS.items()
-            if label in groups and any(kw in q for kw in keywords)
-        ]
+        cats = await kb_categories()
+        wanted = [c.name for c in match_categories(question, cats) if c.name in groups]
         if wanted:
             # Aniq turkum so'ralgan — o'sha turkum TO'LIQ beriladi (sanab
             # o'tish savoliga bitta mahsulot ham tushib qolmasligi kerak).
             groups = {label: groups[label] for label in wanted}
         else:
-            groups = {k: v for k, v in groups.items() if k != _BRANCH_LABEL}
+            branch = {c.name for c in cats if c.is_branch}
+            groups = {k: v for k, v in groups.items() if k not in branch}
 
         blocks: list[str] = []
         used = 0
@@ -518,14 +510,16 @@ class AnswerQuestionUseCase:
         if _asks_for_advice(q):
             return None, None
 
-        for label, keywords in _CATEGORY_KEYWORDS.items():
-            items = groups.get(label)
-            if not items or not any(kw in q for kw in keywords):
+        # Savoldagi kalit so'z bo'yicha turkum — admin turkumlari va ularning
+        # kalit so'zlari (categories.match_categories: eng aniq moslik birinchi).
+        for cat in match_categories(question, await kb_categories()):
+            items = groups.get(cat.name)
+            if not items:
                 continue
 
             # Filiallar — yagona turkum, unda toraytirish ISHONCHLI bajariladi:
             # shart har doim HUDUD bo'ladi va hudud ma'lumotning o'zida yozilgan.
-            if label == _BRANCH_LABEL:
+            if cat.is_branch:
                 # Savol ro'yxat emas, filiallar HAQIDA boshqa narsani so'rasa
                 # ("filiallar tarmog'ini kengaytirish rejalari") — modelga.
                 if _branch_other_topic(q, items):
@@ -533,7 +527,7 @@ class AnswerQuestionUseCase:
                 return self._branch_reply(q, items, want_cyrillic)
 
             # Savolda turkum nomidan TASHQARI so'z bormi. Turkumning O'ZINI
-            # bildiruvchi so'z (_CATEGORY_GENERIC) hisobga olinmaydi, lekin
+            # bildiruvchi so'z (CategoryDef.generic) hisobga olinmaydi, lekin
             # TUR nomi ("ipoteka", "avtokredit", "mikroqarz") hisobga olinadi.
             # Ilgari bu yerda butun _CATEGORY_KEYWORDS chiqarib tashlanardi va
             # "ipoteka" ham o'sha ro'yxatda turgani uchun "Ipoteka kreditlari"
@@ -542,7 +536,7 @@ class AnswerQuestionUseCase:
             # MUHIM: apostrofni OLIB TASHLAB bo'laklaymiz. `_words` apostrofni
             # so'z chegarasi deb biladi va "o'tkazmalari" -> "o" + "tkazmalari"
             # bo'lib ketardi.
-            generic = _CATEGORY_GENERIC.get(label, keywords)
+            generic = cat.generic
             extra = [
                 w for w in _words(q.replace("'", ""))
                 if len(w) >= 4
@@ -1509,6 +1503,7 @@ class AnswerQuestionUseCase:
                 self.last_verdict = "unchecked"
             elif v.ok:
                 self.last_verdict = "ok"
+                self.last_verdict_note = v.analysis or None
                 extra_tokens += v.tokens
             else:
                 extra_tokens += v.tokens
@@ -1516,7 +1511,7 @@ class AnswerQuestionUseCase:
                 logger.warning(
                     "Tekshiruv: javob rad etildi | %r | %s", question[:200], first_problem
                 )
-                self.last_verdict_note = first_problem
+                self.last_verdict_note = v.analysis or first_problem
                 # Qayta yozish — qisqa yo'llarsiz, kamchilik ko'rsatilgan holda
                 yield {"type": "status", "step": "rewrite"}
                 # Tekshiruvchi aytgan manbadan: baza / umumiy bilim / internet
@@ -1693,6 +1688,20 @@ class AnswerQuestionUseCase:
         # Oldingi javob xodim ro'yxati bo'lsa — davom savoli ("rahbari kerak",
         # "7") o'sha ro'yxat ichidan javob oladi. Mahsulot ro'yxati tanlovidan
         # OLDIN: aks holda "7" mahsulot bandi deb olinardi.
+        # "IP ni qanday qo'shsam bo'ladi" — ilovadan foydalanish savoli, xodim
+        # qidiruvi emas: tayyor yo'riqnoma.
+        if not force and _asks_contacts_howto(question):
+            self.last_intent = Intent.ABOUT_BOT.value
+            yield {"type": "delta", "text": _localize(CONTACTS_HOWTO_REPLY, lang)}
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
         picked = None if force else await self._employee_followup(question, history)
         if picked:
             yield {"type": "status", "step": "employees"}
@@ -2380,6 +2389,17 @@ class AnswerQuestionUseCase:
         # Ro'yxatdan tanlov ('19') yoki aniqlashtiruvchi savolimizga javob
         # ('ha', 'meros omonati') — ikkalasi ham savolni MAHSULOT NOMIga
         # aylantiradi va routerni chetlab o'tadi.
+        # "IP ni qanday qo'shsam bo'ladi" — stream yo'li bilan bir xil
+        if _asks_contacts_howto(question):
+            self.last_intent = Intent.ABOUT_BOT.value
+            return AnswerResult(
+                answer=_localize(CONTACTS_HOWTO_REPLY, lang),
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
+            )
+
         # Xodim ro'yxatidan davom savoli — stream yo'li bilan bir xil
         picked = await self._employee_followup(question, history)
         if picked:

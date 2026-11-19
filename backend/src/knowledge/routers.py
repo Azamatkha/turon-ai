@@ -15,10 +15,24 @@ from src.audit.usecases import AuditRecorder, get_audit_recorder
 from src.core.ai.dependencies import get_ai_client
 from src.core.ai.embeddings import OllamaEmbedder, get_embedder
 from src.core.ai.interfaces import BaseAIClient
+from src.core.database.session import get_unit_of_work
+from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.schemas import SuccessResponse
 from src.core.storage.media import read_upload_limited
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.category_usecases import (
+    BulkSetCategoryUseCase,
+    CreateCategoryUseCase,
+    DeleteCategoryUseCase,
+    ListCategoriesUseCase,
+    UpdateCategoryUseCase,
+    ensure_category_exists,
+    get_create_category_use_case,
+    get_delete_category_use_case,
+    get_list_categories_use_case,
+    get_update_category_use_case,
+)
 from src.knowledge.ingest_usecases import SetKnowledgeMetaUseCase
 from src.knowledge.rescrape import (
     RescrapeStatusUseCase,
@@ -28,6 +42,9 @@ from src.knowledge.rescrape import (
 from src.knowledge.schemas import (
     AnswerResult,
     EmployeeIn,
+    KbCategoryIn,
+    KbCategoryView,
+    KnowledgeBulkCategoryRequest,
     KnowledgeDetail,
     KnowledgeItem,
     KnowledgeMetaRequest,
@@ -192,16 +209,106 @@ async def set_knowledge_meta(
     ],
     store: Annotated[QdrantStore, Depends(get_vector_store)],
     audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+    uow: Annotated[ApplicationUnitOfWork[RepositoryProtocol], Depends(get_unit_of_work)],
 ) -> SuccessResponse:
-    """Admin: hujjat turkumi (kredit/omonat/...) va izohi.
+    """Admin: hujjat turkumi (admin yaratgan turkumlardan biri) va izohi.
 
-    Turkum qo'yilsa bot katalogi ham shuni ishlatadi; null — bot o'zi aniqlaydi."""
+    Bot katalogi faqat shu turkumni ishlatadi; null — "Turkumsiz"."""
+    await ensure_category_exists(uow, data.category)
     await SetKnowledgeMetaUseCase(store=store).execute(
         title=data.title, category=data.category, note=data.note
     )
     await audit.log(
         current_user, AuditAction.KNOWLEDGE_META, "knowledge", target_label=data.title,
         details={"category": data.category, "note": data.note},
+    )
+    return SuccessResponse(success=True)
+
+
+@router.patch("/meta/bulk", response_model=SuccessResponse)
+async def set_knowledge_category_bulk(
+    data: KnowledgeBulkCategoryRequest,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+    uow: Annotated[ApplicationUnitOfWork[RepositoryProtocol], Depends(get_unit_of_work)],
+) -> SuccessResponse:
+    """Admin: belgilangan hujjatlarga birdaniga turkum qo'yish (null — olib tashlash)."""
+    done = await BulkSetCategoryUseCase(uow=uow, store=store).execute(
+        titles=data.titles, category=data.category
+    )
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_META, "knowledge",
+        target_label=f"{done} ta hujjat",
+        details={"category": data.category, "titles": data.titles[:50]},
+    )
+    return SuccessResponse(success=True)
+
+
+@router.get("/categories", response_model=list[KbCategoryView])
+async def list_categories(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[ListCategoriesUseCase, Depends(get_list_categories_use_case)],
+) -> list[KbCategoryView]:
+    """Admin: bilim bazasi turkumlari (admin o'zi boshqaradi)."""
+    return await use_case.execute()
+
+
+@router.post("/categories", response_model=KbCategoryView)
+async def create_category(
+    data: KbCategoryIn,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[CreateCategoryUseCase, Depends(get_create_category_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> KbCategoryView:
+    """Admin: yangi turkum."""
+    view = await use_case.execute(data)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_CATEGORY, "knowledge", target_label=view.name,
+        details={"action": "create", "keywords": view.keywords},
+    )
+    return view
+
+
+@router.patch("/categories/{key}", response_model=KbCategoryView)
+async def update_category(
+    key: str,
+    data: KbCategoryIn,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[UpdateCategoryUseCase, Depends(get_update_category_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> KbCategoryView:
+    """Admin: turkum nomi / kalit so'zlari / tartibi."""
+    view = await use_case.execute(key, data)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_CATEGORY, "knowledge", target_label=view.name,
+        details={"action": "update", "keywords": view.keywords},
+    )
+    return view
+
+
+@router.delete("/categories/{key}", response_model=SuccessResponse)
+async def delete_category(
+    key: str,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[DeleteCategoryUseCase, Depends(get_delete_category_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> SuccessResponse:
+    """Admin: turkumni o'chirish (hujjatlari "Turkumsiz" bo'ladi)."""
+    await use_case.execute(key)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_CATEGORY, "knowledge", target_label=key,
+        details={"action": "delete"},
     )
     return SuccessResponse(success=True)
 

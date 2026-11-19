@@ -77,7 +77,7 @@ class QuestionLogEntry:
     verdict_note: str | None = None
 
 
-async def log_question(entry: QuestionLogEntry) -> None:
+async def log_question(entry: QuestionLogEntry) -> UUID | None:
     """Savolni statistikaga yozadi.
 
     Javob oqimi (StreamingResponse) tugagach chaqiriladi — so'rovning DI
@@ -88,12 +88,12 @@ async def log_question(entry: QuestionLogEntry) -> None:
     # Statistikada ham karta/JShShIR/pasport ochiq saqlanmasin
     question = mask_pii(entry.question.strip())[0]
     if not question:
-        return
+        return None
     try:
         async with async_session() as session:
             uow = await get_uow(session)
             async with uow:
-                await uow.question_logs.create(
+                row = await uow.question_logs.create(
                     uow.session,
                     {
                         "user_id": entry.user_id,
@@ -117,8 +117,10 @@ async def log_question(entry: QuestionLogEntry) -> None:
                     },
                 )
                 await uow.commit()
+                return row.id
     except Exception:  # noqa: BLE001 - statistika javobni buzmasin
         logger.exception("Savol statistikasini yozib bo'lmadi")
+    return None
 
 SESSION_NOT_FOUND = "Suhbat topilmadi"
 

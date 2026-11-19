@@ -51,6 +51,7 @@ export const chatStatic: ChatStaticStrings = {
   notifKnowledgeSourceFailed: "Saytdagi sahifa ochilmadi — hujjat yangilanmadi",
   notifSafetyHarmful: "Xavfli so‘rov aniqlandi",
   notifSafetyProfanity: "So‘kinish bilan yozilgan xabar",
+  notifAdminMessage: "Administrator xabari",
   notifTimeNow: "Hozir",
   notifMinAgo: (m: number) => `${m} daq oldin`,
   notifHourAgo: (h: number) => `${h} soat oldin`,

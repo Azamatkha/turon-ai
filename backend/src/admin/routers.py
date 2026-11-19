@@ -37,6 +37,7 @@ from src.admin.schemas import (
     QuestionAnalyticsView,
     ReviewDislikedModel,
     SystemStatusView,
+    UserMessageRequest,
     WebAnswerPageView,
 )
 from src.admin.usecases import (
@@ -48,6 +49,7 @@ from src.admin.usecases import (
     ListWebAnswersUseCase,
     QuestionAnalyticsUseCase,
     ReviewDislikedAnswerUseCase,
+    SendUserMessageUseCase,
     SystemStatusUseCase,
     get_answer_log_use_case,
     get_dashboard_stats_use_case,
@@ -57,6 +59,7 @@ from src.admin.usecases import (
     get_list_web_answers_use_case,
     get_question_analytics_use_case,
     get_review_disliked_answer_use_case,
+    get_send_user_message_use_case,
     get_system_status_use_case,
 )
 from src.audit.actions import AuditAction
@@ -159,7 +162,7 @@ async def answer_log(
     use_case: Annotated[AnswerLogUseCase, Depends(get_answer_log_use_case)],
     days: Annotated[int, Query(ge=1, le=365)] = 30,
     verdict: Annotated[
-        str | None, Query(pattern="^(ok|fixed|failed|unchecked|cached|rejected)$")
+        str | None, Query(pattern="^(ok|fixed|failed|unchecked|cached|rejected|doubt)$")
     ] = None,
     outcome: Annotated[str | None, Query(max_length=20)] = None,
     search: Annotated[str | None, Query(max_length=100)] = None,
@@ -169,6 +172,22 @@ async def answer_log(
     """Savollar va bot bergan javoblar — yangisidan eskisiga."""
     return await use_case.execute(
         days=days, verdict=verdict, outcome=outcome, search=search, page=page, size=size
+    )
+
+
+@router.post("/questions/{log_id}/message", status_code=status.HTTP_204_NO_CONTENT)
+async def send_user_message(
+    log_id: UUID,
+    data: UserMessageRequest,
+    current_user: Annotated[User, Depends(require_permission(Permission.VIEW_DASHBOARD))],
+    use_case: Annotated[SendUserMessageUseCase, Depends(get_send_user_message_use_case)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> None:
+    """Savol bergan xodimga admin xabari — bildirishnoma bo'lib boradi."""
+    question = await use_case.execute(log_id=log_id, text=data.text)
+    await audit.log(
+        current_user, AuditAction.ANSWER_MESSAGE, "question", log_id,
+        target_label=question[:120], details={"text": data.text[:500]},
     )
 
 

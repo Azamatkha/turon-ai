@@ -336,3 +336,87 @@
   background: var(--adm-info-bg);
   color: var(--adm-info);
 }
+
+/* Belgilash rejimi — bir nechta hujjatga birdaniga turkum qo'yish */
+.selectBtn {
+  border-color: var(--adm-border-2);
+  color: var(--adm-text-body-2);
+}
+
+.selectBtnOn {
+  border-color: var(--adm-accent);
+  background: var(--adm-info-bg);
+  color: var(--adm-info);
+}
+
+.bulkBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 12px;
+  background: var(--adm-card);
+}
+
+.bulkCount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.bulkLink {
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--adm-info);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bulkApply {
+  height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--adm-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bulkApply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cardPicked {
+  outline: 2px solid var(--adm-accent);
+  outline-offset: -2px;
+}
+
+.check {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border: 1.6px solid var(--adm-border-input);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.checkOn {
+  border-color: var(--adm-accent);
+  background: var(--adm-accent);
+}
