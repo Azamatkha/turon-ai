@@ -369,3 +369,22 @@ def test_same_name_different_ips_still_asks() -> None:
 
     other = {**SHARED_B, "ip": "4032"}
     assert "Qaysi biri" in _format_employee_answer([SHARED_A, other], "aliyev")
+
+
+ZOKIR = {
+    "fish": "Tadjiyev Zokir Mirgafurovich",
+    "department": "Mijozlar servisi va marketing departamenti",
+    "position": "Bo'lim boshlig'i",
+    "ip": "1807",
+}
+
+
+def test_longer_query_word_is_another_name() -> None:
+    """"Zokirjonov" — "Zokir" emas: bazadagi qisqa ism uzunroq familiyaning
+    boshiga tushgani uchun begona xodim qaytarilmaydi."""
+    assert _match_employees([ZOKIR], "zokirjonov nurbek") == []
+
+
+def test_short_query_word_still_matches_longer_name() -> None:
+    assert _match_employees([ZOKIR], "zokir") == [ZOKIR]
+    assert _match_employees([ZOKIR], "tadjiyev zokir") == [ZOKIR]

@@ -141,6 +141,56 @@ def parse_language(text: str) -> str | None:
     return None
 
 
+# Bir martalik so'rov: "ruschaga tarjima qilib ber: <matn>" yoki matn oxirida
+# "shuni inglizchaga o'gir". Ilgari bu umumiy chat yo'liga (til savoli)
+# tushardi va u yerdagi "javob o'zbekcha" qoidasi ustun kelib, matn ruschaga
+# emas, o'zbekchada qayta yozilib qaytardi (2026-11-18/19). Endi to'g'ridan-
+# to'g'ri tarjimonga — uning prompti faqat tarjima uchun.
+_TRANSLATE_VERBS = ("tarjima", "o'gir", "ogir", "perevod", "pereved", "translat")
+_MAX_INSTRUCTION_CHARS = 80
+_MAX_INSTRUCTION_WORDS = 8
+_QUOTES = "\"'“”«»„`"
+
+
+def _instruction_language(line: str) -> str | None:
+    """Qisqa ko'rsatma qatoridan maqsad til ("ruschaga tarjima qilib ber" -> ru)."""
+    norm = _norm(line)
+    words = re.findall(r"[a-z0-9']+", norm)
+    if (
+        not words
+        or len(line.strip()) > _MAX_INSTRUCTION_CHARS
+        or len(words) > _MAX_INSTRUCTION_WORDS
+        or not any(w.startswith(_TRANSLATE_VERBS) for w in words)
+    ):
+        return None
+    for code, stems, exact in _LANG_STEMS:
+        if any(w in exact or w.startswith(stems) for w in words):
+            return code
+    return None
+
+
+def parse_one_shot(question: str) -> tuple[str, str] | None:
+    """(til kodi, tarjima qilinadigan matn) — bir martalik tarjima so'rovi
+    bo'lsa. Ko'rsatma matnning birinchi yoki oxirgi qatorida (yoki ikki
+    nuqtagacha) turadi; matnning o'rtasidagi til nomlari hisobga olinmaydi."""
+    text = question.strip()
+    lines = text.split("\n")
+    candidates: list[tuple[str, str]] = []
+    first = lines[0]
+    head, colon, after = first.partition(":")
+    if colon:
+        candidates.append((head, "\n".join([after, *lines[1:]])))
+    candidates.append((first, "\n".join(lines[1:])))
+    if len(lines) > 1:
+        candidates.append((lines[-1], "\n".join(lines[:-1])))
+    for instruction, body in candidates:
+        lang = _instruction_language(instruction)
+        body = body.strip().strip(_QUOTES).strip()
+        if lang is not None and body:
+            return lang, body
+    return None
+
+
 @dataclass(frozen=True)
 class TranslatorStep:
     """`prepare` natijasi: yo tayyor javob (`reply`), yo tarjima vazifasi."""
@@ -170,6 +220,20 @@ class TranslatorUseCase:
         uni oddiy HTTP xatosi sifatida olishi uchun."""
         cyrillic = is_cyrillic_text(question)
         command, arg = _parse_command(question)
+
+        # Rejim yoqilmagan bo'lsa ham: "ruschaga tarjima qil: <matn>" — bitta
+        # matnni tarjimon o'giradi (sessiya va holat kerak emas)
+        if command is None:
+            one_shot = parse_one_shot(question)
+            if one_shot is not None:
+                lang, body = one_shot
+                if len(body) > MAX_TEXT_CHARS:
+                    return TranslatorStep(
+                        cyrillic=cyrillic,
+                        reply=TOO_LONG.format(size=len(body), limit=MAX_TEXT_CHARS),
+                    )
+                logger.info("Bir martalik tarjima: %s, %d belgi", lang, len(body))
+                return TranslatorStep(cyrillic=cyrillic, target=lang, text=body)
 
         if session_id is None:
             # Veb/mobil sessiyasiz so'rov: holatni saqlashga joy yo'q

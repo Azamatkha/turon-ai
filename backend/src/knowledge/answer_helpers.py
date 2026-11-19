@@ -451,7 +451,11 @@ def _name_match_core(
                 # umuman xodim haqida bo'lmasa ham xodim ro'yxati qaytarilardi.
                 # Endi: "javob" -> "javohir" RAD (boshi emas), lekin
                 # "shaxzod" -> "shaxzodbek" va "xamdamboyev" QABUL.
-                if cp >= 4 and cp == min(len(qn), len(nn)):
+                # Yo'nalish faqat bitta: SAVOL so'zi ism boshiga tushadi.
+                # Teskarisi emas — bazadagi "Zokir" ismi "Zokirjonov" familiyasi
+                # boshiga tushib, "zokirjonov nurbek" so'roviga Tadjiyev Zokir
+                # qaytarilardi (2026-11-19). Uzunroq so'z — boshqa ism.
+                if cp >= 4 and cp == len(qn) <= len(nn):
                     best_cp = max(best_cp, cp)
                 # Prefiks bo'lmasa ham: savol so'zi ism bo'lagining ICHIDA
                 # to'liq uchrasa hisobga olamiz ("boyev" -> "Xamdamboyev").
@@ -2114,3 +2118,82 @@ def translation_task_note(target: str) -> str:
         "text, do NOT rewrite or correct it in its own language, do NOT comment "
         "on its content. Keep URLs, names and product names unchanged."
     )
+
+
+# --- Xodim ro'yxatidan keyingi DAVOM savoli ------------------------------ #
+# "Sirdaryo BXM ichki raqamlari" -> 15 xodim ro'yxati -> "rahbari kerak".
+# Ilgari ikkinchi savol alohida qidirilardi: unda xodim belgisi ham, filial
+# nomi ham yo'q, kod hech kimni topmasdi, vektor qidiruv esa BOSHQA filial
+# (Surxondaryo) xodimlarini olib kelib, model "ma'lumot yo'q" deb javob
+# berardi — ro'yxatda "Rahbar o'rinbosari" turgan bo'lsa ham. Endi oxirgi
+# javob xodim ro'yxati bo'lsa, yangi savol AVVAL o'sha ro'yxat ichidan
+# qidiriladi (kod bilan, model taxminisiz).
+_EMP_ANSWER_MARKER = "ichki raqam (ip)"
+_ROLE_STEMS = (
+    "rahbar", "raxbar", "boshliq", "boshqaruvchi", "direktor", "rais",
+    "mudir", "nachalnik", "rukovodit", "upravlyayu",
+)
+_FOLLOWUP_MAX_WORDS = 4
+_FOLLOWUP_STOP = _QUERY_STOP | {
+    "kerakli", "edi", "qani", "kimdir", "biri", "birini", "shulardan",
+    "ulardan", "uning", "ularning", "nujen", "nujno", "kto", "dayte",
+    "pokajite", "ego", "kotoryy",
+}
+
+
+def _employee_list_question(history: list[ChatTurn] | None) -> str | None:
+    """Oxirgi bot javobi XODIM javobi bo'lsa — uni chiqargan foydalanuvchi
+    savoli, aks holda None. Kirillcha javob ham tanib olinadi."""
+    if not history or len(history) < 2:
+        return None
+    last, prev = history[-1], history[-2]
+    if last.role != "assistant" or prev.role != "user":
+        return None
+    if _EMP_ANSWER_MARKER not in to_latin(last.content).lower():
+        return None
+    return prev.content
+
+
+def _is_role_word(word: str) -> bool:
+    return word.startswith(_ROLE_STEMS)
+
+
+def _refine_employee_list(
+    emps: list[dict[str, Any]], question: str
+) -> list[dict[str, Any]] | None:
+    """Oldingi ro'yxatdan davom savoliga mos xodimlar:
+    * "7" — ro'yxatdagi 7-xodim;
+    * "rahbari kerak" — lavozimida rahbar/boshliq/direktor... borlar
+      ("Rahbar o'rinbosari" ham);
+    * "IT", "Komplaens", "Ilhom" — bo'limi, lavozimi yoki ismi mos kelganlar.
+    Hech kim mos kelmasa yoki savol uzun (yangi savol) bo'lsa — None."""
+    q = to_latin(question).lower()
+    num = _NUM_ONLY_RE.match(q)
+    if num:
+        i = int(num.group(1))
+        return [emps[i - 1]] if 1 <= i <= len(emps) else None
+    words = [
+        w for w in _words(_drop_apos(q)) if len(w) >= 2 and w not in _FOLLOWUP_STOP
+    ]
+    if not words or len(words) > _FOLLOWUP_MAX_WORDS:
+        return None
+
+    def word_fits(w: str, toks: list[str]) -> bool:
+        if _is_role_word(w):
+            return any(_is_role_word(t) for t in toks)
+        if len(w) < 4:
+            return w in toks  # "IT", "HR" — faqat aynan
+        return any(
+            _common_prefix_len(w, t) >= max(4, min(len(w), len(t)) - 2)
+            for t in toks
+        )
+
+    out = []
+    for e in emps:
+        text = " ".join(
+            str(e.get(k, "")) for k in ("fish", "department", "division", "position")
+        )
+        toks = _words(_drop_apos(to_latin(text)))
+        if all(word_fits(w, toks) for w in words):
+            out.append(e)
+    return out or None

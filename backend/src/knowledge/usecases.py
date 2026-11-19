@@ -52,6 +52,7 @@ from src.knowledge.answer_helpers import (
     _ConceptLineFilter,
     _declined_clarify_titles,
     _dedupe_source_links,
+    _employee_list_question,
     _employees_from_payloads,
     _expand_query,
     _format_employee_answer,
@@ -79,6 +80,7 @@ from src.knowledge.answer_helpers import (
     _question_region,
     _rates_calculation,
     _rates_to_cyrillic,
+    _refine_employee_list,
     _region_of,
     _resolve_clarification,
     _resolve_list_choice,
@@ -789,6 +791,25 @@ class AnswerQuestionUseCase:
         if _has_employee_intent(q_lower) or _asks_unknown_person(people, q_lower):
             return "none", []
         return None
+
+    async def _employee_followup(
+        self, question: str, history: list[ChatTurn] | None
+    ) -> list[dict[str, Any]] | None:
+        """Oxirgi javob xodim ro'yxati bo'lsa — yangi savolni ("rahbari kerak",
+        "7", "IT dagisi") AVVAL o'sha ro'yxat ichidan qidiradi. Ro'yxat oldingi
+        savol bilan qayta tuziladi (xuddi shu kod, shu tartib). Mos kelmasa
+        None — savol odatdagi yo'ldan ketadi."""
+        prev_q = _employee_list_question(history)
+        if prev_q is None:
+            return None
+        prev_q = to_latin(prev_q)
+        emps = await self._directory_hits(prev_q)
+        if not emps:
+            route = await self._employee_route(prev_q)
+            if route is None or route[0] != "answer":
+                return None
+            emps = route[1]
+        return _refine_employee_list(emps, question)
 
     REWRITE_MAX_TOKENS = 120
 
@@ -1665,6 +1686,28 @@ class AnswerQuestionUseCase:
         # Ro'yxatdan tanlov ('19') yoki aniqlashtiruvchi savolimizga javob
         # ('ha', 'meros omonati') — ikkalasi ham savolni MAHSULOT NOMIga
         # aylantiradi va routerni chetlab o'tadi.
+        # Oldingi javob xodim ro'yxati bo'lsa — davom savoli ("rahbari kerak",
+        # "7") o'sha ro'yxat ichidan javob oladi. Mahsulot ro'yxati tanlovidan
+        # OLDIN: aks holda "7" mahsulot bandi deb olinardi.
+        picked = None if force else await self._employee_followup(question, history)
+        if picked:
+            yield {"type": "status", "step": "employees"}
+            self.last_intent = Intent.EMPLOYEE.value
+            self._last_context = None
+            emp_text = _format_employee_answer(picked, question)
+            yield {
+                "type": "delta",
+                "text": to_cyrillic(emp_text) if want_cyrillic else emp_text,
+            }
+            yield {
+                "type": "done",
+                "completion_tokens": 0,
+                "finish_reason": "stop",
+                "max_tokens": self.MAX_TOKENS,
+                "sources": [],
+            }
+            return
+
         resolved = _resolve_list_choice(question, history) or _resolve_clarification(
             question, history
         )
@@ -2333,6 +2376,18 @@ class AnswerQuestionUseCase:
         # Ro'yxatdan tanlov ('19') yoki aniqlashtiruvchi savolimizga javob
         # ('ha', 'meros omonati') — ikkalasi ham savolni MAHSULOT NOMIga
         # aylantiradi va routerni chetlab o'tadi.
+        # Xodim ro'yxatidan davom savoli — stream yo'li bilan bir xil
+        picked = await self._employee_followup(question, history)
+        if picked:
+            emp_text = _format_employee_answer(picked, question)
+            return AnswerResult(
+                answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
+                sources=[],
+                finish_reason="stop",
+                completion_tokens=0,
+                max_tokens=self.MAX_TOKENS,
+            )
+
         resolved = _resolve_list_choice(question, history) or _resolve_clarification(
             question, history
         )

@@ -768,9 +768,11 @@ EMPLOYEE_IP_NOT_FOUND_REPLY = (
 )
 
 EMPLOYEE_NOT_FOUND_REPLY = (
-    "Bu so'rov bo'yicha xodim topilmadi. Xodimning familiyasini yoki ismini "
-    "to'liqroq yozing, yoki bo'lim nomini ko'rsating — masalan: \"IT "
-    "departament xodimlari\" yoki \"Xamdamov ichki raqami\"."
+    "Bu so'rov bo'yicha xodim topilmadi. Xodim qaysi filialda (BXM) yoki "
+    "departamentda ishlashini aniqlashtira olasizmi? Shunda o'sha bo'lim "
+    "xodimlarining raqamlarini beraman — kerakli odamni ulardan so'rashingiz "
+    "mumkin. Masalan: \"IT departament xodimlari\" yoki \"Sirdaryo BXM ichki "
+    "raqamlari\"."
 )
 
 
@@ -959,9 +961,11 @@ RU_CANNED_REPLIES.update(
             "или укажите фамилию сотрудника."
         ),
         EMPLOYEE_NOT_FOUND_REPLY: (
-            "По этому запросу сотрудник не найден. Напишите фамилию или имя "
-            "сотрудника полнее либо укажите название отдела — например: "
-            "\"сотрудники IT департамента\" или \"внутренний номер Xamdamov\"."
+            "По этому запросу сотрудник не найден. Уточните, пожалуйста, в каком "
+            "филиале (БХМ) или департаменте он работает — тогда я дам номера "
+            "сотрудников этого подразделения, и вы сможете уточнить у них. "
+            "Например: \"сотрудники IT департамента\" или \"внутренние номера "
+            "Sirdaryo BXM\"."
         ),
         SMALLTALK_FALLBACK_REPLY: (
             "Здравствуйте! Я внутренний AI-помощник Туронбанка — задавайте "

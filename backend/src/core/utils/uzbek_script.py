@@ -37,7 +37,9 @@ _MAP: dict[str, str] = {"o'": "ў", "g'": "ғ", **dict(_DIGRAPHS), **_SINGLE}
 _apos_cls = "[" + re.escape(_APOSTROPHES) + "]"
 _PATTERN = re.compile(
     "o" + _apos_cls + "|" + "g" + _apos_cls + "|"
-    "sh|ch|yo|yu|ya|ng|[a-z]|" + _apos_cls,
+    # "yo" dan keyin apostrof kelsa ("yo'q") — bu "y" + "o'" (йўқ), "ё" emas:
+    # ilgari "yo'q" -> "ёъқ" bo'lib chiqardi.
+    "sh|ch|yo(?!" + _apos_cls + ")|yu|ya|ng|[a-z]|" + _apos_cls,
     re.IGNORECASE,
 )
 
