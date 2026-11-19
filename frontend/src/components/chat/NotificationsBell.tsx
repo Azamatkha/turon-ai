@@ -107,16 +107,54 @@ function NotifThumb({ n, alt }: { n: ApiNotification; alt: string }) {
   return <img className={styles.thumb} src={url} alt={alt} />;
 }
 
-function ImageViewer({ n, alt, closeLabel, onClose }: { n: ApiNotification; alt: string; closeLabel: string; onClose: () => void }) {
+// Admin xabari to'liq: ro'yxatda matn 2 qatorda kesiladi, bu oynada esa
+// butun matn va rasm (bo'lsa) to'liq o'lchamda ko'rinadi.
+function AdminMessageViewer({
+  n,
+  s,
+  tk,
+  onClose,
+}: {
+  n: ApiNotification;
+  s: ChatStaticStrings;
+  tk: ThemeTokens;
+  onClose: () => void;
+}) {
   const url = useNotifImage(n);
   const ref = useModalA11y<HTMLDivElement>(onClose);
+  const text = n.params?.title ?? "";
   return createPortal(
     <div className={styles.viewer} onClick={onClose}>
-      <div ref={ref} role="dialog" aria-modal="true" aria-label={alt} className={styles.viewerInner}>
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-label={s.notifAdminMessage}
+        className={styles.viewerCard}
+        style={{ background: tk.card, border: "1px solid " + tk.cardBorder }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.viewerHead}>
+          <span className={styles.viewerTitle} style={{ color: tk.strong }}>
+            {s.notifAdminMessage}
+          </span>
+          <span className={styles.rowTime} style={{ color: tk.disc }}>
+            {relTime(n.created_at, s)}
+          </span>
+        </div>
+        {text && (
+          <div className={styles.viewerText} style={{ color: tk.strong }}>
+            {text}
+          </div>
+        )}
+        {url && (
+          <a href={url} target="_blank" rel="noreferrer">
+            <img src={url} alt={s.notifImageAlt} className={styles.viewerImg} />
+          </a>
+        )}
         <button type="button" className={styles.viewerClose} onClick={onClose}>
-          {closeLabel}
+          {s.notifImageClose}
         </button>
-        {url && <img src={url} alt={alt} className={styles.viewerImg} />}
       </div>
     </div>,
     document.body
@@ -339,7 +377,8 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                     onClick={() => {
                       if (href) return openLink(n, href);
                       if (!n.is_read) void markRead(n.id);
-                      if (hasImage) setViewing(n);
+                      // Admin xabari — to'liq matn va rasm alohida oynada
+                      if (isAdminMsg) setViewing(n);
                     }}
                   >
                     <span
@@ -356,9 +395,8 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
                         </span>
                       </span>
                       {bodyFor(n, s) && (
-                        // Admin xabari to'liq ko'rinsin (kesilmasin)
                         <span
-                          className={`${styles.rowText} ${isAdminMsg ? styles.rowTextFull : ""}`}
+                          className={styles.rowText}
                           style={{ color: tk.muted }}
                         >
                           {bodyFor(n, s)}
@@ -374,7 +412,7 @@ export default function NotificationsBell({ tk, isDark, s }: NotificationsBellPr
           document.body
         )}
       {viewing && (
-        <ImageViewer n={viewing} alt={s.notifImageAlt} closeLabel={s.notifImageClose} onClose={() => setViewing(null)} />
+        <AdminMessageViewer n={viewing} s={s} tk={tk} onClose={() => setViewing(null)} />
       )}
     </div>
   );
