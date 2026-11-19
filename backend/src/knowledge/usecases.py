@@ -92,6 +92,8 @@ from src.knowledge.answer_helpers import (
     _word_match,
     _words,
     category_label,
+    translation_target,
+    translation_task_note,
 )
 from src.knowledge.directory import directory_users, users_with_keywords
 from src.knowledge.ingest_usecases import (
@@ -1136,6 +1138,12 @@ class AnswerQuestionUseCase:
             if convo
             else f"QUESTION: {question}"
         )
+        if intent is Intent.LANGUAGE:
+            # Maqsad tilni kod aniqlaydi va eng oxirida aytadi — aks holda
+            # "javob o'zbekcha" qoidasi ustun kelib, matn o'zbekchada qaytardi
+            target = translation_target(question)
+            if target is not None:
+                prompt += translation_task_note(target)
         return prompt, system, max_toks
 
     def _employee_prompt(
@@ -1884,8 +1892,14 @@ class AnswerQuestionUseCase:
             # u yerda matn baribir bir alifboga keltiriladi. Ruscha javobda
             # ikkalasi ham O'CHIQ: tuzatuvchi kirill harflarni lotinga
             # "to'g'rilab" yuborardi.
-            tr = StreamingTransliterator() if want_cyrillic else None
-            sf = StreamingScriptFixer() if lang == "uz" else None
+            # Tarjimada matn so'ralgan tilda qoladi — kirillga o'girish yoki
+            # alifbo "tuzatish" inglizcha/ruscha tarjimani buzardi
+            translating = (
+                nosearch_intent is Intent.LANGUAGE
+                and translation_target(question) is not None
+            )
+            tr = StreamingTransliterator() if want_cyrillic and not translating else None
+            sf = StreamingScriptFixer() if lang == "uz" and not translating else None
             lf = _ConceptLineFilter()
             # web_ok bo'lsa javob boshini ushlab turamiz: NEEDS_WEB
             # foydalanuvchiga chiqmasin
@@ -2458,9 +2472,14 @@ class AnswerQuestionUseCase:
                     max_tokens=self.MAX_TOKENS,
                 )
             text = _clean_concept_answer(gen.text)
-            if want_cyrillic:
+            # Tarjima — so'ralgan tilda qoladi (qara: oqimli yo'l)
+            translating = (
+                decision.intent is Intent.LANGUAGE
+                and translation_target(question) is not None
+            )
+            if want_cyrillic and not translating:
                 text = to_cyrillic(text)
-            elif lang == "uz":
+            elif lang == "uz" and not translating:
                 text = fix_mixed_script(text)
             return AnswerResult(
                 answer=text,

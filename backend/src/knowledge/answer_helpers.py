@@ -2071,3 +2071,46 @@ def _narrow_by_title(
             return None  # bunday nomdagi mahsulot yo'q
         picked, narrowed = hits, True
     return picked if narrowed else None
+
+
+# ------- Tarjima: qaysi tilga? ------- #
+# Til savoli prompti "butun javob o'zbek lotinida" deydi; tarjima istisnosi
+# bitta jumla. Uzun matnda model shu qoidaga bo'ysunib, "ruschaga tarjima
+# qilib ber" so'roviga matnning o'zini o'zbekchada qayta yozib qaytardi
+# (2026-11-18). Shuning uchun maqsad tilni KOD aniqlaydi va modelga aniq
+# aytadi. Faqat til NOMLARI (ruscha/inglizcha/o'zbekcha) — so'z ro'yxati
+# emas, yopiq to'plam.
+_APOS = "['‘’ʻʼ`]"
+_TRANSLATE_TARGETS: tuple[tuple[str, str], ...] = (
+    ("Russian", r"\brus(?:chaga|\s+tiliga)\b|\bрус(?:часига|часи|чага|\s+тилига)|на\s+русск|по-русски"),
+    ("English", r"\bingliz(?:chaga|\s+tiliga)\b|\bинглиз(?:чага|\s+тилига)|на\s+английск|по-английски|\binto\s+english\b"),
+    (
+        "Uzbek (Latin script)",
+        rf"\bo{_APOS}?zbek(?:chaga|\s+tiliga)\b|\bўзбек(?:чага|\s+тилига)|на\s+узбекск",
+    ),
+)
+# Ko'rsatma odatda matn boshida yoki oxirida — o'rtadagi (tarjima qilinadigan
+# matn ichidagi) til nomlari hisobga olinmaydi
+_TRANSLATE_HEAD = 300
+_TRANSLATE_TAIL = 200
+
+
+def translation_target(question: str) -> str | None:
+    """Foydalanuvchi qaysi tilga tarjima so'ragan (inglizcha nomi) — yo'q bo'lsa None."""
+    text = question.strip()
+    probe = (text[:_TRANSLATE_HEAD] + "\n" + text[-_TRANSLATE_TAIL:]).lower()
+    for name, pattern in _TRANSLATE_TARGETS:
+        if re.search(pattern, probe):
+            return name
+    return None
+
+
+def translation_task_note(target: str) -> str:
+    """Til savoli promptining OXIRIGA qo'shiladigan aniq topshiriq."""
+    return (
+        f"\n\nTASK (decided by the system from the user's request): translate "
+        f"the user's text into {target}. Output the COMPLETE translation of "
+        f"every paragraph and list item in {target}. Do NOT return the original "
+        "text, do NOT rewrite or correct it in its own language, do NOT comment "
+        "on its content. Keep URLs, names and product names unchanged."
+    )

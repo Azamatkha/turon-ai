@@ -557,3 +557,42 @@ def test_verifier_text_task_rule() -> None:
 
     assert "TEXT TASKS" in VERIFY_SYSTEM
     assert "never apply rules 3, 7 or 7a" in VERIFY_SYSTEM
+
+
+@pytest.mark.parametrize(
+    "question,target",
+    [
+        ("ruschaga tarjimaga qilib ber\n\"MS Store’dagi aniq manzillarni topa olmadim\"", "Russian"),
+        ("inglizchaga tarjima qilib ber: Salom", "English"),
+        ("rus tiliga o'gir: kredit muddati", "Russian"),
+        ("Переведи на английский: кредит", "English"),
+        ("русчага таржима қил: кредит", "Russian"),
+        ("o‘zbekchaga tarjima qil: срок кредита", "Uzbek (Latin script)"),
+        ("mutolaa so'zining ma'nosi nima", None),
+        # Matn O'RTASIDAGI til nomi ko'rsatma emas
+        ("shu matnni tuzat: " + "x " * 200 + "u ruschaga yaxshi gapiradi " + "y " * 150, None),
+    ],
+)
+def test_translation_target(question: str, target: str | None) -> None:
+    from src.knowledge.answer_helpers import translation_target
+
+    assert translation_target(question) == target
+
+
+def test_translation_note_goes_into_language_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    uc = AnswerQuestionUseCase(embedder=None, store=None, ai_client=None)  # type: ignore[arg-type]
+    prompt, _, _ = uc._no_search_call(Intent.LANGUAGE, "ruschaga tarjima qilib ber: Salom", None)
+    assert "translate the user's text into Russian" in prompt
+    prompt, _, _ = uc._no_search_call(Intent.LANGUAGE, "salom so'zining ma'nosi", None)
+    assert "TASK" not in prompt
+
+
+@pytest.mark.asyncio
+async def test_translation_output_not_transliterated(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Kirillda yozilgan so'rovda ham inglizcha tarjima kirillga o'girilmaydi."""
+    monkeypatch.setattr(config.web_search, "WEB_SEARCH_ENABLED", False)
+    answer = "I could not find the exact links."
+    ai = _SysAI(answer)
+    uc = _language_uc(monkeypatch, ai)
+    text = await _raw(uc, "инглизчага таржима қил: аниқ манзилларни топа олмадим", None, None)
+    assert text == answer
