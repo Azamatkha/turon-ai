@@ -69,7 +69,7 @@ from src.knowledge.answer_helpers import (
     _last_turn_was_clarify,
     _localize,
     _match_by_number,
-    _match_employees,
+    _match_employees_ex,
     _mentions_catalog_title,
     _merge_employee_sources,
     _merge_results,
@@ -689,6 +689,9 @@ class AnswerQuestionUseCase:
             if any(_keyword_hit(k, qwords) for k in kws)
         ]
 
+    # Oxirgi xodim qidiruvi sarlavhasi (qara: _match_employees_ex)
+    _emp_note: str | None = None
+
     async def _employee_route(
         self, question: str
     ) -> tuple[str, list[dict[str, Any]]] | None:
@@ -698,6 +701,7 @@ class AnswerQuestionUseCase:
         ("no_ip", []) — IP egasi so'raldi, bunday raqamli xodim yo'q;
         ("none", []) — xodim so'raldi, lekin topilmadi;
         None — bu xodim savoli emas (mahsulot RAG'ga o'tadi)."""
+        self._emp_note = None
         # Xodimlarni doc_type filtri bilan TO'LIQ sahifalab olamiz — 5000'lik
         # scroll_all cheklovi kolleksiya kattalashganda xodimlarni "yo'qotib"
         # qo'yardi (shuning uchun bir xil savol goh topib, goh topmasdi).
@@ -776,7 +780,7 @@ class AnswerQuestionUseCase:
         # familiyasi bir xil boshqa odam) topilsa, fayl umuman qaralmasdi
         # ("ubaydulloyeva maftuna" so'roviga Umida chiqardi), filial so'rovida
         # esa xodimlarning bir qismi chiqmay qolardi.
-        matched = _match_employees(people, q_lower)
+        matched, self._emp_note = _match_employees_ex(people, q_lower)
         if matched:
             # Javobni endi kod tuzadi (model emas), shuning uchun token cheklovi
             # yo'q — katta bo'lim ham to'liq chiqadi.
@@ -2096,7 +2100,7 @@ class AnswerQuestionUseCase:
             # Router savolni "concept" degan bo'lsa ham kontakt keshga
             # tushib, keyin boshqa savolga ham shu javob qaytib qolardi.
             self.last_intent = Intent.EMPLOYEE.value
-            emp_text = _format_employee_answer(emps, question)
+            emp_text = _format_employee_answer(emps, question, self._emp_note)
             yield {
                 "type": "delta",
                 "text": to_cyrillic(emp_text) if want_cyrillic else emp_text,
@@ -2598,7 +2602,7 @@ class AnswerQuestionUseCase:
             # Router savolni "concept" degan bo'lsa ham kontakt keshga
             # tushib, keyin boshqa savolga ham shu javob qaytib qolardi.
             self.last_intent = Intent.EMPLOYEE.value
-            emp_text = _format_employee_answer(emps, question)
+            emp_text = _format_employee_answer(emps, question, self._emp_note)
             return AnswerResult(
                 answer=to_cyrillic(emp_text) if want_cyrillic else emp_text,
                 sources=[],

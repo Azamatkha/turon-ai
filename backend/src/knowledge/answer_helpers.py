@@ -314,13 +314,27 @@ def _shared_ip(emps: list[dict[str, Any]], question: str) -> str | None:
     return ip if ip and ip in re.findall(r"\d+", question) else None
 
 
-def _format_employee_answer(emps: list[dict[str, Any]], question: str = "") -> str:
+def _format_employee_answer(
+    emps: list[dict[str, Any]], question: str = "", note: str | None = None
+) -> str:
     """Xodim javobini KOD tuzadi, model emas.
 
     Sabab: modelga qoldirilganda u 16 xodimdan 8 tasini yozib to'xtab qolgan,
     undan oldin esa umuman mavjud bo'lmagan xodimlarni va soxta telefon
     raqamlarini to'qib chiqargan edi. Bank ma'lumotnomasida ro'yxat to'liq va
-    aynan bazadagidek bo'lishi shart, shuning uchun uni kod kafolatlaydi."""
+    aynan bazadagidek bo'lishi shart, shuning uchun uni kod kafolatlaydi.
+
+    `note` — qidiruv nima topganini aytuvchi sarlavha ("IT bo'limida «Sardor»
+    ismli 3 ta xodim bor:"). Ro'yxat savolga qanday aloqasi borligini
+    foydalanuvchi o'zi taxmin qilmasin."""
+    if note:
+        lines = [f"{i}. {_format_employee_line(e)}" for i, e in enumerate(emps, 1)]
+        tail = (
+            "\n\nQaysi biri kerak? Tartib raqamini yozing."
+            if len(emps) > 1 and "kerakli odamni" not in note
+            else ""
+        )
+        return f"{note}\n\n" + "\n".join(lines) + tail
     if len(emps) == 1:
         return _format_employee_line(emps[0]) + "."
 
@@ -658,17 +672,90 @@ def _place_score(
     return score + (100 * len(hits) // len(distinctive)) if coverage else score
 
 
+def _dept_and_name(
+    scored: list[tuple[int, dict[str, Any]]],
+    emps: list[dict[str, Any]],
+    q_lower: str,
+) -> tuple[list[dict[str, Any]], str | None]:
+    """Bo'lim topildi — savolda ISM ham bormi, bo'lsa o'sha bo'lim ichidan.
+
+    Ilgari faqat ENG YUQORI balli bo'lim qaralardi va unda ism topilmasa
+    butun bo'lim jim qaytarilardi: "IT dagi Sardor" so'roviga Sardorsiz 10
+    kishilik "IT DEPARTAMENT" ro'yxati chiqdi — Sardorlar esa ayni shu
+    bo'limning boshqacha yozilgan nomi ("Axborot texnologiyalari
+    departamenti (IT departamenti)") ostida edi. Endi:
+      1) bo'limlar ball tartibida ko'riladi, ism birinchi topilgan bo'limdan;
+      2) mos bo'limlarning hech birida yo'q bo'lsa — butun bazadan, va
+         javob boshida "bu bo'limda topilmadi" deb OCHIQ aytiladi;
+      3) savolda ism bo'lmasa — butun bo'lim ro'yxati (avvalgidek).
+    Ikkinchi qiymat — javob sarlavhasi (nima uchun aynan shu ro'yxat)."""
+    by_score: dict[int, list[dict[str, Any]]] = {}
+    for sc, e in scored:
+        by_score.setdefault(sc, []).append(e)
+    groups = [by_score[sc] for sc in sorted(by_score, reverse=True)]
+    top_dept = str(groups[0][0].get("department", "")).strip()
+
+    # Ism-so'zlar: bo'lim nomidagi so'zlar ("axborot", "texnologiyalari")
+    # chiqariladi va faqat bazada KIMNINGDIR ismiga mos kelganlari qoladi —
+    # "bormiu" kabi ortiqcha so'z ism deb olinmaydi.
+    dept_words = {
+        w
+        for grp in groups
+        for e in grp[:1]
+        for w in _words(_drop_apos(str(e.get("department", ""))))
+        if len(w) >= 4
+    }
+    name_toks = [
+        t
+        for t in _name_query_tokens(q_lower)
+        if not any(_common_prefix_len(t, w) >= min(len(t), len(w), 5) for w in dept_words)
+        and _score_by_name(emps, [t])
+    ]
+    if not name_toks:
+        return groups[0], None
+
+    label = " ".join(t.capitalize() for t in name_toks)
+    for grp in groups:
+        named = _score_by_name(grp, name_toks)
+        if named:
+            dept = str(named[0].get("department", "")).strip() or top_dept
+            note = (
+                f"«{dept}» bo'limida «{label}» ismli {len(named)} ta xodim bor:"
+                if len(named) > 1
+                else None
+            )
+            return named, note
+    elsewhere = _score_by_name(emps, name_toks)
+    if elsewhere:
+        return elsewhere, (
+            f"«{top_dept}» bo'limida «{label}» ismli xodim topilmadi. "
+            f"Boshqa bo'limlarda «{label}» ismli {len(elsewhere)} ta xodim bor:"
+        )
+    return groups[0], (
+        f"«{top_dept}» bo'limida «{label}» ismli xodim topilmadi. "
+        "Bo'lim xodimlari — kerakli odamni ulardan so'rashingiz mumkin:"
+    )
+
+
 def _match_employees(
     emps: list[dict[str, Any]], q_lower: str
 ) -> list[dict[str, Any]]:
+    """Savolga mos xodimlar (sarlavhasiz) — qara: _match_employees_ex."""
+    return _match_employees_ex(emps, q_lower)[0]
+
+
+def _match_employees_ex(
+    emps: list[dict[str, Any]], q_lower: str
+) -> tuple[list[dict[str, Any]], str | None]:
     """Savolga mos xodimlarni ANIQ moslash bilan topadi: IP raqami, telefon,
-    bo'lim nomi yoki F.I.SH bo'yicha. Topilmasa bo'sh ro'yxat."""
+    bo'lim nomi yoki F.I.SH bo'yicha. Topilmasa bo'sh ro'yxat. Ikkinchi
+    qiymat — ro'yxat nima uchun shunday ekanini aytuvchi sarlavha (yoki None)."""
     qwords = set(_words(_drop_apos(q_lower)))
 
     # 1-2) IP / telefon — aniq raqam moslash (yagona manba: _match_by_number)
     by_number = _match_by_number(emps, q_lower)
     if by_number:
-        return by_number
+        return by_number, None
 
     # 3) Bo'lim nomi — FAQAT savolda aniq xodim-niyat (xodim/ip) bo'lsa. Aks holda
     # filial/manzil so'rovlari ("...bank xizmatlari markazi") xodim bo'limiga
@@ -710,13 +797,7 @@ def _match_employees(
             if sc:
                 scored.append((sc, e))
         if scored:
-            top = max(sc for sc, _ in scored)
-            dept_emps = [e for sc, e in scored if sc == top]
-            # Savolda bo'lim BILAN BIRGA ism ham aytilgan bo'lsa ("IT
-            # departamenti Shaxzodning ip raqami") — butun bo'limni emas,
-            # o'sha bo'lim ichidan ismni qidiramiz.
-            named = _score_by_name(dept_emps, _name_query_tokens(q_lower))
-            return named or dept_emps
+            return _dept_and_name(scored, emps, q_lower)
 
     # 4) F.I.SH — QISMAN moslash: savoldagi so'z ism/familiyaning boshiga mos
     # kelsa yetarli ("Shaxzod" -> "Shaxzodbek", "Jasur" -> "Jasurbek"). Eng ko'p
@@ -728,9 +809,9 @@ def _match_employees(
     # so'zlar tasodifan ismga mos kelib, "qaysi filial yaqin" savoliga
     # xodimlar ro'yxati qaytarilardi.
     if _has_non_employee_signal(q_lower) and not _has_employee_intent(q_lower):
-        return []
+        return [], None
 
-    return _score_by_name(emps, _name_query_tokens(q_lower))
+    return _score_by_name(emps, _name_query_tokens(q_lower)), None
 
 
 # Foydalanuvchi ro'yxatdan faqat RAQAM yozib tanlashi mumkin ("53"). Bunda

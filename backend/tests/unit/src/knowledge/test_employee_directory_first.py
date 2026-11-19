@@ -6,7 +6,8 @@ from typing import Any
 import pytest
 
 from src.knowledge import usecases as uc_mod
-from src.knowledge.usecases import AnswerQuestionUseCase, _match_employees
+from src.knowledge.answer_helpers import _match_employees
+from src.knowledge.usecases import AnswerQuestionUseCase
 
 VEC_EMP = {
     "doc_type": "employee",

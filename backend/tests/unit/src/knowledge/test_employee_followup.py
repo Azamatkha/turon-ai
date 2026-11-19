@@ -88,3 +88,48 @@ def test_yoq_to_cyrillic(latin: str) -> None:
     """"yo'q" — "й" + "ў" + "қ"; ilgari "ёъқ" bo'lib chiqardi."""
     assert to_cyrillic(latin).endswith("йўқ")
     assert uc_mod.to_cyrillic("Yoshlar") == "Ёшлар"  # oddiy "yo" o'zgarmagan
+
+
+# --- Bo'lim + ism: "IT dagi Sardor" (2026-11-19 server logi) ------------- #
+from src.knowledge.answer_helpers import _match_employees_ex  # noqa: E402
+
+IT_FILE = [
+    _emp("KULMATOV XAYRULLO XABIBULLOYEVICH", "IT DEPARTAMENT", "Bosh direktor", "2201"),
+    _emp("G'ANIYEV ABDUMUTAL SUVANOVICH", "IT DEPARTAMENT", "Bo'lim boshlig'i", "2204"),
+]
+IT_USERS = [
+    _emp("Raimov Sardor Nayim O'g'li", "Axborot texnologiyalari departamenti (IT departamenti)", "Bosh mutaxassis", "5303"),
+    _emp("Abdusalomov Sardor Orif O'g'li", "Axborot texnologiyalari departamenti (IT departamenti)", "Junior backend dasturchi"),
+]
+RISK_SARDOR = _emp("Toshev Sardor", "Risk departamenti", "Bosh mutaxassis", "2301")
+PEOPLE = IT_FILE + IT_USERS + [RISK_SARDOR]
+
+
+def test_it_name_found_under_other_spelling_of_department() -> None:
+    """Eng mos "IT DEPARTAMENT" da Sardor yo'q — ro'yxat jim berilmaydi,
+    Sardorlar shu bo'limning boshqa nomi ostidan topiladi."""
+    emps, note = _match_employees_ex(PEOPLE, "it dagi sardor ni ip yoki telefon raqami bormi")
+    assert emps == IT_USERS
+    assert note is not None and "«Sardor» ismli 2 ta xodim bor" in note
+    text = _format_employee_answer(emps, "", note)
+    assert text.startswith("«Axborot texnologiyalari departamenti (IT departamenti)» bo'limida")
+    assert "Qaysi biri kerak?" in text
+
+
+def test_full_department_name_with_name() -> None:
+    q = "axborot texnologiyalari departamentidagi sardorni ip raqami bormiu"
+    emps, note = _match_employees_ex(PEOPLE, q)
+    assert emps == IT_USERS
+    assert note is not None and "Sardor" in note and "Bormiu" not in note
+
+
+def test_name_missing_in_department_says_so() -> None:
+    emps, note = _match_employees_ex(IT_FILE + [RISK_SARDOR], "it departament sardor ip raqami")
+    assert emps == [RISK_SARDOR]
+    assert note is not None and "topilmadi" in note and "Boshqa bo'limlarda" in note
+
+
+def test_department_without_name_is_plain_list() -> None:
+    emps, note = _match_employees_ex(PEOPLE, "risk departamenti xodimlari ip raqamlari")
+    assert emps == [RISK_SARDOR]
+    assert note is None
