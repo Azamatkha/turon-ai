@@ -19,7 +19,7 @@ from src.core.errors.exceptions import (
 )
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.qdrant_store import QdrantStore
-from src.knowledge.categories import kb_categories
+from src.knowledge.categories import kb_categories, payload_categories
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import (
@@ -47,7 +47,7 @@ logger = get_logger(__name__)
 
 # Admin qo'lda qo'yadigan payload maydonlari: tahrir / qayta scrape paytida
 # hujjat qayta yoziladi, bular esa yo'qolmasligi kerak.
-ADMIN_META_FIELDS = ("valid_until", "category", "note")
+ADMIN_META_FIELDS = ("valid_until", "category", "audience", "note")
 
 
 class UploadKnowledgeUseCase:
@@ -466,13 +466,16 @@ class ListKnowledgeUseCase:
                     "preview": "",
                     "uploaded_at": "",
                     "valid_until": "",
-                    "category": "",
+                    "categories": [],
+                    "audience": "",
                     "note": "",
                     "source_url": "",
                 },
             )
             group["chunks"] += 1
-            for key in ("category", "note", "source_url"):
+            if not group["categories"]:
+                group["categories"] = payload_categories(payload)
+            for key in ("audience", "note", "source_url"):
                 if payload.get(key) and not group[key]:
                     group[key] = str(payload[key])
             # Birinchi bo'lak (chunk_index == 0) matnidan qisqa ko'rinish olamiz
@@ -499,7 +502,8 @@ class ListKnowledgeUseCase:
                 uploaded_at=data["uploaded_at"],
                 valid_until=data["valid_until"],
                 duplicates=duplicates.get(title, []),
-                category=data["category"] if data["category"] in known else "",
+                categories=[k for k in data["categories"] if k in known],
+                audience=data["audience"],
                 note=data["note"],
             )
             for title, data in grouped.items()
@@ -584,19 +588,45 @@ class UpdateKnowledgeUseCase:
 
 
 class SetKnowledgeMetaUseCase:
-    """Hujjatga turkum va izoh qo'yadi (None/bo'sh — olib tashlaydi).
+    """Hujjatga turkumlar, mijoz turi va izoh qo'yadi (bo'sh — olib tashlaydi).
 
     Faqat payload yangilanadi — vektorlar qayta hisoblanmaydi."""
 
     def __init__(self, store: QdrantStore) -> None:
         self.store = store
 
-    async def execute(self, title: str, category: str | None, note: str | None) -> None:
+    async def execute(
+        self,
+        title: str,
+        categories: list[str],
+        note: str | None,
+        audience: str | None = None,
+    ) -> None:
         if not await self.store.search_by_field("title", title, limit=1):
             raise InstanceNotFoundException("Ma'lumot topilmadi")
+        cats = list(dict.fromkeys(c for c in categories if c))
         await self.store.set_payload_by_title(
-            title, {"category": category or None, "note": (note or "").strip() or None}
+            title,
+            {
+                "category": cats or None,
+                "audience": audience or None,
+                "note": (note or "").strip() or None,
+            },
         )
+
+
+class BulkDeleteKnowledgeUseCase:
+    """Belgilangan hujjatlarni bittada o'chiradi. O'chirilganlar sonini qaytaradi."""
+
+    def __init__(self, store: QdrantStore) -> None:
+        self.store = store
+
+    async def execute(self, titles: list[str]) -> int:
+        done = 0
+        for title in dict.fromkeys(t for t in titles if t):
+            await self.store.delete_by_title(title)
+            done += 1
+        return done
 
 
 class SetKnowledgeValidityUseCase:

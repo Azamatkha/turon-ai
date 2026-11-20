@@ -71,3 +71,97 @@
   line-height: 1.5;
   color: var(--adm-text-muted-2);
 }
+
+.sub {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted-2);
+}
+
+.label + .sub {
+  margin-top: 0;
+}
+
+/* Turkum va mijoz turi tanlovlari — bosiladigan "chip"lar */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 999px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--adm-hover);
+}
+
+.chipOn,
+.chipOn:hover:not(:disabled) {
+  border-color: var(--adm-accent);
+  background: var(--adm-accent);
+  color: #fff;
+}
+
+.chipNew {
+  border-style: dashed;
+  color: var(--adm-info);
+}
+
+.newRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.newInput {
+  width: 200px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1.6px solid var(--adm-border-input);
+  border-radius: 10px;
+  background: var(--adm-input-bg);
+  color: var(--adm-text-strong);
+  font: inherit;
+  font-size: 14px;
+}
+
+.newBtn {
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--adm-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.linkBtn {
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  color: var(--adm-text-muted-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}

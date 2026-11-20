@@ -145,3 +145,67 @@ def match_categories(q: str, cats: list[CategoryDef]) -> list[CategoryDef]:
             scored.append((-max(len(k) for k in hits), len(cat.keywords), order, cat))
     scored.sort(key=lambda s: s[:3])
     return [s[3] for s in scored]
+
+
+def payload_categories(payload: dict) -> list[str]:
+    """Hujjat turkumlari kalitlari. Bitta hujjat bir NECHTA turkumda bo'lishi
+    mumkin ("Avtokredit" — ham Kreditlar, ham Avtokreditlar). Eski yozuvlarda
+    `category` bitta satr edi — u ham o'qiladi."""
+    raw = payload.get("category")
+    if isinstance(raw, str):
+        return [raw] if raw else []
+    if isinstance(raw, (list, tuple)):
+        return list(dict.fromkeys(str(x) for x in raw if x))
+    return []
+
+
+# ---------- Mijoz turi: jismoniy / yuridik shaxs ----------
+# Admin hujjatga qo'yadi (payload `audience`). Bo'sh — belgilanmagan.
+AUDIENCES = ("individual", "legal", "both")
+
+# Model kontekstida ko'rsatiladigan izoh (AUDIENCE qatori)
+AUDIENCE_PROMPT = {
+    "individual": "individuals only (jismoniy shaxslar)",
+    "legal": "legal entities and entrepreneurs only (yuridik shaxslar, tadbirkorlar)",
+    "both": "both individuals and legal entities",
+}
+
+# Savolda mijoz turini bildiruvchi so'z o'zaklari (lotin, apostrofsiz).
+# Ruscha so'zlar to_latin orqali shu ko'rinishga keladi ("юридических" ->
+# "yuridicheskix", "физических" -> "fizicheskix").
+_LEGAL_STEMS = ("yuridi", "korxona", "tadbirkor", "biznes", "yatt")
+_INDIVIDUAL_STEMS = ("jismoniy", "fizichesk", "fizlic")
+# Mijoz turi so'zi bilan birga keladigan, o'zi shart bo'lmagan so'zlar
+_AUDIENCE_FILLER = ("shaxs", "lits", "lic", "subyekt")
+
+
+def _flat_words(q: str) -> list[str]:
+    return _norm(q).replace("'", "").replace("-", " ").split()
+
+
+def question_audience(q: str) -> str | None:
+    """Savol jismoniy yoki yuridik shaxslar haqidami. Ikkalasi ham (yoki
+    hech biri) aytilgan bo'lsa — None (filtr qo'llanmaydi)."""
+    words = _flat_words(q)
+    legal = any(w.startswith(s) for w in words for s in _LEGAL_STEMS)
+    individual = any(w.startswith(s) for w in words for s in _INDIVIDUAL_STEMS)
+    if legal == individual:
+        return None
+    return "legal" if legal else "individual"
+
+
+def is_audience_word(word: str) -> bool:
+    """So'z faqat mijoz turini bildiradimi ("yuridik", "shaxslar") — turkum
+    ichida toraytirishda mahsulot sharti hisoblanmaydi."""
+    w = word.lower()
+    return any(
+        w.startswith(s) for s in (*_LEGAL_STEMS, *_INDIVIDUAL_STEMS, *_AUDIENCE_FILLER)
+    )
+
+
+def audience_fits(item_audience: str, wanted: str | None) -> bool:
+    """Hujjat so'ralgan mijoz turiga mosmi. Belgilanmagan va "ikkalasi"
+    hujjatlar har doim mos (ma'lumot yo'qligi sababli yashirilmaydi)."""
+    if not wanted or item_audience in ("", "both"):
+        return True
+    return item_audience == wanted

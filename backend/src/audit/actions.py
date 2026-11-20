@@ -31,6 +31,18 @@ class AuditAction(StrEnum):
     BACKUP_RUN = "backup.run"
 
 
+# Jurnalga YOZILMAYDIGAN mayda amallar (admin so'rovi, 2026-11-20): turkum va
+# izoh qo'yish, turkumlar ro'yxatini tahrirlash, foydalanuvchini tahrirlash.
+# Ular juda ko'p bo'lib, muhim amallarni (o'chirish, yuklash) ko'mib yuborardi.
+# Avval yozilganlari ham ro'yxatda ko'rsatilmaydi.
+SKIPPED_ACTIONS = frozenset(
+    {
+        AuditAction.KNOWLEDGE_META,
+        AuditAction.KNOWLEDGE_CATEGORY,
+        AuditAction.USER_UPDATE,
+    }
+)
+
 # details'ga qiymati yozilmaydigan maydonlar: sirlar va shaxsiy ma'lumot.
 # Jurnalda faqat "maydon o'zgardi" ko'rinadi ("***").
 SECRET_FIELDS = frozenset(

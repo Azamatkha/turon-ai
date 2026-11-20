@@ -199,12 +199,13 @@ async def list_audit_logs(
     use_case: Annotated[ListAuditLogsUseCase, Depends(get_list_audit_logs_use_case)],
     target_type: str | None = None,
     search: Annotated[str | None, Query(max_length=100)] = None,
+    sort: Annotated[str, Query(pattern="^(newest|oldest|actor|action)$")] = "newest",
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> AuditLogPageView:
-    """Admin amallari jurnali — yangisidan eskisiga."""
+    """Admin amallari jurnali (sahifalab, tanlangan tartibda)."""
     return await use_case.execute(
-        target_type=target_type, search=search, page=page, size=size
+        target_type=target_type, search=search, sort=sort, page=page, size=size
     )
 
 

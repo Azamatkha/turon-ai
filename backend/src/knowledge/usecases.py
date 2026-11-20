@@ -94,9 +94,14 @@ from src.knowledge.answer_helpers import (
     translation_task_note,
 )
 from src.knowledge.categories import (
+    AUDIENCE_PROMPT,
     UNCATEGORIZED_LABEL,
+    audience_fits,
+    is_audience_word,
     kb_categories,
     match_categories,
+    payload_categories,
+    question_audience,
 )
 from src.knowledge.directory import directory_users, users_with_keywords
 from src.knowledge.ingest_usecases import (
@@ -289,6 +294,8 @@ class AnswerQuestionUseCase:
         # Javob tekshiruvi (qara: execute_stream, verifier.py)
         self.last_verdict: str | None = None
         self.last_verdict_note: str | None = None
+        # Hujjat -> mijoz turi (payload `audience`); katalog o'qilganda to'ladi
+        self._title_audience: dict[str, str] = {}
         self._retry_hint: str | None = None
         self._last_context: str | None = None
         self._effective_question: str | None = None
@@ -316,7 +323,9 @@ class AnswerQuestionUseCase:
         # ro'yxatdan tushib qolardi: "Omonatlar" so'ralganda «Meros omonati»
         # chiqmay qo'ygan edi, garchi bazada tursa ham.
         payloads = await self._scroll_points()
-        # Turkum — FAQAT admin qo'ygani (payload "category" = turkum kaliti).
+        self._title_audience = {}
+        # Turkum — FAQAT admin qo'ygani (payload "category" = turkum kalitlari;
+        # hujjat bir NECHTA turkumda bo'lishi mumkin va har birida ko'rinadi).
         # Avtomatik taxmin yo'q: u ko'p adashardi (2026-11-19). Turkumi
         # qo'yilmagan yoki turkumi o'chirilgan hujjat UNCATEGORIZED_LABEL
         # ostida turadi — katalogda bor, lekin hech qaysi turkum ro'yxatida emas.
@@ -326,24 +335,28 @@ class AnswerQuestionUseCase:
             # title bo'yicha noyob mahsulotlar. Xodimlar (doc_type=employee)
             # mahsulot katalogiga kirmaydi.
             texts: dict[str, list[str]] = {}
-            labels: dict[str, str] = {}
+            labels: dict[str, list[str]] = {}
             for p in payloads:
                 if p.get("doc_type") == "employee" or _is_ru_doc(p) != ru:
                     continue
                 title = str(p.get("title", "")).strip()
                 if not title:
                     continue
-                key = str(p.get("category") or "")
-                if key in names:
-                    labels.setdefault(title, names[key])
+                if title not in labels:
+                    own = [names[k] for k in payload_categories(p) if k in names]
+                    if own:
+                        labels[title] = list(dict.fromkeys(own))
+                if p.get("audience"):
+                    self._title_audience.setdefault(title, str(p["audience"]))
                 # Bitta mahsulot bir necha bo'lakdan iborat — hammasini
                 # yig'amiz, manzil qaysi bo'lakda bo'lishidan qat'i nazar topilsin.
                 texts.setdefault(title, []).append(str(p.get("chunk_text", "")))
 
             groups: dict[str, list[tuple[str, str]]] = {}
             for title, parts in texts.items():
-                label = labels.get(title, UNCATEGORIZED_LABEL)
-                groups.setdefault(label, []).append((title, " ".join(parts)))
+                text = " ".join(parts)
+                for label in labels.get(title) or [UNCATEGORIZED_LABEL]:
+                    groups.setdefault(label, []).append((title, text))
             return groups
 
         uz_groups = build(ru=False)
@@ -384,6 +397,15 @@ class AnswerQuestionUseCase:
         else:
             branch = {c.name for c in cats if c.is_branch}
             groups = {k: v for k, v in groups.items() if k not in branch}
+        # "Yuridik shaxslar uchun ..." — boshqa mijoz turiga belgilangan
+        # mahsulotlar katalogga kirmaydi (belgilanmaganlar qoladi)
+        want_aud = question_audience(question)
+        if want_aud:
+            groups = {
+                k: [t for t in v if audience_fits(self._title_audience.get(t, ""), want_aud)]
+                for k, v in groups.items()
+            }
+            groups = {k: v for k, v in groups.items() if v}
 
         blocks: list[str] = []
         used = 0
@@ -445,6 +467,8 @@ class AnswerQuestionUseCase:
                         partial.append(title)
         # Bittadan ko'p bo'lsa ham chegaradan ortig'i kerak emas: chaqiruvchi
         # faqat "nechta" ekanini biladi va ko'p bo'lsa aniqlashtirmaydi.
+        # Ko'p turkumli hujjat bir necha guruhda turadi — takrorsiz
+        partial = list(dict.fromkeys(partial))
         return exact, partial[: _CLARIFY_MAX_OPTIONS + 1]
 
     async def _broad_category_reply(
@@ -512,10 +536,25 @@ class AnswerQuestionUseCase:
 
         # Savoldagi kalit so'z bo'yicha turkum — admin turkumlari va ularning
         # kalit so'zlari (categories.match_categories: eng aniq moslik birinchi).
+        want_aud = question_audience(question)
         for cat in match_categories(question, await kb_categories()):
             items = groups.get(cat.name)
             if not items:
                 continue
+            # Mijoz turi so'ralgan ("yuridik shaxslar uchun kreditlar") va
+            # turkumda belgilangan hujjat bor — ro'yxat shu bo'yicha
+            # toraytiriladi. Hech biri belgilanmagan bo'lsa filtr ISHONCHSIZ:
+            # savol avvalgidek modelga ketadi (u matnni o'qib ajratadi).
+            aud_filter = bool(want_aud) and any(
+                self._title_audience.get(t) for t, _ in items
+            )
+            if aud_filter:
+                items = [
+                    it for it in items
+                    if audience_fits(self._title_audience.get(it[0], ""), want_aud)
+                ]
+                if not items:
+                    continue
 
             # Filiallar — yagona turkum, unda toraytirish ISHONCHLI bajariladi:
             # shart har doim HUDUD bo'ladi va hudud ma'lumotning o'zida yozilgan.
@@ -541,6 +580,7 @@ class AnswerQuestionUseCase:
                 w for w in _words(q.replace("'", ""))
                 if len(w) >= 4
                 and w not in _BROAD_QUESTION_STOPWORDS
+                and not (aud_filter and is_audience_word(w))
                 and not any(w.startswith(g) or g.startswith(w) for g in generic)
             ]
             shown = items
@@ -1217,6 +1257,12 @@ class AnswerQuestionUseCase:
                     "say in your answer that the information may be outdated and "
                     "should be confirmed."
                 )
+            # Mijoz turi (admin belgilagan) — model mahsulot kimga ekanini
+            # bilsin: yuridik shaxs so'raganda jismoniylar mahsulotini taklif
+            # qilmasin
+            audience = AUDIENCE_PROMPT.get(str(payload.get("audience") or ""))
+            if audience:
+                header += f"\nFOR CLIENTS: {audience}"
             block = f"{header}\n{payload.get('chunk_text', '')}"
             # Byudjet tugasa qolgan bo'laklar tashlab yuboriladi — ular
             # baribir eng uzoq (eng kam mos) natijalar.

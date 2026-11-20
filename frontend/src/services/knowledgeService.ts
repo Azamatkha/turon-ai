@@ -28,6 +28,10 @@ export interface KbCategory {
   sort_order: number;
 }
 
+// Mijoz turi: jismoniy shaxslar / yuridik shaxslar / ikkalasi
+export type Audience = "individual" | "legal" | "both";
+export const AUDIENCES: Audience[] = ["individual", "legal", "both"];
+
 export interface KbCategoryInput {
   name: string;
   keywords: string[];
@@ -46,8 +50,10 @@ export interface KnowledgeItem {
   valid_until?: string;
   // Matni aynan bir xil boshqa hujjatlar (dublikat)
   duplicates?: string[];
-  // Admin qo'ygan turkum kaliti; qo'yilmagan bo'lsa bo'sh satr
-  category?: string;
+  // Admin qo'ygan turkumlar kalitlari (bir nechta bo'lishi mumkin); bo'sh — "Turkumsiz"
+  categories?: string[];
+  // Mijoz turi; belgilanmagan bo'lsa bo'sh satr
+  audience?: Audience | "";
   // Admin izohi
   note?: string;
 }
@@ -124,15 +130,16 @@ export async function setKnowledgeValidity(title: string, validUntil: string | n
   if (!res.ok) throw new Error(await readError(res, "Muddatni saqlashda xatolik"));
 }
 
-// Turkum (null — "Turkumsiz") va izoh (bo'sh — olib tashlanadi)
+// Turkumlar (bo'sh — "Turkumsiz"), mijoz turi (null — belgilanmagan) va izoh
 export async function setKnowledgeMeta(
   title: string,
-  category: string | null,
+  categories: string[],
+  audience: Audience | null,
   note: string
 ): Promise<void> {
   const res = await apiFetch("/v1/admin/knowledge/meta", {
     method: "PATCH",
-    body: JSON.stringify({ title, category, note: note.trim() || null }),
+    body: JSON.stringify({ title, categories, audience, note: note.trim() || null }),
   });
   if (!res.ok) throw new Error(await readError(res, "Turkumni saqlashda xatolik"));
 }
@@ -276,11 +283,24 @@ export async function deleteCategory(key: string): Promise<void> {
   if (!res.ok) throw new Error(await readError(res, "Turkumni o'chirishda xatolik"));
 }
 
-// Belgilangan hujjatlarga birdaniga turkum qo'yish (null — olib tashlash)
-export async function setCategoryBulk(titles: string[], category: string | null): Promise<void> {
+// Belgilangan hujjatlarga birdaniga: turkum qo'shish / olib tashlash (boshqa
+// turkumlari saqlanadi) va mijoz turi ("none" — belgini olib tashlash)
+export async function setKnowledgeBulk(
+  titles: string[],
+  change: { add?: string[]; remove?: string[]; audience?: Audience | "none" }
+): Promise<void> {
   const res = await apiFetch("/v1/admin/knowledge/meta/bulk", {
     method: "PATCH",
-    body: JSON.stringify({ titles, category }),
+    body: JSON.stringify({ titles, ...change }),
   });
   if (!res.ok) throw new Error(await readError(res, "Turkumni saqlashda xatolik"));
+}
+
+// Belgilangan hujjatlarni bittada o'chirish
+export async function deleteKnowledgeBulk(titles: string[]): Promise<void> {
+  const res = await apiFetch("/v1/admin/knowledge/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ titles }),
+  });
+  if (!res.ok) throw new Error(await readError(res, "O'chirishda xatolik"));
 }

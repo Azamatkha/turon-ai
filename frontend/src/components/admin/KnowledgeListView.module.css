@@ -420,3 +420,33 @@
   border-color: var(--adm-accent);
   background: var(--adm-accent);
 }
+
+/* Mijoz turi belgisi (jismoniy / yuridik / ikkalasi) */
+.audience {
+  border: 1px solid transparent;
+  background: var(--adm-success-bg, var(--adm-hover));
+  color: var(--adm-success);
+}
+
+.bulkInput {
+  width: 200px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1.6px solid var(--adm-border-input);
+  border-radius: 10px;
+  background: var(--adm-input-bg);
+  color: var(--adm-text-strong);
+  font: inherit;
+  font-size: 14px;
+}
+
+/* Ommaviy o'chirish — qizil tugma va ogohlantirish */
+.bulkDanger {
+  background: var(--adm-danger);
+}
+
+.bulkWarn {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--adm-danger);
+}

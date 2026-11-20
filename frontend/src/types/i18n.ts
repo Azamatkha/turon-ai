@@ -575,6 +575,18 @@ export interface AdminStrings {
   knowledgeBulkApply: string;
   knowledgeBulkCancel: string;
   knowledgeBulkDone: (n: number) => string;
+  knowledgeBulkAction: Record<"add" | "remove" | "audience" | "delete", string>;
+  knowledgeBulkAudiencePick: string;
+  knowledgeBulkDeleteConfirm: (n: number) => string;
+  knowledgeBulkDeleteYes: string;
+  knowledgeBulkDeleted: (n: number) => string;
+  knowledgeCategoriesPick: string;
+  knowledgeCategoryNew: string;
+  knowledgeCategoryNewPh: string;
+  knowledgeCategoryCreate: string;
+  knowledgeAudienceLabel: string;
+  knowledgeAudienceAll: string;
+  knowledgeAudience: Record<"none" | "individual" | "legal" | "both", string>;
   knowledgeNoteLabel: string;
   knowledgeNotePh: string;
   knowledgeMetaSave: string;
@@ -674,6 +686,7 @@ export interface AdminStrings {
   auditLoadError: string;
   auditEmpty: string;
   auditSearchPh: string;
+  auditSort: Record<"newest" | "oldest" | "actor" | "action", string>;
   auditColActor: string;
   auditColAction: string;
   auditColTarget: string;

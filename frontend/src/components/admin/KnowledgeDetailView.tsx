@@ -5,6 +5,7 @@ import {
   getKnowledgeDetail,
   updateKnowledge,
   deleteKnowledge,
+  type Audience,
   type KbCategory,
   type KnowledgeDetail,
 } from "../../services/knowledgeService";
@@ -17,9 +18,10 @@ interface Props {
   title: string;
   // Amal qilish muddati (ro'yxatdan keladi — detail endpointi uni bermaydi)
   validUntil?: string;
-  // Turkum va izoh (ro'yxatdan keladi)
-  category?: string;
+  // Turkumlar, mijoz turi va izoh (ro'yxatdan keladi)
+  itemCategories?: string[];
   categories?: KbCategory[];
+  audience?: Audience | "";
   note?: string;
   onBack: () => void;
   onChanged: () => void; // ro'yxatni yangilash uchun
@@ -41,8 +43,9 @@ function stripTitlePrefix(text: string, title: string): string {
 export default function KnowledgeDetailView({
   title,
   validUntil = "",
-  category = "",
+  itemCategories = [],
   categories = [],
+  audience = "",
   note = "",
   onBack,
   onChanged,
@@ -149,8 +152,9 @@ export default function KnowledgeDetailView({
           <div className={styles.title}>{detail.title}</div>
           <KnowledgeMetaEditor
             title={detail.title}
-            category={category}
-            categories={categories}
+            categories={itemCategories}
+            allCategories={categories}
+            audience={audience}
             note={note}
             t={admin}
             onSaved={onChanged}

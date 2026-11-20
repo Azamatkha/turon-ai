@@ -274,11 +274,15 @@ export interface AuditLogPage {
   total: number;
 }
 
+// newest — yangisidan, oldest — eskisidan, actor — bajaruvchi, action — amal
+export type AuditSort = "newest" | "oldest" | "actor" | "action";
+
 export async function listAuditLogs(
-  opts: { targetType?: string; search?: string; page?: number; size?: number } = {}
+  opts: { targetType?: string; search?: string; sort?: AuditSort; page?: number; size?: number } = {}
 ): Promise<AuditLogPage> {
   const q = new URLSearchParams();
   if (opts.targetType) q.set("target_type", opts.targetType);
+  if (opts.sort) q.set("sort", opts.sort);
   if (opts.search?.trim()) q.set("search", opts.search.trim());
   if (opts.page != null) q.set("page", String(opts.page));
   if (opts.size != null) q.set("size", String(opts.size));

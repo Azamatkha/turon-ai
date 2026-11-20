@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import FilterSelect from "./FilterSelect";
-import { listAuditLogs, type AuditLogItem } from "../../services/adminService";
+import { listAuditLogs, type AuditLogItem, type AuditSort } from "../../services/adminService";
 import type { AdminStrings } from "../../types/i18n";
+import { pageList } from "../../utils/pageList";
 import styles from "./AuditLogsView.module.css";
+
+const PAGE_SIZE = 50;
 
 interface AuditLogsViewProps {
   mounted: boolean;
@@ -38,20 +41,25 @@ export default function AuditLogsView({ mounted, t: admin }: AuditLogsViewProps)
   const [targetType, setTargetType] = useState("");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<AuditSort>("newest");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Qidiruv har harfda so'rov yubormasin — 350ms kutamiz
   useEffect(() => {
-    const id = window.setTimeout(() => setQuery(search), 350);
+    const id = window.setTimeout(() => {
+      setQuery(search);
+      setPage(1);
+    }, 350);
     return () => window.clearTimeout(id);
   }, [search]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listAuditLogs({ targetType, search: query, size: 200 });
+      const data = await listAuditLogs({ targetType, search: query, sort, page, size: PAGE_SIZE });
       setItems(data.items);
       setTotal(data.total);
       setErr(null);
@@ -62,20 +70,25 @@ export default function AuditLogsView({ mounted, t: admin }: AuditLogsViewProps)
     } finally {
       setLoading(false);
     }
-  }, [targetType, query, admin.auditLoadError]);
+  }, [targetType, query, sort, page, admin.auditLoadError]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const actionLabel = (a: string) => admin.auditActions[a] ?? a;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
 
   return (
     <div className={mounted ? `${styles.wrap} ${styles.in}` : styles.wrap}>
       <div className={styles.toolbar}>
         <FilterSelect
           value={targetType}
-          onChange={setTargetType}
+          onChange={(v) => {
+            setTargetType(v);
+            setPage(1);
+          }}
           options={[
             { value: "", label: admin.auditTypeAll },
             { value: "user", label: admin.auditTypeUser },
@@ -84,6 +97,14 @@ export default function AuditLogsView({ mounted, t: admin }: AuditLogsViewProps)
             { value: "guide", label: admin.auditTypeGuide },
             { value: "message", label: admin.auditTypeMessage },
           ]}
+        />
+        <FilterSelect
+          value={sort}
+          onChange={(v) => {
+            setSort(v as AuditSort);
+            setPage(1);
+          }}
+          options={(["newest", "oldest", "actor", "action"] as const).map((k) => ({ value: k, label: admin.auditSort[k] }))}
         />
         <input
           className={styles.search}
@@ -147,6 +168,29 @@ export default function AuditLogsView({ mounted, t: admin }: AuditLogsViewProps)
             </div>
           );
         })}
+
+        {total > PAGE_SIZE && (
+          <nav className={styles.pager} aria-label={admin.pageRange(start + 1, start + items.length, total)}>
+            <span className={styles.pagerInfo}>{admin.pageRange(start + 1, start + items.length, total)}</span>
+            <div className={styles.pagerBtns}>
+              <button type="button" className={styles.pageBtn} onClick={() => setPage(page - 1)} disabled={page === 1 || loading} aria-label={admin.pagePrev}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              {pageList(page, totalPages).map((p, i) =>
+                p === null ? (
+                  <span key={`gap-${i}`} className={styles.pageGap}>…</span>
+                ) : (
+                  <button key={p} type="button" className={`${styles.pageBtn} ${p === page ? styles.pageBtnActive : ""}`} onClick={() => setPage(p)} disabled={loading} aria-current={p === page ? "page" : undefined}>
+                    {p}
+                  </button>
+                )
+              )}
+              <button type="button" className={styles.pageBtn} onClick={() => setPage(page + 1)} disabled={page === totalPages || loading} aria-label={admin.pageNext}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+              </button>
+            </div>
+          </nav>
+        )}
       </div>
     </div>
   );

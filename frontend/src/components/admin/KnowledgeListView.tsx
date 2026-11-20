@@ -3,12 +3,16 @@ import HButton from "../common/HButton";
 import FilterSelect from "./FilterSelect";
 import type { AdminStrings } from "../../types/i18n";
 import {
+  AUDIENCES,
+  createCategory,
+  deleteKnowledgeBulk,
   employeeStats,
   listCategories,
   listKnowledge,
-  setCategoryBulk,
+  setKnowledgeBulk,
   uploadEmployees,
   uploadEmployeesJson,
+  type Audience,
   type KbCategory,
   type KnowledgeItem,
 } from "../../services/knowledgeService";
@@ -26,6 +30,13 @@ interface KnowledgeListViewProps {
 
 // Vektor bazaga yuklangan ma'lumotlar ro'yxati (sarlavha bo'yicha guruhlangan).
 type SortKey = "title" | "chunks" | "newest" | "oldest";
+// Belgilanganlar bilan nima qilinadi
+type BulkAction = "add" | "remove" | "audience" | "delete";
+
+// Filtrlarda "turkumsiz" / "belgilanmagan" qiymati
+const NONE = "__none__";
+// Ommaviy turkum qo'shishda — "yangi turkum yaratish" varianti
+const NEW_CAT = "__new__";
 
 // Sanani solishtirish uchun xavfsiz son (bo'sh/noto'g'ri sana -> 0).
 // Eski yozuvlarda `uploaded_at` bo'lmasligi mumkin — ular oxirida turadi.
@@ -49,10 +60,16 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<KbCategory[]>([]);
   const [catsOpen, setCatsOpen] = useState(false);
-  // Belgilash rejimi: bir nechta hujjatga birdaniga turkum qo'yish
+  // Mijoz turi filtri: "" — hammasi, NONE — belgilanmagan
+  const [audFilter, setAudFilter] = useState("");
+  // Belgilash rejimi: bir nechta hujjatga birdaniga turkum / mijoz turi
+  // qo'yish yoki ularni bittada o'chirish
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [bulkCat, setBulkCat] = useState("");
+  const [bulkAction, setBulkAction] = useState<BulkAction>("add");
+  const [bulkValue, setBulkValue] = useState("");
+  const [bulkNewName, setBulkNewName] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [empUploading, setEmpUploading] = useState(false);
@@ -141,8 +158,9 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
       <KnowledgeDetailView
         title={selected}
         validUntil={sel?.valid_until ?? ""}
-        category={sel?.category ?? ""}
+        itemCategories={(sel?.categories ?? []).filter((k) => categories.some((c) => c.key === k))}
         categories={categories}
+        audience={sel?.audience ?? ""}
         note={sel?.note ?? ""}
         onBack={() => setSelected(null)}
         onChanged={load}
@@ -152,16 +170,24 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   }
 
   const q = search.trim().toLowerCase();
-  const NONE = "__none__";
   const names = new Map(categories.map((c) => [c.key, c.name]));
-  // Turkumi o'chirilgan yoki qo'yilmagan — "Turkumsiz"
-  const catOf = (it: KnowledgeItem) => (it.category && names.has(it.category) ? it.category : NONE);
-  // Har turkumda nechta hujjat bor — filtr variantlarida ko'rsatiladi
+  // Hujjat turkumlari (o'chirilgan turkumlar tashlanadi); bo'sh — "Turkumsiz"
+  const catsOf = (it: KnowledgeItem) => (it.categories ?? []).filter((k) => names.has(k));
+  // Har turkumda nechta hujjat bor — filtr variantlarida ko'rsatiladi.
+  // Bir nechta turkumdagi hujjat har birida sanaladi.
   const catCounts = new Map<string, number>();
   for (const it of items) {
-    const c = catOf(it);
-    catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
+    const own = catsOf(it);
+    for (const c of own.length ? own : [NONE]) catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
   }
+  const audOf = (it: KnowledgeItem) => it.audience || NONE;
+  const audCounts = new Map<string, number>();
+  for (const it of items) audCounts.set(audOf(it), (audCounts.get(audOf(it)) ?? 0) + 1);
+  const audienceOptions = [
+    { value: "", label: admin.knowledgeAudienceAll },
+    ...AUDIENCES.map((a) => ({ value: a, label: `${admin.knowledgeAudience[a]} (${audCounts.get(a) ?? 0})` })),
+    { value: NONE, label: `${admin.knowledgeAudience.none} (${audCounts.get(NONE) ?? 0})` },
+  ];
   const categoryOptions = [
     { value: "", label: `${admin.knowledgeCategoryAll} (${items.length})` },
     { value: NONE, label: `${admin.knowledgeCategoryNone} (${catCounts.get(NONE) ?? 0})` },
@@ -175,7 +201,12 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
         it.preview.toLowerCase().includes(q) ||
         (it.note ?? "").toLowerCase().includes(q)
     )
-    .filter((it) => !category || catOf(it) === category)
+    .filter((it) => {
+      if (!category) return true;
+      const own = catsOf(it);
+      return category === NONE ? own.length === 0 : own.includes(category);
+    })
+    .filter((it) => !audFilter || audOf(it) === audFilter)
     .filter((it) => !onlyStale || isStale(it))
     .sort((a, b) => {
       if (sortKey === "chunks") return b.chunks - a.chunks;
@@ -195,15 +226,49 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
   const stopSelecting = () => {
     setSelecting(false);
     setPicked(new Set());
-    setBulkCat("");
+    setBulkValue("");
+    setBulkNewName("");
+    setConfirmDelete(false);
   };
 
+  // Tanlangan amalga mos variantlar (o'chirishda variant yo'q)
+  const bulkOptions =
+    bulkAction === "audience"
+      ? [
+          { value: "", label: admin.knowledgeBulkAudiencePick },
+          ...AUDIENCES.map((a) => ({ value: a, label: admin.knowledgeAudience[a] })),
+          { value: "none", label: admin.knowledgeAudience.none },
+        ]
+      : [
+          { value: "", label: admin.knowledgeBulkPick },
+          ...categories.map((c) => ({ value: c.key, label: c.name })),
+          ...(bulkAction === "add" ? [{ value: NEW_CAT, label: admin.knowledgeCategoryNew }] : []),
+        ];
+  const bulkReady =
+    picked.size > 0 &&
+    (bulkAction === "delete" || (bulkValue !== "" && (bulkValue !== NEW_CAT || bulkNewName.trim() !== "")));
+
   const applyBulk = async () => {
-    if (picked.size === 0) return;
+    if (!bulkReady) return;
+    if (bulkAction === "delete" && !confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
     setBulkBusy(true);
+    const titles = [...picked];
     try {
-      await setCategoryBulk([...picked], bulkCat && bulkCat !== NONE ? bulkCat : null);
-      setEmpMsg(admin.knowledgeBulkDone(picked.size));
+      if (bulkAction === "delete") {
+        await deleteKnowledgeBulk(titles);
+        setEmpMsg(admin.knowledgeBulkDeleted(titles.length));
+      } else if (bulkAction === "audience") {
+        await setKnowledgeBulk(titles, { audience: bulkValue as Audience | "none" });
+        setEmpMsg(admin.knowledgeBulkDone(titles.length));
+      } else {
+        let key = bulkValue;
+        if (key === NEW_CAT) key = (await createCategory({ name: bulkNewName.trim(), keywords: [] })).key;
+        await setKnowledgeBulk(titles, bulkAction === "add" ? { add: [key] } : { remove: [key] });
+        setEmpMsg(admin.knowledgeBulkDone(titles.length));
+      }
       stopSelecting();
       await load();
     } catch (e) {
@@ -298,6 +363,7 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             placeholder={admin.knowledgeSearchPh}
           />
           <FilterSelect value={category} onChange={setCategory} options={categoryOptions} />
+          <FilterSelect value={audFilter} onChange={setAudFilter} options={audienceOptions} />
           <FilterSelect
             value={sortKey}
             onChange={(v) => setSortKey(v as SortKey)}
@@ -340,21 +406,41 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
             {admin.knowledgeSelectAllVisible}
           </button>
           <FilterSelect
-            value={bulkCat}
-            onChange={setBulkCat}
-            options={[
-              { value: "", label: admin.knowledgeBulkPick },
-              ...categories.map((c) => ({ value: c.key, label: c.name })),
-              { value: NONE, label: admin.knowledgeCategoryNone },
-            ]}
+            value={bulkAction}
+            onChange={(v) => {
+              setBulkAction(v as BulkAction);
+              setBulkValue("");
+              setConfirmDelete(false);
+            }}
+            options={(["add", "remove", "audience", "delete"] as const).map((a) => ({
+              value: a,
+              label: admin.knowledgeBulkAction[a],
+            }))}
           />
+          {bulkAction !== "delete" && <FilterSelect value={bulkValue} onChange={setBulkValue} options={bulkOptions} />}
+          {bulkValue === NEW_CAT && (
+            <input
+              className={styles.bulkInput}
+              value={bulkNewName}
+              maxLength={100}
+              autoFocus
+              onChange={(e) => setBulkNewName(e.target.value)}
+              placeholder={admin.knowledgeCategoryNewPh}
+              aria-label={admin.knowledgeCategoryNewPh}
+            />
+          )}
+          {confirmDelete && <span className={styles.bulkWarn}>{admin.knowledgeBulkDeleteConfirm(picked.size)}</span>}
           <button
             type="button"
-            className={styles.bulkApply}
+            className={`${styles.bulkApply} ${bulkAction === "delete" ? styles.bulkDanger : ""}`}
             onClick={() => void applyBulk()}
-            disabled={bulkBusy || picked.size === 0 || !bulkCat}
+            disabled={bulkBusy || !bulkReady}
           >
-            {admin.knowledgeBulkApply}
+            {bulkAction === "delete"
+              ? confirmDelete
+                ? admin.knowledgeBulkDeleteYes
+                : admin.knowledgeBulkAction.delete
+              : admin.knowledgeBulkApply}
           </button>
           <button type="button" className={styles.bulkLink} onClick={stopSelecting} disabled={bulkBusy}>
             {admin.knowledgeBulkCancel}
@@ -394,10 +480,17 @@ export default function KnowledgeListView({ mounted, t: admin, onAddClick }: Kno
               {it.preview && <div className={styles.preview}>{it.preview}…</div>}
               <div className={styles.cardFoot}>
                 <span className={styles.lang}>{it.lang.toUpperCase()}</span>
-                {/* Turkum qo'yilgan — to'q rangda, turkumsiz — xira */}
-                <span className={`${styles.category} ${catOf(it) !== NONE ? styles.categoryManual : ""}`}>
-                  {catOf(it) !== NONE ? names.get(catOf(it)) : admin.knowledgeCategoryNone}
-                </span>
+                {/* Turkumlar — to'q rangda, turkumsiz — xira */}
+                {catsOf(it).length > 0 ? (
+                  catsOf(it).map((k) => (
+                    <span key={k} className={`${styles.category} ${styles.categoryManual}`}>
+                      {names.get(k)}
+                    </span>
+                  ))
+                ) : (
+                  <span className={styles.category}>{admin.knowledgeCategoryNone}</span>
+                )}
+                {it.audience && <span className={`${styles.category} ${styles.audience}`}>{admin.knowledgeAudience[it.audience]}</span>}
                 {it.duplicates && it.duplicates.length > 0 && (
                   <span className={`${styles.validity} ${styles.vSoon}`} title={it.duplicates.join("\n")}>
                     {admin.knowledgeDuplicate(it.duplicates.length)}

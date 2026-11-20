@@ -11,7 +11,11 @@ from src.core.errors.exceptions import (
     InstanceNotFoundException,
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
-from src.knowledge.categories import invalidate_categories, parse_keywords
+from src.knowledge.categories import (
+    invalidate_categories,
+    parse_keywords,
+    payload_categories,
+)
 from src.knowledge.models import KbCategory
 from src.knowledge.schemas import KbCategoryIn, KbCategoryView
 
@@ -111,20 +115,23 @@ class DeleteCategoryUseCase:
         invalidate_categories()
 
 
-async def ensure_category_exists(
-    uow: ApplicationUnitOfWork[RepositoryProtocol], key: str | None
+async def ensure_categories_exist(
+    uow: ApplicationUnitOfWork[RepositoryProtocol], keys: list[str]
 ) -> None:
-    """Hujjatga qo'yilayotgan turkum haqiqatan mavjudmi (None — olib tashlash)."""
-    if not key:
+    """Hujjatga qo'yilayotgan turkumlar haqiqatan mavjudmi."""
+    keys = [k for k in dict.fromkeys(keys) if k]
+    if not keys:
         return
     async with uow as u:
-        if await u.kb_categories.get_single(u.session, key=key) is None:
-            raise InstanceNotFoundException(CATEGORY_NOT_FOUND)
+        existing = {c.key for c in await u.kb_categories.list_ordered(u.session)}
+    if any(k not in existing for k in keys):
+        raise InstanceNotFoundException(CATEGORY_NOT_FOUND)
 
 
-class BulkSetCategoryUseCase:
-    """Belgilangan hujjatlarga bitta turkum qo'yadi — faqat payload yangilanadi,
-    vektorlar qayta hisoblanmaydi."""
+class BulkKnowledgeMetaUseCase:
+    """Belgilangan hujjatlarga turkum QO'SHADI / OLIB TASHLAYDI (hujjatning
+    boshqa turkumlari saqlanadi) va ixtiyoriy mijoz turini qo'yadi. Faqat
+    payload yangilanadi, vektorlar qayta hisoblanmaydi."""
 
     def __init__(
         self, uow: ApplicationUnitOfWork[RepositoryProtocol], store: QdrantStore
@@ -132,13 +139,33 @@ class BulkSetCategoryUseCase:
         self.uow = uow
         self.store = store
 
-    async def execute(self, titles: list[str], category: str | None) -> int:
-        await ensure_category_exists(self.uow, category)
-        done = 0
-        for title in dict.fromkeys(titles):
-            await self.store.set_payload_by_title(title, {"category": category or None})
-            done += 1
-        return done
+    async def execute(
+        self,
+        titles: list[str],
+        add: list[str],
+        remove: list[str],
+        audience: str | None = None,
+    ) -> int:
+        await ensure_categories_exist(self.uow, add)
+        wanted = list(dict.fromkeys(t for t in titles if t))
+        # Har hujjatning HOZIRGI turkumlari — bitta o'qishda
+        current: dict[str, list[str]] = {}
+        if add or remove:
+            for p in await self.store.scroll_all_pages():
+                title = str(p.get("title", ""))
+                if title in wanted and title not in current:
+                    current[title] = payload_categories(p)
+        drop = set(remove)
+        for title in wanted:
+            payload: dict[str, object] = {}
+            if add or remove:
+                cats = [c for c in dict.fromkeys([*current.get(title, []), *add]) if c not in drop]
+                payload["category"] = cats or None
+            if audience is not None:
+                payload["audience"] = None if audience == "none" else audience
+            if payload:
+                await self.store.set_payload_by_title(title, payload)
+        return len(wanted)
 
 
 def get_list_categories_use_case(

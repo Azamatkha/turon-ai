@@ -22,18 +22,21 @@ from src.core.storage.media import read_upload_limited
 from src.core.vectorstore.dependencies import get_vector_store
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.category_usecases import (
-    BulkSetCategoryUseCase,
+    BulkKnowledgeMetaUseCase,
     CreateCategoryUseCase,
     DeleteCategoryUseCase,
     ListCategoriesUseCase,
     UpdateCategoryUseCase,
-    ensure_category_exists,
+    ensure_categories_exist,
     get_create_category_use_case,
     get_delete_category_use_case,
     get_list_categories_use_case,
     get_update_category_use_case,
 )
-from src.knowledge.ingest_usecases import SetKnowledgeMetaUseCase
+from src.knowledge.ingest_usecases import (
+    BulkDeleteKnowledgeUseCase,
+    SetKnowledgeMetaUseCase,
+)
 from src.knowledge.rescrape import (
     RescrapeStatusUseCase,
     TriggerRescrapeUseCase,
@@ -44,7 +47,8 @@ from src.knowledge.schemas import (
     EmployeeIn,
     KbCategoryIn,
     KbCategoryView,
-    KnowledgeBulkCategoryRequest,
+    KnowledgeBulkDeleteRequest,
+    KnowledgeBulkMetaRequest,
     KnowledgeDetail,
     KnowledgeItem,
     KnowledgeMetaRequest,
@@ -211,23 +215,23 @@ async def set_knowledge_meta(
     audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
     uow: Annotated[ApplicationUnitOfWork[RepositoryProtocol], Depends(get_unit_of_work)],
 ) -> SuccessResponse:
-    """Admin: hujjat turkumi (admin yaratgan turkumlardan biri) va izohi.
+    """Admin: hujjat turkumlari (bir nechta bo'lishi mumkin), mijoz turi va izohi.
 
-    Bot katalogi faqat shu turkumni ishlatadi; null — "Turkumsiz"."""
-    await ensure_category_exists(uow, data.category)
+    Bot katalogi faqat shu turkumlarni ishlatadi; bo'sh — "Turkumsiz"."""
+    await ensure_categories_exist(uow, data.categories)
     await SetKnowledgeMetaUseCase(store=store).execute(
-        title=data.title, category=data.category, note=data.note
+        title=data.title, categories=data.categories, note=data.note, audience=data.audience
     )
+    # Audit jurnaliga yozilmaydi (SKIPPED_ACTIONS) — chaqiruv bir xillik uchun
     await audit.log(
         current_user, AuditAction.KNOWLEDGE_META, "knowledge", target_label=data.title,
-        details={"category": data.category, "note": data.note},
     )
     return SuccessResponse(success=True)
 
 
 @router.patch("/meta/bulk", response_model=SuccessResponse)
 async def set_knowledge_category_bulk(
-    data: KnowledgeBulkCategoryRequest,
+    data: KnowledgeBulkMetaRequest,
     current_user: Annotated[
         User, Depends(require_permission(Permission.EDIT_SETTINGS))
     ],
@@ -235,14 +239,32 @@ async def set_knowledge_category_bulk(
     audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
     uow: Annotated[ApplicationUnitOfWork[RepositoryProtocol], Depends(get_unit_of_work)],
 ) -> SuccessResponse:
-    """Admin: belgilangan hujjatlarga birdaniga turkum qo'yish (null — olib tashlash)."""
-    done = await BulkSetCategoryUseCase(uow=uow, store=store).execute(
-        titles=data.titles, category=data.category
+    """Admin: belgilangan hujjatlarga birdaniga turkum qo'shish / olib
+    tashlash va mijoz turini qo'yish."""
+    done = await BulkKnowledgeMetaUseCase(uow=uow, store=store).execute(
+        titles=data.titles, add=data.add, remove=data.remove, audience=data.audience
     )
     await audit.log(
-        current_user, AuditAction.KNOWLEDGE_META, "knowledge",
+        current_user, AuditAction.KNOWLEDGE_META, "knowledge", target_label=f"{done} ta hujjat",
+    )
+    return SuccessResponse(success=True)
+
+
+@router.post("/bulk-delete", response_model=SuccessResponse)
+async def delete_knowledge_bulk(
+    data: KnowledgeBulkDeleteRequest,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    store: Annotated[QdrantStore, Depends(get_vector_store)],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> SuccessResponse:
+    """Admin: belgilangan hujjatlarni bittada o'chirish."""
+    done = await BulkDeleteKnowledgeUseCase(store=store).execute(data.titles)
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_DELETE, "knowledge",
         target_label=f"{done} ta hujjat",
-        details={"category": data.category, "titles": data.titles[:50]},
+        details={"titles": data.titles[:100]},
     )
     return SuccessResponse(success=True)
 

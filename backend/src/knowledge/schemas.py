@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -37,6 +38,10 @@ class EmployeeIn(Base):
     phone: str = ""                         # telefon
 
 
+# Mijoz turi: jismoniy / yuridik shaxslar / ikkalasi
+Audience = Literal["individual", "legal", "both"]
+
+
 class ScrapeRequest(Base):
     url: str = Field(min_length=1)   # parse qilinadigan sahifa manzili
 
@@ -52,9 +57,11 @@ class KnowledgeItem(Base):
     valid_until: str = ""
     # Matni aynan bir xil boshqa hujjatlar sarlavhalari (dublikat)
     duplicates: list[str] = []
-    # Admin qo'ygan turkum kaliti (kb_categories.key); qo'yilmagan yoki
-    # turkumi o'chirilgan bo'lsa "" — avtomatik taxmin YO'Q
-    category: str = ""
+    # Admin qo'ygan turkumlar kalitlari (kb_categories.key) — bir nechta
+    # bo'lishi mumkin; o'chirilgan turkumlar kiritilmaydi. Avtomatik taxmin YO'Q
+    categories: list[str] = []
+    # Mijoz turi: "individual" | "legal" | "both"; belgilanmagan — ""
+    audience: str = ""
     # Admin izohi (erkin matn)
     note: str = ""
 
@@ -78,17 +85,27 @@ class KnowledgeValidityRequest(Base):
 
 class KnowledgeMetaRequest(Base):
     title: str = Field(min_length=1, max_length=500)
-    # Turkum kaliti (kb_categories.key); None — turkumni olib tashlash
-    category: str | None = Field(default=None, max_length=40)
+    # Turkumlar kalitlari (kb_categories.key); bo'sh ro'yxat — "Turkumsiz"
+    categories: list[str] = Field(default_factory=list, max_length=20)
+    # None — mijoz turi belgilanmagan
+    audience: Audience | None = None
     # Bo'sh / None — izohni olib tashlash
     note: str | None = Field(default=None, max_length=500)
 
 
-class KnowledgeBulkCategoryRequest(Base):
-    """Bir nechta hujjatga birdaniga turkum qo'yish (None — olib tashlash)."""
+class KnowledgeBulkMetaRequest(Base):
+    """Belgilangan hujjatlarga birdaniga: turkum QO'SHISH / OLIB TASHLASH
+    (boshqa turkumlari saqlanadi) va mijoz turini qo'yish."""
 
     titles: list[str] = Field(min_length=1, max_length=2000)
-    category: str | None = Field(default=None, max_length=40)
+    add: list[str] = Field(default_factory=list, max_length=20)
+    remove: list[str] = Field(default_factory=list, max_length=20)
+    # None — tegilmaydi; "none" — belgini olib tashlash
+    audience: Literal["individual", "legal", "both", "none"] | None = None
+
+
+class KnowledgeBulkDeleteRequest(Base):
+    titles: list[str] = Field(min_length=1, max_length=2000)
 
 
 class KbCategoryView(Base):

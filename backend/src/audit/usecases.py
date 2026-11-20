@@ -5,7 +5,7 @@ from fastapi import Depends, Request
 from sqlalchemy import select
 
 from loggers import get_logger
-from src.audit.actions import SECRET_FIELDS, AuditAction
+from src.audit.actions import SECRET_FIELDS, SKIPPED_ACTIONS, AuditAction
 from src.audit.schemas import AuditLogPageView, AuditLogView
 from src.core.database.session import async_session, get_unit_of_work
 from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol, get_uow
@@ -49,6 +49,8 @@ class AuditRecorder:
         target_label: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
+        if action in SKIPPED_ACTIONS:
+            return
         try:
             async with async_session() as session:
                 uow = await get_uow(session)
@@ -93,6 +95,7 @@ class ListAuditLogsUseCase:
         self,
         target_type: str | None = None,
         search: str | None = None,
+        sort: str = "newest",
         page: int = 1,
         size: int = 50,
     ) -> AuditLogPageView:
@@ -101,6 +104,8 @@ class ListAuditLogsUseCase:
                 uow.session,
                 target_type=target_type,
                 search=search,
+                sort=sort,
+                hidden_actions=[str(a) for a in SKIPPED_ACTIONS],
                 page=page,
                 size=size,
             )
