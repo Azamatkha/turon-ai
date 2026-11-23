@@ -20,3 +20,6 @@ from src.guides.models import EdoGuide as EdoGuide
 from src.knowledge.models import KbCategory as KbCategory
 from src.telegram_bot.models import TelegramBotUser as TelegramBotUser
 from src.telegram_bot.models import TelegramBotMessage as TelegramBotMessage
+from src.evaluation.models import EvalCaseRow as EvalCaseRow
+from src.evaluation.models import EvalRun as EvalRun
+from src.evaluation.models import EvalResultRow as EvalResultRow

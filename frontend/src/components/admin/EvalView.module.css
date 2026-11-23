@@ -1,0 +1,470 @@
+/* Javob sifati sinov stendi — Audit/Xavfli so'rovlar jadvali uslubida */
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.in {
+  opacity: 1;
+  transform: none;
+}
+
+.hint {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.error {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--adm-danger-bg);
+  border: 1px solid var(--adm-danger-border);
+  color: var(--adm-danger);
+  font-size: 14px;
+}
+
+.muted {
+  font-size: 13px;
+  color: var(--adm-text-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Boshqaruv paneli ---- */
+
+.panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+}
+
+.panelInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.panelTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.docsLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--adm-text-muted);
+}
+
+.docsInput {
+  width: 72px;
+  padding: 7px 9px;
+  border: 1px solid var(--adm-border-input);
+  border-radius: 9px;
+  background: var(--adm-input-bg);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+}
+
+.btn,
+.btnPrimary,
+.tab,
+.tabActive {
+  padding: 8px 14px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 10px;
+  background: var(--adm-card);
+  color: var(--adm-text-body);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled),
+.tab:hover {
+  background: var(--adm-hover);
+}
+
+.btnPrimary {
+  border-color: var(--adm-accent);
+  background: var(--adm-accent);
+  color: #fff;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn:disabled,
+.btnPrimary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.tabActive {
+  border-color: var(--adm-accent);
+  background: var(--adm-accent-bg);
+  color: var(--adm-accent);
+}
+
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--adm-info);
+}
+
+.bar {
+  height: 6px;
+  max-width: 420px;
+  border-radius: 999px;
+  background: var(--adm-border);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--adm-accent);
+  transition: width 0.4s ease;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip,
+.chipHit {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--adm-card-alt);
+  border: 1px solid var(--adm-border);
+  font-size: 12.5px;
+  color: var(--adm-text-body-2);
+}
+
+.chipHit {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+  border-color: transparent;
+}
+
+.miss {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--adm-danger);
+}
+
+/* ---- O'lchovlar jadvali ---- */
+
+.sectionTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--adm-text-strong);
+}
+
+.card {
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+  overflow: hidden;
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--adm-text-muted-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 170px 150px 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-bottom: 1px solid var(--adm-border);
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--adm-text-body);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowBtn {
+  cursor: pointer;
+}
+
+.rowBtn:hover {
+  background: var(--adm-hover);
+}
+
+.headRow {
+  background: var(--adm-card-alt);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.score {
+  font-weight: 700;
+  color: var(--adm-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.st_queued,
+.st_running {
+  color: var(--adm-info);
+  font-weight: 600;
+}
+
+.st_done {
+  color: var(--adm-success);
+  font-weight: 600;
+}
+
+.st_failed {
+  color: var(--adm-danger);
+  font-weight: 600;
+}
+
+.deltaUp,
+.deltaDown,
+.deltaFlat {
+  margin-left: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.deltaUp {
+  color: var(--adm-success);
+}
+
+.deltaDown {
+  color: var(--adm-danger);
+}
+
+.deltaFlat {
+  color: var(--adm-text-muted-2);
+}
+
+/* ---- O'lchov tafsiloti ---- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.total {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--adm-text-muted-2);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--adm-border-2);
+  border-radius: 14px;
+  background: var(--adm-card);
+}
+
+.statLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--adm-text-muted);
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--adm-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--adm-text-body);
+}
+
+.kvNote {
+  font-size: 13.5px;
+  color: var(--adm-text-body);
+}
+
+.result {
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.result:last-child {
+  border-bottom: none;
+}
+
+.resultHead {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) minmax(0, 220px);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--adm-text-body);
+  cursor: pointer;
+}
+
+.resultHead:hover {
+  background: var(--adm-hover);
+}
+
+.badgeOk,
+.badgeBad {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeOk {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+}
+
+.badgeBad {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
+}
+
+.styleTag {
+  font-size: 12.5px;
+  color: var(--adm-text-muted-2);
+  white-space: nowrap;
+}
+
+.resultQ {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--adm-text-strong);
+}
+
+.docTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--adm-text-muted-2);
+  text-align: right;
+}
+
+.resultBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 16px 16px;
+  background: var(--adm-card-alt);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--adm-text-muted);
+}
+
+.note {
+  font-size: 14px;
+  color: var(--adm-text-strong);
+}
+
+.answer {
+  max-height: 280px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 13.5px;
+  color: var(--adm-text-chunk);
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--adm-text-muted-2);
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resultHead {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .styleTag,
+  .docTitle {
+    display: none;
+  }
+}

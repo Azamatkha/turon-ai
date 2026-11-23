@@ -40,6 +40,7 @@ from src.core.errors.handlers import (
     handle_validation_error,
 )
 from src.documents import routers as documents_routers
+from src.evaluation import routers as evaluation_routers
 from src.guides import routers as guide_routers
 from src.knowledge import routers as knowledge_routers
 from src.notifications import routers as notification_routers
@@ -137,6 +138,9 @@ def include_routers(app: FastAPI) -> None:
         calculator_routers.router, prefix="/calculator", tags=["Calculator"]
     )
     v1_router.include_router(admin_routers.router, prefix="/admin", tags=["Admin"])
+    v1_router.include_router(
+        evaluation_routers.router, prefix="/admin/eval", tags=["Eval"]
+    )
     v1_router.include_router(
         knowledge_routers.router, prefix="/admin/knowledge", tags=["Knowledge"]
     )

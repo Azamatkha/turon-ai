@@ -11,6 +11,11 @@ from src.chat.repositories import (
 from src.core.database.repositories import BaseRepository
 from src.core.database.uow.abstract import R, RepositoryProtocol
 from src.core.database.uow.sqlalchemy import RepositoryInstance, SQLAlchemyUnitOfWork
+from src.evaluation.repositories import (
+    EvalCaseRepository,
+    EvalResultRepository,
+    EvalRunRepository,
+)
 from src.guides.repositories import EdoGuideRepository
 from src.knowledge.repositories import KbCategoryRepository
 from src.notifications.repositories import NotificationRepository
@@ -133,6 +138,21 @@ class ApplicationUnitOfWork(SQLAlchemyUnitOfWork[R]):
     def telegram_bot_messages(self) -> TelegramBotMessageRepository:
         """Get the TelegramBotMessageRepository."""
         return self._get_repository(TelegramBotMessageRepository)
+
+    @property
+    def eval_cases(self) -> EvalCaseRepository:
+        """Get the EvalCaseRepository."""
+        return self._get_repository(EvalCaseRepository)
+
+    @property
+    def eval_runs(self) -> EvalRunRepository:
+        """Get the EvalRunRepository."""
+        return self._get_repository(EvalRunRepository)
+
+    @property
+    def eval_results(self) -> EvalResultRepository:
+        """Get the EvalResultRepository."""
+        return self._get_repository(EvalResultRepository)
 
     # Add more repository properties as needed
 

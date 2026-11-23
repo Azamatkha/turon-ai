@@ -21,6 +21,12 @@ services:
       - ..:/app
       - /app/.venv
 
+  celery_eval_worker:
+    image: template-app-dev-image:latest
+    volumes:
+      - ..:/app
+      - /app/.venv
+
   celery_beat:
     image: template-app-dev-image:latest
     volumes:

@@ -102,6 +102,34 @@ services:
           cpus: '1'
           memory: 1G
 
+  # Javob sifati sinov stendi — ALOHIDA worker va navbat ("eval"). Asosiy
+  # worker `--pool=solo` (bir vaqtda bitta vazifa): soatlab davom etadigan
+  # o'lchov uning ichida valyuta kursi, email va zaxira vazifalarini to'sib
+  # qo'yardi. Bu worker faqat `eval` navbatini oladi (celery_tasks/main.py
+  # -> task_routes).
+  celery_eval_worker:
+    container_name: turonai-celery-eval-worker
+    image: template-app-image:latest
+    env_file: ../.env
+    environment:
+      TZ: ${LOCAL_TIMEZONE}
+    command: python -m celery -A celery_tasks.main worker --pool=solo --loglevel=info -E -Q eval -n eval@%h
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app-builder:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
   celery_beat:
     container_name: turonai-celery-beat
     image: template-app-image:latest

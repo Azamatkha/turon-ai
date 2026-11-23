@@ -12,7 +12,7 @@ import time
 
 from loggers import get_logger
 from src.core.database.session import async_session
-from src.core.utils.uzbek_script import to_latin
+from src.core.utils.uzbek_script import to_cyrillic, to_latin
 from src.knowledge.models import KbCategory
 from src.knowledge.repositories import KbCategoryRepository
 
@@ -209,3 +209,67 @@ def audience_fits(item_audience: str, wanted: str | None) -> bool:
     if not wanted or item_audience in ("", "both"):
         return True
     return item_audience == wanted
+
+
+# ---------- Turkum ro'yxati mijoz turi bo'yicha guruhlangan ----------
+# "Kredit turlari" savoliga, mijoz turi aytilmagan bo'lsa, ro'yxat jismoniy va
+# yuridik shaxslarga ajratib beriladi va kimga kerakligi so'raladi. Raqamlash
+# guruhlar bo'ylab UZLUKSIZ — "7" deb tanlash (_resolve_list_choice) ishlaydi.
+AUDIENCE_HEADINGS: dict[str, str] = {
+    "individual": "Jismoniy shaxslar uchun:",
+    "legal": "Yuridik shaxslar va tadbirkorlar uchun:",
+    "both": "Jismoniy va yuridik shaxslar uchun:",
+    "": "Mijoz turi ko'rsatilmagan:",
+}
+AUDIENCE_LIST_CLOSING = (
+    "Qaysi biri bo'yicha batafsil ma'lumot beray? Nomini yoki tartib raqamini "
+    "yozing. Faqat bitta mijoz turi kerak bo'lsa, \"jismoniy\" yoki "
+    "\"yuridik\" deb yozing."
+)
+
+
+def audience_groups(items: list[tuple[str, str]], cyrillic: bool = False) -> str | None:
+    """[(nom, mijoz_turi)] -> guruhlangan raqamli ro'yxat. Turkumda jismoniy
+    HAM yuridik mahsulot bo'lmasa — None (guruhlash ma'nosiz, oddiy ro'yxat)."""
+    kinds = {aud if aud in AUDIENCES else "" for _, aud in items}
+    if not {"individual", "legal"} <= kinds:
+        return None
+    lines: list[str] = []
+    n = 0
+    for key in ("individual", "legal", "both", ""):
+        group = [t for t, aud in items if (aud if aud in AUDIENCES else "") == key]
+        if not group:
+            continue
+        if lines:
+            lines.append("")
+        head = AUDIENCE_HEADINGS[key]
+        lines.append(to_cyrillic(head) if cyrillic else head)
+        for title in group:
+            n += 1
+            lines.append(f"{n}. {title}")
+    return "\n".join(lines)
+
+
+# Javobda "yuridik", "jismoniy uchun", "tadbirkorlar uchunchi" kabi so'zlardan
+# tashqari ruxsat etilgan so'zlar
+_AUDIENCE_REPLY_EXTRA = ("uchun", "uchunchi", "kerak", "menga", "mijoz", "bu", "va", "ga")
+
+
+def audience_followup(question: str, last_assistant: str | None, last_user: str | None) -> str | None:
+    """Guruhlangan ro'yxatdan keyingi qisqa javob ("yuridik", "jismoniy
+    shaxslar uchun") -> oldingi savol + mijoz turi ("kredit turlari yuridik").
+    Shunda bot shu turkumni faqat o'sha mijoz turi bilan qayta beradi.
+    Boshqa har qanday xabar — None."""
+    if not last_assistant or not last_user:
+        return None
+    if question_audience(question) is None:
+        return None
+    words = _flat_words(to_latin(question))
+    if not words or len(words) > 5:
+        return None
+    if not all(is_audience_word(w) or w in _AUDIENCE_REPLY_EXTRA for w in words):
+        return None
+    shown = to_latin(last_assistant)
+    if AUDIENCE_HEADINGS["individual"] not in shown or AUDIENCE_HEADINGS["legal"] not in shown:
+        return None
+    return f"{to_latin(last_user).strip()} {question.strip()}"

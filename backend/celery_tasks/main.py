@@ -33,7 +33,15 @@ celery_app.conf.update(
         "src.knowledge.tasks",
         "src.notifications.tasks",
         "src.backup.tasks",
+        "src.evaluation.tasks",
     ],
+    # Sinov stendi soatlab ishlaydi — o'z navbati va o'z worker'i bor
+    # (infra/docker-compose.yml -> celery_eval_worker), asosiy worker'ni
+    # to'smasin.
+    task_routes={
+        "generate_eval_cases": {"queue": "eval"},
+        "run_eval": {"queue": "eval"},
+    },
     timezone="UTC",
     enable_utc=True,
 )

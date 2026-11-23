@@ -27,6 +27,7 @@ import BackupsView from "../components/admin/BackupsView";
 import SystemView from "../components/admin/SystemView";
 import SafetyView from "../components/admin/SafetyView";
 import WebAnswersView from "../components/admin/WebAnswersView";
+import EvalView from "../components/admin/EvalView";
 import { listDislikedAnswers } from "../services/feedbackService";
 import UsersTable from "../components/admin/UsersTable";
 import AddUserModal from "../components/admin/AddUserModal";
@@ -56,6 +57,7 @@ const VIEW_TO_PATH: Record<AdminView, string> = {
   system: "system",
   safety: "safety",
   webAnswers: "web-answers",
+  eval: "quality",
   faceIdLogs: "face-id-logs",
   telegramBot: "telegram-bot",
   knowledgeList: "knowledge",
@@ -74,6 +76,7 @@ const PATH_TO_VIEW: Record<string, AdminView> = {
   system: "system",
   safety: "safety",
   "web-answers": "webAnswers",
+  quality: "eval",
   "face-id-logs": "faceIdLogs",
   "telegram-bot": "telegramBot",
   knowledge: "knowledgeList",
@@ -238,6 +241,7 @@ export default function AdminPage() {
   const onSystem = view === "system";
   const onSafety = view === "safety";
   const onWebAnswers = view === "webAnswers";
+  const onEval = view === "eval";
   const onKnowledgeList = view === "knowledgeList";
   const onPdfUpload = view === "pdfUpload";
   const onApiDocs = view === "apiDocs";
@@ -467,6 +471,7 @@ export default function AdminPage() {
           )}
           {onSafety && <SafetyView mounted={mounted} t={t} />}
           {onWebAnswers && <WebAnswersView mounted={mounted} t={t} />}
+          {onEval && <EvalView mounted={mounted} t={t} />}
           {onSystem && <SystemView mounted={mounted} t={t} />}
           {onBackups && <BackupsView mounted={mounted} t={t} />}
           {onAudit && <AuditLogsView mounted={mounted} t={t} />}

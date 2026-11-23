@@ -96,9 +96,12 @@ from src.knowledge.answer_helpers import (
     translation_task_note,
 )
 from src.knowledge.categories import (
+    AUDIENCE_LIST_CLOSING,
     AUDIENCE_PROMPT,
     UNCATEGORIZED_LABEL,
     audience_fits,
+    audience_followup,
+    audience_groups,
     is_audience_word,
     kb_categories,
     match_categories,
@@ -159,6 +162,21 @@ from src.knowledge.verifier import join_review_notes, verify_answer
 from src.main.config import config
 
 logger = get_logger(__name__)
+
+
+def _audience_followup_question(
+    question: str, history: list[ChatTurn] | None
+) -> str | None:
+    """Oxirgi javob mijoz turi bo'yicha guruhlangan ro'yxat bo'lsa va
+    foydalanuvchi faqat "yuridik"/"jismoniy" deb yozsa — oldingi savol shu
+    mijoz turi bilan (qara: categories.audience_followup)."""
+    if not history:
+        return None
+    last_assistant = next(
+        (t.content for t in reversed(history) if t.role == "assistant"), None
+    )
+    last_user = next((t.content for t in reversed(history) if t.role == "user"), None)
+    return audience_followup(question, last_assistant, last_user)
 
 __all__ = [
     "AnswerQuestionUseCase",
@@ -607,11 +625,22 @@ class AnswerQuestionUseCase:
                     return None, narrowed[0][0]
                 shown = narrowed
 
-            numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
-            closing = (
-                "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray? "
-                "Nomini yoki tartib raqamini yozing."
+            # Mijoz turi so'ralmagan, turkumda esa jismoniy VA yuridik
+            # mahsulotlar bor — ro'yxat shu bo'yicha guruhlanadi va kimga
+            # kerakligi so'raladi (xodim ko'pincha mijozga qarab izlaydi).
+            grouped = None if aud_filter else audience_groups(
+                [(t, self._title_audience.get(t, "")) for t, _ in shown],
+                want_cyrillic,
             )
+            if grouped:
+                numbered = grouped
+                closing = AUDIENCE_LIST_CLOSING
+            else:
+                numbered = "\n".join(f"{i}. {t}" for i, (t, _) in enumerate(shown, 1))
+                closing = (
+                    "Shu turlardan qaysi biri bo'yicha batafsil ma'lumot beray? "
+                    "Nomini yoki tartib raqamini yozing."
+                )
             if want_cyrillic:
                 closing = to_cyrillic(closing)
             return f"{numbered}\n\n{closing}", None
@@ -1043,14 +1072,17 @@ class AnswerQuestionUseCase:
         if not asks_comparison(question, q):
             return []
         groups = await self._catalog_groups_detailed()
-        want_aud = question_audience(question)
+        # Mijoz turi aytilmasa — JISMONIY shaxs (bankda eng ko'p so'raladigani;
+        # foydalanuvchi talabi, 2026-11-23). "Eng past foizli kredit"ga
+        # yuridik shaxs krediti chiqib qolmasin.
+        want_aud = question_audience(question) or "individual"
         for cat in match_categories(question, await kb_categories()):
             if cat.is_branch:
                 continue
             items = groups.get(cat.name) or []
-            # Mijoz turi so'ralgan va turkumda belgilangan hujjat bor — faqat
-            # mos keladiganlar (belgilanmagan va "ikkalasi" qoladi)
-            if want_aud and any(self._title_audience.get(t) for t, _ in items):
+            # Turkumda mijoz turi belgilangan hujjat bor — faqat mos
+            # keladiganlar (belgilanmagan va "ikkalasi" qoladi)
+            if any(self._title_audience.get(t) for t, _ in items):
                 items = [
                     it for it in items
                     if audience_fits(self._title_audience.get(it[0], ""), want_aud)
@@ -1837,8 +1869,14 @@ class AnswerQuestionUseCase:
             }
             return
 
-        resolved = _resolve_list_choice(question, history) or _resolve_clarification(
-            question, history
+        # Mijoz turi bo'yicha guruhlangan ro'yxatdan keyin "yuridik" deb
+        # javob berildi — oldingi turkum savoli shu mijoz turi bilan qayta
+        # so'raladi (ro'yxatdan tanlov emas, shuning uchun resolve qilinmaydi)
+        follow = _audience_followup_question(question, history)
+        question = follow or question
+        resolved = None if follow else (
+            _resolve_list_choice(question, history)
+            or _resolve_clarification(question, history)
         )
         question = resolved or question
         self._effective_question = question
@@ -2537,8 +2575,14 @@ class AnswerQuestionUseCase:
                 max_tokens=self.MAX_TOKENS,
             )
 
-        resolved = _resolve_list_choice(question, history) or _resolve_clarification(
-            question, history
+        # Mijoz turi bo'yicha guruhlangan ro'yxatdan keyin "yuridik" deb
+        # javob berildi — oldingi turkum savoli shu mijoz turi bilan qayta
+        # so'raladi (ro'yxatdan tanlov emas, shuning uchun resolve qilinmaydi)
+        follow = _audience_followup_question(question, history)
+        question = follow or question
+        resolved = None if follow else (
+            _resolve_list_choice(question, history)
+            or _resolve_clarification(question, history)
         )
         question = resolved or question
 

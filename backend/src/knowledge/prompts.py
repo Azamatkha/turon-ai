@@ -153,6 +153,17 @@ STRICT_RAG_SYSTEM = (
     "\"narsa\", \"shunga o'xshash\", an item you would have to guess), do NOT "
     "guess and do NOT write \"ehtimol ...\". Ask ONE short question about the "
     "purpose (shaxsiy ehtiyoj, biznes, uy-joy, avtomobil?) and stop.\n"
+    # Admin har mahsulotga mijoz turini qo'ygan (FOR CLIENTS). Jismoniy
+    # shaxsga yuridik mahsulot tavsiya qilinmasligi kerak (2026-11-23).
+    "  CLIENT TYPE: a block may carry \"FOR CLIENTS\" (individuals / legal "
+    "entities). Recommend and compare only products that fit the user's client "
+    "type. If the user did not say whether the client is an individual "
+    "(jismoniy shaxs) or a legal entity / entrepreneur (yuridik shaxs, "
+    "tadbirkor), ASSUME AN INDIVIDUAL: use only products for individuals (or "
+    "for both), and add one short sentence that products for legal entities "
+    "also exist and you can list them on request. Never mix a legal-entity "
+    "product into an individual's recommendation. When you list products of "
+    "both types, mark each one's client type.\n"
     "SPECIFIC PRODUCT \u2014 the user named a product or picked one from the list:\n"
     "  line 1: one short sentence starting with the product NAME (what it is, "
     "whom it is for);\n"
