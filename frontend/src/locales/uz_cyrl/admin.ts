@@ -312,6 +312,9 @@ export const admin: AdminStrings = {
   answersQuestion: "Савол",
   answersAnswer: "Бот жавоби",
   answersNote: "АИ таҳлили",
+  answersNoteFirstDraft: "АИ таҳлили — 1-вариант (рад этилди, фойдаланувчига кўрсатилмади)",
+  answersNoteShown: "АИ таҳлили — кўрсатилган (қайта ёзилган) жавоб",
+  answersNoteSecondFailed: "АИ таҳлили — 2-вариант (у ҳам рад этилди, «топилмади» берилди)",
   answersMissing: "Жавоб сақланмаган (суҳбат ўчирилган бўлиши мумкин)",
   answersVerdict: {
     ok: "Текширилди",

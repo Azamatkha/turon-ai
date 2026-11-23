@@ -652,6 +652,9 @@ export interface AdminStrings {
   answersQuestion: string;
   answersAnswer: string;
   answersNote: string;
+  answersNoteFirstDraft: string;
+  answersNoteShown: string;
+  answersNoteSecondFailed: string;
   answersMissing: string;
   answersVerdict: Record<"ok" | "fixed" | "failed" | "unchecked" | "cached" | "doubt", string>;
   answersFilterDoubt: string;

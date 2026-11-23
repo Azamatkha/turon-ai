@@ -33,6 +33,7 @@ from src.core.database.uow import ApplicationUnitOfWork, RepositoryProtocol
 from src.core.errors.exceptions import InstanceNotFoundException, NotAcceptableException
 from src.core.storage.media import delete_media, save_image
 from src.core.utils.datetime_utils import get_utc_now
+from src.knowledge.verifier import split_review_notes
 from src.main.config import config
 from src.notifications.enums import NotificationType
 from src.notifications.events import publish_new
@@ -325,7 +326,8 @@ class AnswerLogUseCase:
                     intent=log.intent,
                     outcome=log.outcome,
                     verdict=log.verdict,
-                    verdict_note=log.verdict_note,
+                    first_draft_note=split_review_notes(log.verdict_note)[0],
+                    verdict_note=split_review_notes(log.verdict_note)[1],
                     duration_ms=log.duration_ms,
                     full_name=full_name,
                     top_score=log.top_score,

@@ -311,6 +311,9 @@ export const admin: AdminStrings = {
   answersQuestion: "Вопрос",
   answersAnswer: "Ответ бота",
   answersNote: "Анализ ИИ",
+  answersNoteFirstDraft: "Анализ ИИ — 1-й вариант (отклонён, пользователю не показан)",
+  answersNoteShown: "Анализ ИИ — показанный (переписанный) ответ",
+  answersNoteSecondFailed: "Анализ ИИ — 2-й вариант (тоже отклонён, выдано «не найдено»)",
   answersMissing: "Ответ не сохранён (возможно, чат удалён)",
   answersVerdict: {
     ok: "Проверен",

@@ -200,6 +200,8 @@ export interface AnswerLogItem {
   outcome: string;
   verdict?: AnswerVerdict | null;
   verdict_note?: string | null;
+  // Javob qayta yozilgan bo'lsa — rad etilgan 1-variant tahlili
+  first_draft_note?: string | null;
   duration_ms: number;
   // Javobni tekshirish uchun qo'shimcha ma'lumot
   full_name?: string | null;

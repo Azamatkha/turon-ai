@@ -272,9 +272,23 @@ const AnswerLogPanel = forwardRef<HTMLElement, AnswerLogPanelProps>(function Ans
         {it.answer ? <MessageContent text={it.answer} /> : <span className={styles.missing}>{admin.answersMissing}</span>}
       </div>
 
+      {/* Javob qayta yozilgan: avval rad etilgan 1-variant tahlili, keyin
+          ko'rsatilgan javobniki — admin ularni adashtirmasin */}
+      {it.first_draft_note && (
+        <>
+          <div className={styles.label}>{admin.answersNoteFirstDraft}</div>
+          <div className={styles.note}>{it.first_draft_note}</div>
+        </>
+      )}
       {it.verdict_note && (
         <>
-          <div className={styles.label}>{admin.answersNote}</div>
+          <div className={styles.label}>
+            {it.first_draft_note
+              ? it.verdict === "failed"
+                ? admin.answersNoteSecondFailed
+                : admin.answersNoteShown
+              : admin.answersNote}
+          </div>
           <div className={styles.note}>{it.verdict_note}</div>
         </>
       )}

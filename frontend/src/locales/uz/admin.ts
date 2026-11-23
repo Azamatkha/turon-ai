@@ -315,6 +315,9 @@ export const admin: AdminStrings = {
   answersQuestion: "Savol",
   answersAnswer: "Bot javobi",
   answersNote: "AI tahlili",
+  answersNoteFirstDraft: "AI tahlili — 1-variant (rad etildi, foydalanuvchiga ko‘rsatilmadi)",
+  answersNoteShown: "AI tahlili — ko‘rsatilgan (qayta yozilgan) javob",
+  answersNoteSecondFailed: "AI tahlili — 2-variant (u ham rad etildi, «topilmadi» berildi)",
   answersMissing: "Javob saqlanmagan (suhbat o‘chirilgan bo‘lishi mumkin)",
   answersVerdict: {
     ok: "Tekshirildi",

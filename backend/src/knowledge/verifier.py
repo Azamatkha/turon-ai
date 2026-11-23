@@ -100,6 +100,25 @@ class Verdict:
     analysis: str = ""
 
 
+# Javob qayta yozilganda jurnalda ikki tahlil bitta `verdict_note` maydonida
+# shu ajratgich bilan turadi (alohida ustun/migratsiya shart emas). Admin API
+# ularni ajratib beradi: split_review_notes.
+REVIEW_NOTE_SEP = "\n\n[[rewrite]]\n\n"
+
+
+def join_review_notes(first: str, second: str) -> str:
+    """1-variant tahlili + qayta yozilgan variant tahlili."""
+    return f"{first.strip()}{REVIEW_NOTE_SEP}{second.strip()}"
+
+
+def split_review_notes(note: str | None) -> tuple[str | None, str | None]:
+    """(1-variant tahlili yoki None, ko'rsatilgan javob tahlili)."""
+    if not note or REVIEW_NOTE_SEP not in note:
+        return None, note
+    first, second = note.split(REVIEW_NOTE_SEP, 1)
+    return first or None, second or None
+
+
 def _history_tail(history: list[ChatTurn] | None, turns: int = 4) -> str:
     """Oxirgi bir necha almashinuv — "19", "ha" kabi davom savollarni
     tushunish uchun."""

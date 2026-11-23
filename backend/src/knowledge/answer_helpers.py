@@ -1581,6 +1581,70 @@ def _asks_for_advice(q_lower: str) -> bool:
     return any(m in q_lower for m in _ADVICE_MARKERS)
 
 
+# Turkum ichida SOLISHTIRISH ("eng foizi past 3 ta kredit", "qaysi omonat
+# daromadliroq", "самый низкий процент"). Bunday savolga javob turkumdagi
+# HAMMA mahsulotni ko'rishni talab qiladi — taxminiy 10 ta bo'lak yetmaydi:
+# 2026-11-23 da "eng foizi past kredit" so'rovida bo'laklar omonatlardan
+# kelib, 21 ta kreditdan faqat bittasining foizi kontekstga tushgan edi.
+_COMPARE_MARKERS = (
+    *_ADVICE_MARKERS,
+    "eng yuqori", "eng ko'p", "eng baland", "eng uzoq", "eng qisqa",
+    "daromadli", "foydali", "yuqori foiz", "foizi yuqori", "kamroq", "ko'proq",
+    "qaysi biri", "qaysilari",
+)
+_COMPARE_MARKERS_RU = (
+    "самы", "наимен", "наибол", "минимальн", "максимальн", "низк", "выгодн",
+    "дешев", "сравн", "лучш", "посовет", "какой из", "какую из", "какие из",
+)
+
+
+def asks_comparison(question: str, q_latin_lower: str) -> bool:
+    """Savol turkum mahsulotlarini solishtirish/tanlashni so'rayaptimi."""
+    ru = question.lower()
+    return any(m in q_latin_lower for m in _COMPARE_MARKERS) or any(
+        m in ru for m in _COMPARE_MARKERS_RU
+    )
+
+
+# Mahsulot shartlarini bildiruvchi so'zlar (foiz, muddat, summa...) —
+# solishtirish uchun matndan faqat shu gaplar olinadi
+_TERM_WORDS = (
+    "foiz", "stavka", "muddat", " oy", "yil", "summa", "miqdor", "so'm", "som",
+    "mln", "mlrd", "boshlang'ich", "to'lov", "imtiyoz", "daromad", "valyuta",
+    "ставк", "процент", "срок", "сумм", "взнос", "месяц", "год", "доход",
+)
+_SENTENCE_SPLIT_RE = re.compile(r"\n+|(?<=[.;!?])\s+")
+
+
+def terms_digest(text: str, budget: int) -> str:
+    """Mahsulot matnidan SOLISHTIRISH uchun qisqa ko'chirma: foiz ("%") bor
+    gaplar birinchi, keyin raqamli shart gaplari (muddat, summa, to'lov).
+    Gaplar asl tartibida qoladi. Hech narsa topilmasa — matn boshi."""
+    sentences = [s.strip() for s in _SENTENCE_SPLIT_RE.split(text) if s.strip()]
+
+    def rank(s: str) -> int:
+        low = s.lower()
+        if "%" in s:
+            return 2
+        if any(ch.isdigit() for ch in s) and any(w in low for w in _TERM_WORDS):
+            return 1
+        return 0
+
+    picked: set[int] = set()
+    used = 0
+    for level in (2, 1):
+        for i, s in enumerate(sentences):
+            if i in picked or rank(s) != level:
+                continue
+            if used + len(s) + 1 > budget:
+                continue
+            picked.add(i)
+            used += len(s) + 1
+    if not picked:
+        return text.strip()[:budget]
+    return " ".join(sentences[i] for i in sorted(picked))
+
+
 # Turkumni bildiruvchi umumiy so'zlar — mahsulot NOMIning o'ziga xos qismi
 # emas (qara: _GENERIC_TITLE_WORDS). Turkumlarning o'zi endi admin
 # boshqaradigan kb_categories jadvalida (qara: categories.py).

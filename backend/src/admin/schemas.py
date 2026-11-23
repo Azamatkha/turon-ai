@@ -144,8 +144,11 @@ class AnswerLogItem(Base):
     outcome: str
     # ok | fixed | failed | unchecked | cached | None
     verdict: str | None
+    # Ko'rsatilgan (yakuniy) javob tahlili
     verdict_note: str | None
     duration_ms: int
+    # Javob qayta yozilgan bo'lsa — rad etilgan 1-variant tahlili
+    first_draft_note: str | None = None
     # Qo'shimcha (eski mijozlar e'tibor bermaydi): javobni tekshirishda kerak
     full_name: str | None = None
     top_score: float | None = None

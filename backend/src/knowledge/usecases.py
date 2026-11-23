@@ -90,6 +90,8 @@ from src.knowledge.answer_helpers import (
     _with_lang,
     _word_match,
     _words,
+    asks_comparison,
+    terms_digest,
     translation_target,
     translation_task_note,
 )
@@ -153,7 +155,7 @@ from src.knowledge.schemas import (
     SourceRef,
 )
 from src.knowledge.validity import is_expired, penalize_expired
-from src.knowledge.verifier import verify_answer
+from src.knowledge.verifier import join_review_notes, verify_answer
 from src.main.config import config
 
 logger = get_logger(__name__)
@@ -239,6 +241,12 @@ class AnswerQuestionUseCase:
     # DIQQAT: STRICT_RAG_SYSTEM ga yangi qoida qo'shishdan yoki quyidagi
     # CHARS chegaralarini oshirishdan OLDIN shu hisobni qayta chiqaring.
     MAX_CONTEXT_CHARS = 9600
+    # Turkum ichida SOLISHTIRISH (qara: _comparison_results): turkumdagi
+    # HAR mahsulotning shartlari beriladi, shuning uchun byudjet kattaroq
+    # (~5000 token; 65k oynada bemalol sig'adi, katalog esa berilmaydi).
+    COMPARE_CONTEXT_CHARS = 16000
+    # Bitta mahsulot ko'chirmasi bundan qisqa bo'lmaydi (shartlar sig'sin)
+    COMPARE_MIN_ITEM_CHARS = 300
     MAX_CATALOG_CHARS = 3000
     MAX_HISTORY_CHARS = 3000
     MAX_HISTORY_MSG_CHARS = 800
@@ -1022,6 +1030,54 @@ class AnswerQuestionUseCase:
             return facts + hint, gen.completion_tokens
         return text + hint, gen.completion_tokens
 
+    async def _comparison_results(
+        self, question: str
+    ) -> list[tuple[dict[str, Any], float]]:
+        """Turkum ichida SOLISHTIRISH savoli ("eng foizi past 3 ta kredit") —
+        turkumdagi HAR mahsulotning shartlari (foiz, muddat, summa) kontekstga
+        beriladi. Vektor qidiruv bunday savolga faqat eng yaqin 10 ta bo'lakni
+        topadi va ular ko'pincha boshqa turkumdan bo'ladi ("foiz" so'zi
+        omonatlarda ko'p): model qolgan mahsulotlarni ko'rmay, foizlarni
+        to'qir edi. Mos turkum topilmasa — bo'sh (odatdagi qidiruv)."""
+        q = _norm_apostrophes(to_latin(question).lower())
+        if not asks_comparison(question, q):
+            return []
+        groups = await self._catalog_groups_detailed()
+        want_aud = question_audience(question)
+        for cat in match_categories(question, await kb_categories()):
+            if cat.is_branch:
+                continue
+            items = groups.get(cat.name) or []
+            # Mijoz turi so'ralgan va turkumda belgilangan hujjat bor — faqat
+            # mos keladiganlar (belgilanmagan va "ikkalasi" qoladi)
+            if want_aud and any(self._title_audience.get(t) for t, _ in items):
+                items = [
+                    it for it in items
+                    if audience_fits(self._title_audience.get(it[0], ""), want_aud)
+                ]
+            if len(items) < 2:
+                continue
+            # ~150 belgi — blok sarlavhasi ([nom], FOR CLIENTS) uchun zaxira
+            per_item = max(
+                self.COMPARE_MIN_ITEM_CHARS,
+                self.COMPARE_CONTEXT_CHARS // len(items) - 150,
+            )
+            logger.info(
+                "Solishtirish: «%s» turkumidagi %d ta mahsulot", cat.name, len(items)
+            )
+            return [
+                (
+                    {
+                        "title": title,
+                        "chunk_text": terms_digest(text, per_item),
+                        "audience": self._title_audience.get(title, ""),
+                    },
+                    1.0,
+                )
+                for title, text in items
+            ]
+        return []
+
     async def _scroll_points(self) -> list[dict[str, Any]]:
         """Bazadagi barcha bo'laklar — bitta so'rov davomida BIR MARTA o'qiladi.
 
@@ -1228,6 +1284,7 @@ class AnswerQuestionUseCase:
         history: list[ChatTurn] | None,
         results: list[tuple[dict[str, Any], float]],
         include_catalog: bool = True,
+        compare: bool = False,
     ) -> tuple[str, list[SourceRef]]:
         """Topilgan bo'laklar + katalog + suhbat tarixidan yakuniy promptni va
         manbalar ro'yxatini quradi (execute/execute_stream uchun umumiy).
@@ -1247,6 +1304,7 @@ class AnswerQuestionUseCase:
         # url(Manba: url)" kabi ikki marta havola chiqarardi (dubl link bug).
         blocks: list[str] = []
         used = 0
+        budget = self.COMPARE_CONTEXT_CHARS if compare else self.MAX_CONTEXT_CHARS
         for payload, _ in results:
             title = payload.get("title", "")
             source_url = payload.get("source_url", "")
@@ -1266,11 +1324,17 @@ class AnswerQuestionUseCase:
             block = f"{header}\n{payload.get('chunk_text', '')}"
             # Byudjet tugasa qolgan bo'laklar tashlab yuboriladi — ular
             # baribir eng uzoq (eng kam mos) natijalar.
-            if blocks and used + len(block) > self.MAX_CONTEXT_CHARS:
+            if blocks and used + len(block) > budget:
                 break
             blocks.append(block)
             used += len(block)
         context = "\n\n---\n\n".join(blocks)
+        context_label = (
+            "CONTEXT (key terms of EVERY product in the category the user asks "
+            "about — compare all of them and pick from these figures only):"
+            if compare
+            else "CONTEXT (nearest blocks for the selected topic):"
+        )
 
         # Katalog — turkumdagi HAMMA mahsulotni sanash uchun (keng savol).
         # ANIQ mahsulot javobida (foydalanuvchi ro'yxatdan tanlagan) katalog
@@ -1284,7 +1348,7 @@ class AnswerQuestionUseCase:
         )
         base = (
             f"{catalog_block}"
-            f"CONTEXT (nearest blocks for the selected topic):\n{context}\n\n"
+            f"{context_label}\n{context}\n\n"
             f"QUESTION: {question}"
         )
 
@@ -1579,6 +1643,13 @@ class AnswerQuestionUseCase:
                     )
                     if v2 is not None:
                         extra_tokens += v2.tokens
+                        # Admin IKKALA tahlilni ko'radi: 1-variant nega rad
+                        # etilgani va qayta yozilgan javob haqida. Ilgari faqat
+                        # birinchisi saqlanardi — admin u tilga olgan raqamlarni
+                        # ko'rinayotgan (qayta yozilgan) javobdan topa olmasdi.
+                        self.last_verdict_note = join_review_notes(
+                            v.analysis or first_problem, v2.analysis or v2.problem
+                        )
                     if v2 is None or v2.ok:
                         self.last_verdict = "fixed"
                     else:
@@ -1589,7 +1660,6 @@ class AnswerQuestionUseCase:
                             v2.problem,
                         )
                         self.last_verdict = "failed"
-                        self.last_verdict_note = f"{first_problem} | {v2.problem}"
                         self.last_outcome = "no_info"
                         lang = detect_reply_lang(question, history)
                         self._buf_text = _localize(VERIFY_FAILED_REPLY, lang)
@@ -2227,6 +2297,11 @@ class AnswerQuestionUseCase:
         yield {"type": "status", "step": "search"}
         if exact_title:
             results = await self._results_by_title(exact_title)
+        # Turkum ichida solishtirish — turkumdagi hamma mahsulot shartlari
+        compare = False
+        if not results and not exact_title:
+            results = await self._comparison_results(question)
+            compare = bool(results)
         if not results:
             # Router savolni allaqachon o'qib, tozalangan qidiruv so'rovini
             # bergan — o'shani ishlatamiz. Ilgari bu yerda YANA bitta LLM
@@ -2313,7 +2388,11 @@ class AnswerQuestionUseCase:
             # katalog kerak emas. Katalog ~2000 token joy egallab, javobning
             # o'zi uchun joy qoldirmasdi.
             prompt, sources = await self._assemble(
-                question, history, results, include_catalog=not exact_title
+                question,
+                history,
+                results,
+                include_catalog=not exact_title and not compare,
+                compare=compare,
             )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
@@ -2726,6 +2805,11 @@ class AnswerQuestionUseCase:
         lexical: list[tuple[dict[str, Any], float]] = []
         if exact_title:
             results = await self._results_by_title(exact_title)
+        # Turkum ichida solishtirish — turkumdagi hamma mahsulot shartlari
+        compare = False
+        if not results and not exact_title:
+            results = await self._comparison_results(question)
+            compare = bool(results)
         if not results:
             # Router savolni allaqachon o'qib, tozalangan qidiruv so'rovini
             # bergan — o'shani ishlatamiz. Ilgari bu yerda YANA bitta LLM
@@ -2786,7 +2870,11 @@ class AnswerQuestionUseCase:
             # katalog kerak emas. Katalog ~2000 token joy egallab, javobning
             # o'zi uchun joy qoldirmasdi.
             prompt, sources = await self._assemble(
-                question, history, results, include_catalog=not exact_title
+                question,
+                history,
+                results,
+                include_catalog=not exact_title and not compare,
+                compare=compare,
             )
             system = STRICT_RAG_SYSTEM
             max_toks = self.MAX_TOKENS
