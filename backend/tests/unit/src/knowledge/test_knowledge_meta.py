@@ -178,6 +178,57 @@ async def test_bulk_delete() -> None:
     assert store.deleted == ["A", "B"]
 
 
+class _WriteStore(_Store):
+    """Yozishni ham qo'llaydigan soxta baza: upsert bo'lakni (title,
+    chunk_index) bo'yicha BUTUNLAY almashtiradi — Qdrant kabi."""
+
+    async def ensure_collection(self, dim: int) -> None:
+        return None
+
+    async def upsert(self, vectors: list[list[float]], payloads: list[dict[str, Any]]) -> None:
+        for new in payloads:
+            key = (new["title"], new["chunk_index"])
+            self.payloads = [p for p in self.payloads if (p.get("title"), p.get("chunk_index")) != key]
+            self.payloads.append(dict(new))
+
+    async def delete_stale_chunks(self, title: str, keep: int) -> None:
+        self.payloads = [
+            p for p in self.payloads if p.get("title") != title or int(p.get("chunk_index", 0)) < keep
+        ]
+
+    async def count(self) -> int:
+        return len(self.payloads)
+
+
+class _Embedder:
+    async def embed_many(self, texts: list[str]) -> list[list[float]]:
+        return [[0.1, 0.2] for _ in texts]
+
+
+@pytest.mark.asyncio
+async def test_reupload_keeps_admin_meta() -> None:
+    """Valyuta kursi kabi qayta yoziladigan yozuv yangilanganda turkum,
+    mijoz turi va izoh yo'qolmaydi ("Turkumsiz" bo'lib qolmaydi)."""
+    from src.knowledge.ingest_usecases import UploadKnowledgeUseCase
+
+    store = _WriteStore(
+        [_doc("Valyuta kurslari", text="eski kurs", category=["rates"], audience="both", note="har kuni")]
+    )
+    await UploadKnowledgeUseCase(_Embedder(), store).execute(  # type: ignore[arg-type]
+        title="Valyuta kurslari", text="yangi kurs", extra_payload={"rates_json": "{}"}
+    )
+    [p] = store.payloads
+    assert p["chunk_text"] == "yangi kurs" and p["rates_json"] == "{}"
+    assert p["category"] == ["rates"] and p["audience"] == "both" and p["note"] == "har kuni"
+
+    # Chaqiruvchi aniq bergan qiymat ustun turadi
+    await UploadKnowledgeUseCase(_Embedder(), store).execute(  # type: ignore[arg-type]
+        title="Valyuta kurslari", text="yana", extra_payload={"note": "yangi izoh"}
+    )
+    assert store.payloads[0]["note"] == "yangi izoh"
+    assert store.payloads[0]["category"] == ["rates"]
+
+
 @pytest.mark.parametrize(
     ("q", "want"),
     [

@@ -50,6 +50,25 @@ logger = get_logger(__name__)
 ADMIN_META_FIELDS = ("valid_until", "category", "audience", "note")
 
 
+async def existing_admin_meta(
+    store: QdrantStore, title: str
+) -> tuple[str, dict[str, Any]]:
+    """Bazadagi yozuvning havolasi va admin qo'ygan maydonlari (muddat,
+    turkum, mijoz turi, izoh) — qayta yozishda saqlab qolish uchun."""
+    if not await store.exists():
+        return "", {}
+    source_url = ""
+    kept: dict[str, Any] = {}
+    for payload in await store.scroll_all_pages():
+        if str(payload.get("title", "")) != title:
+            continue
+        source_url = source_url or str(payload.get("source_url") or "")
+        for key in ADMIN_META_FIELDS:
+            if payload.get(key) and key not in kept:
+                kept[key] = payload[key]
+    return source_url, kept
+
+
 class UploadKnowledgeUseCase:
     def __init__(self, embedder: OllamaEmbedder, store: QdrantStore) -> None:
         self.embedder = embedder
@@ -61,14 +80,25 @@ class UploadKnowledgeUseCase:
         text: str,
         source_url: str = "",
         extra_payload: dict[str, Any] | None = None,
+        keep_meta: bool = True,
     ) -> UploadResult:
         """`extra_payload` — har bir bo'lak payload'iga qo'shiladigan qo'shimcha
         maydonlar. Valyuta kurslari uchun ishlatiladi: matn bilan bir qatorda
         STRUKTURALI JSON ham saqlanadi, shunda oyna (modal) uchun alohida baza
-        yoki jadval kerak bo'lmaydi."""
+        yoki jadval kerak bo'lmaydi.
+
+        `keep_meta` — shu sarlavhali yozuv bazada bo'lsa, admin qo'ygan turkum,
+        mijoz turi, izoh va muddat yangi bo'laklarga ko'chiriladi. Ilgari
+        bo'laklar ustiga yozilganda bular yo'qolardi: masalan valyuta kursi har
+        yangilanganda "Turkumsiz" bo'lib qolardi. `extra_payload` dagi qiymat
+        ustun turadi; meta'ni o'zi hisoblagan chaqiruvchi False beradi."""
         chunks = chunk_text(text)
         if not chunks:
             raise InstanceProcessingException("Matn bo'sh — yozadigan narsa yo'q")
+        if keep_meta:
+            _, kept = await existing_admin_meta(self.store, title)
+            if kept:
+                extra_payload = {**kept, **(extra_payload or {})}
 
         uploaded_at = get_utc_now().isoformat()
         vectors: list[list[float]] = []
@@ -263,11 +293,15 @@ class UploadPdfUseCase:
             # Zaxira: fayl nomi (kengaytmasiz)
             final_title = filename.rsplit(".", 1)[0].strip() or "Hujjat"
 
-        # Bir xil hujjat qayta yuklansa — eski bo'laklar qolib ketmasin
+        # Bir xil hujjat qayta yuklansa — eski bo'laklar qolib ketmasin.
+        # Admin qo'ygan turkum/izoh o'chirishdan OLDIN olinadi va saqlanadi.
+        _, kept = await existing_admin_meta(self.store, final_title)
         await self.store.delete_by_title(final_title)
         result = await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store
-        ).execute(title=final_title, text=cleaned)
+        ).execute(
+            title=final_title, text=cleaned, extra_payload=kept or None, keep_meta=False
+        )
         return PdfUploadResult(
             chunks=result.chunks,
             vector_dim=result.vector_dim,
@@ -377,12 +411,21 @@ class UploadEmployeesUseCase:
             new_depts = {r["department"] for r in records}
             existing = await self.store.scroll_all_records()
             stale = [
-                pid
+                (pid, p)
                 for pid, p in existing
                 if p.get("doc_type") == "employee"
                 and p.get("department") in new_depts
             ]
-            await self.store.delete_ids(stale)
+            # Admin bo'limga qo'ygan turkum/izoh qayta yuklashda saqlanadi
+            kept: dict[str, dict[str, Any]] = {}
+            for _, p in stale:
+                meta = kept.setdefault(str(p.get("title", "")), {})
+                for key in ADMIN_META_FIELDS:
+                    if p.get(key) and key not in meta:
+                        meta[key] = p[key]
+            for p in payloads:
+                p.update(kept.get(str(p["title"]), {}))
+            await self.store.delete_ids([pid for pid, _ in stale])
             await self.store.upsert(vectors, payloads)
             total = await self.store.count()
         except Exception as exc:
@@ -422,6 +465,7 @@ class ScrapeUrlUseCase:
             text=text,
             source_url=url,
             extra_payload=kept or None,
+            keep_meta=False,
         )
 
     async def _unique_title(self, title: str, url: str) -> str:
@@ -568,23 +612,11 @@ class UpdateKnowledgeUseCase:
             text=text,
             source_url=source_url,
             extra_payload=kept or None,
+            keep_meta=False,
         )
 
     async def _existing_meta(self, old_title: str) -> tuple[str, dict[str, Any]]:
-        """Tahrirlanayotgan yozuvning havolasi va admin qo'ygan maydonlari
-        (valid_until, category, note) — qayta yozishda saqlab qolish uchun."""
-        if not await self.store.exists():
-            return "", {}
-        source_url = ""
-        kept: dict[str, Any] = {}
-        for payload in await self.store.scroll_all_pages():
-            if str(payload.get("title", "")) != old_title:
-                continue
-            source_url = source_url or str(payload.get("source_url") or "")
-            for key in ADMIN_META_FIELDS:
-                if payload.get(key) and key not in kept:
-                    kept[key] = payload[key]
-        return source_url, kept
+        return await existing_admin_meta(self.store, old_title)
 
 
 class SetKnowledgeMetaUseCase:
