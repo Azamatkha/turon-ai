@@ -684,6 +684,8 @@ export interface AdminStrings {
   answersIntent: string;
   answersScore: string;
   answersSources: string;
+  // Tool-calling agenti chaqirgan asboblar
+  answersTools: string;
   // Audit jurnali
   auditNav: string;
   auditLoadError: string;

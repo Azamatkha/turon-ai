@@ -15,6 +15,8 @@ from src.core.ai.schemas import (
     CallResult,
     DiagnosticResponse,
     TextGenResult,
+    ToolCall,
+    ToolTurn,
 )
 from src.core.errors.exceptions import InfrastructureException
 from src.core.patterns.singleton import singleton
@@ -160,6 +162,7 @@ class OllamaClient(BaseAIClient):
         think: bool = False,
         fmt: dict[str, Any] | None = None,
         timeout: float | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         # Ollama'ning o'ziga xos (native) /api/chat endpointi — OpenAI-uyg'un
         # /v1/chat/completions'dan farqli, "think" bayrog'ini ishonchli
@@ -184,6 +187,9 @@ class OllamaClient(BaseAIClient):
         # xohlagan ko'rinishda javob berardi va parser uni topa olmay qolardi.
         if fmt is not None:
             payload["format"] = fmt
+        # Tool-calling: model shu ro'yxatdan asbob chaqirishi mumkin
+        if tools:
+            payload["tools"] = tools
         try:
             resp = await self.http.post(
                 f"{self.base_url}/api/chat",
@@ -246,6 +252,47 @@ class OllamaClient(BaseAIClient):
             prompt_tokens=int(data.get("prompt_eval_count", 0)),
             completion_tokens=int(data.get("eval_count", 0)),
             max_tokens=max_tokens,
+        )
+
+    @staticmethod
+    def _tool_calls(message: dict[str, Any]) -> list[ToolCall]:
+        """Ollama `message.tool_calls` ni o'qiydi. Argumentlar ba'zan JSON
+        satr bo'lib keladi — lug'atga aylantiriladi; buzuq bo'lsa bo'sh."""
+        calls: list[ToolCall] = []
+        for raw in message.get("tool_calls") or []:
+            fn = (raw or {}).get("function") or {}
+            name = str(fn.get("name") or "").strip()
+            if not name:
+                continue
+            args = fn.get("arguments")
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args)
+                except ValueError:
+                    args = {}
+            calls.append(ToolCall(name=name, arguments=args if isinstance(args, dict) else {}))
+        return calls
+
+    async def chat_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        timeout: float | None = None,
+    ) -> ToolTurn:
+        data = await self._chat(
+            messages, temperature, max_tokens, think=False, timeout=timeout, tools=tools
+        )
+        message = dict(data.get("message") or {})
+        return ToolTurn(
+            content=str(message.get("content", "")),
+            tool_calls=self._tool_calls(message),
+            message=message,
+            prompt_tokens=int(data.get("prompt_eval_count", 0)),
+            completion_tokens=int(data.get("eval_count", 0)),
+            finish_reason=str(data.get("done_reason", "")),
         )
 
     async def stream_generate(

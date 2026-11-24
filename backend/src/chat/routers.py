@@ -402,6 +402,7 @@ async def ask(
                 answer=result.answer or None,
                 verdict=verdict,
                 verdict_note=getattr(use_case, "last_verdict_note", None),
+                tools=getattr(use_case, "last_tools", None) or None,
             )
         )
         # Asosiy oqimda tekshirilmagan javob (xodim, "topilmadi", tayyor
@@ -521,6 +522,7 @@ async def ask_stream(
                     answer=answer_text or None,
                     verdict=verdict,
                     verdict_note=getattr(answer_use_case, "last_verdict_note", None),
+                    tools=getattr(answer_use_case, "last_tools", None) or None,
                 )
             )
             # Asosiy oqimda tekshirilmagan javob — AI fonda tahlil qiladi

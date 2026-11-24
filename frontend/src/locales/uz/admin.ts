@@ -362,6 +362,7 @@ export const admin: AdminStrings = {
   answersIntent: "Yo‘nalish",
   answersScore: "Moslik balli",
   answersSources: "Manbalar",
+  answersTools: "Asboblar",
   auditNav: "Audit jurnali",
   auditLoadError: "Jurnalni olishda xatolik",
   auditEmpty: "Yozuvlar yo‘q",

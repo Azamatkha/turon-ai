@@ -358,6 +358,7 @@ export const admin: AdminStrings = {
   answersIntent: "Направление",
   answersScore: "Релевантность",
   answersSources: "Источники",
+  answersTools: "Инструменты",
   auditNav: "Журнал аудита",
   auditLoadError: "Ошибка при загрузке журнала",
   auditEmpty: "Записей нет",

@@ -75,6 +75,8 @@ class QuestionLogEntry:
     answer: str | None = None
     verdict: str | None = None
     verdict_note: str | None = None
+    # Tool-calling agenti chaqirgan asboblar
+    tools: list[str] | None = None
 
 
 async def log_question(entry: QuestionLogEntry) -> UUID | None:
@@ -114,6 +116,7 @@ async def log_question(entry: QuestionLogEntry) -> UUID | None:
                         ),
                         "verdict": entry.verdict,
                         "verdict_note": entry.verdict_note,
+                        "tools": entry.tools or None,
                     },
                 )
                 await uow.commit()

@@ -27,6 +27,8 @@ from src.core.utils.uzbek_script import (
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge import web_search
+from src.knowledge.agent import AgentAnswer, ToolAgent
+from src.knowledge.agent_tools import ToolContext
 from src.knowledge.answer_helpers import (
     _BARE_IP_RE,
     _BROAD_QUESTION_STOPWORDS,
@@ -50,11 +52,11 @@ from src.knowledge.answer_helpers import (
     _declined_clarify_titles,
     _dedupe_source_links,
     _employee_list_question,
-    _employees_from_payloads,
     _expand_query,
     _format_employee_answer,
     _format_history,
     _guard_input,
+    _has_contact,
     _has_employee_intent,
     _ip_lookup_numbers,
     _is_generic_employee_request,
@@ -62,6 +64,7 @@ from src.knowledge.answer_helpers import (
     _is_ru_doc,
     _is_web_lookup,
     _is_web_not_found,
+    _kb_employees,
     _keyword_hit,
     _last_turn_was_clarify,
     _localize,
@@ -97,7 +100,6 @@ from src.knowledge.answer_helpers import (
 )
 from src.knowledge.categories import (
     AUDIENCE_LIST_CLOSING,
-    AUDIENCE_PROMPT,
     UNCATEGORIZED_LABEL,
     audience_fits,
     audience_followup,
@@ -108,6 +110,7 @@ from src.knowledge.categories import (
     payload_categories,
     question_audience,
 )
+from src.knowledge.context import context_blocks, source_refs
 from src.knowledge.directory import directory_users, users_with_keywords
 from src.knowledge.ingest_usecases import (
     DeleteKnowledgeUseCase,
@@ -122,6 +125,7 @@ from src.knowledge.ingest_usecases import (
 )
 from src.knowledge.lang import ReplyLang, detect_reply_lang
 from src.knowledge.prompts import (
+    AGENT_SYSTEM,
     CONCEPT_SYSTEM,
     CONCEPT_WEB_ADDENDUM,
     CONTACTS_HOWTO_REPLY,
@@ -157,7 +161,7 @@ from src.knowledge.schemas import (
     ChatTurn,
     SourceRef,
 )
-from src.knowledge.validity import is_expired, penalize_expired
+from src.knowledge.validity import penalize_expired
 from src.knowledge.verifier import join_review_notes, verify_answer
 from src.main.config import config
 
@@ -333,6 +337,8 @@ class AnswerQuestionUseCase:
         # Oxirgi execute_stream natijasi — savollar statistikasi (question_logs)
         # uchun. Router oqim tugagach o'qiydi; javob oqimiga aralashmaydi.
         self.last_intent: str | None = None
+        # Tool-calling agenti chaqirgan asboblar (bo'sh — agent ishlamadi)
+        self.last_tools: list[str] = []
         self.last_outcome: str = "answered"
         self.last_top_score: float | None = None
         # "flagged" bo'lganda sabab: "harmful" (router) yoki "profanity" (lug'at)
@@ -820,11 +826,9 @@ class AnswerQuestionUseCase:
         # ayni shu yozuvlarni vektor qidiruv muammosiz topadi. Python filtri
         # hech qanday Qdrant indeksiga bog'liq emas va ilgari ishlagan usul.
         all_points = await self._scroll_points()
-        emps = [p for p in all_points if p.get("doc_type") == "employee"]
-        if not emps:
-            # Strukturaviy maydonlar yo'q — xodimlarni MATNDAN ajratib olamiz.
-            # Ma'lumot qanday yuklangan bo'lishidan qat'i nazar ishlaydi.
-            emps = _employees_from_payloads(all_points)
+        # Excel'dan yuklangan (doc_type=employee) + admin tahrirlagani sabab
+        # oddiy matnga aylangan xodim yozuvlari (qara: _kb_employees)
+        emps, emp_titles = _kb_employees(all_points)
         if not emps and not users:
             # Ro'yxat baribir bo'sh — hech bo'lmasa raqam bo'yicha ANIQ
             # payload qidiruvini sinab ko'ramiz.
@@ -868,7 +872,7 @@ class AnswerQuestionUseCase:
                 str(p.get("title", ""))
                 for p in catalog
                 if p.get("doc_type") != "employee"
-            }
+            } - emp_titles
             if _mentions_catalog_title(q_lower, sorted(t for t in titles if t)):
                 return None
 
@@ -877,7 +881,13 @@ class AnswerQuestionUseCase:
         # familiyasi bir xil boshqa odam) topilsa, fayl umuman qaralmasdi
         # ("ubaydulloyeva maftuna" so'roviga Umida chiqardi), filial so'rovida
         # esa xodimlarning bir qismi chiqmay qolardi.
-        matched, self._emp_note = _match_employees_ex(people, q_lower)
+        # Ro'yxatda faqat ichki raqami YOKI telefoni bor xodimlar. Raqamsizlar
+        # faqat ular bilan moslik topilsagina qaraladi ("Akbar Mansurov raqami"
+        # — "topilmadi" emas, uning raqami yo'qligi ko'rinsin).
+        reachable = [p for p in people if _has_contact(p)]
+        matched, self._emp_note = _match_employees_ex(reachable, q_lower)
+        if not matched:
+            matched, self._emp_note = _match_employees_ex(people, q_lower)
         if matched:
             # Javobni endi kod tuzadi (model emas), shuning uchun token cheklovi
             # yo'q — katta bo'lim ham to'liq chiqadi.
@@ -1357,36 +1367,10 @@ class AnswerQuestionUseCase:
         ortiqcha 1000 token promptni o'qishga qo'shimcha kutish qo'shadi."""
         # Batafsil kontekst (tanlangan mavzuga oid eng yaqin bo'laklar) —
         # aniq mahsulot bo'yicha to'liq (raqam/shart) javob berish uchun.
-        # MUHIM: manba havolasi "SOURCE_URL:" yorlig'i bilan beriladi — avval
-        # "(Manba: url)" edi va model uni javobga AYNAN ko'chirib, "Batafsil:
-        # url(Manba: url)" kabi ikki marta havola chiqarardi (dubl link bug).
-        blocks: list[str] = []
-        used = 0
+        # Format (sarlavha, SOURCE_URL, muddat, mijoz turi) — context.py da,
+        # tool-calling agenti ham shuni ishlatadi.
         budget = self.COMPARE_CONTEXT_CHARS if compare else self.MAX_CONTEXT_CHARS
-        for payload, _ in results:
-            title = payload.get("title", "")
-            source_url = payload.get("source_url", "")
-            header = f"[{title}]\nSOURCE_URL: {source_url}" if source_url else f"[{title}]"
-            if is_expired(payload):
-                header += (
-                    f"\nNOTE: this document was valid until {payload.get('valid_until')}; "
-                    "say in your answer that the information may be outdated and "
-                    "should be confirmed."
-                )
-            # Mijoz turi (admin belgilagan) — model mahsulot kimga ekanini
-            # bilsin: yuridik shaxs so'raganda jismoniylar mahsulotini taklif
-            # qilmasin
-            audience = AUDIENCE_PROMPT.get(str(payload.get("audience") or ""))
-            if audience:
-                header += f"\nFOR CLIENTS: {audience}"
-            block = f"{header}\n{payload.get('chunk_text', '')}"
-            # Byudjet tugasa qolgan bo'laklar tashlab yuboriladi — ular
-            # baribir eng uzoq (eng kam mos) natijalar.
-            if blocks and used + len(block) > budget:
-                break
-            blocks.append(block)
-            used += len(block)
-        context = "\n\n---\n\n".join(blocks)
+        context = context_blocks(results, budget)
         context_label = (
             "CONTEXT (key terms of EVERY product in the category the user asks "
             "about — compare all of them and pick from these figures only):"
@@ -1432,15 +1416,7 @@ class AnswerQuestionUseCase:
         )
 
         # Manbalarni sarlavha bo'yicha takrorlanmas qilib yig'amiz
-        sources: list[SourceRef] = []
-        seen: set[str] = set()
-        for payload, score in results:
-            title = str(payload.get("title", ""))
-            if title and title not in seen:
-                seen.add(title)
-                sources.append(SourceRef(title=title, score=round(score, 3)))
-
-        return prompt, sources
+        return prompt, source_refs(results)
 
     async def _web_query(self, question: str, decision: Route | None) -> str:
         """Internetga ketadigan KALIT SO'ZLAR (xom savol emas).
@@ -1739,6 +1715,78 @@ class AnswerQuestionUseCase:
         done["completion_tokens"] = int(done.get("completion_tokens") or 0) + extra_tokens
         yield done
 
+    # Agent ishlatmaydigan niyatlar: til vazifasi (tarjima/tahrir) va suhbat
+    # tarixi haqidagi savol — ular uchun alohida promptli eski yo'l yaxshi
+    _AGENT_SKIP_INTENTS = (Intent.LANGUAGE, Intent.HISTORY)
+    # Asbob -> jurnal/kesh uchun niyat. Kurs va xodim javobi keshlanmasin
+    # (router "product" desa ham), hisob natijasi ham savolga xos
+    _TOOL_INTENTS = (
+        ("find_employee", Intent.EMPLOYEE.value),
+        ("get_exchange_rates", Intent.RATES.value),
+        ("calculate_loan", "calc"),
+        ("calculate_deposit", "calc"),
+    )
+
+    def _agent_wanted(self, decision: Route | None, route_general: bool) -> bool:
+        return (
+            bool(config.ai.AGENT_TOOLS_ENABLED)
+            and not route_general
+            and (decision is None or decision.intent not in self._AGENT_SKIP_INTENTS)
+        )
+
+    async def _run_agent(
+        self,
+        question: str,
+        history: list[ChatTurn] | None,
+        lang: ReplyLang,
+        want_cyrillic: bool,
+    ) -> AsyncIterator[dict[str, Any] | AgentAnswer]:
+        """Tool-calling agenti: status hodisalarini, oxirida (muvaffaqiyatli
+        bo'lsa) AgentAnswer'ni chiqaradi. AgentAnswer chiqmasa — eski yo'l.
+
+        Holat maydonlari (last_intent, last_outcome, _last_context, ...) shu
+        yerda to'ldiriladi: tekshiruvchi, kesh va jurnal avvalgidek ishlaydi."""
+        convo = _format_history(
+            history, self.HISTORY_LIMIT, self.MAX_HISTORY_MSG_CHARS, self.MAX_HISTORY_CHARS
+        )
+        user_msg = f"QUESTION: {question}"
+        if convo:
+            user_msg = f"Previous conversation:\n{convo}\n\n{user_msg}"
+        agent = ToolAgent(
+            self.ai_client,
+            ToolContext(uc=self, want_cyrillic=want_cyrillic),
+            system_prompt=self._system(AGENT_SYSTEM, lang),
+            max_tokens=self.MAX_TOKENS,
+            temperature=self.TEMPERATURE,
+        )
+        async for ev in agent.run(user_msg):
+            yield ev
+        a = agent.answer
+        if a is None:
+            return
+        self.last_tools = list(a.tools)
+        for tool, intent in self._TOOL_INTENTS:
+            if tool in a.tools:
+                self.last_intent = intent
+                break
+        if a.no_info:
+            self.last_outcome = "no_info"
+        if a.verbatim:
+            # Ro'yxatni kod tuzdi (xodimlar / turkum) — tekshiruvga berilmaydi
+            self._code_built = True
+        else:
+            # Model yozgan matn: kirillga o'girish yoki aralash alifboni
+            # tuzatish — oddiy RAG oqimidagi bilan bir xil
+            fixer = (
+                StreamingTransliterator() if want_cyrillic
+                else StreamingScriptFixer() if lang == "uz" else None
+            )
+            if fixer is not None:
+                a.text = fixer.feed(a.text) + fixer.flush()
+        self._last_context = a.context or None
+        logger.info("[Agent] javob: asboblar=%s, %d belgi", a.tools, len(a.text))
+        yield a
+
     def _system(self, system: str, lang: ReplyLang) -> str:
         """Tizim prompti + til + (qayta yozishda) tekshiruvchi ko'rsatgan
         kamchilik."""
@@ -1791,6 +1839,7 @@ class AnswerQuestionUseCase:
                               rasmiy ma'lumot); topilmasa — halol "topilmadi";
           knowledge_base / none — bilim bazasidan to'liq qidiruv."""
         self.last_intent = None
+        self.last_tools = []
         self.last_outcome = "answered"
         self.last_top_score = None
         self.last_flag = None
@@ -2049,6 +2098,25 @@ class AnswerQuestionUseCase:
                 "sources": [],
             }
             return
+
+        # TOOL-CALLING (AGENT_TOOLS_ENABLED): xavfsizlik, salomlashish va
+        # "mavzudan tashqari" qarorlaridan keyin qolgan HAMMA yo'lni (xodim,
+        # kurs, katalog, RAG, umumiy tushuncha) model o'zi asbob tanlab
+        # bajaradi. Agent javob bera olmasa — quyidagi eski yo'l davom etadi.
+        if self._agent_wanted(decision, route_general):
+            async for item in self._run_agent(question, history, lang, want_cyrillic):
+                if not isinstance(item, AgentAnswer):
+                    yield item
+                    continue
+                yield {"type": "delta", "text": item.text}
+                yield {
+                    "type": "done",
+                    "completion_tokens": item.tokens + router_tokens,
+                    "finish_reason": item.finish_reason,
+                    "max_tokens": self.MAX_TOKENS,
+                    "sources": [s.model_dump() for s in item.sources],
+                }
+                return
 
         # Bank/moliya sohasining UMUMIY savoli — javob model bilimidan, bank
         # bazasidan EMAS. Qidiruv umuman bajarilmaydi: kontekst promptga
@@ -2560,6 +2628,7 @@ class AnswerQuestionUseCase:
         # Himoya — stream yo'li bilan bir xil (qara: _guard_input)
         self.last_outcome = "answered"
         self.last_flag = None
+        self.last_tools = []
         question, history, blocked = _guard_input(question, history)
         if blocked:
             self.last_outcome = "blocked"
@@ -2692,6 +2761,18 @@ class AnswerQuestionUseCase:
                 completion_tokens=router_tokens,
                 max_tokens=self.MAX_TOKENS,
             )
+
+        # Tool-calling — stream yo'li bilan bir xil (status hodisalari keraksiz)
+        if self._agent_wanted(decision, False):
+            async for item in self._run_agent(question, history, lang, want_cyrillic):
+                if isinstance(item, AgentAnswer):
+                    return AnswerResult(
+                        answer=item.text,
+                        sources=item.sources,
+                        finish_reason=item.finish_reason,
+                        completion_tokens=item.tokens + router_tokens,
+                        max_tokens=self.MAX_TOKENS,
+                    )
 
         # Qidiruvsiz javob beriladigan niyatlar: soha umumiy savoli (model
         # bilimidan) va suhbatning o'zi haqidagi savol (javob tarixda).

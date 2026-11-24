@@ -258,6 +258,9 @@ const AnswerLogPanel = forwardRef<HTMLElement, AnswerLogPanelProps>(function Ans
         <div><dt>{admin.answersIntent}</dt><dd>{it.intent || "—"}</dd></div>
         <div><dt>{admin.answersScore}</dt><dd>{it.top_score != null ? it.top_score.toFixed(3) : "—"}</dd></div>
         <div><dt>{admin.answersSources}</dt><dd>{it.sources_count ?? 0}</dd></div>
+        {!!it.tools?.length && (
+          <div><dt>{admin.answersTools}</dt><dd>{it.tools.join(" → ")}</dd></div>
+        )}
       </dl>
 
       <div className={styles.badges}>

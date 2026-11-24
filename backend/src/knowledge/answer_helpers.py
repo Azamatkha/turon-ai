@@ -289,6 +289,47 @@ def _employees_from_payloads(payloads: list[dict[str, Any]]) -> list[dict[str, A
     return out
 
 
+def _kb_employees(
+    points: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], set[str]]:
+    """Vektor bazadagi BARCHA xodimlar -> (xodimlar, xodim yozuvlari sarlavhalari).
+
+    Ikki xil yozuv bor:
+    * Excel'dan yuklangan — doc_type=employee, strukturaviy maydonlar bilan;
+    * admin TAHRIRLAGAN xodim yozuvi — tahrir uni oddiy matn qilib qayta
+      yozadi va doc_type yo'qoladi ("IT DEPARTAMENT" sarlavhasi
+      o'zgartirilgach, IT xodimlari ro'yxatdan butunlay tushib qolgan edi,
+      2026-11-24). Bunday matndan xodimlar "F.I.SH: ..." bo'yicha ajratiladi.
+    Ikkalasida bir xil odam (F.I.SH + IP) bo'lsa — bittasi qoladi."""
+    structured = [p for p in points if p.get("doc_type") == "employee"]
+    seen = {f"{_person_key(str(p.get('fish', '')))}|{p.get('ip', '')}" for p in structured}
+    parsed: list[dict[str, Any]] = []
+    titles: set[str] = set()
+    for p in points:
+        if p.get("doc_type") == "employee" or "F.I.SH" not in str(p.get("chunk_text", "")):
+            continue
+        recs = _parse_employee_text(str(p.get("chunk_text", "")))
+        if recs:
+            titles.add(str(p.get("title", "")))
+        for rec in recs:
+            key = f"{_person_key(rec['fish'])}|{rec['ip']}"
+            if key not in seen:
+                seen.add(key)
+                parsed.append(rec)
+    titles |= {str(p.get("title", "")) for p in structured}
+    return structured + parsed, {t for t in titles if t}
+
+
+_NO_VALUE = {"", "-", "—", "yo'q", "yoq", "нет"}
+
+
+def _has_contact(e: dict[str, Any]) -> bool:
+    """Xodimning ichki raqami yoki telefoni bormi (ro'yxatda ko'rsatishga arziydimi)."""
+    return any(
+        str(e.get(k) or "").strip().lower() not in _NO_VALUE for k in ("ip", "phone")
+    )
+
+
 def _format_employee_line(e: dict[str, Any], with_dept: bool = True) -> str:
     """Bitta xodim — bir qator: F.I.SH, bo'lim, bo'linma, lavozim, IP, telefon."""
     parts: list[str] = [str(e.get("fish", "")).strip()]
@@ -574,6 +615,10 @@ def _merge_employee_sources(
             by_token.setdefault(t, []).append(i)
     used: set[int] = set()
     merged: list[dict[str, Any]] = []
+    # Fayldagi bo'lim nomi -> users'dagi nomi (ikkala manbada bor odamlar
+    # orqali aniqlanadi): "IT DEPARTAMENT" -> "Axborot texnologiyalari
+    # departamenti (IT departamenti)"
+    dept_alias: dict[str, dict[str, int]] = {}
     for f in file_emps:
         fish = str(f.get("fish", ""))
         k = _person_key(fish)
@@ -602,9 +647,27 @@ def _merge_employee_sources(
             continue  # faylda shu odam ikki marta — bittasi yetarli
         used.add(idx)
         u = users[idx]
+        f_dept = str(f.get("department") or "").strip()
+        u_dept = str(u.get("department") or "").strip()
+        if f_dept and u_dept and f_dept != u_dept:
+            counts = dept_alias.setdefault(f_dept, {})
+            counts[u_dept] = counts.get(u_dept, 0) + 1
         merged.append(
             {**f, **{key: u[key] for key in _USER_OVERRIDE_FIELDS if u.get(key)}}
         )
+    # Faqat FAYLDA bor xodimlar (hali dasturga kirmaganlar) ham users'dagi
+    # bo'lim nomi ostiga o'tadi. Aks holda bitta bo'lim ikki nom bilan ikkiga
+    # bo'linib, bo'lim so'rovida ularning biri tushib qolardi.
+    rename = {
+        fd: max(sorted(c), key=lambda d: c[d]) for fd, c in dept_alias.items()
+    }
+    if rename:
+        merged = [
+            {**e, "department": rename[str(e.get("department") or "").strip()]}
+            if str(e.get("department") or "").strip() in rename
+            else e
+            for e in merged
+        ]
     return [u for i, u in enumerate(users) if i not in used] + merged
 
 

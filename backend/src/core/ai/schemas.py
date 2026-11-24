@@ -45,3 +45,24 @@ class TextGenResult(Base):
     prompt_tokens: int
     completion_tokens: int
     max_tokens: int
+
+
+class ToolCall(Base):
+    """Model chaqirmoqchi bo'lgan bitta asbob (tool-calling)."""
+
+    name: str
+    arguments: dict[str, Any] = {}
+
+
+class ToolTurn(Base):
+    """chat_tools natijasi: model yo matn yozdi, yo asbob(lar) chaqirdi.
+
+    `message` — modelning xom javob xabari: keyingi qadamda suhbatga AYNAN
+    shunday qaytariladi (Ollama tool_calls'ni shu xabardan taniydi)."""
+
+    content: str
+    tool_calls: list[ToolCall] = []
+    message: dict[str, Any] = {}
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    finish_reason: str = ""

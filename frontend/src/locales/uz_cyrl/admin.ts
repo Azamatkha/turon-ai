@@ -359,6 +359,7 @@ export const admin: AdminStrings = {
   answersIntent: "Йўналиш",
   answersScore: "Мослик бали",
   answersSources: "Манбалар",
+  answersTools: "Асбоблар",
   auditNav: "Аудит журнали",
   auditLoadError: "Журнални олишда хатолик",
   auditEmpty: "Ёзувлар йўқ",

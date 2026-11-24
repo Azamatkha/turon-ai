@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import Any
 
-from src.core.ai.schemas import CallResult, DiagnosticResponse, TextGenResult
+from src.core.ai.schemas import CallResult, DiagnosticResponse, TextGenResult, ToolTurn
 
 
 class BaseAIClient(ABC):
@@ -64,6 +64,20 @@ class BaseAIClient(ABC):
         """`timeout` — shu BITTA chaqiruv uchun soniya. Berilmasa, klientning
         umumiy TIMEOUT_SECONDS'i ishlatiladi. Router kabi TEZ bo'lishi shart
         bo'lgan bosqichlar uzun umumiy timeout'ni kutib o'tirmasligi uchun."""
+        raise NotImplementedError
+
+    async def chat_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        temperature: float | None = None,
+        max_tokens: int,
+        timeout: float | None = None,
+    ) -> ToolTurn:
+        """Tool-calling: model `tools` ro'yxatidan asbob chaqirishi yoki
+        to'g'ridan-to'g'ri matn yozishi mumkin. `messages` — to'liq suhbat
+        (system/user/assistant/tool). Qo'llamaydigan provayderda — xato."""
         raise NotImplementedError
 
     @abstractmethod

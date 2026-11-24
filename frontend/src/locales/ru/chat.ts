@@ -180,6 +180,7 @@ export const chatStatic: ChatStaticStrings = {
     analyze: "Анализирует вопрос",
     rates: "Получает курсы валют",
     employees: "Ищет в списке сотрудников",
+    calc: "Считает на калькуляторе",
     search: "Ищет в базе знаний",
     web: "Ищет на официальных сайтах",
     write: "Пишет ответ",

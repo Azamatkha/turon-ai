@@ -332,6 +332,7 @@ class AnswerLogUseCase:
                     full_name=full_name,
                     top_score=log.top_score,
                     sources_count=log.sources_count or 0,
+                    tools=list(log.tools or []),
                     completion_tokens=log.completion_tokens or 0,
                     source_urls=list(log.source_urls or []),
                 )

@@ -97,3 +97,5 @@ class QuestionLog(Base, UUIDIDMixin, TimestampMixin):
     verdict: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     # Tekshiruvchi topgan kamchilik
     verdict_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Tool-calling agenti chaqirgan asboblar (tartib bilan); agent ishlamagan — NULL
+    tools: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)

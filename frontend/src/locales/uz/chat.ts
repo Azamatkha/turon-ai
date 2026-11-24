@@ -183,6 +183,7 @@ export const chatStatic: ChatStaticStrings = {
     analyze: "Savolni tahlil qilmoqda",
     rates: "Valyuta kurslarini olmoqda",
     employees: "Xodimlar ro'yxatidan qidirmoqda",
+    calc: "Kalkulyatorda hisoblamoqda",
     search: "Bilim bazasidan qidirmoqda",
     web: "Rasmiy saytlardan qidirmoqda",
     write: "Javob yozmoqda",

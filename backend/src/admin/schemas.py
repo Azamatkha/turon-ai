@@ -153,6 +153,8 @@ class AnswerLogItem(Base):
     full_name: str | None = None
     top_score: float | None = None
     sources_count: int = 0
+    # Tool-calling agenti chaqirgan asboblar (bo'sh — eski yo'l)
+    tools: list[str] = []
     completion_tokens: int = 0
     source_urls: list[str] = []
 

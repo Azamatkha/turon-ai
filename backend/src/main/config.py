@@ -201,6 +201,11 @@ class AIConfig(BaseModel):
     # o'rniga tekshirilgach birdan chiqadi. Muammo bo'lsa .env da
     # ANSWER_VERIFY=false bilan o'chiriladi.
     ANSWER_VERIFY: bool = True
+    # TOOL-CALLING: savol yo'nalishini kod emas, model o'zi tanlaydi —
+    # qidiruv, katalog, kurs, xodim va kalkulyator asboblarini chaqiradi
+    # (qara: src/knowledge/agent.py). Agent javob bera olmasa eski yo'l
+    # ishlaydi. Sinov uchun .env da AGENT_TOOLS_ENABLED=true bilan yoqiladi.
+    AGENT_TOOLS_ENABLED: bool = False
     # Model oxirgi so'rovdan keyin VRAM'da qancha turadi. Ollama standarti
     # atigi 5 daqiqa: 9 daqiqa jimlikdan keyin model tushirilib, keyingi
     # savolda 27B modelni qayta yuklash router timeout'idan (20 s) uzoq

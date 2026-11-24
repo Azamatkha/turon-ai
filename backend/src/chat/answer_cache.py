@@ -89,7 +89,11 @@ async def cache_key(redis: Redis, question: str, lang: str) -> str | None:
     version = await get_kb_version(redis)
     # Veb-qidiruv yoqilishi/o'chirilishi javobni o'zgartiradi — kalitga kiradi
     web = int(config.web_search.WEB_SEARCH_ENABLED)
-    digest = hashlib.sha256(f"{config.ai.OLLAMA_MODEL}|{lang}|web{web}|{norm}".encode()).hexdigest()[:32]
+    # Tool-calling agenti ham — yoqilganda eski yo'l javoblari chiqmasin
+    agent = int(config.ai.AGENT_TOOLS_ENABLED)
+    digest = hashlib.sha256(
+        f"{config.ai.OLLAMA_MODEL}|{lang}|web{web}|agent{agent}|{norm}".encode()
+    ).hexdigest()[:32]
     return f"{KEY_PREFIX}:{_FINGERPRINT}:{version}:{digest}"
 
 

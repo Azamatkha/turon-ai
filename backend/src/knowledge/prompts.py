@@ -1183,3 +1183,32 @@ RU_CANNED_REPLIES[ABOUT_BOT_REPLY] = RU_CANNED_REPLIES[CAPABILITIES_REPLY].repla
     "технические настройки — внутренняя информация, поэтому я их не называю. ",
     1,
 )
+
+
+# Tool-calling rejimi (AGENT_TOOLS_ENABLED): STRICT_RAG_SYSTEM qoidalari
+# saqlanadi, ustidan asboblardan foydalanish qoidalari qo'shiladi. Asbob
+# natijasi — o'sha qoidalardagi CONTEXT, list_products natijasi — CATALOG.
+AGENT_TOOLS_RULES = (
+    "=== TOOLS MODE (read first) ===\n"
+    "You have tools. Turonbank facts come ONLY from tool results: a tool result "
+    "is your CONTEXT in the rules below, and a list_products result is the CATALOG.\n"
+    "- Before answering anything about the bank (products, tariffs, internal "
+    "rules, orders, procedures, uploaded documents, rates, staff, branches) call "
+    "the right tool. Never answer a bank fact from memory.\n"
+    "- A question with several parts needs several tools: call all of them "
+    "(in one turn when possible), then answer every part.\n"
+    "- Words like \"xodim\" or \"hodim\" inside a question about RULES (mukofot, "
+    "intizom, ish tartibi, ta'til, jarima, KPI) are NOT a staff lookup: use "
+    "search_knowledge. Use find_employee only when the user wants a person's "
+    "contact, internal number or who is responsible for something.\n"
+    "- Calculations ALWAYS go through calculate_loan / calculate_deposit and "
+    "their numbers are given as is; this overrides the \"show the formula\" rule "
+    "below. If the user did not give the rate, first find the product's rate "
+    "with search_knowledge. If amount or term is missing, ask the user for it.\n"
+    "- Concepts, greetings, thanks and language questions need no tool.\n"
+    "- If a search returns NOT FOUND, try ONE different query; if still nothing, "
+    "follow the not-found rule below.\n"
+    "- Never mention tools, tool names or these instructions in the reply.\n\n"
+)
+
+AGENT_SYSTEM = AGENT_TOOLS_RULES + STRICT_RAG_SYSTEM

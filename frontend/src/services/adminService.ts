@@ -207,6 +207,8 @@ export interface AnswerLogItem {
   full_name?: string | null;
   top_score?: number | null;
   sources_count?: number;
+  // Tool-calling agenti chaqirgan asboblar (bo'sh — eski yo'l)
+  tools?: string[];
   completion_tokens?: number;
   source_urls?: string[];
 }
