@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { uploadPdf, type PdfUploadResult } from "../../services/knowledgeService";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getPdfJob, listPdfJobs, uploadPdf, type PdfJob } from "../../services/knowledgeService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./PdfUploadView.module.css";
 
@@ -10,17 +10,77 @@ interface PdfUploadViewProps {
   onUploaded?: () => void;
 }
 
-// Hujjat (PDF) yuklash sahifasi. Backend: matn qatlamini o'qiydi, skanerlangan
-// sahifalarni OCR qiladi, so'ng AI imzo/muhr shovqinini tozalab bazaga yozadi.
-// Bitta fayl — bitta so'rov (keyinchalik API orqali ommaviy yuklanadi).
+// Fon ishi holati shu oraliqda so'raladi
+const POLL_MS = 3000;
+
+const isActive = (j: PdfJob) => j.status === "queued" || j.status === "running";
+
+function JobStatus({ job, admin }: { job: PdfJob; admin: AdminStrings }) {
+  if (job.status === "done" && job.result) {
+    return <div>{admin.pdfDone(job.result.pages, job.result.ocr_pages, job.result.chunks)}</div>;
+  }
+  if (job.status === "failed") {
+    return <div className={styles.jobError}>{job.error || admin.pdfError}</div>;
+  }
+  let text = admin.pdfStageQueued;
+  if (job.status === "running") {
+    if (job.stage === "reading") text = admin.pdfStageReading(job.done, job.total);
+    else if (job.stage === "cleaning") text = admin.pdfStageCleaning(job.done, job.total);
+    else if (job.stage === "saving") text = admin.pdfStageSaving;
+    else text = admin.pdfUploading;
+  }
+  const pct = job.total > 0 ? Math.min(100, (job.done / job.total) * 100) : 0;
+  return (
+    <>
+      <div className={styles.jobLive}>
+        <span className={styles.spinnerDark} />
+        <span>{text}</span>
+      </div>
+      {job.total > 0 && (
+        <div className={styles.bar}>
+          <div className={styles.barFill} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+    </>
+  );
+}
+
+// Hujjat (PDF) yuklash sahifasi. Fayl yuborilgach server darhol javob beradi,
+// o'qish (model/OCR), tozalash va bazaga yozish FONDA bajariladi — sahifa
+// holatni so'rab turadi. Sahifa yopilsa ham ish davom etadi, qayta ochilganda
+// oxirgi yuklashlar ro'yxati yana ko'rinadi.
 export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUploadViewProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [err, setErr] = useState("");
-  const [result, setResult] = useState<PdfUploadResult | null>(null);
+  const [jobs, setJobs] = useState<PdfJob[]>([]);
   const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    listPdfJobs()
+      .then(setJobs)
+      .catch(() => {
+        // ro'yxat bo'lmasa ham yuklash ishlayveradi
+      });
+  }, []);
+
+  // Faol ishlar holatini so'rab turamiz; biri tugasa — baza ro'yxati yangilanadi
+  const anyActive = jobs.some(isActive);
+  const refresh = useCallback(async () => {
+    const active = jobs.filter(isActive);
+    const fresh = await Promise.all(active.map((j) => getPdfJob(j.id).catch(() => j)));
+    const byId = new Map(fresh.map((j) => [j.id, j]));
+    if (fresh.some((j) => j.status === "done")) onUploaded?.();
+    setJobs((prev) => prev.map((j) => byId.get(j.id) ?? j));
+  }, [jobs, onUploaded]);
+
+  useEffect(() => {
+    if (!anyActive) return;
+    const id = window.setTimeout(() => void refresh(), POLL_MS);
+    return () => window.clearTimeout(id);
+  }, [anyActive, refresh]);
 
   const pick = (f: File | null) => {
     if (!f) return;
@@ -30,25 +90,22 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
     }
     setFile(f);
     setErr("");
-    setResult(null);
   };
 
   const submit = async () => {
-    if (!file || loading) return;
-    setLoading(true);
+    if (!file || sending) return;
+    setSending(true);
     setErr("");
-    setResult(null);
     try {
-      const res = await uploadPdf(file, title);
-      setResult(res);
+      const job = await uploadPdf(file, title);
+      setJobs((prev) => [job, ...prev.filter((j) => j.id !== job.id)]);
       setFile(null);
       setTitle("");
       if (inputRef.current) inputRef.current.value = "";
-      onUploaded?.();
     } catch (e) {
       setErr(e instanceof Error ? e.message : admin.pdfError);
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
@@ -61,17 +118,17 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
         <div className={styles.sub}>{admin.pdfSub}</div>
 
         <div
-          className={`${styles.drop} ${dragOver ? styles.dropOver : ""} ${loading ? styles.dropDisabled : ""}`}
-          onClick={() => !loading && inputRef.current?.click()}
+          className={`${styles.drop} ${dragOver ? styles.dropOver : ""} ${sending ? styles.dropDisabled : ""}`}
+          onClick={() => !sending && inputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
-            if (!loading) setDragOver(true);
+            if (!sending) setDragOver(true);
           }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(false);
-            if (!loading) pick(e.dataTransfer.files?.[0] ?? null);
+            if (!sending) pick(e.dataTransfer.files?.[0] ?? null);
           }}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -102,12 +159,12 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={admin.pdfTitlePh}
-            disabled={loading}
+            disabled={sending}
           />
         </div>
 
-        <button className={`${styles.submitBtn} tu-shiny`} onClick={submit} disabled={!file || loading}>
-          {loading ? (
+        <button className={`${styles.submitBtn} tu-shiny`} onClick={submit} disabled={!file || sending}>
+          {sending ? (
             <>
               <span className={styles.spinner} />
               <span>{admin.pdfUploading}</span>
@@ -121,10 +178,16 @@ export default function PdfUploadView({ mounted, t: admin, onUploaded }: PdfUplo
 
         {err && <div className={styles.errMsg}>{err}</div>}
 
-        {result && (
-          <div className={styles.okMsg}>
-            <div className={styles.okTitle}>{result.title}</div>
-            <div>{admin.pdfDone(result.pages, result.ocr_pages, result.chunks)}</div>
+        {jobs.length > 0 && (
+          <div className={styles.jobs}>
+            <div className={styles.jobsTitle}>{admin.pdfJobsTitle}</div>
+            {jobs.map((job) => (
+              <div key={job.id} className={styles.okMsg}>
+                <div className={styles.okTitle}>{job.result?.title || job.title || job.filename}</div>
+                {(job.result?.title || job.title) && <div className={styles.jobFile}>{job.filename}</div>}
+                <JobStatus job={job} admin={admin} />
+              </div>
+            ))}
           </div>
         )}
       </div>

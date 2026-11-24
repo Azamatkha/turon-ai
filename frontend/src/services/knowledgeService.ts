@@ -210,10 +210,28 @@ export interface PdfUploadResult extends UploadResult {
   chars: number;      // tozalangandan keyingi matn uzunligi
 }
 
-// PDF hujjatni yuklash. Backend: matn qatlamini o'qiydi, skan sahifalarni OCR
-// qiladi, so'ng AI imzo/muhr shovqinini tozalab bazaga yozadi. Sekin bo'lishi
-// mumkin (ko'p sahifali skan uchun bir necha daqiqa).
-export async function uploadPdf(file: File, title = ""): Promise<PdfUploadResult> {
+// PDF yuklash FONDA bajariladi: server faylni qabul qilib darhol ish holatini
+// qaytaradi, o'qish/tozalash/yozish fonda ketadi. Ilgari javob hujjat to'liq
+// yozilgach kelardi va oraliq proxy (~60 s) so'rovni uzib qo'yardi — hujjat
+// bazaga yozilsa ham "xatolik" ko'rinardi.
+export type PdfJobStatus = "queued" | "running" | "done" | "failed";
+
+export interface PdfJob {
+  id: string;
+  status: PdfJobStatus;
+  filename: string;
+  title: string;
+  // reading (sahifalar) | cleaning (matn tozalash) | saving | ""
+  stage: string;
+  done: number;
+  total: number;
+  result: PdfUploadResult | null;
+  error: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function uploadPdf(file: File, title = ""): Promise<PdfJob> {
   const form = new FormData();
   form.append("file", file);
   form.append("title", title.trim());
@@ -222,6 +240,18 @@ export async function uploadPdf(file: File, title = ""): Promise<PdfUploadResult
     body: form,
   });
   if (!res.ok) throw new Error(await readError(res, "PDF yuklashda xatolik"));
+  return res.json();
+}
+
+export async function getPdfJob(id: string): Promise<PdfJob> {
+  const res = await apiFetch(`/v1/admin/knowledge/pdf/jobs/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(await readError(res, "Yuklash holatini olishda xatolik"));
+  return res.json();
+}
+
+export async function listPdfJobs(): Promise<PdfJob[]> {
+  const res = await apiFetch("/v1/admin/knowledge/pdf/jobs");
+  if (!res.ok) throw new Error(await readError(res, "Yuklashlar ro'yxatini olishda xatolik"));
   return res.json();
 }
 

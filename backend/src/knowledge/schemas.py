@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -214,3 +214,22 @@ class RescrapeStatusView(Base):
     enabled: bool
     running: bool
     last: RescrapeResultView | None = None
+
+
+class PdfJobView(Base):
+    """Fonda bajarilayotgan PDF yuklash holati (pdf_jobs.py)."""
+
+    id: str
+    # queued | running | done | failed
+    status: Literal["queued", "running", "done", "failed"]
+    filename: str
+    # Admin bergan sarlavha; tugagach — bazaga yozilgan sarlavha
+    title: str = ""
+    # reading (sahifalar) | cleaning (matn tozalash) | saving | "" — faqat running'da
+    stage: str = ""
+    done: int = 0
+    total: int = 0
+    result: PdfUploadResult | None = None
+    error: str = ""
+    created_at: datetime
+    updated_at: datetime

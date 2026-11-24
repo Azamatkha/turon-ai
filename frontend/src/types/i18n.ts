@@ -829,6 +829,12 @@ export interface AdminStrings {
   pdfOnlyPdf: string;
   pdfError: string;
   pdfDone: (pages: number, ocr: number, chunks: number) => string;
+  // Fondagi yuklash holati
+  pdfJobsTitle: string;
+  pdfStageQueued: string;
+  pdfStageReading: (done: number, total: number) => string;
+  pdfStageCleaning: (done: number, total: number) => string;
+  pdfStageSaving: string;
   knowledgeTitle: string;
   knowledgeReload: string;
   knowledgeEmpty: string;

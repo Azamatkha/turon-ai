@@ -4,6 +4,7 @@ xodimlar, scraping, ro'yxat/tahrir/o'chirish).
 `usecases.py` dan ko'chirilgan — mantiq o'zgarmagan, faqat joyi.
 """
 
+from collections.abc import Awaitable, Callable
 from datetime import date
 from typing import Any
 
@@ -147,6 +148,15 @@ class UploadKnowledgeUseCase:
         return UploadResult(chunks=len(chunks), vector_dim=dim, total_points=total)
 
 
+# PDF jarayoni haqida xabar: (bosqich, bajarilgan, jami). Bosqichlar:
+# "reading" (sahifalar o'qilmoqda), "cleaning" (matn tozalanmoqda), "saving".
+PdfProgress = Callable[[str, int, int], Awaitable[None]]
+
+
+async def _no_progress(stage: str, done: int, total: int) -> None:
+    return None
+
+
 class UploadPdfUseCase:
     """PDF (ko'pincha skanerlangan ichki hujjat) -> matn -> LLM tozalash ->
     Qdrant.
@@ -187,13 +197,14 @@ class UploadPdfUseCase:
         self.store = store
         self.ai_client = ai_client
 
-    async def _clean(self, text: str) -> str:
+    async def _clean(self, text: str, progress: PdfProgress = _no_progress) -> str:
         """Matnni bo'lak-bo'lak LLM'dan o'tkazib tozalaydi."""
         blocks = chunk_text(
             text, max_chars=self.CLEAN_BLOCK_CHARS, min_chars=self.CLEAN_BLOCK_CHARS // 4
         )
         cleaned: list[str] = []
-        for block in blocks:
+        for i, block in enumerate(blocks):
+            await progress("cleaning", i, len(blocks))
             try:
                 out = await self.ai_client.generate_text(
                     block,
@@ -230,7 +241,9 @@ class UploadPdfUseCase:
     # Bitta sahifani o'qish vaqti chegarasi (soniya)
     VISION_PAGE_TIMEOUT = 180.0
 
-    async def _read_with_vision(self, file_bytes: bytes) -> tuple[str, int, int, int]:
+    async def _read_with_vision(
+        self, file_bytes: bytes, progress: PdfProgress = _no_progress
+    ) -> tuple[str, int, int, int]:
         """Har sahifani RASM qilib modelga o'qitadi.
 
         Qaytaradi: (matn, sahifalar, OCR/zaxira sahifalar, model o'qigan sahifalar).
@@ -242,6 +255,7 @@ class UploadPdfUseCase:
         vision_pages = 0
         fallback_pages = 0
         for i, page in enumerate(pages, start=1):
+            await progress("reading", i - 1, len(pages))
             try:
                 res = await self.ai_client.read_image(
                     page.png,
@@ -265,24 +279,31 @@ class UploadPdfUseCase:
         return join_pages(parts), len(pages), fallback_pages, vision_pages
 
     async def execute(
-        self, file_bytes: bytes, filename: str, title: str = ""
+        self,
+        file_bytes: bytes,
+        filename: str,
+        title: str = "",
+        progress: PdfProgress = _no_progress,
     ) -> PdfUploadResult:
         vision_pages = 0
         if await self.ai_client.supports_vision():
             # Model sahifani o'zi "ko'rib" o'qiydi: imzo/muhrni o'zi tashlaydi,
             # shuning uchun alohida LLM tozalash bosqichi kerak emas.
             raw_text, pages, ocr_pages, vision_pages = await self._read_with_vision(
-                file_bytes
+                file_bytes, progress
             )
         else:
-            raw_text, pages, ocr_pages = extract_pdf_text(file_bytes)
+            await progress("reading", 0, 0)
+            raw_text, pages, ocr_pages = await to_thread.run_sync(
+                extract_pdf_text, file_bytes
+            )
         if not raw_text:
             raise InstanceProcessingException(
                 "PDF'dan matn ajratib bo'lmadi — sahifalar bo'sh yoki skan "
                 "sifati juda past. Faylni yaxshiroq sifatda skanerlab ko'ring."
             )
 
-        cleaned = raw_text if vision_pages else await self._clean(raw_text)
+        cleaned = raw_text if vision_pages else await self._clean(raw_text, progress)
         if not cleaned:
             raise InstanceProcessingException(
                 "Hujjatda mazmunli matn topilmadi (faqat imzo/muhr sahifalari?)."
@@ -293,6 +314,7 @@ class UploadPdfUseCase:
             # Zaxira: fayl nomi (kengaytmasiz)
             final_title = filename.rsplit(".", 1)[0].strip() or "Hujjat"
 
+        await progress("saving", 0, 0)
         # Bir xil hujjat qayta yuklansa — eski bo'laklar qolib ketmasin.
         # Admin qo'ygan turkum/izoh o'chirishdan OLDIN olinadi va saqlanadi.
         _, kept = await existing_admin_meta(self.store, final_title)

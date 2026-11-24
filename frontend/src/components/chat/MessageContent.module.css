@@ -104,6 +104,13 @@
 }
 
 /* ---- Inline kod ---- */
+/* 📎 o'rniga chiziladigan qisqich ikonkasi — matn rangida, qator ichida */
+.inlineIcon {
+  display: inline-block;
+  vertical-align: -0.18em;
+  opacity: 0.85;
+}
+
 .inlineCode {
   padding: 1px 5px;
   border-radius: 5px;

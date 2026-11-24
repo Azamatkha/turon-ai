@@ -37,6 +37,12 @@ from src.knowledge.ingest_usecases import (
     BulkDeleteKnowledgeUseCase,
     SetKnowledgeMetaUseCase,
 )
+from src.knowledge.pdf_jobs import (
+    PdfJobStatusUseCase,
+    StartPdfUploadUseCase,
+    get_pdf_job_status_use_case,
+    get_start_pdf_upload_use_case,
+)
 from src.knowledge.rescrape import (
     RescrapeStatusUseCase,
     TriggerRescrapeUseCase,
@@ -53,7 +59,7 @@ from src.knowledge.schemas import (
     KnowledgeItem,
     KnowledgeMetaRequest,
     KnowledgeValidityRequest,
-    PdfUploadResult,
+    PdfJobView,
     QuestionRequest,
     RescrapeStatusView,
     ScrapeRequest,
@@ -71,7 +77,6 @@ from src.knowledge.usecases import (
     UpdateKnowledgeUseCase,
     UploadEmployeesUseCase,
     UploadKnowledgeUseCase,
-    UploadPdfUseCase,
 )
 from src.main.config import config
 from src.notifications.enums import NotificationType
@@ -389,45 +394,61 @@ async def upload_knowledge(
     return result
 
 
-@router.post("/pdf", response_model=PdfUploadResult)
+@router.post("/pdf", response_model=PdfJobView, status_code=202)
 async def upload_pdf(
     current_user: Annotated[
         User, Depends(require_permission(Permission.EDIT_SETTINGS))
     ],
-    embedder: Annotated[OllamaEmbedder, Depends(get_embedder)],
-    store: Annotated[QdrantStore, Depends(get_vector_store)],
-    ai_client: Annotated[BaseAIClient, Depends(get_ai_client)],
-    broadcast: Annotated[
-        BroadcastNotificationUseCase, Depends(get_broadcast_notification_use_case)
-    ],
+    use_case: Annotated[StartPdfUploadUseCase, Depends(get_start_pdf_upload_use_case)],
     audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
     file: Annotated[UploadFile, File()],
     title: Annotated[str, Form()] = "",
-) -> PdfUploadResult:
-    """Admin: PDF hujjatni yuklaydi.
+) -> PdfJobView:
+    """Admin: PDF hujjatni yuklaydi — FONDA (qara: pdf_jobs.py).
 
-    Matn qatlami bo'lsa to'g'ridan-to'g'ri o'qiladi, skanerlangan sahifalar
-    Tesseract OCR orqali o'tadi. So'ng LLM imzo/muhr/OCR shovqinini olib
-    tashlaydi va natija bazaga yoziladi. `title` bo'sh bo'lsa — hujjat mavzusi
-    avtomatik aniqlanadi.
+    Darhol 202 va ish holati qaytadi; o'qish (model/OCR), tozalash va bazaga
+    yozish fonda bajariladi. Holat: GET /pdf/jobs/{id}. Tugagach adminlarga
+    "ma'lumotlar yangilandi" bildirishnomasi boradi.
 
-    DIQQAT: OCR va tozalash sekin — ko'p sahifali hujjat bir necha daqiqa
-    olishi mumkin."""
+    Ilgari javob hujjat to'liq yozilgach qaytardi: 9 sahifa ~77 soniya va
+    oraliq proxy (~60 s) so'rovni uzib, hujjat yozilgan bo'lsa ham brauzer
+    xato ko'rardi."""
     # `await file.read()` EMAS: u faylni butunlay xotiraga o'qib bo'lgach
     # tekshirish imkonini beradi, ya'ni juda katta fayl ilova xotirasini
     # to'ldirib bo'lgan bo'lardi. read_upload_limited bo'lak-bo'lak o'qiydi
     # va cheklovdan oshgan zahoti to'xtaydi.
     content = await read_upload_limited(file, config.app.KNOWLEDGE_MAX_BYTES)
-    use_case = UploadPdfUseCase(embedder=embedder, store=store, ai_client=ai_client)
-    result = await use_case.execute(
-        file_bytes=content, filename=file.filename or "", title=title
-    )
+    filename = file.filename or ""
+    job = await use_case.execute(content, filename, title)
     await audit.log(
-        current_user, AuditAction.KNOWLEDGE_PDF, "knowledge", target_label=result.title,
-        details={"filename": file.filename or "", "bytes": len(content)},
+        current_user, AuditAction.KNOWLEDGE_PDF, "knowledge",
+        target_label=title.strip() or filename,
+        details={"filename": filename, "bytes": len(content), "job_id": job.id},
     )
-    await _notify_knowledge_updated(broadcast, result.title)
-    return result
+    return job
+
+
+@router.get("/pdf/jobs", response_model=list[PdfJobView])
+async def list_pdf_jobs(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[PdfJobStatusUseCase, Depends(get_pdf_job_status_use_case)],
+) -> list[PdfJobView]:
+    """Admin: oxirgi PDF yuklashlar (24 soat) — sahifa qayta ochilganda ham
+    jarayon ko'rinsin."""
+    return await use_case.recent()
+
+
+@router.get("/pdf/jobs/{job_id}", response_model=PdfJobView)
+async def get_pdf_job(
+    job_id: str,
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    use_case: Annotated[PdfJobStatusUseCase, Depends(get_pdf_job_status_use_case)],
+) -> PdfJobView:
+    return await use_case.get(job_id)
 
 
 @router.post("/employees", response_model=UploadResult)

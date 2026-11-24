@@ -57,9 +57,20 @@ function inline(s: string): string {
     (u: string) => stash(anchor(u, u))
   );
 
-  // 3) Stash'dagilarni qaytaramiz
+  // 3) 📎 emoji — xabar maydonidagi qisqich tugmasi bilan AYNAN bir xil
+  // ikonka. Emojini har tizim o'zicha chizadi (Windows'da rangli qizil
+  // qisqich) va u tugmaga o'xshamay qolardi.
+  out = out.replace(/\u{1F4CE}️?/gu, PAPERCLIP_SVG);
+
+  // 4) Stash'dagilarni qaytaramiz
   return out.replace(/\x00(\d+)\x00/g, (_m, i: string) => stashed[Number(i)]);
 }
+
+// Composer'dagi biriktirish tugmasi ikonkasi (Composer.tsx bilan bir xil path)
+const PAPERCLIP_SVG =
+  `<svg class="${styles.inlineIcon}" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+  `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+  `<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>`;
 
 // ---- Kod bloklari ----
 
