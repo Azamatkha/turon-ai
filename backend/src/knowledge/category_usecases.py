@@ -11,6 +11,7 @@ from src.core.errors.exceptions import (
     InstanceNotFoundException,
 )
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.core.vectorstore.version import bump_kb_version
 from src.knowledge.categories import (
     invalidate_categories,
     parse_keywords,
@@ -71,6 +72,8 @@ class CreateCategoryUseCase:
             await uow.commit()
             view = _to_view(cat)
         invalidate_categories()
+        # Turkum nomi/kalit so'zlari bot javobiga ta'sir qiladi — javob keshi eskirsin
+        await bump_kb_version()
         return view
 
 
@@ -96,6 +99,8 @@ class UpdateCategoryUseCase:
             await uow.commit()
             view = _to_view(cat)
         invalidate_categories()
+        # Turkum nomi/kalit so'zlari bot javobiga ta'sir qiladi — javob keshi eskirsin
+        await bump_kb_version()
         return view
 
 
@@ -113,6 +118,8 @@ class DeleteCategoryUseCase:
                 raise InstanceNotFoundException(CATEGORY_NOT_FOUND)
             await uow.commit()
         invalidate_categories()
+        # Turkum nomi/kalit so'zlari bot javobiga ta'sir qiladi — javob keshi eskirsin
+        await bump_kb_version()
 
 
 async def ensure_categories_exist(

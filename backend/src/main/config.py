@@ -206,6 +206,9 @@ class AIConfig(BaseModel):
     # savolda 27B modelni qayta yuklash router timeout'idan (20 s) uzoq
     # davom etardi — router yiqilib, javob noto'g'ri yo'lga ketardi.
     # 96 GB VRAM'da modelni doim ushlab turishning hech qanday narxi yo'q.
+    # 2026-11-24: endi Ollama'ga YUBORILMAYDI — model qancha turishini Ollama
+    # serverining o'z sozlamasi belgilaydi (boshqa mijozlar bilan kelishmovchilik
+    # bo'lmasin). Qoldirilgan: .env da bor bo'lsa xato bermasin.
     OLLAMA_KEEP_ALIVE: str = "24h"
     # Javob tagidagi "keyingi savol" takliflari (src/chat/usecases.py ->
     # SuggestFollowupsUseCase). Har javobga bitta qisqa LLM chaqiruvi qo'shadi;

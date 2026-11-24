@@ -51,7 +51,6 @@ class OllamaClient(BaseAIClient):
         self.num_ctx = config.ai.OLLAMA_NUM_CTX
         self.min_num_ctx = config.ai.OLLAMA_MIN_NUM_CTX
         self.send_num_ctx = config.ai.OLLAMA_SEND_NUM_CTX
-        self.keep_alive = config.ai.OLLAMA_KEEP_ALIVE
         self.timeout = config.ai.TIMEOUT_SECONDS
         self.default_temperature = config.ai.DEFAULT_TEMPERATURE
         self.http = http
@@ -176,8 +175,8 @@ class OllamaClient(BaseAIClient):
             "messages": messages,
             "stream": False,
             "think": think,
-            # Model VRAM'dan tushirilmasin (qara: config.ai.OLLAMA_KEEP_ALIVE)
-            "keep_alive": self.keep_alive,
+            # keep_alive ATAYLAB yuborilmaydi: model xotirada qancha turishini
+            # Ollama serverining o'z sozlamasi (OLLAMA_KEEP_ALIVE) belgilaydi.
             "options": await self._options(temperature, max_tokens),
         }
         # JSON sxema berilsa — Ollama chiqishni STRUKTURA bo'yicha majburlaydi.
@@ -266,7 +265,6 @@ class OllamaClient(BaseAIClient):
             "messages": messages,
             "stream": True,
             "think": False,
-            "keep_alive": self.keep_alive,
             "options": await self._options(temperature, max_tokens),
         }
         try:

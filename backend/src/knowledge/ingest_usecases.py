@@ -20,7 +20,11 @@ from src.core.errors.exceptions import (
 )
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.qdrant_store import QdrantStore
-from src.knowledge.categories import kb_categories, payload_categories
+from src.knowledge.categories import (
+    documents_category_key,
+    kb_categories,
+    payload_categories,
+)
 from src.knowledge.chunking import chunk_text
 from src.knowledge.employee_parser import parse_employees
 from src.knowledge.pdf_extractor import (
@@ -192,10 +196,13 @@ class UploadPdfUseCase:
         embedder: OllamaEmbedder,
         store: QdrantStore,
         ai_client: BaseAIClient,
+        documents_category: Callable[[], Awaitable[str | None]] = documents_category_key,
     ) -> None:
         self.embedder = embedder
         self.store = store
         self.ai_client = ai_client
+        # "Hujjatlar" turkumi kalitini beradi (testlarda almashtiriladi)
+        self.documents_category = documents_category
 
     async def _clean(self, text: str, progress: PdfProgress = _no_progress) -> str:
         """Matnni bo'lak-bo'lak LLM'dan o'tkazib tozalaydi."""
@@ -318,6 +325,12 @@ class UploadPdfUseCase:
         # Bir xil hujjat qayta yuklansa — eski bo'laklar qolib ketmasin.
         # Admin qo'ygan turkum/izoh o'chirishdan OLDIN olinadi va saqlanadi.
         _, kept = await existing_admin_meta(self.store, final_title)
+        # Yangi hujjat (yoki turkumi qo'yilmagan) — "Hujjatlar" turkumiga.
+        # Admin avval boshqa turkum qo'ygan bo'lsa, o'shasi saqlanadi.
+        if not kept.get("category"):
+            doc_key = await self.documents_category()
+            if doc_key:
+                kept["category"] = [doc_key]
         await self.store.delete_by_title(final_title)
         result = await UploadKnowledgeUseCase(
             embedder=self.embedder, store=self.store

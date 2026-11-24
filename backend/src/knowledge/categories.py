@@ -101,6 +101,50 @@ def invalidate_categories() -> None:
     _cache = None
 
 
+# Admin paneldagi "Hujjatlar (PDF)" orqali yuklangan hujjatlar shu turkumga
+# tushadi (qara: documents_category_key).
+DOCUMENTS_KEY = "documents"
+DOCUMENTS_NAME = "Hujjatlar"
+
+
+def _is_documents(key: str, name: str) -> bool:
+    return key == DOCUMENTS_KEY or _norm(name) == _norm(DOCUMENTS_NAME)
+
+
+async def _create_documents_category() -> str:
+    """"Hujjatlar" turkumini bazada topadi, bo'lmasa yaratadi (testda almashtiriladi)."""
+    repo = KbCategoryRepository()
+    async with async_session() as session:
+        rows = await repo.list_ordered(session)
+        for c in rows:
+            if _is_documents(c.key, c.name):
+                return c.key
+        order = await repo.max_sort_order(session) + 10
+        # Kalit so'zlar bo'sh — kerak bo'lsa admin panelda qo'shiladi
+        await repo.create(
+            session,
+            {"key": DOCUMENTS_KEY, "name": DOCUMENTS_NAME, "keywords": "", "sort_order": order},
+            commit=True,
+        )
+    invalidate_categories()
+    return DOCUMENTS_KEY
+
+
+async def documents_category_key() -> str | None:
+    """PDF orqali yuklangan hujjat uchun "Hujjatlar" turkumining kaliti.
+    Admin bunday turkum yaratgan bo'lsa (nomi "Hujjatlar") — o'shasi, yo'q
+    bo'lsa yangisi yaratiladi. Xato bo'lsa None: yuklash to'xtamasin, hujjat
+    shunchaki turkumsiz qoladi."""
+    try:
+        for c in await kb_categories():
+            if _is_documents(c.key, c.name):
+                return c.key
+        return await _create_documents_category()
+    except Exception:  # noqa: BLE001
+        logger.warning("\"Hujjatlar\" turkumini aniqlab bo'lmadi", exc_info=True)
+        return None
+
+
 def _to_def(c: KbCategory) -> CategoryDef:
     return make_def(c.key, c.name, c.keywords or "")
 

@@ -30,11 +30,7 @@ from src.chat.usecases import normalize_question
 from src.core.ai.guard import mask_pii
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.version import get_kb_version
-from src.knowledge import (
-    answer_helpers as _helpers,
-    prompts as _prompts,
-    usecases as _usecases,
-)
+from src.knowledge import usecases as _usecases
 from src.knowledge.lang import detect_reply_lang
 from src.knowledge.schemas import ChatTurn
 from src.knowledge.usecases import AnswerQuestionUseCase
@@ -43,22 +39,28 @@ from src.main.config import config
 logger = get_logger(__name__)
 
 CACHEABLE_INTENTS = frozenset({"product", "concept", "branch"})
-KEY_PREFIX = "answer-cache:v2"
+# v3: 2026-11-24 — barmoq izi butun knowledge paketiga kengaytirildi
+KEY_PREFIX = "answer-cache:v3"
 
 
 def _code_fingerprint() -> str:
-    """Promptlar va javob mantig'i fayllarining qisqa xeshi.
+    """Javob mantig'i fayllarining qisqa xeshi.
 
-    Kesh kalitiga kiradi: prompt yoki javob kodi o'zgarib deploy qilinsa,
-    eski keshlangan javoblar O'Z-O'ZIDAN ishlatilmay qoladi. Ilgari versiyani
-    qo'lda oshirish kerak edi va unutilsa, yangi kod chiqqandan keyin ham
-    eski ("cbu.uz'ni tekshiring", "topilmadi") javoblar keshdan qaytardi."""
+    Kesh kalitiga kiradi: javob kodi o'zgarib deploy qilinsa, eski keshlangan
+    javoblar O'Z-O'ZIDAN ishlatilmay qoladi. Ilgari faqat 3 ta fayl
+    (prompts, usecases, answer_helpers) hisobga olinardi — categories.py dagi
+    o'zgarish (masalan jismoniy/yuridik bo'yicha guruhlash) keshni yangilamas
+    va eski "umumiy ro'yxat" keshdan qaytaverardi. Endi butun `knowledge`
+    paketi va shu fayl hisobga olinadi."""
     h = hashlib.sha256()
-    for mod in (_prompts, _usecases, _helpers):
+    pkg = Path(str(_usecases.__file__)).parent
+    files = sorted(pkg.glob("*.py")) + [Path(__file__)]
+    for f in files:
         try:
-            h.update(Path(str(mod.__file__)).read_bytes())
+            h.update(f.name.encode())
+            h.update(f.read_bytes())
         except OSError:
-            h.update(str(mod).encode())
+            h.update(str(f).encode())
     return h.hexdigest()[:10]
 
 
