@@ -1611,6 +1611,7 @@ class AnswerQuestionUseCase:
             bool(config.ai.ANSWER_VERIFY)
             and self.last_outcome not in self._UNVERIFIED_OUTCOMES
             and self.last_intent not in self._UNVERIFIED_INTENTS
+            and not getattr(self, "_code_built", False)
             and bool(self._buf_text.strip())
         )
 
@@ -1765,6 +1766,8 @@ class AnswerQuestionUseCase:
         self.last_outcome = "answered"
         self.last_top_score = None
         self.last_flag = None
+        # Javobni KOD bazadan tuzdi (turkum ro'yxati) — tekshiruvga yuborilmaydi
+        self._code_built = False
         # Tekshiruvchi uchun: model qaysi kontekstga tayanib yozdi va savol
         # qanday talqin qilindi
         self._last_context = None
@@ -2290,6 +2293,11 @@ class AnswerQuestionUseCase:
         question = only_title or question
         self._effective_question = question
         if broad_reply is not None:
+            # Ro'yxatni model emas, kod bazadan tuzdi — tekshiruvchiga berilmaydi.
+            # Ilgari tekshiruvchi jismoniy/yuridik bo'yicha guruhlangan ro'yxatni
+            # rad etar, qayta yozish esa qisqa yo'llarsiz (force) ketib, model
+            # butun turkumni ARALASH ro'yxat qilib chiqarardi (2026-11-24).
+            self._code_built = True
             yield {"type": "delta", "text": broad_reply}
             yield {
                 "type": "done",

@@ -144,3 +144,21 @@ async def test_retry_uses_source_named_by_verifier(monkeypatch: pytest.MonkeyPat
 def test_verify_prompt_starts_with_today() -> None:
     """Model o'z bilimidan yangiroq sanani "kelajak/to'qima" deb rad etmasin."""
     assert build_verify_prompt("savol", "javob").startswith("TODAY: ")
+
+
+@pytest.mark.asyncio
+async def test_code_built_list_not_verified(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Turkum ro'yxatini kod bazadan tuzdi — tekshiruvchi chaqirilmaydi va
+    # ro'yxat qayta yozilib (aralash) model javobiga almashmaydi
+    uc, hints = _use_case(monkeypatch, [("Jismoniy...\n1. A", "product", "answered")], [])
+    inner = uc._execute_stream_raw
+
+    async def raw(*a: Any, **kw: Any):
+        async for ev in inner(*a, **kw):
+            uc._code_built = True
+            yield ev
+
+    monkeypatch.setattr(uc, "_execute_stream_raw", raw)
+    text, steps, _ = await _run(uc)
+    assert text.startswith("Jismoniy") and "verify" not in steps
+    assert hints == [None] and uc.last_verdict is None
