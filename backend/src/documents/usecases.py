@@ -32,7 +32,8 @@ CHARS_PER_TOKEN = 2.5
 MIN_DIRECT_CHARS = 20_000
 # Juda katta hujjat: ko'pi bilan shuncha bo'lak tahlil qilinadi
 MAX_PARTS = 8
-PART_NOTES_MAX_TOKENS = 900
+# Har bo'lak qaydlari — bandlar tushib qolmasligi uchun kengroq
+PART_NOTES_MAX_TOKENS = 1500
 ANSWER_MAX_TOKENS = 4096
 
 
