@@ -317,7 +317,32 @@ def _kb_employees(
                 seen.add(key)
                 parsed.append(rec)
     titles |= {str(p.get("title", "")) for p in structured}
-    return structured + parsed, {t for t in titles if t}
+    return _collapse_same_person(structured + parsed), {t for t in titles if t}
+
+
+def _collapse_same_person(emps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Faylda bir odam bir necha marta (har xil ichki raqam bilan) — bitta
+    yozuv, raqamlari birga: "2199, 2201". Ilgari ro'yxatda u ikki qator
+    bo'lib chiqardi (Kulmatov, 2026-11-24). Bo'sh maydonlar keyingi
+    yozuvdan to'ldiriladi. Joyi boshqa adashlar birlashtirilmaydi."""
+    out: list[dict[str, Any]] = []
+    by_key: dict[str, list[int]] = {}
+    for e in emps:
+        k = _person_key(str(e.get("fish", "")))
+        idx = next((i for i in by_key.get(k or "", []) if _same_place(out[i], e)), None)
+        if k is None or idx is None:
+            if k is not None:
+                by_key.setdefault(k, []).append(len(out))
+            out.append(e)
+            continue
+        cur = dict(out[idx])
+        nums = list(dict.fromkeys([*_ip_numbers(cur), *_ip_numbers(e)]))
+        cur["ip"] = ", ".join(sorted(nums, key=int))
+        for field in ("department", "division", "position", "phone"):
+            if not str(cur.get(field) or "").strip() and e.get(field):
+                cur[field] = e[field]
+        out[idx] = cur
+    return out
 
 
 _NO_VALUE = {"", "-", "—", "yo'q", "yoq", "нет"}
@@ -330,9 +355,37 @@ def _has_contact(e: dict[str, Any]) -> bool:
     )
 
 
+def _ip_numbers(e: dict[str, Any]) -> list[str]:
+    """Xodimning ichki raqam(lar)i: "2199, 2201" -> ["2199", "2201"]."""
+    return re.findall(r"\d+", str(e.get("ip") or ""))
+
+
+def _sort_by_ip(emps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bo'lim ro'yxati tartibi: ichki raqam bo'yicha o'sish (272, 2200,
+    2201, ...), raqamsizlar (faqat telefoni bor) oxirida — ism bo'yicha.
+    Tartib doim bir xil: "7-chisini tanladim" ham shu ro'yxatga qaraydi."""
+
+    def key(e: dict[str, Any]) -> tuple[int, int, str]:
+        nums = _ip_numbers(e)
+        fish = _display_name(str(e.get("fish", ""))).lower()
+        return (0, int(nums[0]), fish) if nums else (1, 0, fish)
+
+    return sorted(emps, key=key)
+
+
+def _display_name(fish: str) -> str:
+    """Fayldan KATTA harflarda kelgan F.I.SH -> oddiy yozuv:
+    "G‘ANIYEV ABDUMUTAL SUVANOVICH" -> "G‘aniyev Abdumutal Suvanovich"."""
+    fish = " ".join(fish.split())
+    letters = [c for c in fish if c.isalpha()]
+    if not letters or any(c.islower() for c in letters):
+        return fish
+    return " ".join(w[:1].upper() + w[1:].lower() for w in fish.split(" "))
+
+
 def _format_employee_line(e: dict[str, Any], with_dept: bool = True) -> str:
     """Bitta xodim — bir qator: F.I.SH, bo'lim, bo'linma, lavozim, IP, telefon."""
-    parts: list[str] = [str(e.get("fish", "")).strip()]
+    parts: list[str] = [_display_name(str(e.get("fish", "")))]
     if with_dept:
         parts.append(str(e.get("department", "")).strip())
     parts.append(str(e.get("division", "")).strip())
@@ -425,7 +478,8 @@ def _match_by_number(
         return []
     ip_targets = {n for n in nums if len(n) <= 5}
     if ip_targets:
-        hit = [e for e in emps if str(e.get("ip", "")).strip() in ip_targets]
+        # Bir xodimda bir nechta raqam bo'lishi mumkin ("2199, 2201")
+        hit = [e for e in emps if set(_ip_numbers(e)) & ip_targets]
         if hit:
             return hit
     phone_targets = [re.sub(r"\D", "", n) for n in nums if len(n) >= 7]
@@ -865,7 +919,8 @@ def _match_employees_ex(
             if sc:
                 scored.append((sc, e))
         if scored:
-            return _dept_and_name(scored, emps, q_lower)
+            found, note = _dept_and_name(scored, emps, q_lower)
+            return _sort_by_ip(found), note
 
     # 4) F.I.SH — QISMAN moslash: savoldagi so'z ism/familiyaning boshiga mos
     # kelsa yetarli ("Shaxzod" -> "Shaxzodbek", "Jasur" -> "Jasurbek"). Eng ko'p

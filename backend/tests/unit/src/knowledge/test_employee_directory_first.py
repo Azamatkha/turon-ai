@@ -361,7 +361,7 @@ def test_shared_ip_answer_lists_all_without_asking() -> None:
 
     text = _format_employee_answer([SHARED_A, SHARED_B, SHARED_C], "4031")
     assert text.startswith("Ichki raqam (IP) 4031 — 3 ta xodimga tegishli")
-    assert "Aliyev Bobur" in text and "Karimova Dilnoza" in text and "TOSHEV JAMSHID" in text
+    assert "Aliyev Bobur" in text and "Karimova Dilnoza" in text and "Toshev Jamshid" in text  # katta harfli ism oddiy yozuvda
     assert "Qaysi biri" not in text
 
 
