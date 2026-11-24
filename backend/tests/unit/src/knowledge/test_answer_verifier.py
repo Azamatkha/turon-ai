@@ -162,3 +162,27 @@ async def test_code_built_list_not_verified(monkeypatch: pytest.MonkeyPatch) -> 
     text, steps, _ = await _run(uc)
     assert text.startswith("Jismoniy") and "verify" not in steps
     assert hints == [None] and uc.last_verdict is None
+
+
+@pytest.mark.asyncio
+async def test_canned_not_found_is_verified_and_rewritten(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Xodim yo'lining "topilmadi" matni (outcome no_info) ham tekshiriladi:
+    # rad etilsa — qayta urinish bilim bazasidan javob beradi
+    uc, hints = _use_case(
+        monkeypatch,
+        [("Xodim topilmadi", "product", "no_info"), ("Mukofot shartlari", "product", "answered")],
+        [Verdict(False, "not about an employee", 1), Verdict(True, "", 1)],
+    )
+    inner = uc._execute_stream_raw
+    calls: list[int] = []
+
+    async def raw(*a: Any, **kw: Any):
+        calls.append(1)
+        async for ev in inner(*a, **kw):
+            uc._verify_canned = len(calls) == 1
+            yield ev
+
+    monkeypatch.setattr(uc, "_execute_stream_raw", raw)
+    text, steps, _ = await _run(uc)
+    assert text == "Mukofot shartlari" and "rewrite" in steps
+    assert hints == [None, "not about an employee"] and uc.last_verdict == "fixed"

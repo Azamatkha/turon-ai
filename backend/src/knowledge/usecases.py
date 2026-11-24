@@ -191,6 +191,32 @@ __all__ = [
     "UploadPdfUseCase",
 ]
 
+def _drop_unwanted_employee_route(
+    route: tuple[str, list[dict[str, Any]]] | None,
+    decision: Route | None,
+    question: str,
+) -> tuple[str, list[dict[str, Any]]] | None:
+    """Xodim yo'li "topilmadi"/"aniqlashtiring" desa-yu, router savolni xodim
+    haqida EMAS deb bilgan bo'lsa — xodim yo'li bekor, savol bilim bazasiga.
+
+    Xodim yo'li savoldagi "xodim" so'zining o'zidan ochiladi. "Bank xodimlari
+    nima qilsa mukofotlanadi" savolida router to'g'ri "product" degan, lekin
+    so'z sabab xodim qidirilib, "xodim topilmadi" chiqqan edi — bazadagi
+    mukofotlash tartibi umuman qidirilmagan (2026-11-24). Xodim TOPILGAN
+    ("answer") yoki IP egasi so'ralgan ("no_ip") holatlar o'zgarmaydi."""
+    if (
+        route is not None
+        and route[0] in ("ask", "none")
+        and decision is not None
+        and decision.intent is not Intent.EMPLOYEE
+    ):
+        logger.info(
+            "Xodim yo'li bekor: router %s dedi | %r", decision.intent.value, question[:200]
+        )
+        return None
+    return route
+
+
 class AnswerQuestionUseCase:
     """RAG: savolni embed qiladi, Qdrant'dan eng yaqin bo'laklarni topadi va
     ularni kontekst sifatida Qwen'ga berib javob oldiradi."""
@@ -1607,6 +1633,8 @@ class AnswerQuestionUseCase:
                 yield ev
 
     def _needs_verify(self) -> bool:
+        if getattr(self, "_verify_canned", False):
+            return bool(config.ai.ANSWER_VERIFY) and bool(self._buf_text.strip())
         return (
             bool(config.ai.ANSWER_VERIFY)
             and self.last_outcome not in self._UNVERIFIED_OUTCOMES
@@ -1768,6 +1796,8 @@ class AnswerQuestionUseCase:
         self.last_flag = None
         # Javobni KOD bazadan tuzdi (turkum ro'yxati) — tekshiruvga yuborilmaydi
         self._code_built = False
+        # Xodim yo'lining tayyor "topilmadi" matni — u ham tekshiriladi
+        self._verify_canned = False
         # Tekshiruvchi uchun: model qaysi kontekstga tayanib yozdi va savol
         # qanday talqin qilindi
         self._last_context = None
@@ -2239,6 +2269,7 @@ class AnswerQuestionUseCase:
             if force or resolved or _blind_employee_guess(decision, question)
             else await self._employee_route(to_latin(question))
         )
+        route = _drop_unwanted_employee_route(route, decision, question)
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none", "no_ip"):
@@ -2247,6 +2278,10 @@ class AnswerQuestionUseCase:
                 # u yo'q xodimlarni to'qib chiqargan edi.
                 if kind != "ask":
                     self.last_outcome = "no_info"
+                # "Topilmadi"/"aniqlashtiring" ham TEKSHIRILADI: savol xodim
+                # haqida bo'lmasa, tekshiruvchi rad etadi va qayta urinish
+                # qisqa yo'llarsiz — bilim bazasidan javob beradi.
+                self._verify_canned = True
                 yield {
                     "type": "delta",
                     "text": self._employee_canned(kind, question, lang),
@@ -2780,6 +2815,7 @@ class AnswerQuestionUseCase:
             if resolved or _blind_employee_guess(decision, question)
             else await self._employee_route(to_latin(question))
         )
+        route = _drop_unwanted_employee_route(route, decision, question)
         if route is not None:
             kind, emps = route
             if kind in ("ask", "none", "no_ip"):
