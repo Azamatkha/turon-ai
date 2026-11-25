@@ -63,7 +63,9 @@ def scrape_targets(groups: dict[str, list[dict[str, Any]]]) -> list[tuple[str, s
         url = next((str(c.get("source_url") or "") for c in chunks if c.get("source_url")), "")
         if not title or title == RATES_TITLE or not url.startswith(("http://", "https://")):
             continue
-        if any(c.get("doc_type") == "employee" for c in chunks):
+        # Xodimlar va sayt yangiliklari (o'z vazifasi bor, matni boshqacha
+        # ajratiladi — umumiy ajratuvchi uni "o'zgargan" deb buzib qo'yardi)
+        if any(c.get("doc_type") in ("employee", "press") for c in chunks):
             continue
         targets.append((title, url))
     return targets

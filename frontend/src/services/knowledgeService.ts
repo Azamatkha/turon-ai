@@ -280,6 +280,14 @@ export async function runRescrape(): Promise<void> {
   if (!res.ok) throw new Error(await readError(res, "Tekshiruvni boshlab bo'lmadi"));
 }
 
+// Rasmiy saytning Yangiliklar va E'lonlar bo'limlaridan yangi maqolalarni
+// hoziroq yuklash (backend/src/knowledge/press_scraper.py). Fon vazifasi —
+// natija bildirishnoma bo'lib keladi.
+export async function runPressImport(): Promise<void> {
+  const res = await apiFetch("/v1/admin/knowledge/press", { method: "POST" });
+  if (!res.ok) throw new Error(await readError(res, "Yangiliklarni yuklashni boshlab bo'lmadi"));
+}
+
 // --- Turkumlar (admin boshqaradi) --- //
 
 export async function listCategories(): Promise<KbCategory[]> {

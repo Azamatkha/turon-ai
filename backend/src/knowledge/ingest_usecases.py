@@ -19,6 +19,7 @@ from src.core.errors.exceptions import (
     InstanceProcessingException,
 )
 from src.core.utils.datetime_utils import get_utc_now
+from src.core.utils.uzbek_script import from_new_alphabet
 from src.core.vectorstore.qdrant_store import QdrantStore
 from src.knowledge.categories import (
     documents_category_key,
@@ -130,8 +131,10 @@ class UploadKnowledgeUseCase:
                 if extra_payload:
                     payload.update(extra_payload)
                 payloads.append(payload)
+            # Yangi alifbodagi matn ("işonç") embedding uchun amaldagi lotinga
+            # keltiriladi — savol shu yozuvda keladi. Saqlanadigan matn o'zgarmaydi.
             vectors = await self.embedder.embed_many(
-                [f"{title}\n\n{chunk}" for chunk in chunks]
+                [from_new_alphabet(f"{title}\n\n{chunk}") for chunk in chunks]
             )
         except Exception as exc:
             raise InfrastructureException(

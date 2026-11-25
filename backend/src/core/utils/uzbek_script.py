@@ -150,6 +150,21 @@ def to_latin(text: str) -> str:
     return "".join(out)
 
 
+# O'zbek YANGI lotin alifbosi (sayt yangiliklarining bir qismi shu bilan
+# yozilgan: "işonç", "Özbekiston", "boğliq") -> amaldagi lotin. Faqat QIDIRUV
+# uchun: saqlangan matn o'zgarmaydi. Xodim savolni amaldagi lotinda yozadi
+# ("ishonch") — ikkalasi bir xil so'z bo'lib solishtirilsin.
+_NEW_ALPHABET = str.maketrans({
+    "ş": "sh", "Ş": "Sh", "ç": "ch", "Ç": "Ch",
+    "ö": "o‘", "Ö": "O‘", "ğ": "g‘", "Ğ": "G‘", "ñ": "ng", "Ñ": "Ng",
+})
+
+
+def from_new_alphabet(text: str) -> str:
+    """Yangi alifbo harflari (ş ç ö ğ ñ) -> amaldagi lotin (sh ch o‘ g‘ ng)."""
+    return text.translate(_NEW_ALPHABET)
+
+
 def is_cyrillic_text(text: str) -> bool:
     """Matnda lotincha harflarga qaraganda kirillcha harflar ko'proq (yoki
     faqat kirill bor)mi — foydalanuvchi qaysi alifboda yozganini aniqlash

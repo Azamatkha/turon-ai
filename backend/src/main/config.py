@@ -250,6 +250,13 @@ class ScrapingConfig(BaseModel):
     # Saytdan olingan hujjatlarni haftalik avtomatik qayta tekshirish
     # (src/knowledge/rescrape.py). O'chirilsa — faqat qo'lda ishga tushadi.
     RESCRAPE_ENABLED: bool = True
+    # Rasmiy saytning Yangiliklar va E'lonlar bo'limlarini kuniga ikki marta
+    # bilim bazasiga yuklash (src/knowledge/press_scraper.py). Faqat YANGI
+    # maqolalar yoziladi; birinchi ishga tushishda shuncha kunlik arxiv olinadi.
+    PRESS_ENABLED: bool = True
+    PRESS_MAX_AGE_DAYS: int = 365
+    # Bir bo'limda ko'pi bilan shuncha ro'yxat sahifasi (har birida ~12 ta)
+    PRESS_MAX_PAGES: int = 40
 
     model_config = ConfigDict(extra="ignore")
 

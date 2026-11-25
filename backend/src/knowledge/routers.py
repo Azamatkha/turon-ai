@@ -43,6 +43,7 @@ from src.knowledge.pdf_jobs import (
     get_pdf_job_status_use_case,
     get_start_pdf_upload_use_case,
 )
+from src.knowledge.press_scraper import TriggerPressImportUseCase
 from src.knowledge.rescrape import (
     RescrapeStatusUseCase,
     TriggerRescrapeUseCase,
@@ -185,6 +186,22 @@ async def run_rescrape(
     Faqat o'zgargan sahifalar qayta yoziladi; natija bildirishnoma bo'lib keladi."""
     TriggerRescrapeUseCase().execute()
     await audit.log(current_user, AuditAction.KNOWLEDGE_RESCRAPE, "knowledge", target_label="*")
+
+
+@router.post("/press", status_code=202)
+async def run_press_import(
+    current_user: Annotated[
+        User, Depends(require_permission(Permission.EDIT_SETTINGS))
+    ],
+    audit: Annotated[AuditRecorder, Depends(get_audit_recorder)],
+) -> None:
+    """Admin: rasmiy saytning Yangiliklar va E'lonlar bo'limlaridan yangi
+    maqolalarni hoziroq yuklash (fon vazifasi). Natija bildirishnoma bo'lib keladi."""
+    TriggerPressImportUseCase().execute()
+    await audit.log(
+        current_user, AuditAction.KNOWLEDGE_RESCRAPE, "knowledge",
+        target_label="Yangiliklar va e'lonlar",
+    )
 
 
 @router.patch("/validity", response_model=SuccessResponse)

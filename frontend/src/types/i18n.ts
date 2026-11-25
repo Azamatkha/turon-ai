@@ -603,6 +603,11 @@ export interface AdminStrings {
   rescrapeFailed: string;
   rescrapeEmpty: string;
   rescrapeError: string;
+  // Sayt yangiliklari va e'lonlarini yuklash tugmasi
+  pressRun: string;
+  pressQueued: string;
+  pressHint: string;
+  pressError: string;
   rescrapeLast: (when: string, checked: number, changed: number, failed: number) => string;
   knowledgeDuplicate: (n: number) => string;
   dislikedNav: string;

@@ -14,6 +14,7 @@ from loggers import get_logger
 from src.core.ai.guard import looks_like_injection, mask_pii
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.utils.uzbek_script import (
+    from_new_alphabet,
     to_cyrillic,
     to_latin,
 )
@@ -2007,8 +2008,9 @@ def _is_suffix_tail(rest: str) -> bool:
 
 
 def _text_words(text: str) -> set[str]:
-    """Matnni solishtirishga tayyor so'zlarga ajratadi (lotin, apostrofsiz)."""
-    return set(_words(_norm_apostrophes(to_latin(text)).replace("'", "")))
+    """Matnni solishtirishga tayyor so'zlarga ajratadi (lotin, apostrofsiz).
+    Yangi alifbodagi so'z ("işonç") amaldagisi ("ishonch") bilan bir xil."""
+    return set(_words(_norm_apostrophes(to_latin(from_new_alphabet(text))).replace("'", "")))
 
 
 def _title_has(title: str, word: str) -> bool:

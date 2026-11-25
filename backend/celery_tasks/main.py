@@ -82,6 +82,12 @@ celery_app.conf.beat_schedule = {
         "task": "rescrape_knowledge",
         "schedule": crontab(minute=0, hour=1, day_of_week="mon"),
     },
+    # Rasmiy saytdagi Yangiliklar va E'lonlar — kuniga ikki marta, 10:15 va
+    # 18:15 Toshkent (05:15, 13:15 UTC). Faqat yangi maqolalar yoziladi.
+    "import_press_center_twice_daily": {
+        "task": "import_press_center",
+        "schedule": crontab(minute=15, hour="5,13"),
+    },
     "backup_qdrant_nightly": {
         "task": "backup_qdrant",
         "schedule": crontab(minute=30, hour=21),

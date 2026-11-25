@@ -7,6 +7,7 @@ Bot har savolda turkumlarga qaraydi, shuning uchun ro'yxat qisqa muddat
 xotirada saqlanadi; admin o'zgartirganda kesh darhol tozalanadi.
 """
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import time
 
@@ -107,42 +108,57 @@ DOCUMENTS_KEY = "documents"
 DOCUMENTS_NAME = "Hujjatlar"
 
 
-def _is_documents(key: str, name: str) -> bool:
-    return key == DOCUMENTS_KEY or _norm(name) == _norm(DOCUMENTS_NAME)
+def _same_category(c_key: str, c_name: str, key: str, name: str) -> bool:
+    return c_key == key or _norm(c_name) == _norm(name)
 
 
-async def _create_documents_category() -> str:
-    """"Hujjatlar" turkumini bazada topadi, bo'lmasa yaratadi (testda almashtiriladi)."""
+async def _create_named_category(key: str, name: str) -> str:
+    """Turkumni bazada topadi, bo'lmasa yaratadi (testda almashtiriladi)."""
     repo = KbCategoryRepository()
     async with async_session() as session:
         rows = await repo.list_ordered(session)
         for c in rows:
-            if _is_documents(c.key, c.name):
+            if _same_category(c.key, c.name, key, name):
                 return c.key
         order = await repo.max_sort_order(session) + 10
         # Kalit so'zlar bo'sh — kerak bo'lsa admin panelda qo'shiladi
         await repo.create(
             session,
-            {"key": DOCUMENTS_KEY, "name": DOCUMENTS_NAME, "keywords": "", "sort_order": order},
+            {"key": key, "name": name, "keywords": "", "sort_order": order},
             commit=True,
         )
     invalidate_categories()
-    return DOCUMENTS_KEY
+    return key
+
+
+async def _create_documents_category() -> str:
+    return await _create_named_category(DOCUMENTS_KEY, DOCUMENTS_NAME)
+
+
+async def named_category_key(
+    key: str, name: str, create: Callable[[], Awaitable[str]] | None = None
+) -> str | None:
+    """Avtomatik yuklanadigan yozuvlar turkumining kaliti ("Hujjatlar",
+    "Yangiliklar", "E'lonlar"). Admin shu nomli turkum yaratgan bo'lsa —
+    o'shasi, yo'q bo'lsa yangisi yaratiladi. Xato bo'lsa None: yuklash
+    to'xtamasin, yozuv shunchaki turkumsiz qoladi."""
+    try:
+        for c in await kb_categories():
+            if _same_category(c.key, c.name, key, name):
+                return c.key
+        if create is not None:
+            return await create()
+        return await _create_named_category(key, name)
+    except Exception:  # noqa: BLE001
+        logger.warning("%r turkumini aniqlab bo'lmadi", name, exc_info=True)
+        return None
 
 
 async def documents_category_key() -> str | None:
-    """PDF orqali yuklangan hujjat uchun "Hujjatlar" turkumining kaliti.
-    Admin bunday turkum yaratgan bo'lsa (nomi "Hujjatlar") — o'shasi, yo'q
-    bo'lsa yangisi yaratiladi. Xato bo'lsa None: yuklash to'xtamasin, hujjat
-    shunchaki turkumsiz qoladi."""
-    try:
-        for c in await kb_categories():
-            if _is_documents(c.key, c.name):
-                return c.key
-        return await _create_documents_category()
-    except Exception:  # noqa: BLE001
-        logger.warning("\"Hujjatlar\" turkumini aniqlab bo'lmadi", exc_info=True)
-        return None
+    """PDF orqali yuklangan hujjat uchun "Hujjatlar" turkumining kaliti."""
+    return await named_category_key(
+        DOCUMENTS_KEY, DOCUMENTS_NAME, create=_create_documents_category
+    )
 
 
 def _to_def(c: KbCategory) -> CategoryDef:

@@ -22,6 +22,7 @@ from src.core.utils.uzbek_script import (
     StreamingScriptFixer,
     StreamingTransliterator,
     fix_mixed_script,
+    from_new_alphabet,
     to_cyrillic,
     to_latin,
 )
@@ -124,6 +125,7 @@ from src.knowledge.ingest_usecases import (
     UploadPdfUseCase,
 )
 from src.knowledge.lang import ReplyLang, detect_reply_lang
+from src.knowledge.press_scraper import PRESS_DOC_TYPE
 from src.knowledge.prompts import (
     AGENT_SYSTEM,
     CONCEPT_SYSTEM,
@@ -395,7 +397,9 @@ class AnswerQuestionUseCase:
             texts: dict[str, list[str]] = {}
             labels: dict[str, list[str]] = {}
             for p in payloads:
-                if p.get("doc_type") == "employee" or _is_ru_doc(p) != ru:
+                # Sayt yangiliklari/e'lonlari ham katalogga kirmaydi: ular yuzlab
+                # bo'lib, har RAG promptidagi katalogni to'ldirib yuborardi
+                if p.get("doc_type") in ("employee", PRESS_DOC_TYPE) or _is_ru_doc(p) != ru:
                     continue
                 title = str(p.get("title", "")).strip()
                 if not title:
@@ -1172,7 +1176,7 @@ class AnswerQuestionUseCase:
         bo'lmasa — o'sha olinadi. Aks holda o'zbekcha (model tarjima qiladi):
         ruscha hujjatlar QISMAN qo'shilgan bo'lsa, so'ralgan mahsulot o'rniga
         boshqa ruscha hujjat tanlanib qolmasin."""
-        query_vector = await self.embedder.embed(_expand_query(search_q))
+        query_vector = await self.embedder.embed(_expand_query(from_new_alphabet(search_q)))
         uz_results = await self.store.search(query_vector, top_k=self.TOP_K, lang="uz")
         # GIBRID QIDIRUV: vektor qidiruvi bo'lak SARLAVHASIGA tortiladi,
         # leksik qidiruv esa matn ICHIDAGI so'zni topadi. Ikkalasining

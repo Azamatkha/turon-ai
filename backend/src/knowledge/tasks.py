@@ -20,6 +20,7 @@ from src.core.redis.core import create_redis_client
 from src.core.utils.coroutine_runner import execute_coroutine_sync
 from src.core.utils.datetime_utils import get_utc_now
 from src.core.vectorstore.qdrant_store import QdrantStore
+from src.knowledge.press_scraper import ImportPressUseCase
 from src.knowledge.rates_scraper import (
     RATES_TITLE,
     RATES_URL,
@@ -297,3 +298,46 @@ async def _rescrape_knowledge() -> str:
         len(summary.failed),
     )
     return f"checked={summary.checked} changed={len(summary.changed)} failed={len(summary.failed)}"
+
+
+# ---- Rasmiy saytning Yangiliklar va E'lonlar bo'limlari ----
+
+PRESS_RUNNING_KEY = "knowledge:press:running"
+
+
+@typed_shared_task(name="import_press_center")
+def import_press_center(manual: bool = False) -> str:
+    # Sozlamada o'chirilgan bo'lsa — faqat qo'lda (admin tugmasi)
+    if not manual and not config.scraping.PRESS_ENABLED:
+        return "disabled"
+    return execute_coroutine_sync(coroutine=_import_press_center)
+
+
+async def _import_press_center() -> str:
+    redis = create_redis_client(config.redis.dsn)
+    try:
+        # Birinchi ishga tushish (arxiv) uzoq davom etadi — ikkinchisi kutmasin
+        if not await redis.set(PRESS_RUNNING_KEY, "1", nx=True, ex=3 * 3600):
+            return "already running"
+        store = QdrantStore()
+        async with httpx.AsyncClient() as http:
+            summary = await ImportPressUseCase(
+                embedder=OllamaEmbedder(http=http), store=store
+            ).execute(
+                max_pages=config.scraping.PRESS_MAX_PAGES,
+                max_age_days=config.scraping.PRESS_MAX_AGE_DAYS,
+            )
+    finally:
+        await redis.delete(PRESS_RUNNING_KEY)
+        await redis.aclose()
+
+    if summary.added:
+        await _notify_admins(
+            NotificationType.KNOWLEDGE_UPDATED,
+            {"title": summary.added[0], "count": str(len(summary.added))},
+        )
+    logger.info(
+        "Sayt yangiliklari: %d tekshirildi, %d qo'shildi, %d xato",
+        summary.checked, len(summary.added), len(summary.failed),
+    )
+    return f"checked={summary.checked} added={len(summary.added)} failed={len(summary.failed)}"

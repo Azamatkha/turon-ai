@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getRescrapeStatus, runRescrape, type RescrapeStatus } from "../../services/knowledgeService";
+import { getRescrapeStatus, runPressImport, runRescrape, type RescrapeStatus } from "../../services/knowledgeService";
 import type { AdminStrings } from "../../types/i18n";
 import styles from "./RescrapePanel.module.css";
 
@@ -73,6 +73,19 @@ export default function RescrapePanel({ t: admin, onFinished }: Props) {
     }
   };
 
+  // Sayt yangiliklari: natija bildirishnoma bo'lib keladi, shu yerda faqat
+  // "navbatga qo'yildi" belgisi
+  const [pressQueued, setPressQueued] = useState(false);
+  const startPress = async () => {
+    try {
+      await runPressImport();
+      setPressQueued(true);
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : admin.pressError);
+    }
+  };
+
   const last = status?.last;
 
   return (
@@ -93,6 +106,15 @@ export default function RescrapePanel({ t: admin, onFinished }: Props) {
         )}
         <button type="button" className={styles.runBtn} onClick={() => void start()} disabled={busy}>
           {admin.rescrapeRun}
+        </button>
+        <button
+          type="button"
+          className={styles.runBtn}
+          onClick={() => void startPress()}
+          disabled={pressQueued}
+          title={admin.pressHint}
+        >
+          {pressQueued ? admin.pressQueued : admin.pressRun}
         </button>
       </div>
       {err && <div className={styles.err}>{err}</div>}
