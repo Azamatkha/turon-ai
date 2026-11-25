@@ -8,6 +8,7 @@
 // YANGI DEPARTAMENT QO'SHISH: shu massivga { uz, ru, uz_cyrl } qatorini qo'shing.
 
 import type { Lang } from "../types/lang";
+import { toNewAlphabet } from "../utils/newAlphabet";
 
 export interface Department {
   uz: string;
@@ -46,5 +47,6 @@ export const DEPARTMENTS: Department[] = [
 
 // Foydalanuvchi tiliga mos ko'rsatiladigan nom (backendga baribir uz yuboriladi)
 export function deptLabel(d: Department, lang: Lang): string {
+  if (lang === "uz_new") return toNewAlphabet(d.uz);
   return lang === "ru" ? d.ru : lang === "uz_cyrl" ? d.uz_cyrl : d.uz;
 }

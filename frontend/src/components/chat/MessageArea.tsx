@@ -9,6 +9,7 @@ import ThoughtLine from "./ThoughtLine";
 import type { ChatStaticStrings } from "../../types/i18n";
 import { ACCENT, PRIMARY, PRIMARY_ON_DARK } from "./theme";
 import MessageContent, { toPlainText } from "./MessageContent";
+import { toNewAlphabet } from "../../utils/newAlphabet";
 import TypingIndicator from "./TypingIndicator";
 import styles from "./MessageArea.module.css";
 import { docKind, parseDocMessage } from "../../services/documentService";
@@ -105,14 +106,20 @@ interface MessageAreaProps {
   isDark: boolean;
   s: ChatStaticStrings;
   onVote?: (id: string, vote: "up" | "down" | null, feedback?: VoteFeedback) => void;
+  // Interfeys yangi alifboda ("uz_new") — bot javoblari ko'rsatishda o'giriladi
+  newAlphabet?: boolean;
 }
 
 type Vote = "up" | "down";
 
 export default function MessageArea({
-  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, liveSteps, onRegenerate, onEditResend, tk, isDark, s, onVote,
+  scrollRef, isEmpty, hasMessages, greeting, sub, suggestions, onSuggestionClick, rawMsgs, thinking, generating, liveSteps, onRegenerate, onEditResend, tk, isDark, s, onVote, newAlphabet = false,
 }: MessageAreaProps) {
   const accent = isDark ? PRIMARY_ON_DARK : ACCENT;
+  // Backend javobni amaldagi lotinda yozadi (kesh, tekshiruv, jurnal shu
+  // holatda qoladi) — yangi alifbo faqat ko'rsatish va nusxalashda. Butun
+  // matn har safar qayta o'giriladi, oqimda "s" | "h" bo'linsa ham xato bo'lmaydi.
+  const botText = (text: string) => (newAlphabet ? toNewAlphabet(text) : text);
   // Kod/jadval nusxalash tugmalari interfeys tilida
   const contentLabels = { copy: s.copy, copied: s.copied, copyTable: s.copyTable };
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -155,7 +162,7 @@ export default function MessageArea({
   };
 
   const copyMsg = (m: Msg) => {
-    navigator.clipboard?.writeText(toPlainText(m.text)).then(() => {
+    navigator.clipboard?.writeText(toPlainText(m.role === "user" ? m.text : botText(m.text))).then(() => {
       setCopiedId(m.id);
       setTimeout(() => setCopiedId((id) => (id === m.id ? null : id)), 1400);
     });
@@ -351,7 +358,7 @@ export default function MessageArea({
                   )}
                   {!!m.text && (
                     <div className={`${styles.bubble} ${styles.bubbleBot}`} style={{ background: tk.bubble, color: tk.strong, border: "1px solid " + tk.cardBorder, boxShadow: isDark ? "none" : "0 1px 2px rgba(25, 48, 112,.04)" }}>
-                      <MessageContent text={m.text} labels={contentLabels} />
+                      <MessageContent text={botText(m.text)} labels={contentLabels} />
                     </div>
                   )}
                   {/* Javob qaysi hujjatlarga tayangani — yozib bo'lingach ko'rinadi */}

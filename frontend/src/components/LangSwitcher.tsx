@@ -8,12 +8,14 @@ export type { Lang };
 // "uz" va "uz_cyrl" bir xil davlat bayrog'iga ega (O'zbekiston) — faqat yozuvi farq qiladi
 const LANGS: { code: Lang; label: string; short: string }[] = [
   { code: "uz", label: "O‘zbekcha", short: "O‘zbekcha" },
+  // Yangi lotin alifbosi (ö ğ ş ç)
+  { code: "uz_new", label: "Özbekça", short: "Özbekça" },
   { code: "uz_cyrl", label: "Ўзбекча", short: "Ўзбекча" },
   { code: "ru", label: "Русский", short: "Русский" },
 ];
 
-// Bayroq ikonkasi davlat kodiga bog'lanadi, til kodiga emas (uz/uz_cyrl bittasini ulashadi)
-const FLAG_COUNTRY: Record<Lang, string> = { uz: "uz", uz_cyrl: "uz", ru: "ru" };
+// Bayroq ikonkasi davlat kodiga bog'lanadi, til kodiga emas (uz/uz_new/uz_cyrl bittasini ulashadi)
+const FLAG_COUNTRY: Record<Lang, string> = { uz: "uz", uz_new: "uz", uz_cyrl: "uz", ru: "ru" };
 
 // Dumaloq (rounded) bayroq ikonkasi — flag-icons paketidan, doira shaklida kesilgan
 function Flag({ code, size = 22 }: { code: Lang; size?: number }) {

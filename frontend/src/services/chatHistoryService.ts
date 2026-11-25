@@ -58,8 +58,9 @@ export async function downloadSessionDocx(
   sessionId: string,
   lang: string
 ): Promise<{ blob: Blob; filename: string }> {
+  // Backend hozircha uz/uz_cyrl/ru ni biladi — yangi alifbo uchun lotin hujjat
   const res = await apiFetch(
-    `/v1/chat/sessions/${encodeURIComponent(sessionId)}/export.docx?lang=${encodeURIComponent(lang)}`
+    `/v1/chat/sessions/${encodeURIComponent(sessionId)}/export.docx?lang=${encodeURIComponent(lang === "uz_new" ? "uz" : lang)}`
   );
   if (!res.ok) throw new Error(await readError(res, "Eksportda xatolik"));
   const filename = filenameFromDisposition(res.headers.get("content-disposition"), "Turon AI.docx");

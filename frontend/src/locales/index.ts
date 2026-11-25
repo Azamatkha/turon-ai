@@ -9,16 +9,18 @@ import { chat as chatRu, chatStatic as chatStaticRu } from "./ru/chat";
 import { admin as adminUz } from "./uz/admin";
 import { admin as adminUzCyrl } from "./uz_cyrl/admin";
 import { admin as adminRu } from "./ru/admin";
+import { withNewAlphabet } from "../utils/newAlphabet";
 
 // Til kodi -> tarjima lug'ati. Yangi til qo'shilganda shu yerga bir qator qo'shiladi.
-export const loginDict: Record<Lang, LoginStrings> = { uz: loginUz, uz_cyrl: loginUzCyrl, ru: loginRu };
-export const chatDict: Record<Lang, ChatStrings> = { uz: chatUz, uz_cyrl: chatUzCyrl, ru: chatRu };
-export const chatStaticDict: Record<Lang, ChatStaticStrings> = {
+// "uz_new" (yangi alifbo) alohida yozilmaydi — withNewAlphabet uni "uz" dan hosil qiladi.
+export const loginDict: Record<Lang, LoginStrings> = withNewAlphabet({ uz: loginUz, uz_cyrl: loginUzCyrl, ru: loginRu });
+export const chatDict: Record<Lang, ChatStrings> = withNewAlphabet({ uz: chatUz, uz_cyrl: chatUzCyrl, ru: chatRu });
+export const chatStaticDict: Record<Lang, ChatStaticStrings> = withNewAlphabet({
   uz: chatStaticUz,
   uz_cyrl: chatStaticUzCyrl,
   ru: chatStaticRu,
-};
-export const adminDict: Record<Lang, AdminStrings> = { uz: adminUz, uz_cyrl: adminUzCyrl, ru: adminRu };
+});
+export const adminDict: Record<Lang, AdminStrings> = withNewAlphabet({ uz: adminUz, uz_cyrl: adminUzCyrl, ru: adminRu });
 
 // Orqaga moslik uchun (til almashtirgichga ulanmagan joylar) — uz versiyasi
 export const chatStatic = chatStaticUz;

@@ -4,15 +4,16 @@ import { GrLogin } from "react-icons/gr";
 import LangSwitcher from "../LangSwitcher";
 import DepartmentSelect from "./DepartmentSelect";
 import type { Lang } from "../../types/lang";
+import { withNewAlphabet } from "../../utils/newAlphabet";
 import styles from "./LoginForm.module.css";
 
 // Register sahifasi uchun qisqa matnlar (login dizayni qayta ishlatiladi)
-const STR: Record<Lang, {
+const STR = withNewAlphabet<{
   title: string; sub: string; fullName: string; fullNamePh: string;
   username: string; usernamePh: string; dept: string; deptPh: string;
   password: string; confirmPassword: string; submit: string; have: string; signin: string; selectLanguage: string;
   showPassword: string; hidePassword: string;
-}> = {
+}>({
   uz: {
     title: "Ro‘yxatdan o‘tish", sub: "Yangi hisob yarating.",
     fullName: "To‘liq ism", fullNamePh: "masalan, Aziz Karimov",
@@ -43,7 +44,7 @@ const STR: Record<Lang, {
     selectLanguage: "Выбрать язык",
     showPassword: "Показать пароль", hidePassword: "Скрыть пароль",
   },
-};
+});
 
 interface Props {
   lang: Lang;

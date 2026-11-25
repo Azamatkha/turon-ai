@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLang } from "../hooks/useLang";
 import { useForceLightTheme } from "../hooks/useForceLightTheme";
 import { loginDict } from "../locales";
-import type { Lang } from "../types/lang";
+import { withNewAlphabet } from "../utils/newAlphabet";
 import PageBackground from "../components/login/PageBackground";
 import BrandPanel from "../components/login/BrandPanel";
 import RegisterForm from "../components/login/RegisterForm";
@@ -11,10 +11,10 @@ import { register as registerRequest, ApiError } from "../services/authService";
 import styles from "./LoginPage.module.css";
 
 // Ro'yxatdan o'tish xatolari — 3 tilda, aniq va tushunarli
-const ERR: Record<Lang, {
+const ERR = withNewAlphabet<{
   required: string; usernameShort: string; passwordShort: string;
   mismatch: string; usernameTaken: string; generic: string;
-}> = {
+}>({
   uz: {
     required: "Iltimos, barcha majburiy maydonlarni to‘ldiring.",
     usernameShort: "Login kamida 4 ta belgidan iborat bo‘lsin.",
@@ -39,7 +39,7 @@ const ERR: Record<Lang, {
     usernameTaken: "Этот логин уже занят. Выберите другой.",
     generic: "Произошла ошибка. Попробуйте снова.",
   },
-};
+});
 
 export default function RegisterPage() {
   const navigate = useNavigate();

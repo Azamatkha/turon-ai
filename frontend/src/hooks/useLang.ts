@@ -4,7 +4,7 @@ import type { Lang } from "../types/lang";
 const STORAGE_KEY = "turon-lang";
 
 function isLang(v: string | null): v is Lang {
-  return v === "uz" || v === "uz_cyrl" || v === "ru";
+  return v === "uz" || v === "uz_new" || v === "uz_cyrl" || v === "ru";
 }
 
 // Til holatini va tanlangan tildagi lug'atni qaytaradi — `const T = STR[lang]` takrorini yo'qotadi.

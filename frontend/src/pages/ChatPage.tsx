@@ -410,6 +410,7 @@ export default function ChatPage() {
           isDark={isDark}
           s={S}
           onVote={voteMsg}
+          newAlphabet={lang === "uz_new"}
         />
 
         <Composer

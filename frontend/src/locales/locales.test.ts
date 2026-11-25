@@ -18,10 +18,10 @@ const dicts = { login: loginDict, chat: chatDict, chatStatic: chatStaticDict, ad
 
 describe("locales", () => {
   for (const [name, dict] of Object.entries(dicts)) {
-    it(`${name}: uz / uz_cyrl / ru tuzilmasi bir xil`, () => {
+    it(`${name}: uz / uz_new / uz_cyrl / ru tuzilmasi bir xil`, () => {
       const base = new Map<string, string>();
       shape(dict.uz, name, base);
-      for (const lang of ["uz_cyrl", "ru"] as const) {
+      for (const lang of ["uz_new", "uz_cyrl", "ru"] as const) {
         const other = new Map<string, string>();
         shape(dict[lang], name, other);
         expect([...other.keys()].sort(), lang).toEqual([...base.keys()].sort());
