@@ -156,12 +156,12 @@ def to_latin(text: str) -> str:
 # ("ishonch") — ikkalasi bir xil so'z bo'lib solishtirilsin.
 _NEW_ALPHABET = str.maketrans({
     "ş": "sh", "Ş": "Sh", "ç": "ch", "Ç": "Ch",
-    "ö": "o‘", "Ö": "O‘", "ğ": "g‘", "Ğ": "G‘", "ñ": "ng", "Ñ": "Ng",
+    "ö": "o‘", "Ö": "O‘", "ğ": "g‘", "Ğ": "G‘",
 })
 
 
 def from_new_alphabet(text: str) -> str:
-    """Yangi alifbo harflari (ş ç ö ğ ñ) -> amaldagi lotin (sh ch o‘ g‘ ng)."""
+    """Yangi alifboning 4 harfi (ş ç ö ğ) -> amaldagi lotin (sh ch o‘ g‘)."""
     return text.translate(_NEW_ALPHABET)
 
 
