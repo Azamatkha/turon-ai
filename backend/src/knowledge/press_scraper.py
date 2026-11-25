@@ -2,15 +2,17 @@
 
 Bo'lim sahifasida faqat sarlavha va sana bor — asosiy matn har maqolaning
 ICHKI sahifasida. Shuning uchun:
-  1) ro'yxat sahifalari (?PAGEN_1=1, 2, ...) ochilib, maqola havolalari olinadi;
-  2) har YANGI maqola ochiladi: sarlavha (h1), sana (meta datePublished),
+  1) ro'yxat sahifasidan (kerak bo'lsa ?PAGEN_1=2) eng oxirgi N ta maqola
+     havolasi olinadi (N = PRESS_KEEP_LATEST, standart 10);
+  2) har maqola ochiladi: sarlavha (h1), sana (ko'rinadigan "10 Iyul 2026"),
      matn (.detail-text);
   3) maqola alohida yozuv bo'lib yoziladi: sarlavhada sana, turkumi
      "Yangiliklar" / "E'lonlar", doc_type=press.
 
-Faqat yangilari yoziladi: bazada shu havola bor bo'lsa o'tkazib yuboriladi,
-sahifadagi hamma maqola ma'lum bo'lsa — keyingi sahifalarga o'tilmaydi.
-Birinchi ishga tushishda PRESS_MAX_AGE_DAYS kunlik arxiv olinadi.
+Bazada har bo'limdan FAQAT oxirgi N tasi turadi: ro'yxatdan tushib qolgan
+eski maqola o'chiriladi (eski yangiliklar xodimga kerak emas va qidiruvni
+"ifloslaydi"). Sarlavhasi o'zgargan (masalan sana tuzatilgan) maqola qayta
+yoziladi.
 
 Matn saytdagidek saqlanadi (ba'zi maqolalar o'zbek YANGI alifbosida:
 "işonç", "Özbekiston") — qidiruv ikkala yozuvni ham tushunadi
@@ -18,7 +20,7 @@ Matn saytdagidek saqlanadi (ba'zi maqolalar o'zbek YANGI alifbosida:
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date
 import re
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -70,6 +72,10 @@ class PressArticle:
 class PressSummary:
     checked: int = 0
     added: list[str] = field(default_factory=list)
+    # Sarlavhasi o'zgargani uchun qayta yozilganlar
+    updated: list[str] = field(default_factory=list)
+    # Oxirgi N tadan chiqib, bazadan o'chirilganlar
+    removed: list[str] = field(default_factory=list)
     # (havola, xato turi)
     failed: list[tuple[str, str]] = field(default_factory=list)
 
@@ -104,12 +110,9 @@ _DATE_TEXT_RE = re.compile(r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})")
 
 
 def _parse_date(soup: BeautifulSoup) -> date | None:
-    meta = soup.find("meta", attrs={"itemprop": "datePublished"})
-    if meta and meta.get("content"):
-        try:
-            return date.fromisoformat(str(meta["content"])[:10])
-        except ValueError:
-            pass
+    # Ko'rinadigan sana ("10 Iyul 2026") — haqiqiy e'lon sanasi. Meta
+    # datePublished ishonchsiz: saytda u ko'pincha TAHRIR sanasi (10-iyul
+    # yangiligida 2026-07-14, ba'zilarida hammasi oyning 1-kuni).
     el = soup.select_one(".post-date__text, .post-date, .news__date")
     m = _DATE_TEXT_RE.search(el.get_text(" ", strip=True)) if el else None
     if m:
@@ -120,7 +123,13 @@ def _parse_date(soup: BeautifulSoup) -> date | None:
             try:
                 return date(int(m.group(3)), month, int(m.group(1)))
             except ValueError:
-                return None
+                pass
+    meta = soup.find("meta", attrs={"itemprop": "datePublished"})
+    if meta and meta.get("content"):
+        try:
+            return date.fromisoformat(str(meta["content"])[:10])
+        except ValueError:
+            pass
     return None
 
 
@@ -173,13 +182,20 @@ def record_text(section: PressSection, a: PressArticle) -> str:
     )
 
 
-def known_urls(payloads: list[dict[str, Any]]) -> set[str]:
-    """Bazada allaqachon bor havolalar (oxiridagi "/" farqisiz)."""
-    return {
-        str(p.get("source_url") or "").rstrip("/")
-        for p in payloads
-        if p.get("source_url")
-    }
+# Oxirgi N tani yig'ish uchun ko'pi bilan shuncha ro'yxat sahifasi
+_MAX_LIST_PAGES = 3
+
+
+def section_records(payloads: list[dict[str, Any]], section: PressSection) -> dict[str, set[str]]:
+    """Bazadagi shu bo'lim yozuvlari: havola (oxiridagi "/" siz) -> sarlavhalar."""
+    out: dict[str, set[str]] = {}
+    for p in payloads:
+        if p.get("doc_type") != PRESS_DOC_TYPE:
+            continue
+        url = str(p.get("source_url") or "")
+        if urlparse(url).path.startswith(section.path):
+            out.setdefault(url.rstrip("/"), set()).add(str(p.get("title") or ""))
+    return out
 
 
 class ImportPressUseCase:
@@ -189,84 +205,103 @@ class ImportPressUseCase:
         store: QdrantStore,
         fetch: Callable[[str], Awaitable[str]] = fetch_html,
         category: Callable[[str, str], Awaitable[str | None]] = named_category_key,
-        today: date | None = None,
     ) -> None:
         self.embedder = embedder
         self.store = store
         self.fetch = fetch
         self.category = category
-        self.today = today
 
-    async def execute(self, max_pages: int, max_age_days: int) -> PressSummary:
+    async def execute(self, keep: int) -> PressSummary:
         summary = PressSummary()
-        exists = await self.store.exists()
-        known = known_urls(await self.store.scroll_all_pages()) if exists else set()
-        today = self.today or datetime.now().date()
-        cutoff = today - timedelta(days=max_age_days)
+        payloads = await self.store.scroll_all_pages() if await self.store.exists() else []
         for section in SECTIONS:
-            await self._section(section, known, cutoff, max_pages, summary)
+            await self._section(section, payloads, keep, summary)
         return summary
+
+    async def _latest_links(self, section: PressSection, keep: int) -> list[str]:
+        """Bo'limdagi eng oxirgi `keep` ta maqola havolasi (sayt yangidan eskiga)."""
+        links: list[str] = []
+        for page in range(1, _MAX_LIST_PAGES + 1):
+            url = section.list_url if page == 1 else f"{section.list_url}?PAGEN_1={page}"
+            fresh = [u for u in article_links(await self.fetch(url), section) if u not in links]
+            # Sahifalar tugadi (sayt oxirgi sahifani qayta berdi)
+            if not fresh:
+                break
+            links += fresh
+            if len(links) >= keep:
+                break
+        return links[:keep]
 
     async def _section(
         self,
         section: PressSection,
-        known: set[str],
-        cutoff: date,
-        max_pages: int,
+        payloads: list[dict[str, Any]],
+        keep: int,
         summary: PressSummary,
     ) -> None:
+        try:
+            latest = await self._latest_links(section, keep)
+        except Exception as exc:  # noqa: BLE001 - bo'lim to'xtaydi, boshqasi davom etadi
+            logger.warning("[Press] %s ochilmadi: %r", section.list_url, exc)
+            summary.failed.append((section.list_url, type(exc).__name__))
+            return
+        # Ro'yxat bo'sh — sayt tuzilmasi o'zgargan bo'lishi mumkin. Bunda
+        # bazadagilarni o'chirib yubormaymiz.
+        if not latest:
+            summary.failed.append((section.list_url, "empty list"))
+            return
+
+        stored = section_records(payloads, section)
         cat_key: str | None = None
-        for page in range(1, max_pages + 1):
-            url = section.list_url if page == 1 else f"{section.list_url}?PAGEN_1={page}"
+        for link in latest:
+            summary.checked += 1
             try:
-                links = article_links(await self.fetch(url), section)
-            except Exception as exc:  # noqa: BLE001 - bo'lim to'xtaydi, boshqasi davom etadi
-                logger.warning("[Press] %s ochilmadi: %r", url, exc)
-                summary.failed.append((url, type(exc).__name__))
-                return
-            fresh = [u for u in links if u.rstrip("/") not in known]
-            # Sahifada yangi maqola yo'q (yoki sahifalar tugab, sayt oxirgi
-            # sahifani qayta berdi) — qolgani allaqachon bazada
-            if not fresh:
-                return
-            for link in fresh:
-                summary.checked += 1
-                known.add(link.rstrip("/"))
-                try:
-                    article = parse_article(await self.fetch(link), link)
-                except Exception as exc:  # noqa: BLE001 - bitta maqola qolganini to'xtatmasin
-                    logger.warning("[Press] %s ochilmadi: %r", link, exc)
-                    summary.failed.append((link, type(exc).__name__))
-                    continue
-                if article.published and article.published < cutoff:
-                    # Ro'yxat yangidan eskiga — bundan keyingilari ham eski
-                    return
-                if not article.text:
-                    summary.failed.append((link, "empty"))
-                    continue
-                if cat_key is None:
-                    cat_key = await self.category(section.category_key, section.category_name) or ""
-                payload: dict[str, Any] = {"doc_type": PRESS_DOC_TYPE}
-                if article.published:
-                    payload["published"] = article.published.isoformat()
-                if cat_key:
-                    payload["category"] = [cat_key]
-                title = record_title(section, article)
-                try:
-                    await UploadKnowledgeUseCase(
-                        embedder=self.embedder, store=self.store
-                    ).execute(
-                        title=title,
-                        text=record_text(section, article),
-                        source_url=link,
-                        extra_payload=payload,
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    logger.warning("[Press] %s yozilmadi: %r", link, exc)
-                    summary.failed.append((link, type(exc).__name__))
-                    continue
-                summary.added.append(title)
-                logger.info("[Press] qo'shildi: %s", title)
+                article = parse_article(await self.fetch(link), link)
+            except Exception as exc:  # noqa: BLE001 - bitta maqola qolganini to'xtatmasin
+                logger.warning("[Press] %s ochilmadi: %r", link, exc)
+                summary.failed.append((link, type(exc).__name__))
+                continue
+            if not article.text:
+                summary.failed.append((link, "empty"))
+                continue
+            title = record_title(section, article)
+            old = stored.get(link.rstrip("/"), set())
+            if old == {title}:
+                continue  # o'zgarmagan
+            if cat_key is None:
+                cat_key = await self.category(section.category_key, section.category_name) or ""
+            payload: dict[str, Any] = {"doc_type": PRESS_DOC_TYPE}
+            if article.published:
+                payload["published"] = article.published.isoformat()
+            if cat_key:
+                payload["category"] = [cat_key]
+            try:
+                await UploadKnowledgeUseCase(
+                    embedder=self.embedder, store=self.store
+                ).execute(
+                    title=title,
+                    text=record_text(section, article),
+                    source_url=link,
+                    extra_payload=payload,
+                )
+            except Exception as exc:  # noqa: BLE001 - eski yozuv joyida qoladi
+                logger.warning("[Press] %s yozilmadi: %r", link, exc)
+                summary.failed.append((link, type(exc).__name__))
+                continue
+            # Eski sarlavhali yozuv (masalan noto'g'ri sana bilan) o'chadi
+            for t in old - {title}:
+                await self.store.delete_by_title(t)
+            (summary.updated if old else summary.added).append(title)
+            logger.info("[Press] %s: %s", "yangilandi" if old else "qo'shildi", title)
+
+        # Oxirgi N tadan chiqib qolganlar bazadan o'chiriladi
+        keep_urls = {u.rstrip("/") for u in latest}
+        for url, titles in stored.items():
+            if url in keep_urls:
+                continue
+            for t in titles:
+                await self.store.delete_by_title(t)
+                summary.removed.append(t)
 
 
 class TriggerPressImportUseCase:

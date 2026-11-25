@@ -269,7 +269,7 @@ export const admin: AdminStrings = {
   rescrapeError: "Tekshiruvda xatolik",
   pressRun: "Yangiliklarni olish",
   pressQueued: "Navbatga qo‘yildi",
-  pressHint: "Saytdagi Yangiliklar va E’lonlardan yangilarini bilim bazasiga yuklaydi (avtomatik: har kuni 10:15 va 18:15). Tugagach bildirishnoma keladi.",
+  pressHint: "Saytdagi oxirgi 10 ta yangilik va 10 ta e’lonni bilim bazasida saqlaydi, eskilarini o‘chiradi (avtomatik: har kuni 10:15 va 18:15). Tugagach bildirishnoma keladi.",
   pressError: "Yangiliklarni yuklashda xatolik",
   rescrapeLast: (when: string, checked: number, changed: number, failed: number) => `Oxirgi: ${when} — ${checked} ta tekshirildi, ${changed} ta yangilandi, ${failed} ta xato`,
   knowledgeDuplicate: (n: number) => n === 1 ? "Dublikat" : `Dublikat (${n})`,

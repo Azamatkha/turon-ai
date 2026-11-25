@@ -638,12 +638,21 @@ class AnswerQuestionUseCase:
             # so'z chegarasi deb biladi va "o'tkazmalari" -> "o" + "tkazmalari"
             # bo'lib ketardi.
             generic = cat.generic
+            # Turkum NOMIDAGI so'zlar ham shart emas: "Xalqaro pul o'tkazmalari"
+            # turkumida "xalqaro pul o'tkazmalari" savoli — butun turkum. Ilgari
+            # "xalqaro" qo'shimcha shart deb olinib, savol modelga ketardi va u
+            # qidiruvdan kelgan 3 ta bo'lakni ko'rib, 8 tadan 3 tasini aytardi.
+            name_words = [
+                n for n in _words(_norm_apostrophes(to_latin(cat.name).lower()).replace("'", ""))
+                if len(n) >= 4
+            ]
             extra = [
                 w for w in _words(q.replace("'", ""))
                 if len(w) >= 4
                 and w not in _BROAD_QUESTION_STOPWORDS
                 and not (aud_filter and is_audience_word(w))
                 and not any(w.startswith(g) or g.startswith(w) for g in generic)
+                and not any(w.startswith(n) or n.startswith(w) for n in name_words)
             ]
             shown = items
             if extra:

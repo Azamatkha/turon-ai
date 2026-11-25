@@ -119,3 +119,27 @@ async def test_comparison_defaults_to_individual() -> None:
         p["title"] for p, _ in await uc._comparison_results("yuridik shaxslar uchun eng past foizli kredit")
     )
     assert legal == ["Biznes kredit", "Eski kredit", "Universal kredit"]
+
+
+@pytest.mark.asyncio
+async def test_word_from_category_name_is_not_a_condition(monkeypatch: pytest.MonkeyPatch) -> None:
+    """"Xalqaro pul o'tkazmalari" turkumi: savoldagi "xalqaro" — turkum NOMI,
+    qo'shimcha shart emas. Ilgari ro'yxat o'rniga model 3 tasini aytardi."""
+    from src.knowledge import usecases
+    from src.knowledge.categories import make_def
+
+    async def _cats() -> list[Any]:
+        return [make_def("transfer", "Xalqaro pul o'tkazmalari", "o'tkazma, otkazma")]
+
+    monkeypatch.setattr(usecases, "kb_categories", _cats)
+    names = ["Astrasend", "Western Union", "Zolotaya Korona", "UPT", "Money Gram"]
+    uc = _use_case()
+    points = [_doc(n, "pul o'tkazmasi", "individual", "transfer") for n in names]
+
+    async def _scroll() -> list[dict[str, Any]]:
+        return points
+
+    uc._scroll_points = _scroll
+    reply, title = await uc._broad_category_reply("xalqaro pul o'tkazmalari", False)
+    assert title is None and reply is not None
+    assert all(n in reply for n in names)

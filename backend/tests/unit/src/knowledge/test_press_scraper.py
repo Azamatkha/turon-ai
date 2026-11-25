@@ -79,9 +79,19 @@ def test_press_records_skipped_by_rescrape() -> None:
     assert scrape_targets(groups) == [("Kredit", "https://turonbank.uz/k/")]
 
 
+def test_visible_date_wins_over_meta() -> None:
+    # Saytda meta datePublished — tahrir sanasi; ko'rinadigani haqiqiysi
+    html = (
+        '<h1>T</h1><meta itemprop="datePublished" content="2026-07-14">'
+        '<div class="post-date__text">10 Iyul 2026</div><div class="detail-text">x</div>'
+    )
+    assert ps.parse_article(html, "u").published == date(2026, 7, 10)
+
+
 class _Store:
     def __init__(self, payloads: list[dict[str, Any]]) -> None:
         self.payloads = payloads
+        self.deleted: list[str] = []
 
     async def exists(self) -> bool:
         return True
@@ -89,8 +99,15 @@ class _Store:
     async def scroll_all_pages(self) -> list[dict[str, Any]]:
         return self.payloads
 
+    async def delete_by_title(self, title: str) -> None:
+        self.deleted.append(title)
 
-def _run(monkeypatch: pytest.MonkeyPatch, pages: dict[str, str], known: list[str], max_age: int = 365):  # noqa: ANN202
+
+def _press(url: str, title: str) -> dict[str, Any]:
+    return {"source_url": url, "title": title, "doc_type": "press"}
+
+
+def _run(monkeypatch: pytest.MonkeyPatch, pages: dict[str, str], stored: list[dict[str, Any]]):  # noqa: ANN202
     uploads: list[dict[str, Any]] = []
     fetched: list[str] = []
 
@@ -109,45 +126,75 @@ def _run(monkeypatch: pytest.MonkeyPatch, pages: dict[str, str], known: list[str
         return f"cat-{key}"
 
     monkeypatch.setattr(ps, "UploadKnowledgeUseCase", _Upload)
+    store = _Store(stored)
     uc = ps.ImportPressUseCase(
         embedder=None,  # type: ignore[arg-type]
-        store=_Store([{"source_url": u} for u in known]),  # type: ignore[arg-type]
+        store=store,  # type: ignore[arg-type]
         fetch=fetch,
         category=category,
-        today=date(2026, 11, 25),
     )
-    return uc, uploads, fetched
+    return uc, uploads, fetched, store
 
 
 BASE = "https://turonbank.uz/uz/press_center/news/"
 
 
 @pytest.mark.asyncio
-async def test_only_new_articles_written_and_paging_stops(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_new_written_unchanged_skipped(monkeypatch: pytest.MonkeyPatch) -> None:
     pages = {
         BASE: _news_list("yangi", "eski"),
         BASE + "yangi/": _article("Yangi xabar", "2026-11-22", "Matn"),
+        BASE + "eski/": _article("Eski xabar", "2026-11-20", "Matn"),
     }
-    uc, uploads, fetched = _run(monkeypatch, pages, known=[BASE + "eski"])
-    summary = await uc.execute(max_pages=5, max_age_days=365)
+    uc, uploads, _, store = _run(
+        monkeypatch, pages, [_press(BASE + "eski/", "Yangilik 20.11.2026: Eski xabar")]
+    )
+    summary = await uc.execute(keep=10)
     assert [u["title"] for u in uploads] == ["Yangilik 22.11.2026: Yangi xabar"]
     up = uploads[0]
     assert up["source_url"] == BASE + "yangi/"
     assert up["extra_payload"] == {"doc_type": "press", "published": "2026-11-22", "category": ["cat-news"]}
-    # 2-sahifa: undagi maqolalar (yana o'sha "yangi"/"eski") ma'lum — to'xtadi
     assert summary.added == ["Yangilik 22.11.2026: Yangi xabar"]
-    assert fetched.count(BASE + "?PAGEN_1=3") == 0
+    assert store.deleted == []
 
 
 @pytest.mark.asyncio
-async def test_old_articles_stop_the_section(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_only_latest_kept_older_removed(monkeypatch: pytest.MonkeyPatch) -> None:
     pages = {
-        BASE: _news_list("bugun", "otgan-yil", "undan-eski"),
-        BASE + "bugun/": _article("Bugun", "2026-11-20", "a"),
-        BASE + "otgan-yil/": _article("O'tgan yil", "2025-01-01", "b"),
-        BASE + "undan-eski/": _article("Eski", "2024-01-01", "c"),
+        BASE: _news_list("a", "b", "c"),
+        BASE + "a/": _article("A", "2026-11-22", "x"),
+        BASE + "b/": _article("B", "2026-11-21", "x"),
     }
-    uc, uploads, fetched = _run(monkeypatch, pages, known=[])
-    await uc.execute(max_pages=5, max_age_days=365)
-    assert [u["title"] for u in uploads] == ["Yangilik 20.11.2026: Bugun"]
-    assert BASE + "undan-eski/" not in fetched
+    stored = [
+        _press(BASE + "b/", "Yangilik 21.11.2026: B"),
+        _press(BASE + "yozgi/", "Yangilik 01.07.2026: Yozgi"),
+        # E'lonlar bo'limi yozuviga yangiliklar tegmaydi
+        _press("https://turonbank.uz/uz/press_center/adverts/e/", "E'lon 20.11.2026: E"),
+    ]
+    uc, uploads, fetched, store = _run(monkeypatch, pages, stored)
+    summary = await uc.execute(keep=2)
+    assert [u["title"] for u in uploads] == ["Yangilik 22.11.2026: A"]
+    assert BASE + "c/" not in fetched
+    assert store.deleted == ["Yangilik 01.07.2026: Yozgi"]
+    assert summary.removed == ["Yangilik 01.07.2026: Yozgi"]
+
+
+@pytest.mark.asyncio
+async def test_wrong_date_record_rewritten(monkeypatch: pytest.MonkeyPatch) -> None:
+    pages = {
+        BASE: _news_list("a"),
+        BASE + "a/": _article("A", "2026-07-10", "x"),
+    }
+    uc, uploads, _, store = _run(monkeypatch, pages, [_press(BASE + "a/", "Yangilik 01.07.2026: A")])
+    summary = await uc.execute(keep=10)
+    assert [u["title"] for u in uploads] == ["Yangilik 10.07.2026: A"]
+    assert store.deleted == ["Yangilik 01.07.2026: A"]
+    assert summary.updated == ["Yangilik 10.07.2026: A"]
+
+
+@pytest.mark.asyncio
+async def test_empty_list_deletes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    uc, uploads, _, store = _run(monkeypatch, {}, [_press(BASE + "a/", "Yangilik 22.11.2026: A")])
+    summary = await uc.execute(keep=10)
+    assert uploads == [] and store.deleted == []
+    assert summary.failed

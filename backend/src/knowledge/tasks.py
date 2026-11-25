@@ -316,17 +316,14 @@ def import_press_center(manual: bool = False) -> str:
 async def _import_press_center() -> str:
     redis = create_redis_client(config.redis.dsn)
     try:
-        # Birinchi ishga tushish (arxiv) uzoq davom etadi — ikkinchisi kutmasin
+        # Bir vaqtda ikkitasi ishlamasin (qo'lda tugma + jadval)
         if not await redis.set(PRESS_RUNNING_KEY, "1", nx=True, ex=3 * 3600):
             return "already running"
         store = QdrantStore()
         async with httpx.AsyncClient() as http:
             summary = await ImportPressUseCase(
                 embedder=OllamaEmbedder(http=http), store=store
-            ).execute(
-                max_pages=config.scraping.PRESS_MAX_PAGES,
-                max_age_days=config.scraping.PRESS_MAX_AGE_DAYS,
-            )
+            ).execute(keep=config.scraping.PRESS_KEEP_LATEST)
     finally:
         await redis.delete(PRESS_RUNNING_KEY)
         await redis.aclose()
@@ -337,7 +334,12 @@ async def _import_press_center() -> str:
             {"title": summary.added[0], "count": str(len(summary.added))},
         )
     logger.info(
-        "Sayt yangiliklari: %d tekshirildi, %d qo'shildi, %d xato",
-        summary.checked, len(summary.added), len(summary.failed),
+        "Sayt yangiliklari: %d tekshirildi, %d qo'shildi, %d yangilandi, %d o'chirildi, %d xato",
+        summary.checked, len(summary.added), len(summary.updated),
+        len(summary.removed), len(summary.failed),
     )
-    return f"checked={summary.checked} added={len(summary.added)} failed={len(summary.failed)}"
+    return (
+        f"checked={summary.checked} added={len(summary.added)} "
+        f"updated={len(summary.updated)} removed={len(summary.removed)} "
+        f"failed={len(summary.failed)}"
+    )
