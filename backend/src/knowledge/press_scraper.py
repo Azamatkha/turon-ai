@@ -296,12 +296,11 @@ class ImportPressUseCase:
 
         # Oxirgi N tadan chiqib qolganlar bazadan o'chiriladi
         keep_urls = {u.rstrip("/") for u in latest}
-        for url, titles in stored.items():
-            if url in keep_urls:
-                continue
-            for t in titles:
-                await self.store.delete_by_title(t)
-                summary.removed.append(t)
+        stale = sorted(t for url, ts in stored.items() if url not in keep_urls for t in ts)
+        if stale:
+            # Birinchi ishga tushishda yuzlab eski yozuv — bitta so'rov bilan
+            await self.store.delete_by_titles(stale)
+            summary.removed.extend(stale)
 
 
 class TriggerPressImportUseCase:

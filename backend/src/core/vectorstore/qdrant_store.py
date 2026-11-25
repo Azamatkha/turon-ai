@@ -14,6 +14,7 @@ from qdrant_client.models import (
     Distance,
     FieldCondition,
     Filter,
+    MatchAny,
     MatchValue,
     PayloadSchemaType,
     PointIdsList,
@@ -288,6 +289,22 @@ class QdrantStore:
                 must=[FieldCondition(key="title", match=MatchValue(value=title))]
             ),
         )
+        await bump_kb_version()
+
+    async def delete_by_titles(self, titles: list[str], batch: int = 200) -> None:
+        """Bir nechta sarlavhaning barcha bo'laklarini o'chiradi — har sarlavha
+        uchun alohida so'rov emas, `batch` tadan bitta so'rov. Ilgari 300 ta
+        hujjat ketma-ket o'chirilib, so'rov nginx taym-autidan oshib ketardi."""
+        titles = list(dict.fromkeys(t for t in titles if t))
+        if not titles or not await self.exists():
+            return
+        for i in range(0, len(titles), batch):
+            await self.client.delete(
+                collection_name=self.collection,
+                points_selector=Filter(
+                    must=[FieldCondition(key="title", match=MatchAny(any=titles[i : i + batch]))]
+                ),
+            )
         await bump_kb_version()
 
     async def delete_by_title(self, title: str) -> None:

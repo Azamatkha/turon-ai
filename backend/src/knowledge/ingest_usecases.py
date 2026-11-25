@@ -692,11 +692,10 @@ class BulkDeleteKnowledgeUseCase:
         self.store = store
 
     async def execute(self, titles: list[str]) -> int:
-        done = 0
-        for title in dict.fromkeys(t for t in titles if t):
-            await self.store.delete_by_title(title)
-            done += 1
-        return done
+        unique = list(dict.fromkeys(t for t in titles if t))
+        # Bitta (bo'lakli) so'rov — yuzlab hujjat ham taym-autsiz o'chadi
+        await self.store.delete_by_titles(unique)
+        return len(unique)
 
 
 class SetKnowledgeValidityUseCase:

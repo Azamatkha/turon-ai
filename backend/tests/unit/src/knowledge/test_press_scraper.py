@@ -102,6 +102,9 @@ class _Store:
     async def delete_by_title(self, title: str) -> None:
         self.deleted.append(title)
 
+    async def delete_by_titles(self, titles: list[str]) -> None:
+        self.deleted.extend(titles)
+
 
 def _press(url: str, title: str) -> dict[str, Any]:
     return {"source_url": url, "title": title, "doc_type": "press"}

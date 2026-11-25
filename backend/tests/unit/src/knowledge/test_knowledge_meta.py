@@ -37,6 +37,9 @@ class _Store:
     async def delete_by_title(self, title: str) -> None:
         self.deleted.append(title)
 
+    async def delete_by_titles(self, titles: list[str]) -> None:
+        self.deleted.extend(titles)
+
 
 def _doc(title: str, url: str = "", text: str = "matn", **extra: Any) -> dict[str, Any]:
     return {"title": title, "chunk_index": 0, "chunk_text": text, "source_url": url, **extra}
